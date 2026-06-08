@@ -699,6 +699,18 @@ code {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.top-pages-list__country {
+  display: inline-block;
+  margin-right: 0.35rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  background: var(--rice-dark);
+  color: var(--teal);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  vertical-align: middle;
+}
 .top-pages-list__count {
   font-weight: 700;
   color: var(--teal);

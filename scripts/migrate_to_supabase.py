@@ -71,7 +71,7 @@ def migrate_sqlite():
     try:
         with dst.cursor() as cur:
             for table, cols in (
-                ("page_views", ("path", "referrer", "user_agent", "ip_hash", "created_at")),
+                ("page_views", ("path", "referrer", "user_agent", "ip_hash", "country_code", "country_name", "created_at")),
                 ("affiliate_clicks", ("provider", "target_url", "source_page", "created_at")),
                 ("revenue", ("source", "amount", "currency", "note", "created_at")),
             ):

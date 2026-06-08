@@ -133,6 +133,7 @@ def build_site_analytics(days: int = 30) -> dict:
     aff = db.get_affiliate_stats(days)
     geo_rows = db.get_geo_view_rows(days)
     geo = aggregate_geo_views(geo_rows)
+    countries = db.get_country_stats(days)
 
     return {
         "days": days,
@@ -145,5 +146,6 @@ def build_site_analytics(days: int = 30) -> dict:
         "daily_clicks": db.get_daily_affiliate_clicks(days),
         "top_pages": realtime["top_pages"],
         "recent": realtime["recent"],
+        "countries": countries,
         "geo": geo,
     }

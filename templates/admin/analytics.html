@@ -63,7 +63,12 @@
         <ul class="top-pages-list" id="live-feed">
           {% for v in stats.recent[:15] %}
           <li>
-            <span class="top-pages-list__path">{{ v.path }}</span>
+            <span class="top-pages-list__path">
+              {% if v.country_code and v.country_code != '??' %}
+              <span class="top-pages-list__country">{{ v.country_code }}</span>
+              {% endif %}
+              {{ v.path }}
+            </span>
             <span class="top-pages-list__count">{{ v.created_at[11:16] }}</span>
           </li>
           {% else %}
@@ -72,6 +77,41 @@
         </ul>
       </section>
     </div>
+
+    <section class="geo-analytics-section" aria-labelledby="location-title">
+      <header class="geo-analytics-header">
+        <h2 id="location-title">Localisation</h2>
+        <p class="page-sub">Pays d'origine des visiteurs humains (hors robots) — {{ days }} derniers jours.</p>
+      </header>
+      <div class="chart-grid">
+        <section class="chart-panel">
+          <h2>Top pays</h2>
+          {% if stats.countries %}
+          <canvas id="countriesChart" height="140"></canvas>
+          {% else %}
+          <p class="muted">Les pays apparaîtront dès les premières visites enregistrées.</p>
+          {% endif %}
+        </section>
+        <section class="chart-panel">
+          <h2>Détail par pays</h2>
+          <ul class="top-pages-list">
+            {% for c in stats.countries[:12] %}
+            <li>
+              <span class="top-pages-list__path">
+                {% if c.country_code != '??' %}
+                <span class="top-pages-list__country">{{ c.country_code }}</span>
+                {% endif %}
+                {{ c.country_name }}
+              </span>
+              <span class="top-pages-list__count">{{ c.views }}</span>
+            </li>
+            {% else %}
+            <li class="muted">Pas encore de données géographiques.</li>
+            {% endfor %}
+          </ul>
+        </section>
+      </div>
+    </section>
 
     <section class="geo-analytics-section" aria-labelledby="geo-title">
       <header class="geo-analytics-header">
@@ -144,6 +184,7 @@
   const siteAnalyticsData = {
     dailyViews: {{ stats.daily_views | tojson }},
     dailyClicks: {{ stats.daily_clicks | tojson }},
+    countries: {{ stats.countries | tojson }},
     geo: {{ stats.geo | tojson }},
   };
 </script>

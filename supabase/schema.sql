@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS page_views (
     referrer TEXT,
     user_agent TEXT,
     ip_hash TEXT,
+    country_code TEXT,
+    country_name TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

@@ -2,6 +2,7 @@
 
 from datetime import date, datetime, timedelta
 
+from admin.analytics_filters import not_bot_sql
 from admin.database import get_connection, ensure_schema, init_schema, is_postgres
 
 init_db = init_schema
@@ -35,6 +36,11 @@ def _since_days(days: int) -> str:
     return (datetime.utcnow() - timedelta(days=days)).isoformat()
 
 
+def _human_traffic_sql() -> str:
+    """Exclut crawlers / robots des stats visiteurs (section GEO non concernée)."""
+    return not_bot_sql(postgres=is_postgres())
+
+
 def _execute(conn, sql_pg: str, sql_sqlite: str, params=()):
     if is_postgres():
         cur = conn.cursor()
@@ -43,13 +49,24 @@ def _execute(conn, sql_pg: str, sql_sqlite: str, params=()):
     return conn.execute(sql_sqlite, params)
 
 
-def log_page_view(path: str, referrer: str, user_agent: str, ip_hash: str):
+def log_page_view(
+    path: str,
+    referrer: str,
+    user_agent: str,
+    ip_hash: str,
+    country_code: str = "",
+    country_name: str = "",
+):
     with get_connection() as conn:
         _execute(
             conn,
-            "INSERT INTO page_views (path, referrer, user_agent, ip_hash, created_at) VALUES (%s,%s,%s,%s,%s)",
-            "INSERT INTO page_views (path, referrer, user_agent, ip_hash, created_at) VALUES (?,?,?,?,?)",
-            (path, referrer, user_agent, ip_hash, _now_iso()),
+            """INSERT INTO page_views
+               (path, referrer, user_agent, ip_hash, country_code, country_name, created_at)
+               VALUES (%s,%s,%s,%s,%s,%s,%s)""",
+            """INSERT INTO page_views
+               (path, referrer, user_agent, ip_hash, country_code, country_name, created_at)
+               VALUES (?,?,?,?,?,?,?)""",
+            (path, referrer, user_agent, ip_hash, country_code, country_name, _now_iso()),
         )
 
 
@@ -74,17 +91,18 @@ def add_revenue(source: str, amount: float, note: str = "", currency: str = "EUR
 
 
 def get_realtime_stats():
+    bot = _human_traffic_sql()
     with get_connection() as conn:
         active = _execute(
             conn,
-            "SELECT COUNT(DISTINCT ip_hash) AS c FROM page_views WHERE created_at >= %s",
-            "SELECT COUNT(DISTINCT ip_hash) FROM page_views WHERE created_at >= ?",
+            f"SELECT COUNT(DISTINCT ip_hash) AS c FROM page_views WHERE created_at >= %s{bot}",
+            f"SELECT COUNT(DISTINCT ip_hash) FROM page_views WHERE created_at >= ?{bot}",
             (_since(30),),
         ).fetchone()
         views_30m = _execute(
             conn,
-            "SELECT COUNT(*) AS c FROM page_views WHERE created_at >= %s",
-            "SELECT COUNT(*) FROM page_views WHERE created_at >= ?",
+            f"SELECT COUNT(*) AS c FROM page_views WHERE created_at >= %s{bot}",
+            f"SELECT COUNT(*) FROM page_views WHERE created_at >= ?{bot}",
             (_since(30),),
         ).fetchone()
         clicks_30m = _execute(
@@ -95,15 +113,17 @@ def get_realtime_stats():
         ).fetchone()
         recent = _execute(
             conn,
-            "SELECT path, created_at FROM page_views ORDER BY id DESC LIMIT 15",
-            "SELECT path, created_at FROM page_views ORDER BY id DESC LIMIT 15",
+            f"""SELECT path, created_at, country_code, country_name
+                FROM page_views WHERE 1=1{bot} ORDER BY id DESC LIMIT 15""",
+            f"""SELECT path, created_at, country_code, country_name
+                FROM page_views WHERE 1=1{bot} ORDER BY id DESC LIMIT 15""",
         ).fetchall()
         top_pages = _execute(
             conn,
-            """SELECT path, COUNT(*) AS c FROM page_views
-               WHERE created_at >= %s GROUP BY path ORDER BY c DESC LIMIT 10""",
-            """SELECT path, COUNT(*) as c FROM page_views
-               WHERE created_at >= ? GROUP BY path ORDER BY c DESC LIMIT 10""",
+            f"""SELECT path, COUNT(*) AS c FROM page_views
+               WHERE created_at >= %s{bot} GROUP BY path ORDER BY c DESC LIMIT 10""",
+            f"""SELECT path, COUNT(*) as c FROM page_views
+               WHERE created_at >= ?{bot} GROUP BY path ORDER BY c DESC LIMIT 10""",
             (_since(60 * 24),),
         ).fetchall()
     return {
@@ -116,13 +136,40 @@ def get_realtime_stats():
 
 
 def get_daily_views(days: int = 30):
+    bot = _human_traffic_sql()
     with get_connection() as conn:
         rows = _execute(
             conn,
-            """SELECT created_at::date AS day, COUNT(*) AS views
-               FROM page_views WHERE created_at >= %s GROUP BY day ORDER BY day""",
-            """SELECT date(created_at) as day, COUNT(*) as views
-               FROM page_views WHERE created_at >= ? GROUP BY day ORDER BY day""",
+            f"""SELECT created_at::date AS day, COUNT(*) AS views
+               FROM page_views WHERE created_at >= %s{bot} GROUP BY day ORDER BY day""",
+            f"""SELECT date(created_at) as day, COUNT(*) as views
+               FROM page_views WHERE created_at >= ?{bot} GROUP BY day ORDER BY day""",
+            (_since_days(days),),
+        ).fetchall()
+    return [_row_dict(r) for r in rows]
+
+
+def get_country_stats(days: int = 30) -> list[dict]:
+    bot = _human_traffic_sql()
+    with get_connection() as conn:
+        rows = _execute(
+            conn,
+            f"""SELECT COALESCE(NULLIF(country_code, ''), '??') AS country_code,
+                       COALESCE(NULLIF(country_name, ''), 'Inconnu') AS country_name,
+                       COUNT(*) AS views
+                FROM page_views
+                WHERE created_at >= %s{bot}
+                GROUP BY country_code, country_name
+                ORDER BY views DESC
+                LIMIT 15""",
+            f"""SELECT COALESCE(NULLIF(country_code, ''), '??') AS country_code,
+                       COALESCE(NULLIF(country_name, ''), 'Inconnu') AS country_name,
+                       COUNT(*) AS views
+                FROM page_views
+                WHERE created_at >= ?{bot}
+                GROUP BY country_code, country_name
+                ORDER BY views DESC
+                LIMIT 15""",
             (_since_days(days),),
         ).fetchall()
     return [_row_dict(r) for r in rows]
@@ -216,16 +263,17 @@ def get_revenue_stats():
 
 
 def get_dashboard_totals():
+    bot = _human_traffic_sql()
     with get_connection() as conn:
         total_views = _execute(
             conn,
-            "SELECT COUNT(*) AS c FROM page_views",
-            "SELECT COUNT(*) FROM page_views",
+            f"SELECT COUNT(*) AS c FROM page_views WHERE 1=1{bot}",
+            f"SELECT COUNT(*) FROM page_views WHERE 1=1{bot}",
         ).fetchone()
         today_views = _execute(
             conn,
-            "SELECT COUNT(*) AS c FROM page_views WHERE created_at::date = CURRENT_DATE",
-            "SELECT COUNT(*) FROM page_views WHERE date(created_at) = date('now')",
+            f"SELECT COUNT(*) AS c FROM page_views WHERE created_at::date = CURRENT_DATE{bot}",
+            f"SELECT COUNT(*) FROM page_views WHERE date(created_at) = date('now'){bot}",
         ).fetchone()
         total_clicks = _execute(
             conn,

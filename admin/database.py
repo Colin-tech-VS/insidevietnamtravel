@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS page_views (
     referrer TEXT,
     user_agent TEXT,
     ip_hash TEXT,
+    country_code TEXT,
+    country_name TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE TABLE IF NOT EXISTS affiliate_clicks (
@@ -138,6 +140,19 @@ def ensure_schema():
         _schema_initialized = True
 
 
+def _migrate_page_views_columns(conn, *, postgres: bool) -> None:
+    if postgres:
+        with conn.cursor() as cur:
+            cur.execute("ALTER TABLE page_views ADD COLUMN IF NOT EXISTS country_code TEXT")
+            cur.execute("ALTER TABLE page_views ADD COLUMN IF NOT EXISTS country_name TEXT")
+    else:
+        cols = {row[1] for row in conn.execute("PRAGMA table_info(page_views)")}
+        if "country_code" not in cols:
+            conn.execute("ALTER TABLE page_views ADD COLUMN country_code TEXT")
+        if "country_name" not in cols:
+            conn.execute("ALTER TABLE page_views ADD COLUMN country_name TEXT")
+
+
 def _init_postgres():
     import psycopg2
 
@@ -148,6 +163,7 @@ def _init_postgres():
                 stmt = stmt.strip()
                 if stmt:
                     cur.execute(stmt)
+        _migrate_page_views_columns(conn, postgres=True)
         conn.commit()
     finally:
         conn.close()
@@ -163,6 +179,8 @@ def _init_sqlite():
                 referrer TEXT,
                 user_agent TEXT,
                 ip_hash TEXT,
+                country_code TEXT,
+                country_name TEXT,
                 created_at TEXT NOT NULL
             );
             CREATE TABLE IF NOT EXISTS affiliate_clicks (
@@ -183,6 +201,7 @@ def _init_sqlite():
             CREATE INDEX IF NOT EXISTS idx_pv_created ON page_views(created_at);
             CREATE INDEX IF NOT EXISTS idx_clicks_created ON affiliate_clicks(created_at);
         """)
+        _migrate_page_views_columns(conn, postgres=False)
 
 
 @contextmanager

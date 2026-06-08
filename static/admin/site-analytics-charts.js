@@ -27,6 +27,34 @@
     });
   }
 
+  const countries = siteAnalyticsData.countries || [];
+  const countryColors = ['#1B4D4A', '#C17F3A', '#2A6F6B', '#8B6914', '#4A7C59', '#6B5B95', '#A0522D', '#4682B4', '#5F7A61', '#9B6B4F'];
+
+  const countriesCtx = document.getElementById('countriesChart');
+  if (countriesCtx && countries.length) {
+    new Chart(countriesCtx, {
+      type: 'bar',
+      data: {
+        labels: countries.map((c) => (c.country_code !== '??' ? `${c.country_code} · ${c.country_name}` : c.country_name)),
+        datasets: [{
+          label: 'Pages vues',
+          data: countries.map((c) => c.views),
+          backgroundColor: countryColors,
+          borderRadius: 4,
+        }],
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { beginAtZero: true, grid: { color: '#F0EBE3' }, ticks: { color: '#7A7772', precision: 0 } },
+          y: { grid: { display: false }, ticks: { color: '#7A7772', font: { size: 11 } } },
+        },
+      },
+    });
+  }
+
   const geo = siteAnalyticsData.geo || {};
   const geoColors = ['#1B4D4A', '#C17F3A', '#2A6F6B', '#8B6914', '#4A7C59', '#6B5B95', '#A0522D', '#4682B4'];
 
@@ -87,9 +115,12 @@
         if (clicks) clicks.textContent = d.clicks_30m;
         const feed = document.getElementById('live-feed');
         if (feed && d.recent) {
-          feed.innerHTML = d.recent.slice(0, 12).map((v) =>
-            `<li><span class="top-pages-list__path">${v.path}</span><span class="top-pages-list__count">${v.created_at.slice(11, 16)}</span></li>`
-          ).join('') || '<li class="muted">En attente de visites…</li>';
+          feed.innerHTML = d.recent.slice(0, 12).map((v) => {
+            const country = v.country_code && v.country_code !== '??'
+              ? `<span class="top-pages-list__country">${v.country_code}</span>`
+              : '';
+            return `<li><span class="top-pages-list__path">${country}${v.path}</span><span class="top-pages-list__count">${v.created_at.slice(11, 16)}</span></li>`;
+          }).join('') || '<li class="muted">En attente de visites…</li>';
         }
       })
       .catch(() => {});

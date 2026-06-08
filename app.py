@@ -115,13 +115,18 @@ def _localized_block(block: dict, lang: str) -> dict:
     return result
 
 
-def _log_page_view_async(path: str, referrer: str, user_agent: str, ip_hash: str):
+def _log_page_view_async(path: str, referrer: str, user_agent: str, ip_hash: str, client_ip: str):
     try:
+        from admin.geoip import resolve_country
+
+        country_code, country_name = resolve_country(client_ip)
         analytics_db.log_page_view(
             path=path,
             referrer=referrer,
             user_agent=user_agent,
             ip_hash=ip_hash,
+            country_code=country_code,
+            country_name=country_name,
         )
     except Exception:
         pass
@@ -141,12 +146,19 @@ def track_page_view():
         return
     if is_analytics_excluded_ip():
         return
+    client_ip = (request.remote_addr or "").strip()
     ip_hash = hashlib.sha256(
-        (request.remote_addr or "unknown").encode()
+        (client_ip or "unknown").encode()
     ).hexdigest()[:16]
     threading.Thread(
         target=_log_page_view_async,
-        args=(path, request.referrer or "", (request.user_agent.string or "")[:200], ip_hash),
+        args=(
+            path,
+            request.referrer or "",
+            (request.user_agent.string or "")[:200],
+            ip_hash,
+            client_ip,
+        ),
         daemon=True,
     ).start()
 
