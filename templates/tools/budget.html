@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% from "macros/seo.html" import json_ld_graph with context %}
+{% from "macros/affiliates.html" import sim_banner with context %}
+
+{% block head_preload %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tools.css') }}">
+{% endblock %}
+
+{% block structured_data %}
+{{ json_ld_graph([
+  {
+    "@type": "WebApplication",
+    "name": meta_title,
+    "applicationCategory": "TravelApplication",
+    "operatingSystem": "Web",
+    "description": meta_description,
+    "url": canonical_url,
+    "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"},
+    "inLanguage": "en-GB" if lang == 'en' else "fr-FR"
+  },
+  seo_breadcrumb([
+    (t('nav.home'), site.SITE_URL ~ lang_url('index')),
+    (t('budget.title'), None),
+  ]),
+]) }}
+{% endblock %}
+
+{% block content %}
+<header class="page-hero">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="{{ t('nav.main') }}">
+      <ol>
+        <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+        <li aria-current="page">{{ t('tools.budget') }}</li>
+      </ol>
+    </nav>
+    <span class="tool-eyebrow">{{ t('budget.eyebrow') }}</span>
+    <h1>{{ t('budget.title') }}</h1>
+    <p class="page-hero__lead">{{ t('budget.lead') }}</p>
+  </div>
+</header>
+
+<section class="section">
+  <div class="container">
+    <div class="budget-tool" id="budget-tool">
+
+      <div class="budget-controls">
+        <fieldset class="budget-field">
+          <legend>{{ t('budget.style') }}</legend>
+          <div class="budget-styles">
+            {% for s in budget.styles %}
+            <label class="budget-style">
+              <input type="radio" name="budget-style" value="{{ s.key }}" data-perday='{{ s.perday | tojson }}' {% if loop.first %}checked{% endif %}>
+              <span class="budget-style__inner">
+                <span class="budget-style__icon" aria-hidden="true">{{ s.icon }}</span>
+                <span class="budget-style__name">{{ s.name }}</span>
+                <span class="budget-style__desc">{{ s.desc }}</span>
+                <span class="budget-style__price">{{ s.perday_total }} € <small>{{ t('budget.perday') }}</small></span>
+              </span>
+            </label>
+            {% endfor %}
+          </div>
+        </fieldset>
+
+        <div class="budget-field budget-field--row">
+          <div class="budget-stepper">
+            <label for="budget-travellers">{{ t('budget.travellers') }}</label>
+            <div class="budget-stepper__row">
+              <button type="button" class="budget-stepper__btn" data-step="travellers" data-dir="-1" aria-label="−">−</button>
+              <input type="number" id="budget-travellers" min="1" max="12" value="2" inputmode="numeric">
+              <button type="button" class="budget-stepper__btn" data-step="travellers" data-dir="1" aria-label="+">+</button>
+            </div>
+          </div>
+          <div class="budget-stepper">
+            <label for="budget-days">{{ t('budget.days') }}</label>
+            <div class="budget-stepper__row">
+              <button type="button" class="budget-stepper__btn" data-step="days" data-dir="-1" aria-label="−">−</button>
+              <input type="number" id="budget-days" min="1" max="60" value="14" inputmode="numeric">
+              <button type="button" class="budget-stepper__btn" data-step="days" data-dir="1" aria-label="+">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="budget-output" aria-live="polite">
+        <h2 class="budget-output__heading">{{ t('budget.breakdown') }}</h2>
+        <ul class="budget-bars" id="budget-bars">
+          {% for c in budget.categories %}
+          <li class="budget-bar" data-cat="{{ c.key }}">
+            <span class="budget-bar__label"><span aria-hidden="true">{{ c.icon }}</span> {{ c.label }}</span>
+            <span class="budget-bar__track"><span class="budget-bar__fill"></span></span>
+            <span class="budget-bar__value" data-out="{{ c.key }}">—</span>
+          </li>
+          {% endfor %}
+        </ul>
+
+        <p class="budget-subtotal">
+          <span>{{ t('budget.daily_total') }}</span>
+          <strong><span data-out="perday">—</span> € <small>{{ t('budget.perday') }}</small></strong>
+        </p>
+
+        <div class="budget-oneoff">
+          <span class="budget-oneoff__title">{{ t('budget.oneoff') }}</span>
+          <ul>
+            {% for o in budget.oneoff %}
+            <li data-oneoff="{{ o.amount }}">
+              <span>{{ o.label }} <small>{{ o.hint }}</small></span>
+              <strong>{{ o.amount }} €</strong>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+
+        <div class="budget-total">
+          <span class="budget-total__label">{{ t('budget.total') }}</span>
+          <span class="budget-total__value"><span data-out="total">—</span> €</span>
+          <span class="budget-total__per"><span data-out="per_person">—</span> € · {{ t('budget.per_person') }}</span>
+        </div>
+
+        <a class="btn btn-primary btn-lg budget-cta" href="{{ lang_url('index') }}#destinations">{{ t('budget.cta_book') }}</a>
+      </div>
+    </div>
+
+    <p class="tool-note">{{ t('budget.note') }}</p>
+  </div>
+</section>
+
+<section class="section section--monetize">
+  <div class="container">
+    {{ sim_banner() }}
+  </div>
+</section>
+
+<script>
+  window.budgetCatalog = {{ budget | tojson }};
+  window.budgetLabels = {
+    cta_hotels: {{ t('budget.cta_book') | tojson }}
+  };
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/budget.js') }}" defer></script>
+{% endblock %}

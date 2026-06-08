@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% from "macros/seo.html" import json_ld_graph with context %}
+{% from "macros/affiliates.html" import pdf_banner with context %}
+
+{% block head_preload %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tools.css') }}">
+{% endblock %}
+
+{% block structured_data %}
+{{ json_ld_graph([
+  {
+    "@type": "WebPage",
+    "name": meta_title,
+    "description": meta_description,
+    "url": canonical_url,
+    "inLanguage": "en-GB" if lang == 'en' else "fr-FR"
+  },
+  seo_breadcrumb([
+    (t('nav.home'), site.SITE_URL ~ lang_url('index')),
+    (t('season.title'), None),
+  ]),
+]) }}
+{% endblock %}
+
+{% block content %}
+<header class="page-hero">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="{{ t('nav.main') }}">
+      <ol>
+        <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+        <li aria-current="page">{{ t('tools.season') }}</li>
+      </ol>
+    </nav>
+    <span class="tool-eyebrow">{{ t('season.eyebrow') }}</span>
+    <h1>{{ t('season.title') }}</h1>
+    <p class="page-hero__lead">{{ t('season.lead') }}</p>
+  </div>
+</header>
+
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2>{{ t('season.matrix_title') }}</h2>
+      <p>{{ t('season.matrix_sub') }}</p>
+    </div>
+
+    <div class="season-legend" role="list">
+      {% for item in seasons.legend %}
+      <span class="season-legend__item" role="listitem">
+        <span class="season-dot season-dot--{{ item.rating }}" aria-hidden="true"></span>{{ item.label }}
+      </span>
+      {% endfor %}
+    </div>
+
+    <div class="table-scroll-x">
+      <table class="season-matrix">
+        <caption class="sr-only">{{ t('season.matrix_sub') }}</caption>
+        <thead>
+          <tr>
+            <th scope="col">{{ t('season.region') }}</th>
+            {% for m in seasons.month_labels %}
+            <th scope="col">{{ m }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for region in seasons.regions %}
+          <tr>
+            <th scope="row">{{ region.name }}</th>
+            {% for month in region.months %}
+            <td class="season-cell season-cell--{{ month.rating }}"
+                title="{{ month.label }} — {{ month.rating_label }}">
+              <span class="sr-only">{{ month.label }} : {{ month.rating_label }}</span>
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="section section--alt">
+  <div class="container">
+    <div class="season-grid">
+      {% for region in seasons.regions %}
+      <article class="season-card">
+        <header class="season-card__head">
+          <h3>{{ region.name }}</h3>
+          <p class="season-card__cities">{{ region.cities }}</p>
+        </header>
+        <p class="season-card__best">
+          <span class="season-card__best-label">{{ t('season.best') }}</span>
+          <strong>{{ region.best }}</strong>
+        </p>
+        <div class="season-strip" aria-hidden="true">
+          {% for month in region.months %}
+          <span class="season-strip__cell season-cell--{{ month.rating }}">{{ month.label[:1] }}</span>
+          {% endfor %}
+        </div>
+        <p class="season-card__summary">{{ region.summary }}</p>
+      </article>
+      {% endfor %}
+    </div>
+
+    <aside class="tool-callout">
+      <span class="tool-callout__icon" aria-hidden="true">🧭</span>
+      <div>
+        <h3>{{ t('season.tip_title') }}</h3>
+        <p>{{ t('season.tip') }}</p>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<section class="section section--monetize">
+  <div class="container">
+    <div class="tool-links">
+      <a class="tool-link-card" href="{{ lang_url('budget_tool') }}">
+        <span class="tool-link-card__icon" aria-hidden="true">💶</span>
+        <span class="tool-link-card__title">{{ t('tools.budget') }}</span>
+      </a>
+      <a class="tool-link-card" href="{{ lang_url('visa_tool') }}">
+        <span class="tool-link-card__icon" aria-hidden="true">🛂</span>
+        <span class="tool-link-card__title">{{ t('tools.visa') }}</span>
+      </a>
+      <a class="tool-link-card" href="{{ lang_url('prepare_trip') }}">
+        <span class="tool-link-card__icon" aria-hidden="true">🗺️</span>
+        <span class="tool-link-card__title">{{ t('nav.prepare') }}</span>
+      </a>
+    </div>
+    {{ pdf_banner() }}
+  </div>
+</section>
+{% endblock %}

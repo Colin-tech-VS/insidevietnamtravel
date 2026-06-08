@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% from "macros/seo.html" import json_ld_graph with context %}
+{% from "macros/affiliates.html" import pdf_banner with context %}
+
+{% block head_preload %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tools.css') }}">
+{% endblock %}
+
+{% set esim_urls = {'esim_airalo': esim_airalo_url(), 'esim_holafly': esim_holafly_url()} %}
+
+{% block structured_data %}
+{{ json_ld_graph([
+  {
+    "@type": "WebPage",
+    "name": meta_title,
+    "description": meta_description,
+    "url": canonical_url,
+    "inLanguage": "en-GB" if lang == 'en' else "fr-FR"
+  },
+  seo_breadcrumb([
+    (t('nav.home'), site.SITE_URL ~ lang_url('index')),
+    (t('compare.title'), None),
+  ]),
+]) }}
+{% endblock %}
+
+{% block content %}
+<header class="page-hero">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="{{ t('nav.main') }}">
+      <ol>
+        <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+        <li aria-current="page">{{ t('tools.essentials') }}</li>
+      </ol>
+    </nav>
+    <span class="tool-eyebrow">{{ t('compare.eyebrow') }}</span>
+    <h1>{{ t('compare.title') }}</h1>
+    <p class="page-hero__lead">{{ t('compare.lead') }}</p>
+  </div>
+</header>
+
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2>{{ t('compare.esim_title') }}</h2>
+    </div>
+
+    <div class="table-scroll-x">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th scope="col">{{ t('compare.col_offer') }}</th>
+            <th scope="col">{{ t('compare.col_best') }}</th>
+            <th scope="col">{{ t('compare.col_price') }}</th>
+            <th scope="col">{{ t('compare.col_data') }}</th>
+            <th scope="col">{{ t('compare.col_validity') }}</th>
+            <th scope="col">{{ t('compare.col_pros') }}</th>
+            <th scope="col">{{ t('compare.col_cons') }}</th>
+            <th scope="col"><span class="sr-only">{{ t('compare.see_offer') }}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in compare.esim %}
+          <tr>
+            <th scope="row" class="compare-table__name">{{ row.name }}</th>
+            <td><span class="compare-badge">{{ row.best }}</span></td>
+            <td>{{ row.price }}</td>
+            <td>{{ row.data }}</td>
+            <td>{{ row.validity }}</td>
+            <td>{{ row.pros }}</td>
+            <td class="compare-table__cons">{{ row.cons }}</td>
+            <td>
+              <a href="{{ esim_urls[row.key] }}" class="btn btn-primary btn-sm affiliate-link"
+                 rel="sponsored noopener noreferrer" target="_blank">{{ t('compare.see_offer') }}</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="section section--alt">
+  <div class="container">
+    <div class="compare-insurance">
+      <div class="compare-insurance__intro">
+        <div class="section-header">
+          <h2>{{ t('compare.insurance_title') }}</h2>
+        </div>
+        <ul class="compare-checklist">
+          {% for point in compare.insurance_points %}
+          <li>{{ point }}</li>
+          {% endfor %}
+        </ul>
+        <a href="{{ travel_insurance_url() }}" class="btn btn-primary affiliate-link"
+           rel="sponsored noopener noreferrer" target="_blank">{{ t('compare.insurance_cta') }}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section--monetize">
+  <div class="container">
+    {{ pdf_banner() }}
+  </div>
+</section>
+{% endblock %}

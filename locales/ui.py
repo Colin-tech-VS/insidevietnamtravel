@@ -413,6 +413,207 @@ UI: dict[str, dict[str, str]] = {
         "fr": "Guide pratique pour voyageurs français",
         "en": "Practical guide for travellers",
     },
+
+    # ── Navigation : outils ──────────────────────────────────────────
+    "nav.tools": {"fr": "Outils", "en": "Tools"},
+    "tools.season": {"fr": "Quand partir", "en": "Best time to go"},
+    "tools.budget": {"fr": "Calculateur de budget", "en": "Budget calculator"},
+    "tools.visa": {"fr": "Visa Vietnam", "en": "Vietnam visa"},
+    "tools.essentials": {"fr": "eSIM & assurance", "en": "eSIM & insurance"},
+    "footer.tools": {"fr": "Outils voyage", "en": "Travel tools"},
+
+    # ── Recherche ────────────────────────────────────────────────────
+    "search.label": {"fr": "Rechercher", "en": "Search"},
+    "search.open": {"fr": "Ouvrir la recherche", "en": "Open search"},
+    "search.close": {"fr": "Fermer la recherche", "en": "Close search"},
+    "search.placeholder": {
+        "fr": "Destination, itinéraire, visa, budget…",
+        "en": "Destination, itinerary, visa, budget…",
+    },
+    "search.hint": {
+        "fr": "Tapez pour filtrer guides, articles et outils.",
+        "en": "Type to filter guides, articles and tools.",
+    },
+    "search.empty": {
+        "fr": "Aucun résultat — essayez « Hanoï », « budget » ou « visa ».",
+        "en": "No result — try “Hanoi”, “budget” or “visa”.",
+    },
+    "search.group.destination": {"fr": "Destinations", "en": "Destinations"},
+    "search.group.itinerary": {"fr": "Itinéraires", "en": "Itineraries"},
+    "search.group.article": {"fr": "Articles", "en": "Articles"},
+    "search.group.tool": {"fr": "Outils", "en": "Tools"},
+
+    # ── Filtres blog ─────────────────────────────────────────────────
+    "blog.filter.all": {"fr": "Tout", "en": "All"},
+    "blog.filter.label": {"fr": "Filtrer par thème", "en": "Filter by topic"},
+    "blog.filter.none": {
+        "fr": "Aucun article pour ce filtre.",
+        "en": "No article for this filter.",
+    },
+    "blog.readtime": {"fr": "min de lecture", "en": "min read"},
+
+    # ── Quand partir ─────────────────────────────────────────────────
+    "season.eyebrow": {"fr": "Météo & saisons", "en": "Weather & seasons"},
+    "season.title": {"fr": "Quand partir au Vietnam ?", "en": "When to visit Vietnam?"},
+    "season.lead": {
+        "fr": "Le Vietnam s'étire sur 1 700 km et compte trois climats distincts. "
+              "Repérez la meilleure période région par région avant de réserver.",
+        "en": "Vietnam stretches over 1,700 km across three distinct climates. "
+              "Find the best period region by region before you book.",
+    },
+    "season.matrix_title": {"fr": "Calendrier des saisons", "en": "Season calendar"},
+    "season.matrix_sub": {
+        "fr": "Pertinence mois par mois pour chaque grande région.",
+        "en": "Month-by-month suitability for each main region.",
+    },
+    "season.region": {"fr": "Région", "en": "Region"},
+    "season.best": {"fr": "Meilleure période", "en": "Best period"},
+    "season.tip_title": {"fr": "Le bon réflexe", "en": "Smart tip"},
+    "season.tip": {
+        "fr": "Un même voyage traverse souvent plusieurs climats. Suivez la saison "
+              "sèche du nord au sud (oct.–avr.) pour maximiser le beau temps.",
+        "en": "A single trip often crosses several climates. Follow the dry season "
+              "from north to south (Oct–Apr) to maximise good weather.",
+    },
+
+    # ── Calculateur de budget ────────────────────────────────────────
+    "budget.eyebrow": {"fr": "Budget voyage", "en": "Trip budget"},
+    "budget.title": {"fr": "Calculateur de budget Vietnam", "en": "Vietnam budget calculator"},
+    "budget.lead": {
+        "fr": "Estimez le coût de votre voyage en quelques secondes. Hors vol "
+              "international, ajustable selon votre style.",
+        "en": "Estimate your trip cost in seconds. Excluding international flights, "
+              "adjustable to your style.",
+    },
+    "budget.style": {"fr": "Style de voyage", "en": "Travel style"},
+    "budget.travellers": {"fr": "Voyageurs", "en": "Travellers"},
+    "budget.days": {"fr": "Durée (jours)", "en": "Duration (days)"},
+    "budget.perday": {"fr": "par jour / pers.", "en": "per day / person"},
+    "budget.breakdown": {"fr": "Détail par poste", "en": "Cost breakdown"},
+    "budget.daily_total": {"fr": "Sous-total journalier", "en": "Daily subtotal"},
+    "budget.oneoff": {"fr": "Frais ponctuels", "en": "One-off costs"},
+    "budget.total": {"fr": "Budget total estimé", "en": "Estimated total budget"},
+    "budget.per_person": {"fr": "par personne", "en": "per person"},
+    "budget.note": {
+        "fr": "Estimation indicative en euros, hors vol international depuis l'Europe "
+              "(≈ 500–800 €). Les prix réels varient selon la saison et les options.",
+        "en": "Indicative estimate in euros, excluding international flights from Europe "
+              "(≈ €500–800). Real prices vary with season and options.",
+    },
+    "budget.cta_book": {"fr": "Voir les hôtels recommandés", "en": "See recommended hotels"},
+
+    # ── Visa ─────────────────────────────────────────────────────────
+    "visa.eyebrow": {"fr": "Formalités", "en": "Formalities"},
+    "visa.title": {"fr": "Avez-vous besoin d'un visa ?", "en": "Do you need a visa?"},
+    "visa.lead": {
+        "fr": "Indiquez votre nationalité et la durée de votre séjour pour savoir "
+              "si l'e-visa est nécessaire.",
+        "en": "Enter your nationality and trip length to find out whether the "
+              "e-visa is required.",
+    },
+    "visa.q_country": {"fr": "Votre nationalité", "en": "Your nationality"},
+    "visa.q_days": {"fr": "Durée du séjour (jours)", "en": "Length of stay (days)"},
+    "visa.check": {"fr": "Vérifier", "en": "Check"},
+    "visa.result.exempt": {
+        "fr": "Bonne nouvelle : vous êtes exempté de visa jusqu'à {days} jours.",
+        "en": "Good news: you are visa-exempt for up to {days} days.",
+    },
+    "visa.result.exempt_over": {
+        "fr": "Exemption jusqu'à {days} jours, mais votre séjour est plus long : "
+              "demandez un e-visa (jusqu'à 90 jours).",
+        "en": "Exempt up to {days} days, but your stay is longer: apply for an "
+              "e-visa (up to 90 days).",
+    },
+    "visa.result.evisa": {
+        "fr": "Un e-visa est nécessaire. Demande 100 % en ligne, ≈ 25 $, "
+              "délai 3 à 5 jours ouvrés.",
+        "en": "An e-visa is required. Fully online application, ≈ $25, "
+              "3 to 5 business days.",
+    },
+    "visa.result.over90": {
+        "fr": "Au-delà de 90 jours, l'e-visa ne suffit pas : passez par un visa "
+              "consulaire classique.",
+        "en": "Beyond 90 days the e-visa is not enough: apply for a standard "
+              "consular visa.",
+    },
+    "visa.apply": {"fr": "Site officiel e-visa", "en": "Official e-visa site"},
+    "visa.steps_title": {"fr": "Demander l'e-visa en 4 étapes", "en": "Apply for the e-visa in 4 steps"},
+    "visa.disclaimer": {
+        "fr": "Information indicative — les règles de visa évoluent. Vérifiez toujours "
+              "le portail officiel evisa.gov.vn avant de réserver.",
+        "en": "Indicative information — visa rules change. Always check the official "
+              "evisa.gov.vn portal before booking.",
+    },
+
+    # ── Comparateurs ─────────────────────────────────────────────────
+    "compare.eyebrow": {"fr": "Avant de partir", "en": "Before you go"},
+    "compare.title": {"fr": "eSIM & assurance pour le Vietnam", "en": "eSIM & insurance for Vietnam"},
+    "compare.lead": {
+        "fr": "Restez connecté dès l'atterrissage et voyagez couvert. Notre comparatif "
+              "des solutions les plus utilisées.",
+        "en": "Stay connected on landing and travel covered. Our comparison of the "
+              "most-used options.",
+    },
+    "compare.esim_title": {"fr": "Quelle eSIM choisir ?", "en": "Which eSIM to choose?"},
+    "compare.col_offer": {"fr": "Offre", "en": "Provider"},
+    "compare.col_best": {"fr": "Idéal pour", "en": "Best for"},
+    "compare.col_price": {"fr": "Prix", "en": "Price"},
+    "compare.col_data": {"fr": "Data", "en": "Data"},
+    "compare.col_validity": {"fr": "Validité", "en": "Validity"},
+    "compare.col_pros": {"fr": "Points forts", "en": "Pros"},
+    "compare.col_cons": {"fr": "Limites", "en": "Cons"},
+    "compare.see_offer": {"fr": "Voir l'offre", "en": "See offer"},
+    "compare.insurance_title": {"fr": "Assurance voyage : l'essentiel", "en": "Travel insurance: the essentials"},
+    "compare.insurance_cta": {"fr": "Comparer les assurances", "en": "Compare insurance plans"},
+
+    # ── Avis voyageurs ───────────────────────────────────────────────
+    "reviews.title": {"fr": "Ils ont préparé leur voyage avec nous", "en": "They planned their trip with us"},
+    "reviews.sub": {
+        "fr": "Retours de voyageurs ayant utilisé nos guides et itinéraires.",
+        "en": "Feedback from travellers who used our guides and itineraries.",
+    },
+
+    # ── Meta des nouvelles pages ─────────────────────────────────────
+    "meta.season.title": {
+        "fr": "Quand partir au Vietnam ? Météo et meilleure saison par région 2026",
+        "en": "When to visit Vietnam? Weather and best season by region 2026",
+    },
+    "meta.season.desc": {
+        "fr": "Meilleure période pour voyager au Vietnam région par région : nord, "
+              "centre, sud. Calendrier des saisons, météo et conseils mois par mois.",
+        "en": "Best time to travel to Vietnam region by region: north, central, "
+              "south. Season calendar, weather and month-by-month advice.",
+    },
+    "meta.budget.title": {
+        "fr": "Calculateur de budget voyage Vietnam 2026 — estimez votre coût",
+        "en": "Vietnam travel budget calculator 2026 — estimate your cost",
+    },
+    "meta.budget.desc": {
+        "fr": "Calculez le budget de votre voyage au Vietnam selon votre style et la "
+              "durée : hébergement, repas, transport, activités. Estimation gratuite.",
+        "en": "Calculate your Vietnam trip budget by style and duration: "
+              "accommodation, food, transport, activities. Free estimate.",
+    },
+    "meta.visa.title": {
+        "fr": "Visa Vietnam 2026 — avez-vous besoin d'un visa ? Test en ligne",
+        "en": "Vietnam visa 2026 — do you need a visa? Online checker",
+    },
+    "meta.visa.desc": {
+        "fr": "Vérifiez en 10 secondes si vous avez besoin d'un visa pour le Vietnam "
+              "selon votre nationalité, et comment demander l'e-visa étape par étape.",
+        "en": "Check in 10 seconds whether you need a visa for Vietnam based on your "
+              "nationality, and how to apply for the e-visa step by step.",
+    },
+    "meta.essentials.title": {
+        "fr": "eSIM & assurance voyage Vietnam 2026 — comparatif",
+        "en": "Vietnam eSIM & travel insurance 2026 — comparison",
+    },
+    "meta.essentials.desc": {
+        "fr": "Comparez les eSIM (Airalo, Holafly) et choisissez votre assurance "
+              "voyage pour le Vietnam : data, prix, validité et garanties.",
+        "en": "Compare eSIMs (Airalo, Holafly) and choose your travel insurance for "
+              "Vietnam: data, price, validity and cover.",
+    },
 }
 
 

@@ -212,6 +212,15 @@
             </ul>
           </li>
           <li class="nav-dropdown">
+            <button type="button" class="nav-dropdown__toggle" aria-expanded="false" aria-controls="nav-tools">{{ t('nav.tools') }}</button>
+            <ul id="nav-tools" class="nav-dropdown__menu">
+              <li><a href="{{ lang_url('best_season') }}">{{ t('tools.season') }}</a></li>
+              <li><a href="{{ lang_url('budget_tool') }}">{{ t('tools.budget') }}</a></li>
+              <li><a href="{{ lang_url('visa_tool') }}">{{ t('tools.visa') }}</a></li>
+              <li><a href="{{ lang_url('essentials_tool') }}">{{ t('tools.essentials') }}</a></li>
+            </ul>
+          </li>
+          <li class="nav-dropdown">
             <button type="button" class="nav-dropdown__toggle" aria-expanded="false" aria-controls="nav-blog">{{ t('nav.blog') }}</button>
             <ul id="nav-blog" class="nav-dropdown__menu">
               <li><a href="{{ lang_url('blog_index') }}">{{ t('blog.title') }}</a></li>
@@ -298,6 +307,15 @@
           <li><a href="{{ lang_url('itinerary', slug=slug) }}">{{ it.title }}</a></li>
           {% endfor %}
           <li><a href="{{ lang_url('blog_index') }}">{{ t('footer.all_articles') }}</a></li>
+        </ul>
+      </div>
+      <div class="footer-links">
+        <h3>{{ t('footer.tools') }}</h3>
+        <ul>
+          <li><a href="{{ lang_url('best_season') }}">{{ t('tools.season') }}</a></li>
+          <li><a href="{{ lang_url('budget_tool') }}">{{ t('tools.budget') }}</a></li>
+          <li><a href="{{ lang_url('visa_tool') }}">{{ t('tools.visa') }}</a></li>
+          <li><a href="{{ lang_url('essentials_tool') }}">{{ t('tools.essentials') }}</a></li>
         </ul>
       </div>
     </div>

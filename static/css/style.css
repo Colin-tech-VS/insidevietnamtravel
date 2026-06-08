@@ -1005,9 +1005,12 @@ body.is-nav-open { overflow: hidden; }
 
 .footer-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
-  gap: 3rem;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 2.5rem;
   padding-bottom: 3rem;
+}
+@media (max-width: 980px) {
+  .footer-grid { grid-template-columns: 1fr 1fr; }
 }
 
 .footer-logo {
