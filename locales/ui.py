@@ -15,6 +15,7 @@ UI: dict[str, dict[str, str]] = {
     "nav.about": {"fr": "À propos", "en": "About"},
     "nav.contact": {"fr": "Contact", "en": "Contact"},
     "nav.open_menu": {"fr": "Ouvrir le menu", "en": "Open menu"},
+    "nav.close_menu": {"fr": "Fermer le menu", "en": "Close menu"},
     "nav.main": {"fr": "Navigation principale", "en": "Main navigation"},
     "nav.days": {"fr": "jours", "en": "days"},
     "lang.switch": {"fr": "English", "en": "Français"},

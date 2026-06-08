@@ -1587,39 +1587,159 @@ select optgroup { font-weight: 700; color: var(--teal); }
   .input-row { flex-direction: column; }
 }
 
+.admin-sidebar-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0.5rem;
+  border: 1px solid var(--rice-dark);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.admin-sidebar-toggle span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  margin: 0 auto;
+  background: var(--ink);
+  border-radius: 1px;
+  transition: transform var(--transition), opacity var(--transition), width var(--transition);
+}
+.admin-sidebar-toggle.is-active span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.admin-sidebar-toggle.is-active span:nth-child(2) { opacity: 0; width: 0; }
+.admin-sidebar-toggle.is-active span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+.admin-topbar__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+.admin-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background: rgba(26, 26, 24, 0.42);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--transition), visibility var(--transition);
+}
+.admin-backdrop.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+body.is-admin-nav-open { overflow: hidden; }
+
 /* ── Responsive ─────────────────────────────────── */
 @media (max-width: 900px) {
+  .admin-backdrop { display: block; }
+
+  .admin-sidebar-toggle { display: flex; }
+
   .admin-shell { flex-direction: column; }
+
   .admin-sidebar {
-    width: 100%;
-    height: auto;
-    position: static;
-    flex-direction: row;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: min(290px, 88vw);
+    height: 100dvh;
+    z-index: 200;
+    padding: 1.25rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 0;
+    transform: translateX(-105%);
+    transition: transform var(--transition);
+    box-shadow: var(--shadow-lg);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .admin-sidebar.is-open { transform: translateX(0); }
+
+  .admin-logo {
+    margin-bottom: 1.5rem;
+    flex: none;
+    min-width: 0;
+  }
+
+  .admin-nav {
+    display: block;
+    flex: 1;
+  }
+
+  .admin-nav__label { display: block; }
+
+  .admin-nav__link {
+    padding: 0.75rem 0.85rem;
+    font-size: 0.92rem;
+  }
+
+  .admin-sidebar__footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    border-top: 1px solid var(--rice-dark);
+    padding-top: 1rem;
+    margin-top: 1rem;
+    flex: none;
+  }
+
+  .admin-topbar { padding: 1rem 1.25rem; }
+  .admin-main { padding: 1rem 1.25rem 1.5rem; }
+  .admin-topbar__title { font-size: 1.45rem; }
+  .panel-grid, .stat-grid--3, .stat-grid--4 { grid-template-columns: 1fr; }
+
+  .analytics-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.85rem;
+    padding: 1rem;
+  }
+
+  .analytics-toolbar__period {
+    display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
-    padding: 1rem;
   }
-  .admin-logo { margin-bottom: 0; flex: 1; min-width: 200px; }
-  .admin-nav {
+
+  .analytics-toolbar__live {
+    padding-top: 0.35rem;
+    border-top: 1px solid var(--rice-dark);
+  }
+
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .kpi-card__value { font-size: 1.55rem; }
+}
+
+@media (max-width: 520px) {
+  .kpi-grid,
+  .kpi-grid--aff { grid-template-columns: 1fr; }
+
+  .period-pills {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.25rem;
-    flex: 1 1 100%;
+    width: 100%;
   }
-  .admin-nav__label { display: none; }
-  .admin-nav__link { padding: 0.5rem 0.75rem; font-size: 0.85rem; }
-  .admin-sidebar__footer {
-    display: flex;
-    gap: 0.5rem;
-    border: none;
-    padding: 0;
-    margin: 0;
-    flex: 1 1 100%;
+
+  .period-pill {
+    flex: 1 1 auto;
+    text-align: center;
+    min-width: 4.5rem;
   }
-  .admin-topbar { padding: 1.5rem; }
-  .admin-main { padding: 1.5rem; }
-  .panel-grid, .stat-grid--3, .stat-grid--4 { grid-template-columns: 1fr; }
 }
 
 /* Page loader */

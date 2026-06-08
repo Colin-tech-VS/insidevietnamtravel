@@ -237,7 +237,7 @@
              {% if lang == 'en' %}aria-current="true"{% endif %}>EN</a>
         </nav>
 
-        <button class="nav-toggle" aria-label="{{ t('nav.open_menu') }}" aria-expanded="false" aria-controls="main-nav">
+        <button type="button" class="nav-toggle" aria-label="{{ t('nav.open_menu') }}" aria-expanded="false" aria-controls="main-nav" data-label-open="{{ t('nav.open_menu') }}" data-label-close="{{ t('nav.close_menu') }}">
           <span></span><span></span><span></span>
         </button>
       </div>
@@ -246,7 +246,7 @@
 
   </header>
 
-
+  <div class="nav-backdrop" id="nav-backdrop" aria-hidden="true"></div>
 
   <main id="main" role="main">
 
