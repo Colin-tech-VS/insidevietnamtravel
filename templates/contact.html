@@ -12,14 +12,16 @@
 {% endblock %}
 
 {% block content %}
+{% set is_en = (lang == 'en') %}
 <header class="page-hero page-hero--about">
   <div class="container">
-    <nav class="breadcrumb" aria-label="Fil d'Ariane">
+    <nav class="breadcrumb" aria-label="{{ 'Breadcrumb' if is_en else 'Fil d\'Ariane' }}">
       <ol>
         <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
         <li aria-current="page">{{ t('nav.contact') }}</li>
       </ol>
     </nav>
+    <span class="page-hero__eyebrow">{{ 'We usually reply within 48h' if is_en else 'Réponse sous 48h en général' }}</span>
     <h1>{{ t('contact.title') }}</h1>
     <p class="page-hero__lead">{{ t('contact.lead') }}</p>
   </div>
@@ -28,6 +30,7 @@
 <section class="section">
   <div class="container contact-layout">
     <form class="contact-form card" method="post" action="{{ lang_url('contact') }}" novalidate>
+      <h2 class="contact-form__title">{{ 'Send us a message' if is_en else 'Écrivez-nous' }}</h2>
       <div class="contact-form__grid">
         <div class="form-field">
           <label for="contact-name">{{ t('contact.name') }}</label>
@@ -51,13 +54,38 @@
         <span>{{ t('contact.consent') }} <a href="{{ lang_url('privacy') }}" target="_blank" rel="noopener">{{ t('newsletter.privacy_link') }}</a>).</span>
       </label>
       <input type="text" name="website" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true">
-      <button type="submit" class="btn btn-primary">{{ t('contact.send') }}</button>
+      <button type="submit" class="btn btn-primary btn-lg">{{ t('contact.send') }}</button>
     </form>
 
     <aside class="contact-aside">
-      <div class="sidebar-card">
-        <h3>{% if lang == 'en' %}Direct email{% else %}Email direct{% endif %}</h3>
+      <div class="contact-card contact-card--accent">
+        <span class="contact-card__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+        </span>
+        <h3>{{ 'Direct email' if is_en else 'Email direct' }}</h3>
         <p><a href="mailto:{{ legal_contact_email }}">{{ legal_contact_email }}</a></p>
+        <p class="contact-card__note">{{ 'Prefer email? Write to us directly.' if is_en else 'Vous préférez le mail ? Écrivez-nous directement.' }}</p>
+      </div>
+
+      <div class="contact-card">
+        <span class="contact-card__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        </span>
+        <h3>{{ 'Response time' if is_en else 'Délai de réponse' }}</h3>
+        <p class="contact-card__note">{{ 'We read every message and usually reply within 48 hours (Mon–Fri).' if is_en else 'Nous lisons chaque message et répondons généralement sous 48h (lun–ven).' }}</p>
+      </div>
+
+      <div class="contact-card">
+        <span class="contact-card__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg>
+        </span>
+        <h3>{{ 'What to write about' if is_en else 'Pour quoi nous écrire' }}</h3>
+        <ul class="contact-card__list">
+          <li>{{ 'A question about your Vietnam trip' if is_en else 'Une question sur votre voyage au Vietnam' }}</li>
+          <li>{{ 'A correction or suggestion on a guide' if is_en else 'Une correction ou suggestion sur un guide' }}</li>
+          <li>{{ 'A partnership or collaboration' if is_en else 'Un partenariat ou une collaboration' }}</li>
+        </ul>
+        <a class="contact-card__link" href="{{ lang_url('about') }}">{{ 'Learn more about us →' if is_en else 'En savoir plus sur nous →' }}</a>
       </div>
     </aside>
   </div>

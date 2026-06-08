@@ -194,7 +194,6 @@
 
       <nav id="main-nav" class="main-nav" role="navigation" aria-label="{{ t('nav.main') }}">
         <ul>
-          <li><a href="{{ lang_url('index') }}" {% if request.endpoint in ('index',) %}aria-current="page"{% endif %}>{{ t('nav.home') }}</a></li>
           <li><a href="{{ lang_url('prepare_trip') }}" {% if request.endpoint == 'prepare_trip' %}aria-current="page"{% endif %} class="nav-highlight">{{ t('nav.prepare') }}</a></li>
           <li class="nav-dropdown">
             <button type="button" class="nav-dropdown__toggle" aria-expanded="false" aria-controls="nav-destinations">{{ t('nav.destinations') }}</button>
@@ -230,8 +229,13 @@
               {% endfor %}
             </ul>
           </li>
-          <li><a href="{{ lang_url('about') }}" {% if request.endpoint == 'about' %}aria-current="page"{% endif %}>{{ t('nav.about') }}</a></li>
-          <li><a href="{{ lang_url('contact') }}" {% if request.endpoint == 'contact' %}aria-current="page"{% endif %}>{{ t('nav.contact') }}</a></li>
+          <li class="nav-dropdown">
+            <button type="button" class="nav-dropdown__toggle" aria-expanded="false" aria-controls="nav-about">{{ t('nav.about') }}</button>
+            <ul id="nav-about" class="nav-dropdown__menu">
+              <li><a href="{{ lang_url('about') }}" {% if request.endpoint == 'about' %}aria-current="page"{% endif %}>{{ t('nav.about') }}</a></li>
+              <li><a href="{{ lang_url('contact') }}" {% if request.endpoint == 'contact' %}aria-current="page"{% endif %}>{{ t('nav.contact') }}</a></li>
+            </ul>
+          </li>
         </ul>
       </nav>
 

@@ -21,54 +21,113 @@
 {% endblock %}
 
 {% block content %}
+{% set is_en = (lang == 'en') %}
 <header class="page-hero page-hero--about">
   <div class="container">
-    <nav class="breadcrumb" aria-label="Fil d'Ariane">
+    <nav class="breadcrumb" aria-label="{{ 'Breadcrumb' if is_en else 'Fil d\'Ariane' }}">
       <ol>
         <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
         <li aria-current="page">{{ t('nav.about') }}</li>
       </ol>
     </nav>
-    {% if lang == 'en' %}
+    <span class="page-hero__eyebrow">{{ 'Independent · Bilingual · Transparent' if is_en else 'Indépendant · Bilingue · Transparent' }}</span>
+    {% if is_en %}
     <h1>About Inside Vietnam Travel</h1>
-    <p class="page-hero__lead">An independent guide to plan your Vietnam trip — not a travel agency.</p>
+    <p class="page-hero__lead">An independent guide to plan your trip to Vietnam — written by travellers, for travellers. Not a travel agency.</p>
     {% else %}
     <h1>À propos d'Inside Vietnam Travel</h1>
-    <p class="page-hero__lead">Un guide indépendant pour préparer votre voyage au Vietnam — sans prétendre être une agence.</p>
+    <p class="page-hero__lead">Un guide indépendant pour préparer votre voyage au Vietnam — écrit par des voyageurs, pour des voyageurs. Pas une agence.</p>
     {% endif %}
   </div>
 </header>
 
-<section class="about-section">
-  <div class="container about-content prose">
-    {% if lang == 'en' %}
-    <h2>Our approach</h2>
-    <p>Inside Vietnam Travel is a content site for travellers planning a trip to Vietnam. We publish practical guides, itineraries and articles to help you prepare — not to book on your behalf.</p>
-    <p>We are not a travel agency. We do not sell all-inclusive packages. Our model relies on affiliate links (hotels, activities, eSIM, insurance) and a digital PDF guide.</p>
-    <h2>What you'll find</h2>
-    <ul>
-      <li><strong>City guides</strong> — Hanoi, Ho Chi Minh City, Hội An, Đà Nẵng</li>
-      <li><strong>Itineraries</strong> — 3, 7 and 10 days, day by day</li>
-      <li><strong>Practical articles</strong> — visa, budget, eSIM, safety, transport</li>
-      <li><strong>Recommendations</strong> — hotels and activities via clearly marked affiliate links</li>
-    </ul>
-    <h2>Transparency</h2>
-    <p>Some links on this site are affiliate links. If you book through them, we may earn a commission at no extra cost to you. This funds free content creation.</p>
-    {% else %}
-    <h2>Notre approche</h2>
-    <p>Inside Vietnam Travel est un site de contenu pour voyageurs français qui souhaitent aller au Vietnam. Nous publions des guides pratiques, des itinéraires et des articles pour vous aider à préparer votre séjour — pas à réserver à votre place.</p>
-    <p>Nous ne sommes pas une agence de voyage. Nous ne vendons pas de packages tout compris. Notre modèle repose sur des liens affiliés (hôtels, activités, eSIM, assurance) et un guide PDF numérique.</p>
-    <h2>Ce que vous trouverez</h2>
-    <ul>
-      <li><strong>Guides par ville</strong> — Hanoï, Ho Chi Minh-Ville, Hội An, Đà Nẵng</li>
-      <li><strong>Itinéraires</strong> — 3, 7 et 10 jours, jour par jour</li>
-      <li><strong>Articles pratiques</strong> — visa, budget, eSIM, sécurité, transport</li>
-      <li><strong>Recommandations</strong> — hôtels et activités via liens affiliés clairement indiqués</li>
-    </ul>
-    <h2>Transparence</h2>
-    <p>Certains liens sur ce site sont des liens affiliés. Si vous réservez via ces liens, nous pouvons percevoir une commission, sans surcoût pour vous. Cela finance la création de contenu gratuit.</p>
-    {% endif %}
-    {{ affiliate_disclosure() }}
+<section class="section about-page">
+  <div class="container">
+
+    <!-- Valeurs -->
+    <div class="about-values">
+      <article class="value-card">
+        <span class="value-card__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v18M5 8l7-5 7 5M5 8v8l7 5 7-5V8"/></svg>
+        </span>
+        <h3>{{ 'Truly independent' if is_en else 'Vraiment indépendant' }}</h3>
+        <p>{{ 'No agency, no packages to sell. We help you prepare — you book yourself, freely.' if is_en else "Pas d'agence, pas de package à vendre. On vous aide à préparer — vous réservez vous-même, librement." }}</p>
+      </article>
+      <article class="value-card">
+        <span class="value-card__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
+        </span>
+        <h3>{{ 'Transparent' if is_en else 'Transparent' }}</h3>
+        <p>{{ 'Affiliate links are always clearly marked. They fund free content — at no extra cost to you.' if is_en else "Les liens affiliés sont toujours indiqués. Ils financent du contenu gratuit — sans surcoût pour vous." }}</p>
+      </article>
+      <article class="value-card">
+        <span class="value-card__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M8 9h6M8 13h8M8 17h5"/></svg>
+        </span>
+        <h3>{{ 'Practical first' if is_en else 'Du concret avant tout' }}</h3>
+        <p>{{ 'Visa, budget, when to go, where to eat, mistakes to avoid — real answers, no fluff.' if is_en else "Visa, budget, quand partir, où manger, erreurs à éviter — des réponses concrètes, sans blabla." }}</p>
+      </article>
+    </div>
+
+    <!-- Approche -->
+    <div class="about-grid">
+      <div class="about-grid__text prose">
+        {% if is_en %}
+        <h2>Our approach</h2>
+        <p>Inside Vietnam Travel is a content site for travellers planning a trip to Vietnam. We publish practical guides, itineraries and articles to help you prepare — not to book on your behalf.</p>
+        <p>We are not a travel agency and we don't sell all-inclusive packages. Our model relies on clearly marked affiliate links (hotels, activities, eSIM, insurance) and a digital PDF guide. That keeps the site free and independent.</p>
+        {% else %}
+        <h2>Notre approche</h2>
+        <p>Inside Vietnam Travel est un site de contenu pour les voyageurs qui souhaitent aller au Vietnam. Nous publions des guides pratiques, des itinéraires et des articles pour vous aider à préparer votre séjour — pas à réserver à votre place.</p>
+        <p>Nous ne sommes pas une agence de voyage et ne vendons aucun package tout compris. Notre modèle repose sur des liens affiliés clairement indiqués (hôtels, activités, eSIM, assurance) et un guide PDF numérique. C'est ce qui garde le site gratuit et indépendant.</p>
+        {% endif %}
+      </div>
+
+      <ul class="about-features">
+        <li>
+          <span class="about-features__ic" aria-hidden="true">📍</span>
+          <div><strong>{{ 'City guides' if is_en else 'Guides par ville' }}</strong><span>Hanoï · Ho Chi Minh · Hội An · Đà Nẵng</span></div>
+        </li>
+        <li>
+          <span class="about-features__ic" aria-hidden="true">🗺️</span>
+          <div><strong>{{ 'Itineraries' if is_en else 'Itinéraires' }}</strong><span>{{ '3, 7 and 10 days, day by day' if is_en else '3, 7 et 10 jours, jour par jour' }}</span></div>
+        </li>
+        <li>
+          <span class="about-features__ic" aria-hidden="true">🧭</span>
+          <div><strong>{{ 'Practical articles' if is_en else 'Articles pratiques' }}</strong><span>{{ 'Visa, budget, eSIM, safety, transport' if is_en else 'Visa, budget, eSIM, sécurité, transport' }}</span></div>
+        </li>
+        <li>
+          <span class="about-features__ic" aria-hidden="true">🏨</span>
+          <div><strong>{{ 'Recommendations' if is_en else 'Recommandations' }}</strong><span>{{ 'Hotels & activities via marked affiliate links' if is_en else 'Hôtels & activités via liens affiliés indiqués' }}</span></div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Transparence -->
+    <div class="about-transparency">
+      <div class="about-transparency__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+      </div>
+      <div>
+        <h2>{{ 'Transparency' if is_en else 'Transparence' }}</h2>
+        <p>{{ 'Some links on this site are affiliate links. If you book through them, we may earn a commission at no extra cost to you. This is what funds free, independent content.' if is_en else "Certains liens de ce site sont des liens affiliés. Si vous réservez via ces liens, nous pouvons percevoir une commission, sans aucun surcoût pour vous. C'est ce qui finance un contenu gratuit et indépendant." }}</p>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="about-cta">
+      <h2>{{ 'Ready to plan your trip?' if is_en else 'Prêt à préparer votre voyage ?' }}</h2>
+      <p>{{ 'Start with our free trip planner, then dive into city guides and itineraries.' if is_en else 'Commencez par notre assistant de préparation gratuit, puis explorez les guides et itinéraires.' }}</p>
+      <div class="about-cta__actions">
+        <a href="{{ lang_url('prepare_trip') }}" class="btn btn-primary btn-lg">{{ t('nav.prepare') }}</a>
+        <a href="{{ lang_url('contact') }}" class="btn btn-ghost btn-lg">{{ t('nav.contact') }}</a>
+      </div>
+    </div>
+
+    <div class="about-disclosure prose">
+      {{ affiliate_disclosure() }}
+    </div>
+
   </div>
 </section>
 {% endblock %}
