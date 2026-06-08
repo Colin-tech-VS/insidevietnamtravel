@@ -10,10 +10,18 @@ BUILTIN_PARTNERS = [
         "name": "Booking.com",
         "category": "Hôtel",
         "icon": "🏨",
-        "description": "Réservation d'hôtels et hébergements au Vietnam.",
+        "description": "Liens affiliés vers des recherches hôtel (ville ou nom d'hôtel) — vous n'avez pas à louer ni lister de logement.",
         "what_you_earn": "~5 à 15 € par réservation confirmée (25-40% de la commission Booking).",
         "avg_per_click": 8.0,
-        "signup_url": "https://admin.booking.com/",
+        "signup_url": "https://signup.cj.com/member/signup/publisher/",
+        "signup_note": (
+            "Le « Affiliate Partner Centre » Booking est réservé aux anciens comptes directs — "
+            "message « no access rights » = normal pour un nouveau site. "
+            "En France : créez un compte éditeur sur CJ Affiliate, puis postulez au programme « Booking.com » "
+            "dans le répertoire annonceurs CJ. "
+            "« Promotional property » = URL du site (https://www.insidevietnamtravel.fr), pas un appartement. "
+            "Une fois approuvé sur CJ, récupérez votre AID et collez-le ici."
+        ),
         "id_label": "AID (affiliate ID)",
         "id_placeholder": "ex: 1234567",
     },

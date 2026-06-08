@@ -216,6 +216,12 @@
 
             </p>
 
+            {% if p.signup_note %}
+
+            <p class="partner-card__hint muted"><small>{{ p.signup_note }}</small></p>
+
+            {% endif %}
+
             {% endif %}
 
           </form>
