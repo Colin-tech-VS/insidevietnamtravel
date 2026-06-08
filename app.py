@@ -303,6 +303,14 @@ def activity_affiliate_url(activity: dict, location_slug: str) -> str:
 
 
 @app.template_global()
+def gyg_partner_id() -> str:
+    from admin.store import get_affiliate_ids, is_configured
+
+    pid = get_affiliate_ids().get("gyg_partner_id", "")
+    return pid if is_configured(pid) else ""
+
+
+@app.template_global()
 def tracked_affiliate_url(provider: str, target_url: str) -> str:
     if target_url.startswith("#"):
         return target_url

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% from "macros/affiliates.html" import hotel_card, activity_card, sim_banner, insurance_banner, affiliate_disclosure with context %}
+{% from "macros/affiliates.html" import hotel_card, activity_card, gyg_activities_widget, sim_banner, insurance_banner, affiliate_disclosure with context %}
 {% from "macros/images.html" import responsive_img with context %}
 {% from "macros/seo.html" import json_ld_graph, og_image_tags with context %}
 
@@ -106,6 +106,7 @@
         {{ activity_card(act, dest.slug) }}
         {% endfor %}
       </div>
+      {{ gyg_activities_widget(dest.slug, campaign=dest.slug) }}
     </section>
 
     <section class="content-block">
@@ -141,4 +142,10 @@
     </div>
   </aside>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{% if gyg_partner_id() %}
+<script async defer src="https://widget.getyourguide.com/v2/widget.js"></script>
+{% endif %}
 {% endblock %}

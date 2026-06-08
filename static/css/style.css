@@ -2186,6 +2186,34 @@ a.article-category:hover { text-decoration: underline; }
   margin-bottom: 1rem;
 }
 
+/* ── GetYourGuide activity widget ─────────────────── */
+.gyg-widget-block {
+  margin-top: 2rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--rice-dark);
+}
+.gyg-widget-block__head {
+  margin-bottom: 1.25rem;
+}
+.gyg-widget-block__title {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 0.35rem;
+}
+.gyg-widget-block__sub {
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+.gyg-widget {
+  min-height: 120px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
 @media (max-width: 720px) {
   .prepare-options--duo,
   .prepare-options--trio { grid-template-columns: 1fr; }

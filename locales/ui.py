@@ -158,6 +158,14 @@ UI: dict[str, dict[str, str]] = {
     "dest.things": {"fr": "À faire", "en": "Things to do"},
     "dest.hotels": {"fr": "Où dormir", "en": "Where to stay"},
     "dest.activities": {"fr": "Activités & tours", "en": "Activities & tours"},
+    "dest.gyg_widget.title": {
+        "fr": "Plus d'activités à {city} sur GetYourGuide",
+        "en": "More activities in {city} on GetYourGuide",
+    },
+    "dest.gyg_widget.sub": {
+        "fr": "Sélection dynamique pour {city} — réservation et paiement sur GetYourGuide.",
+        "en": "Live selection for {city} — book and pay on GetYourGuide.",
+    },
     "dest.tips": {"fr": "Conseils pratiques", "en": "Practical tips"},
     "dest.book": {"fr": "Réserver", "en": "Book"},
     "dest.from": {"fr": "dès", "en": "from"},
