@@ -117,7 +117,7 @@
 
 <body class="is-loading" data-ga4-id="{{ ga4_id }}">
 
-  {% from "macros/loader.html" import page_loader %}
+  {% from "macros/loader.html" import page_loader with context %}
   {{ page_loader() }}
   <script>
     (function () {

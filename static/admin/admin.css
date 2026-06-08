@@ -684,6 +684,27 @@ code {
   padding: 0;
 }
 
+/* Conteneur à hauteur fixe pour des graphiques fiables et responsives.
+   Chart.js (maintainAspectRatio:false) remplit ce conteneur, donc les
+   graphes ne débordent jamais et restent lisibles sur mobile. */
+.chart-box {
+  position: relative;
+  width: 100%;
+  height: 280px;
+}
+.chart-box--short { height: 200px; }
+.chart-box--tall { height: 340px; }
+.chart-box > canvas {
+  position: absolute;
+  inset: 0;
+}
+
+@media (max-width: 640px) {
+  .chart-box { height: 240px; }
+  .chart-box--short { height: 180px; }
+  .chart-box--tall { height: 300px; }
+}
+
 .geo-analytics-section {
   margin-top: 2.5rem;
   padding-top: 2rem;

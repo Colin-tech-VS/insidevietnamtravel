@@ -43,7 +43,7 @@
     <div class="chart-grid">
       <section class="chart-panel chart-panel--wide">
         <h2>Pages vues par jour</h2>
-        <canvas id="viewsChart" height="100"></canvas>
+        <div class="chart-box"><canvas id="viewsChart"></canvas></div>
       </section>
       <section class="chart-panel">
         <h2>Top pages (24h)</h2>
@@ -111,7 +111,7 @@
         <section class="chart-panel">
           <h2>Sources de trafic</h2>
           {% if stats.seo.channels_chart %}
-          <canvas id="seoChannelsChart" height="130"></canvas>
+          <div class="chart-box"><canvas id="seoChannelsChart"></canvas></div>
           {% else %}
           <p class="muted">Les sources apparaîtront dès les premières visites humaines.</p>
           {% endif %}
@@ -119,7 +119,7 @@
         <section class="chart-panel">
           <h2>Moteurs de recherche</h2>
           {% if stats.seo.engines_chart %}
-          <canvas id="seoEnginesChart" height="130"></canvas>
+          <div class="chart-box"><canvas id="seoEnginesChart"></canvas></div>
           {% else %}
           <p class="muted">Le trafic Google/Bing s'affichera quand des visiteurs arriveront via recherche.</p>
           {% endif %}
@@ -127,7 +127,7 @@
         <section class="chart-panel chart-panel--wide">
           <h2>Visites SEO par jour</h2>
           {% if stats.seo.daily_organic %}
-          <canvas id="seoDailyChart" height="80"></canvas>
+          <div class="chart-box chart-box--short"><canvas id="seoDailyChart"></canvas></div>
           {% else %}
           <p class="muted">Courbe SEO dès les premières visites organiques.</p>
           {% endif %}
@@ -148,7 +148,7 @@
         <section class="chart-panel">
           <h2>Contenu performant (SEO)</h2>
           {% if stats.seo.content_organic %}
-          <canvas id="seoContentChart" height="120"></canvas>
+          <div class="chart-box"><canvas id="seoContentChart"></canvas></div>
           {% else %}
           <p class="muted">Répartition blog / destinations / itinéraires quand le SEO décollera.</p>
           {% endif %}
@@ -165,7 +165,7 @@
         <section class="chart-panel">
           <h2>Top pays</h2>
           {% if stats.countries %}
-          <canvas id="countriesChart" height="140"></canvas>
+          <div class="chart-box chart-box--tall"><canvas id="countriesChart"></canvas></div>
           {% else %}
           <p class="muted">Les pays apparaîtront dès les premières visites enregistrées.</p>
           {% endif %}
@@ -219,7 +219,7 @@
         <section class="chart-panel">
           <h2>Sources LLM</h2>
           {% if stats.geo.sources_chart %}
-          <canvas id="geoSourcesChart" height="120"></canvas>
+          <div class="chart-box"><canvas id="geoSourcesChart"></canvas></div>
           {% else %}
           <p class="muted">Aucune visite IA détectée sur la période. Vérifiez que <a href="{{ url_for('llms_txt') }}" target="_blank" rel="noopener">/llms.txt</a> est accessible.</p>
           {% endif %}
@@ -227,7 +227,7 @@
         <section class="chart-panel chart-panel--wide">
           <h2>Vues IA par jour</h2>
           {% if stats.geo.daily_ai %}
-          <canvas id="geoDailyChart" height="80"></canvas>
+          <div class="chart-box chart-box--short"><canvas id="geoDailyChart"></canvas></div>
           {% else %}
           <p class="muted">Les graphiques GEO apparaîtront dès qu'un LLM enverra du trafic.</p>
           {% endif %}

@@ -27,7 +27,7 @@
 {% block content %}
 <header class="page-hero page-hero--{{ category_key }}">
   <div class="container">
-    <nav class="breadcrumb" aria-label="Fil d'Ariane">
+    <nav class="breadcrumb" aria-label="{{ t('breadcrumb.aria') }}">
       <ol>
         <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
         <li><a href="{{ lang_url('blog_index') }}">{{ t('nav.blog') }}</a></li>

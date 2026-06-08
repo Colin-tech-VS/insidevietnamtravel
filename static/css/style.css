@@ -1070,16 +1070,10 @@ body.is-nav-open { overflow: hidden; }
   .article-sidebar { position: static; }
 }
 
-@media (max-width: 768px) {
-  :root { --header-h: 64px; }
-
-  .container { padding: 0 1rem; }
-
+/* Navigation : on bascule sur le menu hamburger dès la tablette pour éviter
+   une barre de navigation tassée, et la recherche devient une icône. */
+@media (max-width: 1024px) {
   .nav-toggle { display: flex; }
-
-  .logo-icon { width: 34px; height: 34px; }
-  .logo-name { font-size: 1.05rem; }
-  .logo-sub { font-size: 0.62rem; }
 
   .main-nav {
     position: fixed;
@@ -1190,6 +1184,16 @@ body.is-nav-open { overflow: hidden; }
     border-color: rgba(27, 77, 74, 0.1);
     color: var(--teal);
   }
+}
+
+@media (max-width: 768px) {
+  :root { --header-h: 64px; }
+
+  .container { padding: 0 1rem; }
+
+  .logo-icon { width: 34px; height: 34px; }
+  .logo-name { font-size: 1.05rem; }
+  .logo-sub { font-size: 0.62rem; }
 
   .flash-messages {
     left: 1rem;

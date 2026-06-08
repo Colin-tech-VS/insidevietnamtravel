@@ -1,5 +1,5 @@
-{% macro page_loader(hint='Préparation de votre voyage…', sub='Travel') %}
-<div id="page-loader" class="page-loader" role="status" aria-live="polite" aria-busy="true" aria-label="Chargement en cours">
+{% macro page_loader(hint=None, sub='Travel') %}
+<div id="page-loader" class="page-loader" role="status" aria-live="polite" aria-busy="true" aria-label="{{ t('loader.aria') }}">
   <div class="page-loader__inner">
     <svg class="page-loader__logo" viewBox="0 0 40 40" aria-hidden="true">
       <circle class="page-loader__ring" cx="20" cy="20" r="18" fill="none" stroke="currentColor" stroke-width="1.5"/>
@@ -12,7 +12,7 @@
       <span class="page-loader__name">Inside Vietnam</span>
       <span class="page-loader__sub">{{ sub }}</span>
     </p>
-    <p class="page-loader__hint">{{ hint }}</p>
+    <p class="page-loader__hint">{{ hint or t('loader.hint') }}</p>
   </div>
 </div>
 {% endmacro %}
