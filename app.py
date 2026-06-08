@@ -60,6 +60,7 @@ RESERVED_SLUGS = frozenset({
     "blog", "admin", "go", "itineraries", "a-propos", "newsletter",
     "politique-confidentialite", "mentions-legales",
     "robots.txt", "sitemap.xml", "llms.txt", "llms-full.txt",
+    "AgodaPartnerVerification.htm",
     "categorie", "category", "static", "favicon.ico",
     "en", "about", "privacy", "legal", "unsubscribe", "contact", "guide-pdf",
     "preparer-mon-voyage", "plan-my-trip",
@@ -889,6 +890,18 @@ def search_index():
 
 
 # ── SEO ───────────────────────────────────────────────────────────────
+
+@app.route("/AgodaPartnerVerification.htm")
+def agoda_partner_verification():
+    """Vérification domaine Agoda Partners (méthode fichier HTML)."""
+    body = (
+        "<!DOCTYPE html><html><head><meta charset=\"utf-8\">"
+        "<title>Agoda Partner Site Verification</title></head><body>"
+        "agoda-partner-site-verification: AgodaPartnerVerification.html"
+        "</body></html>"
+    )
+    return Response(body, mimetype="text/html; charset=utf-8")
+
 
 @app.route("/robots.txt")
 def robots():
