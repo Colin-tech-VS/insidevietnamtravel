@@ -2,13 +2,20 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import sqlite3
+import threading
 from contextlib import contextmanager
 from pathlib import Path
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
-DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+logger = logging.getLogger(__name__)
+
 SQLITE_PATH = Path(__file__).parent.parent / "data" / "site.db"
+
+_schema_lock = threading.Lock()
+_schema_initialized = False
 
 SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS page_views (
@@ -50,6 +57,61 @@ CREATE INDEX IF NOT EXISTS idx_newsletter_email ON newsletter_subscribers(email)
 """
 
 
+def normalize_database_url(url: str) -> str:
+    """Convertit l'URL directe Supabase (IPv6) vers le pooler (IPv4, Scalingo-compatible)."""
+    url = (url or "").strip()
+    if not url:
+        return url
+
+    parsed = urlparse(url)
+    host = parsed.hostname or ""
+    if not host.startswith("db.") or not host.endswith(".supabase.co"):
+        return _ensure_sslmode(url)
+
+    project_ref = host.removeprefix("db.").removesuffix(".supabase.co")
+    pooler_host = os.environ.get("SUPABASE_POOLER_HOST", "").strip()
+    if not pooler_host:
+        region = os.environ.get("SUPABASE_POOLER_REGION", "eu-central-1").strip()
+        aws_prefix = os.environ.get("SUPABASE_POOLER_AWS", "aws-1").strip()
+        pooler_host = f"{aws_prefix}-{region}.pooler.supabase.com"
+    pooler_port = os.environ.get("SUPABASE_POOLER_PORT", "6543").strip()
+
+    username = parsed.username or "postgres"
+    password = parsed.password or ""
+    if username == "postgres":
+        username = f"postgres.{project_ref}"
+
+    auth = f"{username}:{password}" if password else username
+    db_path = parsed.path or "/postgres"
+    new_netloc = f"{auth}@{pooler_host}:{pooler_port}"
+    normalized = urlunparse((
+        parsed.scheme or "postgresql",
+        new_netloc,
+        db_path,
+        parsed.params,
+        parsed.query,
+        parsed.fragment,
+    ))
+    logger.info(
+        "DATABASE_URL normalisée : pooler Supabase %s:%s (évite IPv6 db.*.supabase.co)",
+        pooler_host,
+        pooler_port,
+    )
+    return _ensure_sslmode(normalized)
+
+
+def _ensure_sslmode(url: str) -> str:
+    if not url or "sslmode=" in url:
+        return url
+    parsed = urlparse(url)
+    query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    query.setdefault("sslmode", "require")
+    return urlunparse(parsed._replace(query=urlencode(query)))
+
+
+DATABASE_URL = normalize_database_url(os.environ.get("DATABASE_URL", ""))
+
+
 def is_postgres() -> bool:
     return bool(DATABASE_URL)
 
@@ -61,10 +123,25 @@ def init_schema():
         _init_sqlite()
 
 
+def ensure_schema():
+    """Initialisation paresseuse — ne bloque pas l'import du module."""
+    global _schema_initialized
+    if _schema_initialized or not is_postgres():
+        if not _schema_initialized and not is_postgres():
+            _init_sqlite()
+            _schema_initialized = True
+        return
+    with _schema_lock:
+        if _schema_initialized:
+            return
+        _init_postgres()
+        _schema_initialized = True
+
+
 def _init_postgres():
     import psycopg2
 
-    conn = psycopg2.connect(DATABASE_URL)
+    conn = psycopg2.connect(DATABASE_URL, connect_timeout=10)
     try:
         with conn.cursor() as cur:
             for stmt in SCHEMA_SQL.split(";"):
@@ -110,11 +187,16 @@ def _init_sqlite():
 
 @contextmanager
 def get_connection():
+    ensure_schema()
     if is_postgres():
         import psycopg2
         from psycopg2.extras import RealDictCursor
 
-        conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+        conn = psycopg2.connect(
+            DATABASE_URL,
+            cursor_factory=RealDictCursor,
+            connect_timeout=10,
+        )
         try:
             yield conn
             conn.commit()

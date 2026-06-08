@@ -2,9 +2,8 @@
 
 from datetime import datetime, timedelta
 
-from admin.database import get_connection, init_schema, is_postgres
+from admin.database import get_connection, ensure_schema, init_schema, is_postgres
 
-init_schema()
 init_db = init_schema
 
 

@@ -42,8 +42,10 @@ Optionnel :
 scalingo --app insidevietnamtravel env-set \
   SITE_URL="https://votre-domaine.fr" \
   GA4_MEASUREMENT_ID="G-XXXXXXXX" \
-  SMTP_HOST="smtp..." SMTP_PORT="587" SMTP_USER="..." SMTP_PASSWORD="..." SMTP_FROM="..."
+  DATABASE_URL="postgresql://postgres.[REF]:[MDP]@aws-0-eu-west-3.pooler.supabase.com:6543/postgres"
 ```
+
+**Important Supabase + Scalingo :** n'utilisez pas l'URL directe `db.xxx.supabase.co:5432` (IPv6, crash au boot). Préférez le **pooler** port **6543**, ou laissez l'app convertir automatiquement l'URL directe.
 
 `SITE_URL` est auto-détecté si absent (`https://<app>.<region>.scalingo.io`).
 
