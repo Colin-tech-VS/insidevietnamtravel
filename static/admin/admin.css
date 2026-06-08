@@ -254,6 +254,10 @@ a:hover { color: var(--terracotta); }
   gap: 1.25rem;
 }
 .panel {
+  /* min-width:0 : en grille (panel-grid) un panneau contenant un tableau large
+     gonflerait la colonne au-delà du viewport et créerait un scroll horizontal.
+     Le .table-scroll interne gère le défilement du tableau. */
+  min-width: 0;
   background: var(--white);
   border: 1px solid var(--rice-dark);
   border-radius: var(--radius-lg);
@@ -673,6 +677,7 @@ code {
   border-radius: var(--radius-lg);
   padding: 1.25rem 1.5rem;
 }
+.chart-panel { min-width: 0; }
 .chart-panel--wide { grid-column: 1 / -1; }
 .chart-panel h2 {
   font-family: var(--font-display);
@@ -697,6 +702,10 @@ code {
 .chart-box > canvas {
   position: absolute;
   inset: 0;
+  /* Garde-fou : Chart.js fixe parfois une largeur inline (300px par défaut)
+     plus grande que le conteneur sur très petit écran ; max-width évite le
+     débordement horizontal de la page. */
+  max-width: 100%;
 }
 
 @media (max-width: 640px) {
@@ -1193,9 +1202,13 @@ select optgroup { font-weight: 700; color: var(--teal); }
   gap: 0.5rem;
 }
 .type-pill {
+  position: relative;
   cursor: pointer;
 }
-.type-pill input { position: absolute; opacity: 0; pointer-events: none; }
+/* width:auto neutralise la règle globale input{width:100%} : sans cela le radio
+   masqué (position:absolute) s'étire à la largeur du viewport et provoque un
+   scroll horizontal de toute la page. */
+.type-pill input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .type-pill span {
   display: inline-block;
   padding: 0.5rem 0.85rem;
