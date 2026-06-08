@@ -39,17 +39,24 @@
 
 <section class="section">
   <div class="container">
-    <nav class="blog-categories" aria-label="{{ t('blog.filter_by') }}">
-      <a href="{{ lang_url('blog_index') }}" class="blog-categories__chip is-active">{{ t('blog.all_categories') }}</a>
+    <nav class="blog-categories" id="blog-filter" aria-label="{{ t('blog.filter.label') }}">
+      <a href="{{ lang_url('blog_index') }}" class="blog-categories__chip is-active" data-filter="all">{{ t('blog.filter.all') }}</a>
       {% for cat_key, cat in categories.items() %}
-      <a href="{{ lang_url('category', category=cat_key) }}" class="blog-categories__chip">{{ cat.label }}</a>
+      <a href="{{ lang_url('category', category=cat_key) }}" class="blog-categories__chip" data-filter="{{ cat_key }}">{{ cat.label }}</a>
       {% endfor %}
     </nav>
-    <div class="articles-grid">
+    <div class="articles-grid" id="blog-grid">
       {% for article in articles %}
-      {{ article_card(article, index=loop.index0) }}
+      <div class="blog-item" data-category="{{ article.category }}">
+        {{ article_card(article, index=loop.index0) }}
+      </div>
       {% endfor %}
     </div>
+    <p class="blog-filter__empty" id="blog-empty" hidden>{{ t('blog.filter.none') }}</p>
   </div>
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/blog-filter.js') }}" defer></script>
 {% endblock %}

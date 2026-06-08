@@ -235,6 +235,11 @@
       </nav>
 
       <div class="header-actions">
+        <button type="button" class="site-search__open" data-search-open aria-label="{{ t('search.open') }}" aria-haspopup="dialog">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
+          </svg>
+        </button>
         <nav class="lang-switch" aria-label="{{ t('lang.label') }}">
           <a href="{{ page_url_in_lang('fr') }}"
              hreflang="fr"
@@ -256,6 +261,28 @@
   </header>
 
   <div class="nav-backdrop" id="nav-backdrop" aria-hidden="true"></div>
+
+  <div class="search-overlay" id="search-overlay" role="dialog" aria-modal="true" aria-label="{{ t('search.label') }}" hidden
+       data-index-url="{{ url_for('search_index') }}?lang={{ lang }}"
+       data-empty="{{ t('search.empty') }}"
+       data-group-destination="{{ t('search.group.destination') }}"
+       data-group-itinerary="{{ t('search.group.itinerary') }}"
+       data-group-article="{{ t('search.group.article') }}"
+       data-group-tool="{{ t('search.group.tool') }}">
+    <div class="search-overlay__panel">
+      <div class="search-overlay__bar">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
+        </svg>
+        <input type="search" class="search-overlay__input" id="search-input"
+               placeholder="{{ t('search.placeholder') }}" aria-label="{{ t('search.label') }}"
+               autocomplete="off" spellcheck="false">
+        <button type="button" class="search-overlay__close" data-search-close aria-label="{{ t('search.close') }}">✕</button>
+      </div>
+      <p class="search-overlay__hint" id="search-hint">{{ t('search.hint') }}</p>
+      <div class="search-results" id="search-results"></div>
+    </div>
+  </div>
 
   <main id="main" role="main">
 
@@ -338,6 +365,7 @@
   <script src="{{ url_for('static', filename='js/loader.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/cookies.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/search.js') }}" defer></script>
   {% block scripts %}{% endblock %}
 
 </body>

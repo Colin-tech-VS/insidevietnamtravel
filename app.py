@@ -809,6 +809,53 @@ def destination_page(slug):
     )
 
 
+# ── Recherche (index client) ──────────────────────────────────────────
+
+@app.route("/search-index.json")
+def search_index():
+    from flask import jsonify
+
+    lang = "en" if (request.args.get("lang") == "en") else "fr"
+    items = []
+
+    for slug, d in _destinations(lang).items():
+        items.append({
+            "t": d.get("name", slug),
+            "s": d.get("tagline", ""),
+            "u": lang_url("destination_page", lang, slug=slug),
+            "g": "destination",
+        })
+    for slug, it in _itineraries(lang).items():
+        items.append({
+            "t": it.get("title", slug),
+            "s": it.get("summary", ""),
+            "u": lang_url("itinerary", lang, slug=slug),
+            "g": "itinerary",
+        })
+    for a in _articles(lang):
+        items.append({
+            "t": a.get("title", ""),
+            "s": a.get("excerpt", ""),
+            "u": lang_url("article", lang, slug=a["slug"]),
+            "g": "article",
+        })
+    for endpoint, key in (
+        ("best_season", "tools.season"),
+        ("budget_tool", "tools.budget"),
+        ("visa_tool", "tools.visa"),
+        ("essentials_tool", "tools.essentials"),
+        ("prepare_trip", "nav.prepare"),
+    ):
+        items.append({
+            "t": t(key, lang),
+            "s": "",
+            "u": lang_url(endpoint, lang),
+            "g": "tool",
+        })
+
+    return jsonify(items)
+
+
 # ── SEO ───────────────────────────────────────────────────────────────
 
 @app.route("/robots.txt")
