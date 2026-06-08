@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block meta_robots %}noindex, nofollow{% endblock %}
+
+{% block content %}
+<header class="page-hero page-hero--about">
+  <div class="container">
+    <h1>{{ t('pdf.success.title') }}</h1>
+    <p class="page-hero__lead">{{ t('pdf.success.lead') }}</p>
+  </div>
+</header>
+
+<section class="section">
+  <div class="container" style="max-width: 560px;">
+    <div class="card" style="padding: 2rem; text-align: center;">
+      <p style="margin-bottom: 1.5rem;">{{ t('pdf.success.body') }}</p>
+      {% if download_url %}
+      <a href="{{ download_url }}" class="btn btn-primary" style="margin-bottom: 1rem;">
+        {{ t('pdf.success.download') }}
+      </a>
+      <p class="text-muted" style="font-size: 0.9rem;">{{ t('pdf.success.email_note') }}</p>
+      {% else %}
+      <p class="text-muted">{{ t('pdf.success.pending') }}</p>
+      {% endif %}
+      <p style="margin-top: 1.5rem;">
+        <a href="{{ lang_url('index') }}">{{ t('pdf.success.back') }}</a>
+      </p>
+    </div>
+  </div>
+</section>
+{% endblock %}

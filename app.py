@@ -59,7 +59,7 @@ RESERVED_SLUGS = frozenset({
     "blog", "admin", "go", "itineraries", "a-propos", "newsletter",
     "politique-confidentialite", "mentions-legales",
     "robots.txt", "sitemap.xml", "categorie", "category", "static", "favicon.ico",
-    "en", "about", "privacy", "legal", "unsubscribe", "contact",
+    "en", "about", "privacy", "legal", "unsubscribe", "contact", "guide-pdf",
 })
 
 load_dotenv()
@@ -316,6 +316,9 @@ def travel_insurance_url() -> str:
 
 @app.template_global()
 def pdf_checkout_url() -> str:
+    from admin.pdf_payment_service import is_payment_configured
+    if is_payment_configured():
+        return lang_url("pdf_checkout")
     url = pdf_checkout()
     if url.startswith("#"):
         return url
@@ -569,6 +572,87 @@ def newsletter_subscribe():
     else:
         flash(t("flash.invalid_email", lang), "error")
     return redirect(request.referrer or lang_url("index", lang))
+
+
+# ── Guide PDF (achat + téléchargement) ───────────────────────────────────
+
+@app.route("/guide-pdf/checkout")
+@app.route("/en/guide-pdf/checkout")
+def pdf_checkout_start():
+    from admin.pdf_payment_service import create_checkout_session, is_payment_configured
+
+    lang = get_lang()
+    if not is_payment_configured():
+        flash(t("pdf.error.payment", lang), "error")
+        return redirect(lang_url("index", lang) + "#pdf-guide")
+
+    base = config.SITE_URL.rstrip("/")
+    success_url = base + lang_url("pdf_success", lang) + "?session_id={CHECKOUT_SESSION_ID}"
+    cancel_url = base + lang_url("index", lang) + "#pdf-guide"
+    result = create_checkout_session(lang=lang, success_url=success_url, cancel_url=cancel_url)
+    if not result.get("ok"):
+        flash(t("pdf.error.payment", lang), "error")
+        return redirect(lang_url("index", lang) + "#pdf-guide")
+
+    if not is_analytics_excluded_ip():
+        analytics_db.log_affiliate_click("pdf", result.get("url", ""), request.referrer or "")
+    return redirect(result["url"])
+
+
+@app.route("/guide-pdf/merci")
+@app.route("/en/guide-pdf/success")
+def pdf_success():
+    from admin.pdf_payment_service import (
+        build_download_url,
+        fulfill_checkout_session,
+        notify_purchase_fulfilled,
+    )
+
+    lang = get_lang()
+    session_id = (request.args.get("session_id") or "").strip()
+    download_url = ""
+    if session_id:
+        result = fulfill_checkout_session(session_id)
+        if result.get("ok"):
+            token = result["token"]
+            download_url = build_download_url(token, result.get("lang", lang))
+            if not result.get("already"):
+                notify_purchase_fulfilled(
+                    token=token,
+                    email=result.get("email", ""),
+                    lang=result.get("lang", lang),
+                )
+
+    return render_template(
+        "pdf_success.html",
+        download_url=download_url,
+        meta_title=t("pdf.success.meta_title", lang),
+        meta_description=t("pdf.success.meta_desc", lang),
+        meta_robots="noindex, nofollow",
+    )
+
+
+@app.route("/guide-pdf/telecharger/<token>")
+@app.route("/en/guide-pdf/download/<token>")
+def pdf_download(token):
+    from admin.pdf_guide_service import generate_pdf_bytes, pdf_filename
+    from admin.pdf_payment_service import get_valid_token, record_download
+
+    lang = get_lang()
+    record = get_valid_token(token)
+    if not record:
+        abort(404)
+    pdf_lang = record.get("lang", lang)
+    data = generate_pdf_bytes(pdf_lang)
+    record_download(token)
+    return Response(
+        data,
+        mimetype="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{pdf_filename(pdf_lang)}"',
+            "Cache-Control": "private, no-store",
+        },
+    )
 
 
 # ── Destinations (route dynamique — en dernier) ─────────────────────────

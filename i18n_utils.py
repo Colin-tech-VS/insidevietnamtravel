@@ -253,6 +253,9 @@ ROUTE_PATHS: dict[str, dict[str, str]] = {
     "category": {"fr": "/categorie/{category}", "en": "/en/category/{category}"},
     "article": {"fr": "/blog/{slug}", "en": "/en/blog/{slug}"},
     "itinerary": {"fr": "/itineraries/{slug}", "en": "/en/itineraries/{slug}"},
+    "pdf_checkout": {"fr": "/guide-pdf/checkout", "en": "/en/guide-pdf/checkout"},
+    "pdf_success": {"fr": "/guide-pdf/merci", "en": "/en/guide-pdf/success"},
+    "pdf_download": {"fr": "/guide-pdf/telecharger/{token}", "en": "/en/guide-pdf/download/{token}"},
     "destination_page": {"fr": "/{slug}", "en": "/en/{slug}"},
 }
 

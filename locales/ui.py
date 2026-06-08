@@ -170,6 +170,38 @@ UI: dict[str, dict[str, str]] = {
     },
     "aff.pdf.cta": {"fr": "Obtenir le guide PDF", "en": "Get the PDF guide"},
 
+    "pdf.error.payment": {
+        "fr": "Le paiement n'est pas encore disponible. Réessayez plus tard ou contactez-nous.",
+        "en": "Payment is not available yet. Please try again later or contact us.",
+    },
+    "pdf.success.meta_title": {
+        "fr": "Merci — votre guide PDF",
+        "en": "Thank you — your PDF guide",
+    },
+    "pdf.success.meta_desc": {
+        "fr": "Téléchargez votre guide Vietnam PDF Inside Vietnam Travel.",
+        "en": "Download your Inside Vietnam Travel Vietnam PDF guide.",
+    },
+    "pdf.success.title": {"fr": "Merci pour votre achat !", "en": "Thank you for your purchase!"},
+    "pdf.success.lead": {
+        "fr": "Votre guide PDF est prêt à télécharger.",
+        "en": "Your PDF guide is ready to download.",
+    },
+    "pdf.success.body": {
+        "fr": "Le guide inclut 3 itinéraires (7, 10 et 14 jours), les checklists visa/eSIM/assurance, un budget détaillé et des adresses testées.",
+        "en": "The guide includes 3 itineraries (7, 10 and 14 days), visa/eSIM/insurance checklists, a detailed budget and tested addresses.",
+    },
+    "pdf.success.download": {"fr": "Télécharger le PDF", "en": "Download PDF"},
+    "pdf.success.email_note": {
+        "fr": "Un lien de téléchargement vous a aussi été envoyé par email si vous en avez indiqué un lors du paiement.",
+        "en": "A download link was also emailed to you if you provided an address at checkout.",
+    },
+    "pdf.success.pending": {
+        "fr": "Paiement en cours de validation. Actualisez cette page dans quelques instants.",
+        "en": "Payment is being validated. Refresh this page in a moment.",
+    },
+    "pdf.success.back": {"fr": "← Retour à l'accueil", "en": "← Back to home"},
+
     # Cookies
     "cookie.title": {"fr": "Cookies & confidentialité", "en": "Cookies & privacy"},
     "cookie.lead": {
