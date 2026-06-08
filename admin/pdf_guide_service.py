@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import io
+from pathlib import Path
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm, mm
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen import canvas
 from reportlab.platypus import (
     Flowable,
     KeepTogether,
@@ -23,6 +27,41 @@ from reportlab.platypus import (
 from data.destinations import DESTINATIONS
 from data.itineraries import ITINERARIES
 from i18n_utils import localize_destination, localize_itinerary
+
+# Unicode fonts (Vietnamese diacritics: Hội An, Huế, Phở, Đà Nẵng…)
+FONT_FAMILY = "NotoSans"
+FONT_REGULAR = "NotoSans-Regular"
+FONT_BOLD = "NotoSans-Bold"
+FONT_ITALIC = "NotoSans-Italic"
+FONT_BOLD_ITALIC = "NotoSans-BoldItalic"
+_fonts_ready = False
+
+
+def _ensure_pdf_fonts() -> None:
+    global _fonts_ready
+    if _fonts_ready:
+        return
+    fonts_dir = Path(__file__).resolve().parent / "fonts"
+    pdfmetrics.registerFont(TTFont(FONT_REGULAR, str(fonts_dir / "NotoSans-Regular.ttf")))
+    pdfmetrics.registerFont(TTFont(FONT_BOLD, str(fonts_dir / "NotoSans-Bold.ttf")))
+    pdfmetrics.registerFont(TTFont(FONT_ITALIC, str(fonts_dir / "NotoSans-Italic.ttf")))
+    pdfmetrics.registerFont(TTFont(FONT_BOLD_ITALIC, str(fonts_dir / "NotoSans-BoldItalic.ttf")))
+    pdfmetrics.registerFontFamily(
+        FONT_FAMILY,
+        normal=FONT_REGULAR,
+        bold=FONT_BOLD,
+        italic=FONT_ITALIC,
+        boldItalic=FONT_BOLD_ITALIC,
+    )
+    _fonts_ready = True
+
+
+def _pdf_bold(text: str) -> str:
+    return f'<font name="{FONT_BOLD}">{text}</font>'
+
+
+def _pdf_italic(text: str) -> str:
+    return f'<font name="{FONT_ITALIC}">{text}</font>'
 
 # Brand palette (site design system)
 TEAL = colors.HexColor("#1B4D4A")
@@ -258,39 +297,39 @@ def _styles() -> dict:
     base = getSampleStyleSheet()
     return {
         "welcome_lead": ParagraphStyle(
-            "WelcomeLead", parent=base["Normal"], fontSize=11, leading=16,
+            "WelcomeLead", parent=base["Normal"], fontName=FONT_REGULAR, fontSize=11, leading=16,
             textColor=INK_SOFT, spaceAfter=14,
         ),
         "welcome_item": ParagraphStyle(
-            "WelcomeItem", parent=base["Normal"], fontSize=10, leading=15,
+            "WelcomeItem", parent=base["Normal"], fontName=FONT_REGULAR, fontSize=10, leading=15,
             textColor=INK, leftIndent=8, spaceBefore=4,
         ),
         "section_intro": ParagraphStyle(
-            "SectionIntro", parent=base["Normal"], fontSize=10, leading=14,
+            "SectionIntro", parent=base["Normal"], fontName=FONT_REGULAR, fontSize=10, leading=14,
             textColor=INK_SOFT, spaceAfter=12,
         ),
         "body": ParagraphStyle(
-            "Body", parent=base["Normal"], fontSize=9.5, leading=13,
+            "Body", parent=base["Normal"], fontName=FONT_REGULAR, fontSize=9.5, leading=13,
             textColor=INK,
         ),
         "muted": ParagraphStyle(
-            "Muted", parent=base["Normal"], fontSize=8.5, leading=11,
+            "Muted", parent=base["Normal"], fontName=FONT_REGULAR, fontSize=8.5, leading=11,
             textColor=INK_MUTED,
         ),
         "hotel_name": ParagraphStyle(
-            "HotelName", parent=base["Normal"], fontSize=10, leading=13,
+            "HotelName", parent=base["Normal"], fontName=FONT_REGULAR, fontSize=10, leading=13,
             textColor=TEAL, spaceBefore=2,
         ),
         "hotel_desc": ParagraphStyle(
-            "HotelDesc", parent=base["Normal"], fontSize=9, leading=12,
+            "HotelDesc", parent=base["Normal"], fontName=FONT_REGULAR, fontSize=9, leading=12,
             textColor=INK_SOFT,
         ),
         "toc_item": ParagraphStyle(
-            "TocItem", parent=base["Normal"], fontSize=10, leading=14,
+            "TocItem", parent=base["Normal"], fontName=FONT_REGULAR, fontSize=10, leading=14,
             textColor=INK,
         ),
         "check_item": ParagraphStyle(
-            "CheckItem", parent=base["Normal"], fontSize=9, leading=12,
+            "CheckItem", parent=base["Normal"], fontName=FONT_REGULAR, fontSize=9, leading=12,
             textColor=INK,
         ),
     }
@@ -316,18 +355,18 @@ def _draw_cover(c: canvas.Canvas, lang: str):
     c.setFillColor(GOLD)
     c.roundRect(PAGE_W / 2 - 2.8 * cm, badge_y, 5.6 * cm, 0.9 * cm, 4, fill=1, stroke=0)
     c.setFillColor(TEAL_DEEP)
-    c.setFont("Helvetica-Bold", 9)
+    c.setFont(FONT_BOLD, 9)
     c.drawCentredString(PAGE_W / 2, badge_y + 0.28 * cm, COPY[lang]["edition"].upper())
     # Title block
     c.setFillColor(WHITE)
-    c.setFont("Helvetica-Bold", 32)
+    c.setFont(FONT_BOLD, 32)
     c.drawCentredString(PAGE_W / 2, PAGE_H * 0.58, "Inside Vietnam")
     c.drawCentredString(PAGE_W / 2, PAGE_H * 0.58 - 1.1 * cm, "Travel")
-    c.setFont("Helvetica", 15)
+    c.setFont(FONT_REGULAR, 15)
     c.setFillColor(GOLD_LIGHT)
     title = "Guide Voyage Vietnam" if lang == "fr" else "Vietnam Travel Guide"
     c.drawCentredString(PAGE_W / 2, PAGE_H * 0.58 - 2.2 * cm, title)
-    c.setFont("Helvetica", 11)
+    c.setFont(FONT_REGULAR, 11)
     c.setFillColor(colors.HexColor("#E8E4DC"))
     c.drawCentredString(PAGE_W / 2, PAGE_H * 0.58 - 3.1 * cm, COPY[lang]["tagline"])
     # Feature pills
@@ -337,11 +376,11 @@ def _draw_cover(c: canvas.Canvas, lang: str):
         c.setFillColor(colors.HexColor("#1a3d3a"))
         c.roundRect(MARGIN_L + 0.5 * cm, y_pill, CONTENT_W - 1 * cm, 0.75 * cm, 3, fill=1, stroke=0)
         c.setFillColor(WHITE)
-        c.setFont("Helvetica", 9)
+        c.setFont(FONT_REGULAR, 9)
         c.drawString(MARGIN_L + 1 * cm, y_pill + 0.25 * cm, f"  {feat}")
         y_pill -= 1.05 * cm
     c.setFillColor(INK_MUTED)
-    c.setFont("Helvetica", 8)
+    c.setFont(FONT_REGULAR, 8)
     c.drawCentredString(PAGE_W / 2, 1.8 * cm, "www.insidevietnamtravel.fr")
     c.restoreState()
 
@@ -355,15 +394,15 @@ def _draw_back_cover(c: canvas.Canvas, lang: str):
     c.setFillColor(GOLD)
     c.rect(MARGIN_L, PAGE_H * 0.54, CONTENT_W, 2 * mm, fill=1, stroke=0)
     c.setFillColor(TEAL)
-    c.setFont("Helvetica-Bold", 22)
+    c.setFont(FONT_BOLD, 22)
     c.drawCentredString(PAGE_W / 2, PAGE_H * 0.68, COPY[lang]["back_title"])
     c.setFillColor(WHITE)
-    c.setFont("Helvetica", 11)
+    c.setFont(FONT_REGULAR, 11)
     c.drawCentredString(PAGE_W / 2, PAGE_H * 0.68 - 1.2 * cm, COPY[lang]["back_body"])
     c.setFillColor(TEAL)
-    c.setFont("Helvetica-Bold", 14)
+    c.setFont(FONT_BOLD, 14)
     c.drawCentredString(PAGE_W / 2, PAGE_H * 0.32, "Inside Vietnam Travel")
-    c.setFont("Helvetica", 9)
+    c.setFont(FONT_REGULAR, 9)
     c.setFillColor(INK_MUTED)
     c.drawCentredString(PAGE_W / 2, PAGE_H * 0.32 - 0.8 * cm, "© 2026 — insidevietnamtravel.fr")
     c.restoreState()
@@ -376,18 +415,18 @@ def _page_frame(c: canvas.Canvas, doc, *, section: str = ""):
     c.rect(0, PAGE_H - 1.6 * cm, PAGE_W, 1.6 * cm, fill=1, stroke=0)
     c.setFillColor(TEAL)
     c.rect(0, PAGE_H - 1.65 * cm, PAGE_W, 1.5 * mm, fill=1, stroke=0)
-    c.setFont("Helvetica-Bold", 8)
+    c.setFont(FONT_BOLD, 8)
     c.setFillColor(TEAL)
     c.drawString(MARGIN_L, PAGE_H - 1.1 * cm, COPY.get(getattr(doc, "_lang", "fr"), COPY["fr"])["footer"])
     if section:
-        c.setFont("Helvetica", 8)
+        c.setFont(FONT_REGULAR, 8)
         c.setFillColor(INK_MUTED)
         c.drawRightString(PAGE_W - MARGIN_R, PAGE_H - 1.1 * cm, section)
     # Footer
     c.setStrokeColor(GOLD)
     c.setLineWidth(0.4)
     c.line(MARGIN_L, 1.4 * cm, PAGE_W - MARGIN_R, 1.4 * cm)
-    c.setFont("Helvetica", 7.5)
+    c.setFont(FONT_REGULAR, 7.5)
     c.setFillColor(INK_MUTED)
     c.drawString(MARGIN_L, 0.85 * cm, "insidevietnamtravel.fr")
     c.drawRightString(PAGE_W - MARGIN_R, 0.85 * cm, str(c.getPageNumber()))
@@ -397,11 +436,11 @@ def _page_frame(c: canvas.Canvas, doc, *, section: str = ""):
 def _section_divider(title: str, subtitle: str, styles: dict) -> list:
     """Full-width section opener block."""
     header = Table(
-        [[Paragraph(f'<font color="white"><b>{title}</b></font>', ParagraphStyle(
-            "SecH", fontSize=18, leading=22, textColor=WHITE, alignment=TA_LEFT,
+        [[Paragraph(f'<font color="white">{_pdf_bold(title)}</font>', ParagraphStyle(
+            "SecH", fontName=FONT_REGULAR, fontSize=18, leading=22, textColor=WHITE, alignment=TA_LEFT,
         ))],
          [Paragraph(f'<font color="#D4B86A">{subtitle}</font>', ParagraphStyle(
-            "SecS", fontSize=10, leading=14, textColor=GOLD_LIGHT,
+            "SecS", fontName=FONT_REGULAR, fontSize=10, leading=14, textColor=GOLD_LIGHT,
         ))]],
         colWidths=[CONTENT_W],
     )
@@ -421,8 +460,8 @@ def _section_divider(title: str, subtitle: str, styles: dict) -> list:
 def _welcome_page(lang: str, styles: dict) -> list:
     cp = COPY[lang]
     flow = [
-        Paragraph(f'<font color="#1B4D4A"><b>{cp["welcome_title"]}</b></font>', ParagraphStyle(
-            "WTitle", fontSize=20, leading=26, textColor=TEAL, spaceAfter=10,
+        Paragraph(f'<font color="#1B4D4A">{_pdf_bold(cp["welcome_title"])}</font>', ParagraphStyle(
+            "WTitle", fontName=FONT_REGULAR, fontSize=20, leading=26, textColor=TEAL, spaceAfter=10,
         )),
         Paragraph(cp["welcome_body"], styles["welcome_lead"]),
     ]
@@ -468,8 +507,8 @@ def _toc_page(lang: str, styles: dict) -> list:
         ("LINEBELOW", (0, 0), (-1, -2), 0.25, RICE_DARK),
     ]))
     return [
-        Paragraph(f'<font color="#1B4D4A"><b>{cp["toc"]}</b></font>', ParagraphStyle(
-            "TocTitle", fontSize=20, leading=26, textColor=TEAL, spaceAfter=16,
+        Paragraph(f'<font color="#1B4D4A">{_pdf_bold(cp["toc"])}</font>', ParagraphStyle(
+            "TocTitle", fontName=FONT_REGULAR, fontSize=20, leading=26, textColor=TEAL, spaceAfter=16,
         )),
         tbl,
     ]
@@ -482,11 +521,11 @@ def _checklist_section(lang: str, styles: dict) -> list:
 
     for section in cl["sections"]:
         rows = [[
-            Paragraph(f'<font color="white"><b>{section["icon"]}</b></font>', ParagraphStyle(
-                "Icon", fontSize=11, alignment=TA_CENTER, textColor=WHITE,
+            Paragraph(f'<font color="white">{_pdf_bold(section["icon"])}</font>', ParagraphStyle(
+                "Icon", fontName=FONT_BOLD, fontSize=11, alignment=TA_CENTER, textColor=WHITE,
             )),
-            Paragraph(f'<b>{section["name"]}</b>', ParagraphStyle(
-                "SecName", fontSize=11, textColor=TEAL, leading=14,
+            Paragraph(_pdf_bold(section["name"]), ParagraphStyle(
+                "SecName", fontName=FONT_BOLD, fontSize=11, textColor=TEAL, leading=14,
             )),
         ]]
         sec_hdr = Table(rows, colWidths=[1.1 * cm, CONTENT_W - 1.1 * cm])
@@ -536,9 +575,10 @@ def _budget_section(lang: str, styles: dict) -> list:
     tbl.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), TEAL_DEEP),
         ("TEXTCOLOR", (0, 0), (-1, 0), WHITE),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTNAME", (0, 0), (-1, -1), FONT_REGULAR),
+        ("FONTNAME", (0, 0), (-1, 0), FONT_BOLD),
         ("FONTSIZE", (0, 0), (-1, -1), 8.5),
-        ("FONTNAME", (0, 1), (0, -1), "Helvetica-Bold"),
+        ("FONTNAME", (0, 1), (0, -1), FONT_BOLD),
         ("TEXTCOLOR", (0, 1), (0, -1), TEAL),
         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [WHITE, RICE, RICE_DARK]),
         ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#ddd8d0")),
@@ -565,8 +605,8 @@ def _addresses_section(lang: str, styles: dict) -> list:
         dest = localize_destination(DESTINATIONS.get(slug, {}), lang)
         name = dest.get("name", slug)
         city_hdr = Table(
-            [[Paragraph(f'<font color="white"><b>{name}</b></font>', ParagraphStyle(
-                "CityH", fontSize=13, textColor=WHITE,
+            [[Paragraph(f'<font color="white">{_pdf_bold(name)}</font>', ParagraphStyle(
+                "CityH", fontName=FONT_BOLD, fontSize=13, textColor=WHITE,
             ))]],
             colWidths=[CONTENT_W],
         )
@@ -588,9 +628,10 @@ def _addresses_section(lang: str, styles: dict) -> list:
         htbl = Table(hotel_rows, colWidths=[4.2 * cm, 7.8 * cm, 3.2 * cm])
         htbl.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), RICE_DARK),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTNAME", (0, 0), (-1, -1), FONT_REGULAR),
+            ("FONTNAME", (0, 0), (-1, 0), FONT_BOLD),
             ("FONTSIZE", (0, 0), (-1, -1), 8.5),
-            ("FONTNAME", (0, 1), (0, -1), "Helvetica-Bold"),
+            ("FONTNAME", (0, 1), (0, -1), FONT_BOLD),
             ("TEXTCOLOR", (0, 1), (0, -1), TEAL),
             ("ROWBACKGROUNDS", (0, 1), (-1, -1), [WHITE, RICE]),
             ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#ddd8d0")),
@@ -603,7 +644,7 @@ def _addresses_section(lang: str, styles: dict) -> list:
 
         for tip in dest.get("tips", [])[:2]:
             tip_tbl = Table(
-                [[Paragraph(f'<b>{cp["tip"]} —</b> {tip}', styles["muted"])]],
+                [[Paragraph(f'{_pdf_bold(cp["tip"] + " —")} {tip}', styles["muted"])]],
                 colWidths=[CONTENT_W],
             )
             tip_tbl.setStyle(TableStyle([
@@ -625,17 +666,18 @@ def _day_card(day: dict, lang: str, styles: dict) -> Table:
     stay = day.get("stay", "")
     stay_line = ""
     if stay and stay != "—":
-        stay_line = f'<br/><font color="#7A7772"><i>{cp["night"]} : {stay}</i></font>'
+        stay_line = f'<br/><font color="#7A7772">{_pdf_italic(f"{cp["night"]} : {stay}")}</font>'
 
     left = Paragraph(
-        f'<font color="white"><b>{day["day"]}</b></font>',
-        ParagraphStyle("DayNum", fontSize=14, alignment=TA_CENTER, textColor=WHITE, leading=16),
+        f'<font color="white">{_pdf_bold(str(day["day"]))}</font>',
+        ParagraphStyle("DayNum", fontName=FONT_BOLD, fontSize=14, alignment=TA_CENTER, textColor=WHITE, leading=16),
     )
+    title_html = f'<font color="#1B4D4A"><font name="{FONT_BOLD}">{day["title"]}</font></font>'
     right = Paragraph(
-        f'<b><font color="#1B4D4A">{day["title"]}</font></b>'
+        f'{title_html}'
         f'<br/><font color="#C4A053">{day.get("location", "")}</font>'
         f'<br/><br/>{acts}{stay_line}',
-        ParagraphStyle("DayBody", fontSize=9, leading=12, textColor=INK),
+        ParagraphStyle("DayBody", fontName=FONT_REGULAR, fontSize=9, leading=12, textColor=INK),
     )
     card = Table([[left, right]], colWidths=[1.4 * cm, CONTENT_W - 1.4 * cm])
     card.setStyle(TableStyle([
@@ -662,8 +704,8 @@ def _itinerary_section(itin: dict, lang: str, styles: dict) -> list:
 
     flow = _section_divider(title, subtitle, styles)
     flow.append(Paragraph(
-        f'<b>{cp["budget_lbl"]} :</b> {itin.get("budget_hint", "")}',
-        ParagraphStyle("BudgetHint", fontSize=10, textColor=TEAL, spaceAfter=12),
+        f'{_pdf_bold(cp["budget_lbl"] + " :")} {itin.get("budget_hint", "")}',
+        ParagraphStyle("BudgetHint", fontName=FONT_REGULAR, fontSize=10, textColor=TEAL, spaceAfter=12),
     ))
 
     for day in itin.get("days", []):
@@ -686,6 +728,7 @@ class _BackCoverPage(Flowable):
 
 
 def generate_pdf_bytes(lang: str = "fr") -> bytes:
+    _ensure_pdf_fonts()
     lang = "en" if lang == "en" else "fr"
     styles = _styles()
     buffer = io.BytesIO()
