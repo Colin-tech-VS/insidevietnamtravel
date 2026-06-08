@@ -1456,6 +1456,7 @@ body.is-nav-open { overflow: hidden; }
   overflow: hidden;
   transition: transform var(--transition), box-shadow var(--transition);
   text-decoration: none;
+  background: linear-gradient(135deg, var(--teal-deep) 0%, var(--jade) 100%);
 }
 .dest-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); color: var(--white); }
 .dest-card__img {

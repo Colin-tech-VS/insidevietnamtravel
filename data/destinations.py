@@ -159,3 +159,219 @@ vers les Montagnes de Marbre ou Bà Nà Hills.</p>
         ],
     },
 }
+
+
+# ── Destinations supplémentaires (Halong, Sapa, Mékong, Huế, Phú Quốc) ──
+DESTINATIONS.update({
+    "halong": {
+        "slug": "halong",
+        "name": "Baie d'Halong",
+        "meta_title": "Guide Baie d'Halong 2026 — Croisière, que faire, conseils",
+        "meta_description": (
+            "Guide de la baie d'Halong : choisir sa croisière, kayak, grottes et "
+            "baie de Bai Tu Long. Conseils pratiques depuis Hanoï."
+        ),
+        "tagline": "Pitons karstiques émergeant d'une mer d'émeraude",
+        "location_meta": {"label": "Halong", "booking_city": "Ha Long Bay, Vietnam"},
+        "overview": """
+<p>Classée à l'UNESCO, la baie d'Halong aligne près de 2 000 îlots calcaires
+surgissant d'eaux turquoise. L'expérience phare reste la croisière d'une ou
+deux nuits, entre grottes, plages cachées et villages flottants.</p>
+<p>Comptez 2h30 de route depuis Hanoï. Pour fuir la foule, privilégiez la baie
+voisine de Bai Tu Long, plus calme et tout aussi spectaculaire.</p>
+""",
+        "things_to_do": [
+            {"title": "Croisière 2J/1N", "desc": "Le meilleur moyen de vivre la baie au lever et coucher du soleil."},
+            {"title": "Grotte Sung Sot", "desc": "La « grotte de la Surprise », la plus vaste et impressionnante de la baie."},
+            {"title": "Île Ti Top", "desc": "Montée au belvédère pour un panorama à 360° sur les îlots."},
+            {"title": "Kayak & baignade", "desc": "Pagayez entre les pitons et explorez les lagons cachés."},
+            {"title": "Baie de Bai Tu Long", "desc": "Alternative paisible, loin des grandes flottes touristiques."},
+        ],
+        "hotels": [
+            {"name": "Croisière tout confort", "search": "Halong Bay cruise 2 days 1 night", "desc": "Cabines avec hublot, repas et activités inclus.", "price_hint": "dès 95 €/pers", "provider": "booking"},
+            {"name": "Hôtel à Halong City", "search": "Halong city hotel bay view", "desc": "Pratique avant ou après la croisière.", "price_hint": "dès 35 €/nuit", "provider": "booking"},
+            {"name": "Croisière premium Bai Tu Long", "search": "Bai Tu Long Bay luxury cruise", "desc": "Petite flotte, baie préservée, service soigné.", "price_hint": "dès 160 €/pers", "provider": "booking"},
+        ],
+        "activities": [
+            {"name": "Croisière Halong 2J/1N", "search": "Halong Bay cruise 2 days 1 night", "desc": "Transport depuis Hanoï, grottes et kayak inclus.", "price_hint": "dès 89 €", "provider": "getyourguide"},
+            {"name": "Excursion journée + transferts", "search": "Halong Bay day trip from Hanoi", "desc": "Idéal si vous manquez de temps.", "price_hint": "dès 45 €", "provider": "viator"},
+            {"name": "Kayak guidé dans la baie", "search": "Halong Bay kayaking tour", "desc": "Exploration des lagons à la pagaie.", "price_hint": "dès 20 €", "provider": "getyourguide"},
+        ],
+        "tips": [
+            "Réservez une compagnie réputée — la qualité des croisières varie énormément.",
+            "Nov–avril offre le meilleur temps ; évitez la saison des typhons (juil–sept).",
+            "Une nuit à bord suffit ; deux nuits permettent d'atteindre Bai Tu Long.",
+            "Prévoyez une petite laine : les soirées sur l'eau sont fraîches en hiver.",
+        ],
+    },
+    "sapa": {
+        "slug": "sapa",
+        "name": "Sapa",
+        "meta_title": "Guide Sapa 2026 — Trek, rizières en terrasse et ethnies",
+        "meta_description": (
+            "Guide de Sapa : treks dans la vallée de Muong Hoa, rizières en "
+            "terrasse, mont Fansipan, homestays et marchés ethniques."
+        ),
+        "tagline": "Rizières en terrasse et villages des montagnes du Nord",
+        "location_meta": {"label": "Sapa", "booking_city": "Sapa, Vietnam"},
+        "overview": """
+<p>Perchée dans les montagnes du Nord-Ouest, Sapa déploie des rizières en
+terrasse parmi les plus belles d'Asie, cultivées par les ethnies Hmong et Dao.
+Randonnées, homestays et marchés colorés rythment le séjour.</p>
+<p>On y accède en 5 à 6h depuis Hanoï (bus direct ou train de nuit jusqu'à Lào
+Cai). Le mont Fansipan, « toit de l'Indochine » (3 143 m), se rejoint en
+téléphérique.</p>
+""",
+        "things_to_do": [
+            {"title": "Trek dans la vallée de Muong Hoa", "desc": "Rizières en terrasse, hameaux Hmong et points de vue à couper le souffle."},
+            {"title": "Mont Fansipan", "desc": "Téléphérique record jusqu'au plus haut sommet du Vietnam."},
+            {"title": "Village de Cat Cat", "desc": "Cascade, maisons traditionnelles et artisanat à deux pas de Sapa."},
+            {"title": "Nuit en homestay à Ta Van", "desc": "Immersion chez l'habitant au cœur des terrasses."},
+            {"title": "Marché de Bac Ha (dimanche)", "desc": "Le plus grand marché ethnique de la région."},
+        ],
+        "hotels": [
+            {"name": "Homestay dans les rizières", "search": "Ta Van homestay rice terrace Sapa", "desc": "Accueil chez l'habitant, vue sur la vallée.", "price_hint": "dès 15 €/nuit", "provider": "booking"},
+            {"name": "Hôtel vue vallée à Sapa", "search": "Sapa hotel valley view", "desc": "Confort en ville, terrasses panoramiques.", "price_hint": "dès 30 €/nuit", "provider": "booking"},
+            {"name": "Éco-lodge de montagne", "search": "Sapa eco lodge mountain", "desc": "Calme et nature, idéal après le trek.", "price_hint": "dès 60 €/nuit", "provider": "booking"},
+        ],
+        "activities": [
+            {"name": "Trek guidé Muong Hoa 1 jour", "search": "Sapa trekking Muong Hoa valley guide", "desc": "Guide local d'une ethnie de la région.", "price_hint": "dès 30 €", "provider": "getyourguide"},
+            {"name": "Téléphérique du Fansipan", "search": "Fansipan cable car ticket Sapa", "desc": "Billet pour le sommet et ses temples.", "price_hint": "dès 35 €", "provider": "getyourguide"},
+            {"name": "Excursion marché de Bac Ha", "search": "Bac Ha Sunday market tour", "desc": "Marché ethnique du dimanche.", "price_hint": "dès 28 €", "provider": "viator"},
+        ],
+        "tips": [
+            "Engagez un guide local : il ouvre les portes des villages et soutient l'économie ethnique.",
+            "Septembre = rizières dorées avant la récolte ; mars–mai pour la verdure.",
+            "Habillez-vous en couches : la météo de montagne change vite.",
+            "Le train de nuit + navette est plus reposant que le bus direct.",
+        ],
+    },
+    "delta-du-mekong": {
+        "slug": "delta-du-mekong",
+        "name": "Delta du Mékong",
+        "meta_title": "Guide Delta du Mékong 2026 — Marchés flottants & Can Tho",
+        "meta_description": (
+            "Guide du delta du Mékong : marché flottant de Cai Rang, Can Tho, "
+            "Ben Tre, homestays et balades en sampan parmi les vergers."
+        ),
+        "tagline": "Labyrinthe de canaux, marchés flottants et vergers",
+        "location_meta": {"label": "Can Tho", "booking_city": "Can Tho, Vietnam"},
+        "overview": """
+<p>Au sud de Hô-Chi-Minh-Ville, le delta du Mékong est une mosaïque de bras de
+fleuve, de rizières et de vergers. La vie s'y organise autour de l'eau :
+marchés flottants, maisons sur pilotis et sampans glissant entre les
+cocoteraies.</p>
+<p>Can Tho, capitale du delta, sert de base idéale. Une excursion à la journée
+depuis Saigon donne un aperçu ; une nuit sur place permet d'atteindre le marché
+flottant de Cai Rang à l'aube, au meilleur moment.</p>
+""",
+        "things_to_do": [
+            {"title": "Marché flottant de Cai Rang", "desc": "Le plus grand du delta, animé dès le lever du jour, près de Can Tho."},
+            {"title": "Balade en sampan", "desc": "Glissez dans les petits canaux bordés de palmiers d'eau."},
+            {"title": "Ben Tre, royaume du coco", "desc": "Ateliers de bonbons, vergers et fabriques artisanales."},
+            {"title": "Nuit en homestay", "desc": "Vie rurale, cuisine locale et lever de soleil sur le fleuve."},
+            {"title": "Vélo entre les vergers", "desc": "Pédalez sur les digues entre rizières et arbres fruitiers."},
+        ],
+        "hotels": [
+            {"name": "Hôtel en bord de fleuve à Can Tho", "search": "Can Tho riverside hotel", "desc": "Idéal pour rejoindre Cai Rang à l'aube.", "price_hint": "dès 28 €/nuit", "provider": "booking"},
+            {"name": "Homestay dans le delta", "search": "Mekong Delta homestay Ben Tre", "desc": "Immersion chez l'habitant au bord de l'eau.", "price_hint": "dès 18 €/nuit", "provider": "booking"},
+            {"name": "Éco-resort fluvial", "search": "Mekong Delta eco resort river", "desc": "Bungalows au calme parmi les vergers.", "price_hint": "dès 55 €/nuit", "provider": "booking"},
+        ],
+        "activities": [
+            {"name": "Marché flottant Cai Rang + sampan", "search": "Cai Rang floating market boat tour Can Tho", "desc": "Sortie matinale en bateau.", "price_hint": "dès 22 €", "provider": "getyourguide"},
+            {"name": "Excursion delta 1 jour depuis Saigon", "search": "Mekong Delta day trip from Ho Chi Minh", "desc": "My Tho ou Ben Tre, transferts inclus.", "price_hint": "dès 25 €", "provider": "viator"},
+            {"name": "Tour à vélo dans le delta", "search": "Mekong Delta cycling tour", "desc": "Villages, vergers et chemins de digue.", "price_hint": "dès 35 €", "provider": "getyourguide"},
+        ],
+        "tips": [
+            "Dormez à Can Tho pour atteindre Cai Rang vers 6h, quand le marché bat son plein.",
+            "L'excursion à la journée depuis Saigon est pratique mais condensée.",
+            "Saison sèche (nov–avr) plus confortable ; la saison des fruits va de mai à septembre.",
+            "Emportez un anti-moustique : les soirées au bord de l'eau en réclament.",
+        ],
+    },
+    "hue": {
+        "slug": "hue",
+        "name": "Huế",
+        "meta_title": "Guide Huế 2026 — Cité impériale, tombeaux royaux & rivière",
+        "meta_description": (
+            "Guide de Huế : Cité impériale, tombeaux des empereurs, pagode Thien "
+            "Mu, rivière des Parfums et col de Hai Van vers Đà Nẵng."
+        ),
+        "tagline": "Ancienne capitale impériale au bord de la rivière des Parfums",
+        "location_meta": {"label": "Hue", "booking_city": "Hue, Vietnam"},
+        "overview": """
+<p>Capitale du Vietnam sous la dynastie Nguyễn, Huế conserve un patrimoine
+impérial classé à l'UNESCO : la Citadelle et sa Cité pourpre interdite, les
+mausolées royaux disséminés le long de la rivière des Parfums et de superbes
+pagodes.</p>
+<p>Idéalement placée entre Đà Nẵng et la zone démilitarisée (DMZ), Huế se relie
+à Hội An par la route panoramique du col de Hai Van, l'une des plus belles du
+pays.</p>
+""",
+        "things_to_do": [
+            {"title": "Citadelle impériale", "desc": "Palais, portes monumentales et Cité pourpre interdite des empereurs."},
+            {"title": "Tombeaux royaux", "desc": "Tu Duc et Khai Dinh, chefs-d'œuvre mêlant styles vietnamien et européen."},
+            {"title": "Pagode Thien Mu", "desc": "Emblème de Huế, dressée au-dessus de la rivière des Parfums."},
+            {"title": "Croisière sur la rivière des Parfums", "desc": "En bateau-dragon vers les pagodes et mausolées."},
+            {"title": "Col de Hai Van", "desc": "Route mythique entre Huế et Đà Nẵng, vues sur la mer."},
+        ],
+        "hotels": [
+            {"name": "Hôtel en bord de rivière à Huế", "search": "Hue riverside hotel Perfume River", "desc": "Calme et central, proche de la Citadelle.", "price_hint": "dès 30 €/nuit", "provider": "booking"},
+            {"name": "Boutique-hôtel de charme", "search": "Hue boutique hotel old town", "desc": "Cadre élégant, service attentionné.", "price_hint": "dès 55 €/nuit", "provider": "booking"},
+            {"name": "Auberge conviviale", "search": "Hue hostel city center", "desc": "Budget, tours organisés vers la DMZ.", "price_hint": "dès 8 €/nuit", "provider": "booking"},
+        ],
+        "activities": [
+            {"name": "Visite guidée de la Citadelle", "search": "Hue Imperial City guided tour", "desc": "Histoire de la dynastie Nguyễn.", "price_hint": "dès 25 €", "provider": "getyourguide"},
+            {"name": "Tour des tombeaux royaux", "search": "Hue royal tombs tour", "desc": "Tu Duc, Khai Dinh et Minh Mang.", "price_hint": "dès 30 €", "provider": "viator"},
+            {"name": "Transfert panoramique Hai Van vers Hội An", "search": "Hue to Hoi An car Hai Van pass", "desc": "Voiture privée avec arrêts photo.", "price_hint": "dès 45 €", "provider": "getyourguide"},
+        ],
+        "tips": [
+            "Combinez Huế et Hội An via le col de Hai Van plutôt que le tunnel.",
+            "Louez un vélo ou un scooter pour relier les tombeaux dispersés.",
+            "Évitez octobre–décembre, période des pluies et des crues.",
+            "Goûtez la cuisine impériale : bún bò Huế et banh khoai en tête.",
+        ],
+    },
+    "phu-quoc": {
+        "slug": "phu-quoc",
+        "name": "Phú Quốc",
+        "meta_title": "Guide Phú Quốc 2026 — Plages, îles An Thoi & téléphérique",
+        "meta_description": (
+            "Guide de Phú Quốc : plages de Sao et Long Beach, snorkeling aux îles "
+            "An Thoi, téléphérique de Hon Thom, marché nocturne et fermes de poivre."
+        ),
+        "tagline": "Île tropicale aux plages de sable blanc du golfe de Thaïlande",
+        "location_meta": {"label": "Phu Quoc", "booking_city": "Phu Quoc, Vietnam"},
+        "overview": """
+<p>Plus grande île du Vietnam, Phú Quốc séduit par ses plages de sable blanc,
+ses eaux chaudes et ses couchers de soleil sur le golfe de Thaïlande. On y vient
+pour se détendre, plonger et explorer l'archipel d'An Thoi.</p>
+<p>Accessible en vol direct depuis Hô-Chi-Minh-Ville ou Hanoï, l'île mêle
+resorts, marché nocturne animé, fermes de poivre et fabriques de nuoc-mâm. Le
+téléphérique de Hon Thom est le plus long au-dessus de la mer au monde.</p>
+""",
+        "things_to_do": [
+            {"title": "Sao Beach & Long Beach", "desc": "Les plus belles plages de l'île, sable poudreux et eau turquoise."},
+            {"title": "Snorkeling aux îles An Thoi", "desc": "Sortie en bateau entre îlots et récifs coralliens."},
+            {"title": "Téléphérique de Hon Thom", "desc": "Traversée spectaculaire au-dessus de la mer vers le parc aquatique."},
+            {"title": "Marché nocturne de Duong Dong", "desc": "Fruits de mer grillés, souvenirs et ambiance locale."},
+            {"title": "Fermes de poivre & nuoc-mâm", "desc": "Découverte des spécialités qui ont fait la réputation de l'île."},
+        ],
+        "hotels": [
+            {"name": "Resort sur Long Beach", "search": "Phu Quoc resort Long Beach", "desc": "Accès direct à la plage, piscine et spa.", "price_hint": "dès 60 €/nuit", "provider": "booking"},
+            {"name": "Hôtel proche du marché nocturne", "search": "Phu Quoc hotel Duong Dong night market", "desc": "Pratique pour sorties et restaurants.", "price_hint": "dès 30 €/nuit", "provider": "booking"},
+            {"name": "Bungalow en bord de mer", "search": "Phu Quoc beach bungalow", "desc": "Cadre intimiste face au coucher de soleil.", "price_hint": "dès 45 €/nuit", "provider": "booking"},
+        ],
+        "activities": [
+            {"name": "Island hopping & snorkeling An Thoi", "search": "Phu Quoc An Thoi islands snorkeling tour", "desc": "Bateau, masque et tuba fournis.", "price_hint": "dès 25 €", "provider": "getyourguide"},
+            {"name": "Billet téléphérique Hon Thom", "search": "Phu Quoc Hon Thom cable car ticket", "desc": "Accès au parc et plages du sud.", "price_hint": "dès 30 €", "provider": "getyourguide"},
+            {"name": "Croisière coucher de soleil", "search": "Phu Quoc sunset cruise", "desc": "Apéritif en mer face au soleil couchant.", "price_hint": "dès 35 €", "provider": "viator"},
+        ],
+        "tips": [
+            "Saison sèche de novembre à avril pour une mer calme et un ciel dégagé.",
+            "Louez un scooter pour rejoindre les plages du sud, plus sauvages.",
+            "Sao Beach offre le plus beau sable — arrivez tôt pour la tranquillité.",
+            "Réservez l'island hopping la veille via votre hôtel ou en ligne.",
+        ],
+    },
+})
