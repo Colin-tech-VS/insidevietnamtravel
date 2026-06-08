@@ -27,7 +27,10 @@
   padding: 1rem 1.25rem;
 }
 
-.table-scroll-x { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+/* position: relative confine les éléments absolus internes (.sr-only des
+   cellules) à la zone scrollable, sinon ils débordent et créent un scroll
+   horizontal parasite de la page entière sur mobile. */
+.table-scroll-x { position: relative; width: 100%; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
 .tool-callout {
   display: flex;
@@ -186,8 +189,8 @@
 .budget-field--row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 
 .budget-styles { display: flex; flex-direction: column; gap: 0.65rem; }
-.budget-style { cursor: pointer; }
-.budget-style input { position: absolute; opacity: 0; pointer-events: none; }
+.budget-style { position: relative; cursor: pointer; }
+.budget-style input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .budget-style__inner {
   display: grid;
   grid-template-columns: auto 1fr auto;
