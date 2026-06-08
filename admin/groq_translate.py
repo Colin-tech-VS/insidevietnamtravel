@@ -36,7 +36,7 @@ def translate_article_block(fr_data: dict, *, pause_before: float = 0) -> dict:
             },
         ],
         temperature=0.3,
-        max_tokens=8192,
+        max_tokens=5120,
         pause_before=pause_before,
     )
     return json.loads(response.choices[0].message.content)
@@ -65,7 +65,7 @@ def translate_destination_block(fr_data: dict, *, pause_before: float = 0) -> di
             },
         ],
         temperature=0.3,
-        max_tokens=8192,
+        max_tokens=6144,
         pause_before=pause_before,
     )
     data = json.loads(response.choices[0].message.content)

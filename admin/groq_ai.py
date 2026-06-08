@@ -9,17 +9,25 @@ from admin.store import slugify
 from admin.groq_translate import translate_article_block
 from i18n_utils import merge_bilingual_article
 
-# Longueur minimale selon type de guide (recommandations SEO)
+# Longueur minimale selon type de guide (recommandations SEO).
+# max_tokens dimensionné sur la cible réelle (≈ mots × 2,2 + ~400 de JSON/HTML)
+# pour NE PAS réserver tout le budget tokens/minute de Groq. Garde une marge
+# confortable contre la troncature, tout en restant bien sous 8192.
 SEO_WORD_TARGETS: dict[str, dict] = {
-    "Article blog SEO": {"min": 800, "target": 950, "max_tokens": 6144},
-    "Guide pratique": {"min": 1000, "target": 1200, "max_tokens": 8192},
-    "Guide ville": {"min": 1200, "target": 1500, "max_tokens": 8192},
-    "Itinéraire": {"min": 1500, "target": 1800, "max_tokens": 8192},
-    "Conseils budget": {"min": 1000, "target": 1200, "max_tokens": 8192},
-    "Gastronomie": {"min": 900, "target": 1100, "max_tokens": 8192},
+    "Article blog SEO": {"min": 800, "target": 950, "max_tokens": 3584},
+    "Guide pratique": {"min": 1000, "target": 1200, "max_tokens": 4608},
+    "Guide ville": {"min": 1200, "target": 1500, "max_tokens": 5120},
+    "Itinéraire": {"min": 1500, "target": 1800, "max_tokens": 6144},
+    "Conseils budget": {"min": 1000, "target": 1200, "max_tokens": 4608},
+    "Gastronomie": {"min": 900, "target": 1100, "max_tokens": 4096},
 }
 
-DEFAULT_SEO = {"min": 1000, "target": 1200, "max_tokens": 8192}
+DEFAULT_SEO = {"min": 1000, "target": 1200, "max_tokens": 4608}
+
+# On ne relance un enrichissement (appel supplémentaire) que si l'article est
+# nettement sous la cible. Un texte à 90 %+ du minimum est déjà publiable et
+# évite un second appel coûteux en tokens et en temps.
+EXPAND_TOLERANCE = 0.9
 
 SYSTEM_PROMPT = """Tu es un rédacteur SEO senior spécialisé voyage au Vietnam pour "Inside Vietnam Travel".
 
@@ -123,12 +131,13 @@ def _call_groq(client, model: str, messages: list, max_tokens: int, *, pause_bef
     return _parse_response(response.choices[0].message.content)
 
 
-def _expand_if_short(article: dict, guide_type: str, client, model: str) -> dict:
+def _expand_if_short(article: dict, guide_type: str, client, model: str = "") -> dict:
     target = _seo_target(guide_type)
     min_words = target["min"]
     current = _count_words(article["content"])
 
-    if current >= min_words:
+    # Tolérance : on n'engage un second appel que si l'article est nettement court.
+    if current >= min_words * EXPAND_TOLERANCE:
         article["word_count"] = current
         article["read_time"] = _read_time_from_words(current)
         return article
@@ -144,15 +153,17 @@ Enrichis SANS changer le slug implicite ni le sujet :
 Article :
 {json.dumps({k: article[k] for k in ('title', 'excerpt', 'content', 'tags', 'city') if k in article}, ensure_ascii=False)}"""
 
+    # Enrichissement sur le modèle rapide : bucket tokens/minute distinct du
+    # modèle principal (ne grignote pas son quota) et nettement plus véloce.
     data = _call_groq(
         client,
-        model,
+        groq_client.fast_model(),
         [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": expand_prompt},
         ],
         target["max_tokens"],
-        pause_before=3.0,
+        pause_before=1.5,
     )
 
     article.update({
@@ -207,9 +218,9 @@ Exigences :
     )
 
     article = _build_article(data, topic, city, guide_type)
-    article = _expand_if_short(article, guide_type, client, model)
+    article = _expand_if_short(article, guide_type, client)
     try:
-        en_data = translate_article_block(article, pause_before=3.0)
+        en_data = translate_article_block(article, pause_before=1.5)
         shared = {
             k: v for k, v in article.items()
             if k not in (
@@ -267,9 +278,9 @@ def improve_guide(article: dict, instructions: str) -> dict:
     wc = _count_words(article["content"])
     article["word_count"] = wc
     article["read_time"] = _read_time_from_words(wc)
-    article = _expand_if_short(article, guide_type, client, model)
+    article = _expand_if_short(article, guide_type, client)
     try:
-        en_data = translate_article_block(article, pause_before=3.0)
+        en_data = translate_article_block(article, pause_before=1.5)
         shared = {
             k: v for k, v in article.items()
             if k not in (

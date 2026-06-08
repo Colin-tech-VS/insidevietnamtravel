@@ -78,7 +78,7 @@ def generate_newsletter_email(
             {"role": "user", "content": user_msg},
         ],
         temperature=0.7,
-        max_tokens=4096,
+        max_tokens=2048,
     )
     raw = response.choices[0].message.content or ""
     data = _parse_response(raw)
