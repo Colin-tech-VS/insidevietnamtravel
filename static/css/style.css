@@ -2421,7 +2421,6 @@ a.article-category:hover { text-decoration: underline; }
   .logo-name { font-size: 0.98rem; }
   .header-actions { gap: 0.3rem; }
   .lang-switch__btn { min-width: 1.85rem; padding: 0.3rem 0.4rem; }
-  .site-search-bar { width: 2.2rem; height: 2.2rem; }
   .nav-toggle { width: 2.25rem; height: 2.25rem; }
   .hero-stats .stat { min-width: 100%; }
   .stat-number { font-size: 1.65rem; }
@@ -2479,17 +2478,31 @@ a.article-category:hover { text-decoration: underline; }
   background: var(--rice);
   color: var(--ink-muted);
 }
-/* Tablette/mobile : on réduit la barre à une pastille icône pour gagner de la
-   place dans le header (même seuil que la nav en hamburger). */
+/* Tablette/mobile : on réduit la barre à un bouton icône carré qui s'accorde
+   avec le hamburger (même seuil, même taille, même langage visuel) pour que les
+   actions du header forment une paire cohérente. L'icône reste en teal pour
+   conserver l'affordance de recherche. */
 @media (max-width: 1200px) {
   .site-search-bar {
-    width: 2.4rem;
+    width: 2.5rem;
+    height: 2.5rem;
     justify-content: center;
     padding: 0;
-    border-radius: 50%;
+    border-radius: var(--radius-sm);
+    border-color: var(--rice-dark);
+  }
+  .site-search-bar:hover {
+    border-color: rgba(27, 77, 74, 0.25);
+    background: rgba(27, 77, 74, 0.04);
+    box-shadow: none;
   }
   .site-search-bar__text,
   .site-search-bar__kbd { display: none; }
+}
+/* Petit écran : on réduit le bouton recherche à la même taille que le
+   hamburger. Placé après la règle ≤1200px pour l'emporter dans la cascade. */
+@media (max-width: 480px) {
+  .site-search-bar { width: 2.25rem; height: 2.25rem; }
 }
 
 .search-overlay {
