@@ -471,8 +471,8 @@ UI: dict[str, dict[str, str]] = {
         "en": "Destination, hotel, activity, itinerary…",
     },
     "search.bar": {
-        "fr": "Rechercher une destination, un hôtel, une activité…",
-        "en": "Search a destination, hotel, activity…",
+        "fr": "Rechercher",
+        "en": "Search",
     },
     "search.hint": {
         "fr": "Tapez pour trouver une destination, un hôtel, une activité, un guide ou un outil.",
