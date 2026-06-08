@@ -1255,8 +1255,20 @@ body.is-nav-open { overflow: hidden; }
 
   .container { padding: 0 1rem; }
 
-  .logo-icon { width: 34px; height: 34px; }
-  .logo-name { font-size: 1.05rem; }
+  /* Header compact : on resserre les espacements et on autorise le logo à se
+     tronquer plutôt que de pousser le header au-delà de l'écran. */
+  .header-inner { gap: 0.5rem; }
+  .header-actions { gap: 0.4rem; }
+
+  .logo { min-width: 0; flex-shrink: 1; gap: 0.55rem; }
+  .logo-text { min-width: 0; }
+  .logo-icon { width: 34px; height: 34px; flex-shrink: 0; }
+  .logo-name {
+    font-size: 1.05rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .logo-sub { font-size: 0.62rem; }
 
   .flash-messages {
@@ -2405,7 +2417,12 @@ a.article-category:hover { text-decoration: underline; }
 
 @media (max-width: 480px) {
   .logo-sub { display: none; }
-  .lang-switch__btn { min-width: 2rem; padding: 0.35rem 0.45rem; }
+  .logo-icon { width: 30px; height: 30px; }
+  .logo-name { font-size: 0.98rem; }
+  .header-actions { gap: 0.3rem; }
+  .lang-switch__btn { min-width: 1.85rem; padding: 0.3rem 0.4rem; }
+  .site-search-bar { width: 2.2rem; height: 2.2rem; }
+  .nav-toggle { width: 2.25rem; height: 2.25rem; }
   .hero-stats .stat { min-width: 100%; }
   .stat-number { font-size: 1.65rem; }
 }
