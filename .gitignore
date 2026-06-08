@@ -1,6 +1,7 @@
 .env
 .env.local
 data/site.db
+data/site.db-journal
 data/newsletter_subscribers.txt
 __pycache__/
 *.pyc
