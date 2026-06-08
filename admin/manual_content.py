@@ -6,11 +6,19 @@ import re
 from datetime import date
 
 from admin.store import slugify
+from i18n_utils import merge_bilingual_article, merge_bilingual_destination
 
 CATEGORY_LABELS = {
     "practical": "Pratique",
     "food": "Gastronomie",
     "itinerary": "Itinéraire",
+    "budget": "Budget",
+}
+
+CATEGORY_LABELS_EN = {
+    "practical": "Practical",
+    "food": "Food & dining",
+    "itinerary": "Itinerary",
     "budget": "Budget",
 }
 
@@ -131,22 +139,34 @@ def build_manual_article(form) -> dict:
         tags.insert(0, city)
 
     wc = _word_count(content)
-    return {
-        "slug": slug,
+    fr_data = {
         "title": title,
         "excerpt": excerpt[:160],
-        "category": category,
         "category_label": CATEGORY_LABELS.get(category, "Pratique"),
+        "content": content,
+        "tags": tags[:12],
+    }
+    en_data = {}
+    if (form.get("title_en") or "").strip():
+        en_data = {
+            "title": (form.get("title_en") or "").strip(),
+            "excerpt": _strip_html(form.get("excerpt_en") or "")[:160],
+            "content": _ensure_html(form.get("content_en") or ""),
+            "category_label": (form.get("category_label_en") or CATEGORY_LABELS_EN.get(category, "Practical")),
+            "tags": [t.strip() for t in (form.get("tags_en") or "").split(",") if t.strip()],
+        }
+    shared = {
+        "slug": slug,
+        "category": category,
         "date": date.today().isoformat(),
         "read_time": max(5, round(wc / 200)),
         "word_count": wc,
         "featured": False,
-        "tags": tags[:12],
-        "content": content,
         "city": city,
         "ai_generated": False,
         "manual": True,
     }
+    return merge_bilingual_article(fr_data, en_data, shared)
 
 
 def build_manual_destination(form) -> dict:
@@ -178,22 +198,34 @@ def build_manual_destination(form) -> dict:
     things = _parse_things_from_html(form.get("things_to_do") or "")
     tips = _parse_list_items(form.get("tips") or "")
 
-    return {
-        "slug": slug,
+    fr_data = {
         "name": name,
         "meta_title": meta_title,
         "meta_description": meta_description[:160],
         "tagline": tagline,
         "overview": overview,
-        "things_to_do": things or [
-            {"title": f"Découvrir {name}", "desc": "À compléter depuis l'admin."},
-        ],
+        "things_to_do": things or [{"title": f"Découvrir {name}", "desc": "À compléter depuis l'admin."}],
+        "tips": tips or [f"Prévoyez 2–4 jours pour explorer {name}."],
+    }
+    en_data = {}
+    if (form.get("name_en") or "").strip():
+        en_data = {
+            "name": (form.get("name_en") or "").strip(),
+            "meta_title": (form.get("meta_title_en") or "").strip(),
+            "meta_description": _strip_html(form.get("meta_description_en") or "")[:160],
+            "tagline": (form.get("tagline_en") or "").strip(),
+            "overview": _ensure_html(form.get("overview_en") or ""),
+            "things_to_do": _parse_things_from_html(form.get("things_to_do_en") or ""),
+            "tips": _parse_list_items(form.get("tips_en") or ""),
+        }
+    shared = {
+        "slug": slug,
         "hotels": [],
         "activities": [],
-        "tips": tips or [f"Prévoyez 2–4 jours pour explorer {name}."],
         "location_meta": loc,
         "city": city,
         "ai_generated": False,
         "manual": True,
         "updated_at": date.today().isoformat(),
     }
+    return merge_bilingual_destination(fr_data, en_data, shared)

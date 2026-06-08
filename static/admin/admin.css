@@ -1003,6 +1003,49 @@ code {
   margin: -1.25rem -1.25rem 1rem;
 }
 
+.email-preview-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+.email-preview-frame-wrap {
+  border: 1px solid var(--rice-dark);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: #faf7f2;
+}
+.email-preview-frame {
+  display: block;
+  width: 100%;
+  min-height: 520px;
+  border: none;
+  background: #faf7f2;
+}
+.draft-actions--newsletter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+.draft-action-form--inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.draft-test-input {
+  min-width: 220px;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid var(--rice-dark);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+}
+
 .form-field { margin-bottom: 1.25rem; }
 .form-field label {
   margin-top: 0;

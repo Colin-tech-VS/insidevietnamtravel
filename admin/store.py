@@ -1,56 +1,23 @@
-"""JSON stores — settings, affiliates, articles."""
+"""Store contenu & réglages — Supabase (JSONB) ou fichiers JSON locaux."""
 
-import json
 import re
 from copy import deepcopy
 from datetime import date
-from pathlib import Path
-from typing import Any
 
 from data.affiliates import AFFILIATE_IDS as DEFAULT_AFFILIATE_IDS
-from data.affiliates import PDF_GUIDE as DEFAULT_PDF_GUIDE
 from data.articles import ARTICLES as DEFAULT_ARTICLES
 from data.articles import CATEGORIES as DEFAULT_CATEGORIES
 from data.destinations import DESTINATIONS as DEFAULT_DESTINATIONS
 
-STORE_DIR = Path(__file__).parent.parent / "data" / "store"
-SETTINGS_FILE = STORE_DIR / "settings.json"
-AFFILIATES_FILE = STORE_DIR / "affiliate_ids.json"
-CUSTOM_PARTNERS_FILE = STORE_DIR / "custom_partners.json"
-ARTICLES_FILE = STORE_DIR / "articles.json"
-DESTINATIONS_FILE = STORE_DIR / "destinations.json"
-
-_json_cache: dict[str, tuple[float, Any]] = {}
-
-
-def _read_json(path: Path, default):
-    if path.exists():
-        with open(path, encoding="utf-8") as f:
-            return json.load(f)
-    return deepcopy(default)
-
-
-def _read_json_cached(path: Path, default, cache_key: str):
-    mtime = path.stat().st_mtime if path.exists() else -1.0
-    cached = _json_cache.get(cache_key)
-    if cached and cached[0] == mtime:
-        return deepcopy(cached[1])
-    data = _read_json(path, default)
-    if path.exists():
-        _json_cache[cache_key] = (mtime, data)
-    return deepcopy(data)
-
-
-def _invalidate_cache(*keys: str):
-    for key in keys:
-        _json_cache.pop(key, None)
-
-
-def _write_json(path: Path, data, *cache_keys: str):
-    STORE_DIR.mkdir(parents=True, exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-    _invalidate_cache(*cache_keys)
+from admin.kv_store import get_json, set_json
+from i18n_utils import (
+    DEFAULT_LANG,
+    localize_article,
+    localize_category,
+    localize_destination,
+    wrap_article_i18n,
+    wrap_destination_i18n,
+)
 
 
 def get_settings() -> dict:
@@ -68,29 +35,36 @@ def get_settings() -> dict:
             "pdf": 9.0,
         },
     }
-    return {**defaults, **_read_json_cached(SETTINGS_FILE, {}, "settings")}
+    stored = get_json("settings", {}, file_name="settings.json")
+    if stored is None:
+        stored = {}
+    return {**defaults, **stored}
 
 
 def save_settings(data: dict):
     current = get_settings()
     current.update(data)
-    _write_json(SETTINGS_FILE, current, "settings")
+    set_json("settings", current, file_name="settings.json")
 
 
 def get_affiliate_ids() -> dict:
-    return {**DEFAULT_AFFILIATE_IDS, **_read_json_cached(AFFILIATES_FILE, {}, "affiliates")}
+    stored = get_json("affiliate_ids", {}, file_name="affiliate_ids.json")
+    if stored is None:
+        stored = {}
+    return {**DEFAULT_AFFILIATE_IDS, **stored}
 
 
 def save_affiliate_ids(data: dict):
-    _write_json(AFFILIATES_FILE, data, "affiliates")
+    set_json("affiliate_ids", data, file_name="affiliate_ids.json")
 
 
 def get_custom_partners() -> list:
-    return _read_json_cached(CUSTOM_PARTNERS_FILE, [], "custom_partners")
+    stored = get_json("custom_partners", [], file_name="custom_partners.json")
+    return stored if stored is not None else []
 
 
 def save_custom_partners(partners: list):
-    _write_json(CUSTOM_PARTNERS_FILE, partners, "custom_partners")
+    set_json("custom_partners", partners, file_name="custom_partners.json")
 
 
 def add_custom_partner(partner: dict):
@@ -107,61 +81,94 @@ def delete_custom_partner(partner_id: str):
 
 def is_configured(value: str) -> bool:
     if not value or value.startswith("#"):
-        return value.startswith("http")  # PDF URL
+        return value.startswith("http")
     return "PLACEHOLDER" not in value.upper()
 
 
-def get_articles() -> list:
-    stored = _read_json_cached(ARTICLES_FILE, None, "articles")
+def _raw_articles() -> list:
+    stored = get_json("articles", None, file_name="articles.json")
     if stored is None:
-        _write_json(ARTICLES_FILE, DEFAULT_ARTICLES, "articles")
+        set_json("articles", DEFAULT_ARTICLES, file_name="articles.json")
         return deepcopy(DEFAULT_ARTICLES)
     return stored
 
 
-def get_categories() -> dict:
-    return DEFAULT_CATEGORIES
+def get_articles(lang: str | None = None) -> list:
+    articles = [wrap_article_i18n(a) for a in _raw_articles()]
+    if lang:
+        return [localize_article(a, lang) for a in articles]
+    return articles
+
+
+def get_categories(lang: str | None = None) -> dict:
+    if not lang:
+        return DEFAULT_CATEGORIES
+    return {
+        key: localize_category(cat, lang)
+        for key, cat in DEFAULT_CATEGORIES.items()
+    }
 
 
 def save_articles(articles: list):
-    _write_json(ARTICLES_FILE, articles, "articles")
+    normalized = [wrap_article_i18n(a) for a in articles]
+    set_json("articles", normalized, file_name="articles.json")
 
 
-def get_article_by_slug(slug: str) -> dict | None:
-    return next((a for a in get_articles() if a["slug"] == slug), None)
+def get_article_by_slug(slug: str, lang: str | None = None) -> dict | None:
+    article = next((a for a in _raw_articles() if a["slug"] == slug), None)
+    if not article:
+        return None
+    article = wrap_article_i18n(article)
+    return localize_article(article, lang) if lang else article
 
 
 def add_article(article: dict):
-    articles = get_articles()
-    articles = [a for a in articles if a["slug"] != article["slug"]]
+    articles = _raw_articles()
+    article = wrap_article_i18n(article)
+    articles = [wrap_article_i18n(a) for a in articles if a["slug"] != article["slug"]]
     articles.insert(0, article)
     save_articles(articles)
 
 
-def get_destinations_dict() -> dict:
-    stored = _read_json_cached(DESTINATIONS_FILE, None, "destinations")
+def _raw_destinations() -> dict:
+    stored = get_json("destinations", None, file_name="destinations.json")
     if stored is None:
-        _write_json(DESTINATIONS_FILE, DEFAULT_DESTINATIONS, "destinations")
+        set_json("destinations", DEFAULT_DESTINATIONS, file_name="destinations.json")
         return deepcopy(DEFAULT_DESTINATIONS)
     return stored
 
 
+def get_destinations_dict(lang: str | None = None) -> dict:
+    raw = _raw_destinations()
+    wrapped = {slug: wrap_destination_i18n(d) for slug, d in raw.items()}
+    if not lang:
+        return wrapped
+    return {
+        slug: localize_destination(d, lang)
+        for slug, d in wrapped.items()
+    }
+
+
 def save_destinations(destinations: dict):
-    _write_json(DESTINATIONS_FILE, destinations, "destinations")
+    set_json("destinations", destinations, file_name="destinations.json")
 
 
-def get_destination_by_slug(slug: str) -> dict | None:
-    return get_destinations_dict().get(slug)
+def get_destination_by_slug(slug: str, lang: str | None = None) -> dict | None:
+    dest = _raw_destinations().get(slug)
+    if not dest:
+        return None
+    dest = wrap_destination_i18n(dest)
+    return localize_destination(dest, lang) if lang else dest
 
 
 def add_or_update_destination(dest: dict):
-    data = get_destinations_dict()
-    data[dest["slug"]] = dest
+    data = _raw_destinations()
+    data[dest["slug"]] = wrap_destination_i18n(dest)
     save_destinations(data)
 
 
 def delete_destination(slug: str):
-    data = get_destinations_dict()
+    data = _raw_destinations()
     data.pop(slug, None)
     save_destinations(data)
 

@@ -38,6 +38,7 @@ from admin.newsletter_service import (
     send_newsletter_email,
     remove_newsletter_subscriber,
     is_smtp_configured,
+    render_newsletter_preview,
 )
 from admin.manual_content import build_manual_article, build_manual_destination, CATEGORY_LABELS
 from data.affiliate_partners import PARTNER_BY_KEY
@@ -312,6 +313,25 @@ def newsletter_admin():
                 draft = build_manual_newsletter(request.form)
                 session["draft_newsletter"] = draft
                 flash("Brouillon email enregistré — vérifiez l'aperçu.", "success")
+            elif action == "send_test":
+                draft = session.get("draft_newsletter")
+                if not draft:
+                    flash("Composez d'abord un email (IA ou manuel).", "error")
+                    return redirect(url_for("admin.newsletter_admin"))
+                test_email = (request.form.get("test_email") or "").strip().lower()
+                if not test_email or "@" not in test_email:
+                    flash("Indiquez une adresse email de test valide.", "error")
+                    return redirect(url_for("admin.newsletter_admin"))
+                result = send_newsletter_email(
+                    [test_email],
+                    draft["subject"],
+                    draft["body_html"],
+                    preheader=draft.get("preheader", ""),
+                )
+                if result["sent"]:
+                    flash(f"Email de test envoyé à {test_email}.", "success")
+                else:
+                    flash(f"Échec d'envoi vers {test_email}.", "error")
             elif action == "send_one":
                 draft = session.get("draft_newsletter")
                 if not draft:
@@ -361,15 +381,28 @@ def newsletter_admin():
 
     subscribers = get_newsletter_subscribers()
     draft = session.get("draft_newsletter")
+    preview_html = render_newsletter_preview(draft) if draft else ""
     return render_template(
         "admin/newsletter.html",
         subscribers=subscribers,
         draft=draft,
+        preview_html=preview_html,
         groq_ok=bool(os.environ.get("GROQ_API_KEY")),
         smtp_ok=is_smtp_configured(),
         email_types=groq_newsletter.EMAIL_TYPES,
         draft_is_manual=bool(draft and draft.get("manual")),
+        test_email_default=os.environ.get("LEGAL_CONTACT_EMAIL", ""),
     )
+
+
+@admin_bp.route("/newsletter/preview")
+@login_required
+def newsletter_preview():
+    from flask import Response
+    draft = session.get("draft_newsletter")
+    if not draft:
+        return "Aucun brouillon.", 404
+    return Response(render_newsletter_preview(draft), mimetype="text/html; charset=utf-8")
 
 
 @admin_bp.route("/api/newsletter/generate", methods=["POST"])

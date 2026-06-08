@@ -129,9 +129,29 @@ CATEGORIES = {
     "practical": {
         "label": "Guides pratiques",
         "description": "Visa, budget, eSIM, sécurité et transport pour préparer votre voyage au Vietnam.",
+        "i18n": {
+            "fr": {
+                "label": "Guides pratiques",
+                "description": "Visa, budget, eSIM, sécurité et transport pour préparer votre voyage au Vietnam.",
+            },
+            "en": {
+                "label": "Practical guides",
+                "description": "Visa, budget, eSIM, safety and transport to plan your Vietnam trip.",
+            },
+        },
     },
     "food": {
         "label": "Gastronomie",
         "description": "Street food, restaurants et spécialités vietnamiennes par ville — pour voyageurs français.",
+        "i18n": {
+            "fr": {
+                "label": "Gastronomie",
+                "description": "Street food, restaurants et spécialités vietnamiennes par ville — pour voyageurs français.",
+            },
+            "en": {
+                "label": "Food & dining",
+                "description": "Street food, restaurants and Vietnamese specialities by city — for travellers.",
+            },
+        },
     },
 }

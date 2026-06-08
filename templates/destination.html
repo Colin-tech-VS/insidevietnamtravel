@@ -27,8 +27,8 @@
   "name": dest.name,
   "description": meta_description,
   "url": canonical_url,
-  "touristType": "Voyageurs français",
-  "inLanguage": "fr-FR"
+  "touristType": "Travellers" if lang == 'en' else "Voyageurs français",
+  "inLanguage": "en-GB" if lang == 'en' else "fr-FR"
 } %}
 {% if dest.image %}
 {% set _ = dest_schema.update({"image": site.SITE_URL ~ dest.image}) %}
@@ -36,9 +36,9 @@
 {{ json_ld_graph([
   dest_schema,
   seo_breadcrumb([
-    ("Accueil", site.SITE_URL),
-    ("Destinations", site.SITE_URL ~ "/#destinations"),
-    ("Guide " ~ dest.name, None),
+    (t('nav.home'), site.SITE_URL ~ lang_url('index')),
+    (t('nav.destinations'), site.SITE_URL ~ "/#destinations"),
+    (("Guide " if lang == 'fr' else "Guide ") ~ dest.name, None),
   ]),
 ]) }}
 {% endblock %}
@@ -61,11 +61,11 @@
   <div class="container">
     <nav class="breadcrumb" aria-label="Fil d'Ariane">
       <ol>
-        <li><a href="{{ url_for('index') }}">Accueil</a></li>
+        <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
         <li aria-current="page">{{ dest.name }}</li>
       </ol>
     </nav>
-    <h1>Guide {{ dest.name }} — voyage Vietnam</h1>
+    <h1>{% if lang == 'en' %}Guide {{ dest.name }} — Vietnam travel{% else %}Guide {{ dest.name }} — voyage Vietnam{% endif %}</h1>
     <p class="page-hero__lead">{{ dest.tagline }}</p>
   </div>
 </header>
@@ -73,12 +73,12 @@
 <div class="container page-layout">
   <article class="page-content">
     <section class="content-block">
-      <h2>Vue d'ensemble</h2>
+      <h2>{% if lang == 'en' %}Overview{% else %}Vue d'ensemble{% endif %}</h2>
       <div class="prose">{{ dest.overview | safe }}</div>
     </section>
 
     <section class="content-block">
-      <h2>Top choses à faire à {{ dest.name }}</h2>
+      <h2>{% if lang == 'en' %}Top things to do in {{ dest.name }}{% else %}Top choses à faire à {{ dest.name }}{% endif %}</h2>
       <ul class="things-list">
         {% for item in dest.things_to_do %}
         <li>
@@ -90,8 +90,8 @@
     </section>
 
     <section class="content-block">
-      <h2>Hôtels recommandés</h2>
-      <p class="section-intro">Liens affiliés — comparez les prix avant de réserver.</p>
+      <h2>{{ t('dest.hotels') }}</h2>
+      <p class="section-intro">{% if lang == 'en' %}Affiliate links — compare prices before booking.{% else %}Liens affiliés — comparez les prix avant de réserver.{% endif %}</p>
       <div class="affiliate-grid">
         {% for hotel in dest.hotels %}
         {{ hotel_card(hotel, dest.slug) }}
@@ -100,7 +100,7 @@
     </section>
 
     <section class="content-block">
-      <h2>Activités & tours</h2>
+      <h2>{{ t('dest.activities') }}</h2>
       <div class="affiliate-grid">
         {% for act in dest.activities %}
         {{ activity_card(act, dest.slug) }}
@@ -109,7 +109,7 @@
     </section>
 
     <section class="content-block">
-      <h2>Conseils pratiques</h2>
+      <h2>{{ t('dest.tips') }}</h2>
       <ul class="tips-list">
         {% for tip in dest.tips %}
         <li>{{ tip }}</li>
@@ -124,18 +124,18 @@
     {{ sim_banner() }}
     {{ insurance_banner() }}
     <div class="sidebar-card">
-      <h3>Itinéraires incluant {{ dest.name }}</h3>
+      <h3>{% if lang == 'en' %}Itineraries including {{ dest.name }}{% else %}Itinéraires incluant {{ dest.name }}{% endif %}</h3>
       <ul>
         {% for slug, it in itineraries.items() %}
-        <li><a href="{{ url_for('itinerary', slug=slug) }}">{{ it.title }}</a></li>
+        <li><a href="{{ lang_url('itinerary', slug=slug) }}">{{ it.title }}</a></li>
         {% endfor %}
       </ul>
     </div>
     <div class="sidebar-card">
-      <h3>Autres destinations</h3>
+      <h3>{% if lang == 'en' %}Other destinations{% else %}Autres destinations{% endif %}</h3>
       <ul>
         {% for slug, d in destinations.items() if slug != dest.slug %}
-        <li><a href="{{ url_for('destination_page', slug=slug) }}">{{ d.name }}</a></li>
+        <li><a href="{{ lang_url('destination_page', slug=slug) }}">{{ d.name }}</a></li>
         {% endfor %}
       </ul>
     </div>

@@ -1,0 +1,107 @@
+<h2>1. Responsable du traitement</h2>
+<p>
+  Le site <strong>Inside Vietnam Travel</strong> ({{ site.SITE_URL }}) est édité à titre indépendant.
+  Pour toute question relative à vos données personnelles, contactez-nous à :
+  <a href="mailto:{{ legal_contact_email }}">{{ legal_contact_email }}</a>.
+</p>
+
+<h2>2. Données collectées</h2>
+<p>Nous pouvons traiter les catégories de données suivantes :</p>
+<ul>
+  <li><strong>Newsletter</strong> : adresse email et date d'inscription.</li>
+  <li><strong>Navigation</strong> : pages consultées, referrer, type de navigateur, empreinte IP hachée (analytics internes).</li>
+  <li><strong>Liens affiliés</strong> : clics sortants (fournisseur, page source, horodatage) — sans nom ni email.</li>
+  <li><strong>Administration</strong> : session de connexion admin (cookie de session Flask).</li>
+  <li><strong>Cookies</strong> : préférences de consentement stockées localement dans votre navigateur.</li>
+  <li><strong>Mesure d'audience</strong> (si vous l'acceptez) : Google Analytics 4 — données anonymisées ou pseudonymisées selon la configuration du service.</li>
+</ul>
+
+<h2>3. Finalités et bases légales</h2>
+<table class="legal-table">
+  <thead>
+    <tr><th>Traitement</th><th>Finalité</th><th>Base légale</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Newsletter</td>
+      <td>Envoi de conseils voyage Vietnam</td>
+      <td>Consentement (case à cocher à l'inscription)</td>
+    </tr>
+    <tr>
+      <td>Analytics internes</td>
+      <td>Statistiques de fréquentation du site</td>
+      <td>Intérêt légitime (amélioration du contenu)</td>
+    </tr>
+    <tr>
+      <td>Google Analytics</td>
+      <td>Mesure d'audience agrégée</td>
+      <td>Consentement (bandeau cookies)</td>
+    </tr>
+    <tr>
+      <td>Clics affiliés</td>
+      <td>Suivi des performances des recommandations</td>
+      <td>Intérêt légitime</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>4. Durée de conservation</h2>
+<ul>
+  <li><strong>Newsletter</strong> : jusqu'à désinscription ou 3 ans sans interaction.</li>
+  <li><strong>Analytics</strong> : 24 mois maximum (données agrégées).</li>
+  <li><strong>Cookies de consentement</strong> : 13 mois.</li>
+</ul>
+
+<h2>5. Destinataires et sous-traitants</h2>
+<p>Vos données peuvent être hébergées ou traitées par :</p>
+<ul>
+  <li><strong>Scalingo</strong> — hébergement de l'application (France / UE).</li>
+  <li><strong>Supabase</strong> — base de données PostgreSQL (UE).</li>
+  <li><strong>Google</strong> — Analytics (uniquement si vous acceptez les cookies analytics).</li>
+  <li><strong>Prestataire SMTP</strong> — envoi des emails newsletter (si configuré).</li>
+</ul>
+<p>Nous ne vendons pas vos données personnelles à des tiers.</p>
+
+<h2>6. Vos droits (RGPD)</h2>
+<p>Conformément au Règlement (UE) 2016/679, vous disposez des droits suivants :</p>
+<ul>
+  <li>Droit d'accès, de rectification et d'effacement</li>
+  <li>Droit à la limitation et à l'opposition</li>
+  <li>Droit à la portabilité (données newsletter)</li>
+  <li>Droit de retirer votre consentement à tout moment</li>
+</ul>
+<p>
+  <strong>Newsletter</strong> : désinscription immédiate via le lien présent dans chaque email ou sur
+  <a href="{{ lang_url('newsletter_unsubscribe') }}">cette page</a>.
+</p>
+<p>
+  Pour exercer vos autres droits : <a href="mailto:{{ legal_contact_email }}">{{ legal_contact_email }}</a>.
+  Vous pouvez également introduire une réclamation auprès de la <a href="https://www.cnil.fr/" rel="noopener noreferrer" target="_blank">CNIL</a>.
+</p>
+
+<h2>7. Cookies</h2>
+<p>
+  Lors de votre première visite, un bandeau vous permet d'accepter ou de refuser les cookies non essentiels
+  (mesure d'audience). Vous pouvez modifier votre choix à tout moment via
+  <button type="button" class="link-button" data-cookie-settings>Ouvrir les préférences cookies</button>.
+</p>
+<ul>
+  <li><strong>Essentiels</strong> : mémorisation de votre choix cookies (obligatoires au fonctionnement du bandeau).</li>
+  <li><strong>Analytics</strong> : Google Analytics 4 — désactivés par défaut jusqu'à votre consentement.</li>
+</ul>
+
+<h2>8. Sécurité</h2>
+<p>
+  Nous appliquons des mesures techniques raisonnables : connexion HTTPS, mots de passe admin, hébergement sécurisé,
+  accès base de données restreint. Aucun système n'étant infaillible, nous ne pouvons garantir une sécurité absolue.
+</p>
+
+<h2>9. Liens externes</h2>
+<p>
+  Le site contient des liens vers des sites tiers (Booking, Agoda, GetYourGuide, etc.).
+  Leur politique de confidentialité s'applique dès que vous quittez notre site.
+</p>
+
+<p class="legal-nav">
+  Voir aussi : <a href="{{ lang_url('legal_notices') }}">Mentions légales</a>
+</p>

@@ -11,17 +11,19 @@
 {% block structured_data %}
 {% set dest_items = [] %}
 {% for slug, d in destinations.items() %}
-{% set _ = dest_items.append({"name": "Guide " ~ d.name, "url": site.SITE_URL ~ url_for('destination_page', slug=slug)}) %}
+{% set _ = dest_items.append({"name": ("Guide " if lang == 'fr' else "Guide ") ~ d.name, "url": site.SITE_URL ~ lang_url('destination_page', slug=slug)}) %}
 {% endfor %}
 {% set itin_items = [] %}
 {% for slug, it in itineraries.items() %}
-{% set _ = itin_items.append({"name": it.title, "url": site.SITE_URL ~ url_for('itinerary', slug=slug)}) %}
+{% set _ = itin_items.append({"name": it.title, "url": site.SITE_URL ~ lang_url('itinerary', slug=slug)}) %}
 {% endfor %}
+{% set list_dest = "Destinations Vietnam" if lang == 'fr' else "Vietnam destinations" %}
+{% set list_itin = "Itinéraires voyage Vietnam" if lang == 'fr' else "Vietnam travel itineraries" %}
 {{ json_ld_graph([
   seo_organization(),
   seo_website(),
-  seo_item_list("Destinations Vietnam", dest_items),
-  seo_item_list("Itinéraires voyage Vietnam", itin_items),
+  seo_item_list(list_dest, dest_items),
+  seo_item_list(list_itin, itin_items),
 ]) }}
 {% endblock %}
 
@@ -30,12 +32,12 @@
   <div class="hero-bg" aria-hidden="true"></div>
   <div class="hero-pattern" aria-hidden="true"></div>
   <div class="container hero-content">
-    <p class="hero-eyebrow">Guide voyage Vietnam</p>
-    <h1 id="hero-title">Votre guide voyage<br><em>au Vietnam</em></h1>
-    <p class="hero-lead">Itinéraires prêts à l'emploi, guides par ville, conseils visa et budget — pour préparer votre séjour au Vietnam en toute sérénité.</p>
+    <p class="hero-eyebrow">{{ t('home.hero.eyebrow') }}</p>
+    <h1 id="hero-title">{{ t('home.hero.title') }}<br><em>{{ t('home.hero.title_em') }}</em></h1>
+    <p class="hero-lead">{{ t('home.hero.lead') }}</p>
     <div class="hero-actions">
-      <a href="#destinations" class="btn btn-primary">Explorer les destinations</a>
-      <a href="#pdf-guide" class="btn btn-ghost">Télécharger le guide PDF</a>
+      <a href="#destinations" class="btn btn-primary">{{ t('home.hero.cta_dest') }}</a>
+      <a href="#pdf-guide" class="btn btn-ghost">{{ t('home.hero.cta_pdf') }}</a>
     </div>
   </div>
 </section>
@@ -43,12 +45,12 @@
 <section id="destinations" class="section" aria-labelledby="dest-title">
   <div class="container">
     <header class="section-header">
-      <h2 id="dest-title">Destinations au Vietnam</h2>
-      <p>Guides complets par ville : que faire, où dormir, activités incontournables</p>
+      <h2 id="dest-title">{{ t('home.dest.title') }}</h2>
+      <p>{{ t('home.dest.sub') }}</p>
     </header>
     <div class="dest-grid">
       {% for slug, d in destinations.items() %}
-      <a href="{{ url_for('destination_page', slug=slug) }}" class="dest-card">
+      <a href="{{ lang_url('destination_page', slug=slug) }}" class="dest-card">
         {% if d.image %}
         {{ responsive_img(
           d.image,
@@ -64,7 +66,7 @@
         <span class="dest-card__content">
           <span class="dest-card__name">{{ d.name }}</span>
           <span class="dest-card__tag">{{ d.tagline }}</span>
-          <span class="dest-card__cta">Lire le guide →</span>
+          <span class="dest-card__cta">{{ t('home.dest.cta') }}</span>
         </span>
       </a>
       {% endfor %}
@@ -75,17 +77,17 @@
 <section class="section section--alt" aria-labelledby="itin-title">
   <div class="container">
     <header class="section-header">
-      <h2 id="itin-title">Itinéraires Vietnam</h2>
-      <p>Circuits jour par jour — 3, 7 ou 10 jours pour organiser votre voyage</p>
+      <h2 id="itin-title">{{ t('home.itin.title') }}</h2>
+      <p>{{ t('home.itin.sub') }}</p>
     </header>
     <div class="itin-grid">
       {% for slug, it in itineraries.items() %}
       <article class="itin-card">
-        <span class="itin-card__days">{{ it.duration }} jours</span>
-        <h3><a href="{{ url_for('itinerary', slug=slug) }}">{{ it.title }}</a></h3>
+        <span class="itin-card__days">{{ it.duration }} {{ t('nav.days') }}</span>
+        <h3><a href="{{ lang_url('itinerary', slug=slug) }}">{{ it.title }}</a></h3>
         <p>{{ it.summary }}</p>
         <span class="itin-card__budget">{{ it.budget_hint }}</span>
-        <a href="{{ url_for('itinerary', slug=slug) }}" class="card-link-text">Voir l'itinéraire →</a>
+        <a href="{{ lang_url('itinerary', slug=slug) }}" class="card-link-text">{{ t('home.itin.cta') }}</a>
       </article>
       {% endfor %}
     </div>
@@ -95,15 +97,15 @@
 <section class="section" aria-labelledby="blog-title">
   <div class="container">
     <header class="section-header">
-      <h2 id="blog-title">Guides pratiques voyage Vietnam</h2>
-      <p>Visa, budget, eSIM, sécurité — conseils pour voyageurs français</p>
+      <h2 id="blog-title">{{ t('home.blog.title') }}</h2>
+      <p>{{ t('home.blog.sub') }}</p>
     </header>
     <div class="articles-grid">
       {% for article in featured_articles[:6] %}
       {{ article_card(article, index=loop.index0) }}
       {% endfor %}
     </div>
-    <p class="section-cta"><a href="{{ url_for('blog_index') }}" class="btn btn-primary">Tous les articles</a></p>
+    <p class="section-cta"><a href="{{ lang_url('blog_index') }}" class="btn btn-primary">{{ t('home.blog.cta') }}</a></p>
   </div>
 </section>
 

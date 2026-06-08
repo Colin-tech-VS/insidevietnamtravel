@@ -1,6 +1,12 @@
 """Ready-made travel itineraries."""
 
-ITINERARIES = {
+from copy import deepcopy
+
+from data.itineraries_i18n import ITINERARIES_EN
+
+
+def _build_itineraries() -> dict:
+    base = {
     "3-days-vietnam": {
         "slug": "3-days-vietnam",
         "title": "Itinéraire 3 jours au Vietnam",
@@ -142,4 +148,25 @@ ITINERARIES = {
             {"day": 10, "title": "Départ", "location": "HCMC", "activities": ["Shopping dernier moment", "Vol retour"], "stay": "—"},
         ],
     },
-}
+    }
+    for slug, itin in base.items():
+        fr_block = {
+            k: itin[k]
+            for k in (
+                "title", "meta_title", "meta_description", "summary", "budget_hint",
+                "sample_hotel", "sample_activity", "days",
+            )
+            if k in itin
+        }
+        en_overlay = ITINERARIES_EN.get(slug, {})
+        en_block = deepcopy(fr_block)
+        for key, val in en_overlay.items():
+            if isinstance(val, dict) and key in en_block and isinstance(en_block[key], dict):
+                en_block[key] = {**en_block[key], **val}
+            else:
+                en_block[key] = val
+        itin["i18n"] = {"fr": fr_block, "en": en_block}
+    return base
+
+
+ITINERARIES = _build_itineraries()

@@ -8,6 +8,8 @@ from datetime import date
 from groq import Groq
 
 from admin.store import get_settings, slugify
+from admin.groq_translate import translate_article_block
+from i18n_utils import merge_bilingual_article
 
 # Longueur minimale selon type de guide (recommandations SEO)
 SEO_WORD_TARGETS: dict[str, dict] = {
@@ -210,7 +212,25 @@ Exigences :
     )
 
     article = _build_article(data, topic, city, guide_type)
-    return _expand_if_short(article, guide_type, client, model)
+    article = _expand_if_short(article, guide_type, client, model)
+    try:
+        en_data = translate_article_block(article)
+        shared = {
+            k: v for k, v in article.items()
+            if k not in (
+                "title", "meta_title", "meta_description", "excerpt", "content",
+                "category_label", "tags", "focus_keyword", "image_alt",
+            )
+        }
+        return merge_bilingual_article(article, en_data, shared)
+    except Exception:
+        return merge_bilingual_article(article, {}, {
+            k: v for k, v in article.items()
+            if k not in (
+                "title", "meta_title", "meta_description", "excerpt", "content",
+                "category_label", "tags", "focus_keyword", "image_alt",
+            )
+        })
 
 
 def improve_guide(article: dict, instructions: str) -> dict:
@@ -256,4 +276,16 @@ def improve_guide(article: dict, instructions: str) -> dict:
     wc = _count_words(article["content"])
     article["word_count"] = wc
     article["read_time"] = _read_time_from_words(wc)
-    return _expand_if_short(article, guide_type, client, model)
+    article = _expand_if_short(article, guide_type, client, model)
+    try:
+        en_data = translate_article_block(article)
+        shared = {
+            k: v for k, v in article.items()
+            if k not in (
+                "title", "meta_title", "meta_description", "excerpt", "content",
+                "category_label", "tags", "focus_keyword", "image_alt", "i18n",
+            )
+        }
+        return merge_bilingual_article(article, en_data, shared)
+    except Exception:
+        return article

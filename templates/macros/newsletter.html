@@ -3,14 +3,18 @@
   <div class="newsletter__inner">
     <h2 id="newsletter-title" class="newsletter__title">{{ newsletter.NEWSLETTER.title }}</h2>
     <p class="newsletter__subtitle">{{ newsletter.NEWSLETTER.subtitle }}</p>
-    <form class="newsletter__form" action="{{ url_for('newsletter_subscribe') }}" method="post" novalidate>
-      <label for="newsletter-email" class="sr-only">Adresse email</label>
+    <form class="newsletter__form" action="{{ lang_url('newsletter_subscribe') }}" method="post" novalidate>
+      <label for="newsletter-email" class="sr-only">Email</label>
       <input type="email" id="newsletter-email" name="email" required
              placeholder="{{ newsletter.NEWSLETTER.placeholder }}"
              autocomplete="email" class="newsletter__input">
       <button type="submit" class="btn btn-primary">{{ newsletter.NEWSLETTER.cta }}</button>
+      <label class="newsletter__consent">
+        <input type="checkbox" name="consent_rgpd" value="1" required>
+        <span>{{ t('newsletter.consent') }} <a href="{{ lang_url('privacy') }}" target="_blank" rel="noopener">{{ t('newsletter.privacy_link') }}</a>.</span>
+      </label>
     </form>
-    <p class="newsletter__privacy"><small>Pas de spam. Désinscription en un clic.</small></p>
+    <p class="newsletter__privacy"><small>{% if lang == 'en' %}No spam. <a href="{{ lang_url('newsletter_unsubscribe') }}">Unsubscribe</a> in one click.{% else %}Pas de spam. <a href="{{ lang_url('newsletter_unsubscribe') }}">Désinscription</a> en un clic.{% endif %}</small></p>
   </div>
 </section>
 {% endmacro %}

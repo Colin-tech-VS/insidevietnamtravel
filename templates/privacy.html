@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "macros/seo.html" import json_ld_graph with context %}
+
+{% block structured_data %}
+{{ json_ld_graph([{
+  "@type": "WebPage",
+  "name": meta_title,
+  "description": meta_description,
+  "url": canonical_url,
+  "inLanguage": "en-GB" if lang == 'en' else "fr-FR"
+}]) }}
+{% endblock %}
+
+{% block content %}
+<header class="page-hero page-hero--about">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Fil d'Ariane">
+      <ol>
+        <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+        <li aria-current="page">{{ t('footer.privacy') }}</li>
+      </ol>
+    </nav>
+    {% if lang == 'en' %}
+    <h1>Privacy policy</h1>
+    <p class="page-hero__lead">How Inside Vietnam Travel collects, uses and protects your personal data (GDPR).</p>
+    {% else %}
+    <h1>Politique de confidentialité</h1>
+    <p class="page-hero__lead">Comment Inside Vietnam Travel collecte, utilise et protège vos données personnelles (RGPD).</p>
+    {% endif %}
+    <p class="legal-updated"><small>{% if lang == 'en' %}Last updated:{% else %}Dernière mise à jour :{% endif %} {{ legal_updated }}</small></p>
+  </div>
+</header>
+
+<section class="legal-section">
+  <div class="container legal-content prose">
+    {% if lang == 'en' %}
+    {% include 'partials/privacy_en.html' %}
+    {% else %}
+    {% include 'partials/privacy_fr.html' %}
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -33,19 +33,25 @@ def article_meta_title(article: dict) -> str:
     return build_meta_title(article.get("title", ""))
 
 
-def article_meta_description(article: dict) -> str:
+def article_meta_description(article: dict, lang: str = "fr") -> str:
     if article.get("meta_description"):
         return truncate_text(article["meta_description"], 160)
     excerpt = article.get("excerpt", "")
     if len(excerpt) >= 100:
         return truncate_text(excerpt, 160)
     city = article.get("city", "")
-    kw = article.get("focus_keyword") or article.get("title", "")
-    extra = f" Guide pratique pour voyageurs français"
-    if city and city != "Tout le Vietnam":
-        extra += f" — {city}, Vietnam."
+    if lang == "en":
+        extra = " Practical guide for travellers"
+        if city and city not in ("Tout le Vietnam", "All Vietnam"):
+            extra += f" — {city}, Vietnam."
+        else:
+            extra += " — plan your Vietnam trip."
     else:
-        extra += " — préparez votre voyage au Vietnam."
+        extra = " Guide pratique pour voyageurs français"
+        if city and city != "Tout le Vietnam":
+            extra += f" — {city}, Vietnam."
+        else:
+            extra += " — préparez votre voyage au Vietnam."
     return truncate_text(f"{excerpt}{extra}", 160)
 
 
@@ -71,13 +77,14 @@ def _strip_tags(html: str) -> str:
     return re.sub(r"\s+", " ", unescape(text)).strip()
 
 
-def organization_schema() -> dict:
+def organization_schema(lang: str = "fr") -> dict:
+    desc = config.SITE_DESCRIPTION_I18N.get(lang, config.SITE_DESCRIPTION)
     return {
         "@type": "Organization",
         "@id": f"{config.SITE_URL}/#organization",
         "name": config.SITE_NAME,
         "url": config.SITE_URL,
-        "description": config.SITE_DESCRIPTION,
+        "description": desc,
         "logo": {
             "@type": "ImageObject",
             "url": f"{config.SITE_URL}/static/images/favicon.svg",
@@ -85,14 +92,16 @@ def organization_schema() -> dict:
     }
 
 
-def website_schema() -> dict:
+def website_schema(lang: str = "fr") -> dict:
+    from i18n_utils import schema_language
+    desc = config.SITE_DESCRIPTION_I18N.get(lang, config.SITE_DESCRIPTION)
     return {
         "@type": "WebSite",
         "@id": f"{config.SITE_URL}/#website",
         "name": config.SITE_NAME,
         "url": config.SITE_URL,
-        "description": config.SITE_DESCRIPTION,
-        "inLanguage": "fr-FR",
+        "description": desc,
+        "inLanguage": schema_language(lang),
         "publisher": {"@id": f"{config.SITE_URL}/#organization"},
     }
 

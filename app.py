@@ -14,6 +14,19 @@ from flask import (
 from flask_compress import Compress
 
 import config
+from i18n_utils import (
+    canonical_for_request,
+    detect_lang_from_path,
+    get_lang,
+    hreflang_urls,
+    is_analytics_excluded_ip,
+    lang_url,
+    localize_itinerary,
+    set_lang,
+    page_url_in_lang,
+    switch_lang_url,
+)
+from locales.ui import t
 from seo_utils import (
     article_meta_description,
     article_meta_title,
@@ -44,7 +57,9 @@ from data.affiliates import PDF_GUIDE, NEWSLETTER
 
 RESERVED_SLUGS = frozenset({
     "blog", "admin", "go", "itineraries", "a-propos", "newsletter",
-    "robots.txt", "sitemap.xml", "categorie", "static", "favicon.ico",
+    "politique-confidentialite", "mentions-legales",
+    "robots.txt", "sitemap.xml", "categorie", "category", "static", "favicon.ico",
+    "en", "about", "privacy", "legal", "unsubscribe",
 })
 
 load_dotenv()
@@ -68,21 +83,33 @@ app.config["COMPRESS_MIN_SIZE"] = 256
 Compress(app)
 app.register_blueprint(admin_bp)
 
-NEWSLETTER_FILE = Path(__file__).parent / "data" / "newsletter_subscribers.txt"
-
-analytics_db.init_db()
 
 
-def _articles():
-    return get_articles()
+def _articles(lang=None):
+    return get_articles(lang or get_lang())
 
 
-def _categories():
-    return get_categories()
+def _categories(lang=None):
+    return get_categories(lang or get_lang())
 
 
-def _destinations():
-    return get_destinations_dict()
+def _destinations(lang=None):
+    return get_destinations_dict(lang or get_lang())
+
+
+def _itineraries(lang=None):
+    lang = lang or get_lang()
+    return {
+        slug: localize_itinerary(it, lang)
+        for slug, it in ITINERARIES.items()
+    }
+
+
+def _localized_block(block: dict, lang: str) -> dict:
+    result = {k: v for k, v in block.items() if k != "i18n"}
+    if lang == "en" and block.get("i18n", {}).get("en"):
+        result.update(block["i18n"]["en"])
+    return result
 
 
 def _log_page_view_async(path: str, referrer: str, user_agent: str, ip_hash: str):
@@ -98,11 +125,18 @@ def _log_page_view_async(path: str, referrer: str, user_agent: str, ip_hash: str
 
 
 @app.before_request
+def prepare_request():
+    set_lang(detect_lang_from_path())
+
+
+@app.before_request
 def track_page_view():
     if request.method != "GET":
         return
     path = request.path
     if path.startswith(("/admin", "/static", "/go/", "/favicon")):
+        return
+    if is_analytics_excluded_ip():
         return
     ip_hash = hashlib.sha256(
         (request.remote_addr or "unknown").encode()
@@ -126,18 +160,31 @@ def add_performance_headers(response):
 @app.context_processor
 def inject_globals():
     settings = get_settings()
-    canonical = config.SITE_URL.rstrip("/") + (request.path if request.path != "/" else "")
+    lang = get_lang()
     return {
         "site": app.config,
-        "categories": _categories(),
+        "lang": lang,
+        "categories": _categories(lang),
         "current_year": datetime.now().year,
-        "destinations": _destinations(),
-        "itineraries": ITINERARIES,
-        "pdf": {"PDF_GUIDE": PDF_GUIDE},
-        "newsletter": {"NEWSLETTER": NEWSLETTER},
+        "destinations": _destinations(lang),
+        "itineraries": _itineraries(lang),
+        "pdf": {"PDF_GUIDE": _localized_block(PDF_GUIDE, lang)},
+        "newsletter": {"NEWSLETTER": _localized_block(NEWSLETTER, lang)},
         "ga4_id": settings.get("ga4_measurement_id", ""),
-        "canonical_url": canonical,
+        "canonical_url": canonical_for_request(lang),
+        "hreflang_urls": hreflang_urls(),
+        "switch_lang_url": switch_lang_url(),
+        "page_url_in_lang": page_url_in_lang,
         "meta_keywords": None,
+        "legal_contact_email": config.LEGAL_CONTACT_EMAIL,
+        "legal_updated": config.LEGAL_UPDATED_I18N.get(lang, config.LEGAL_UPDATED),
+        "site_tagline": config.SITE_TAGLINE_I18N.get(lang, config.SITE_TAGLINE),
+        "site_description": config.SITE_DESCRIPTION_I18N.get(lang, config.SITE_DESCRIPTION),
+        "site_keywords": config.SITE_KEYWORDS_I18N.get(lang, config.SITE_KEYWORDS),
+        "t": t,
+        "lang_url": lang_url,
+        "html_lang": "en" if lang == "en" else "fr",
+        "og_locale": "en_GB" if lang == "en" else "fr_FR",
     }
 
 
@@ -163,12 +210,12 @@ def seo_item_list(name: str, items: list):
 
 @app.template_global()
 def seo_organization():
-    return organization_schema()
+    return organization_schema(get_lang())
 
 
 @app.template_global()
 def seo_website():
-    return website_schema()
+    return website_schema(get_lang())
 
 
 @app.template_global()
@@ -280,88 +327,94 @@ def affiliate_redirect(provider):
     target = request.args.get("to", "")
     if not target or not target.startswith("http"):
         abort(404)
-    analytics_db.log_affiliate_click(provider, target, request.referrer or "")
+    if not is_analytics_excluded_ip():
+        analytics_db.log_affiliate_click(provider, target, request.referrer or "")
     return redirect(target)
 
 
 # ── Homepage ──────────────────────────────────────────────────────────
 
 @app.route("/")
+@app.route("/en/")
+@app.route("/en")
 def index():
-    articles = _articles()
+    lang = get_lang()
+    articles = _articles(lang)
     featured_articles = [a for a in articles if a.get("featured")]
     return render_template(
         "index.html",
         featured_articles=featured_articles,
-        meta_title="Voyage Vietnam 2026 : guides, itinéraires et conseils pratiques",
-        meta_description=(
-            "Préparez votre voyage au Vietnam : itinéraires 3 à 10 jours, guides Hanoï, "
-            "Hội An, Saigon, visa, budget et conseils pour voyageurs français."
-        ),
-        meta_keywords="voyage Vietnam, guide Vietnam, itinéraire Vietnam, préparer voyage Vietnam, voyageurs français",
+        meta_title=t("meta.home.title", lang),
+        meta_description=t("meta.home.desc", lang),
+        meta_keywords=t("meta.home.kw", lang),
     )
 
 
 # ── Blog ──────────────────────────────────────────────────────────────
 
 @app.route("/blog")
+@app.route("/en/blog")
 def blog_index():
-    posts = sorted(_articles(), key=lambda a: a["date"], reverse=True)
+    lang = get_lang()
+    posts = sorted(_articles(lang), key=lambda a: a["date"], reverse=True)
     return render_template(
         "blog_index.html",
         articles=posts,
-        meta_title="Blog voyage Vietnam : visa, budget, transport, gastronomie",
-        meta_description=(
-            "Articles pratiques pour préparer un voyage au Vietnam : e-visa, budget au jour, "
-            "eSIM, sécurité, transport et street food. Conseils pour voyageurs français."
-        ),
-        meta_keywords="blog voyage Vietnam, visa Vietnam, budget Vietnam, conseils voyage Vietnam",
+        meta_title=t("meta.blog.title", lang),
+        meta_description=t("meta.blog.desc", lang),
+        meta_keywords=t("meta.blog.kw", lang),
     )
 
 
 @app.route("/blog/<slug>")
+@app.route("/en/blog/<slug>")
 def article(slug):
-    post = get_article_by_slug(slug)
+    lang = get_lang()
+    post = get_article_by_slug(slug, lang)
     if not post:
         abort(404)
-    articles = _articles()
+    articles = _articles(lang)
     related = [a for a in articles if a["category"] == post["category"] and a["slug"] != slug][:3]
     return render_template(
         "article.html",
         article=post,
         related=related,
         meta_title=article_meta_title(post),
-        meta_description=article_meta_description(post),
+        meta_description=article_meta_description(post, lang),
         meta_keywords=", ".join(post.get("tags", [])[:10]),
     )
 
 
 @app.route("/categorie/<category>")
+@app.route("/en/category/<category>")
 def category(category):
-    cats = _categories()
+    lang = get_lang()
+    cats = _categories(lang)
     if category not in cats:
         abort(404)
-    articles = [a for a in _articles() if a["category"] == category]
+    articles = [a for a in _articles(lang) if a["category"] == category]
     cat = cats[category]
     return render_template(
         "category.html",
         category_key=category,
         category=cat,
         articles=articles,
-        meta_title=f"{cat['label']} Vietnam — guides pratiques voyage",
+        meta_title=f"{cat['label']} Vietnam {t('meta.category.suffix', lang)}",
         meta_description=truncate_text(
-            f"{cat['description']} Conseils pour voyageurs français préparant un séjour au Vietnam.",
+            f"{cat['description']} {t('meta.category.desc_extra', lang)}",
             160,
         ),
-        meta_keywords=f"{cat['label']}, voyage Vietnam, guide Vietnam",
+        meta_keywords=f"{cat['label']}, Vietnam travel, Vietnam guide",
     )
 
 
 # ── Itineraries ───────────────────────────────────────────────────────
 
 @app.route("/itineraries/<slug>")
+@app.route("/en/itineraries/<slug>")
 def itinerary(slug):
-    itin = ITINERARIES.get(slug)
+    lang = get_lang()
+    itin = _itineraries(lang).get(slug)
     if not itin:
         abort(404)
     return render_template(
@@ -370,46 +423,129 @@ def itinerary(slug):
         slug=slug,
         meta_title=itin["meta_title"],
         meta_description=itin["meta_description"],
-        meta_keywords=f"itinéraire Vietnam {itin['duration']} jours, voyage Vietnam, circuit Vietnam",
+        meta_keywords=t("meta.itin.kw", lang, days=str(itin["duration"])),
     )
 
 
 # ── Static pages ──────────────────────────────────────────────────────
 
-@app.route("/a-propos")
-def about():
+@app.route("/politique-confidentialite")
+@app.route("/en/privacy")
+def privacy():
+    lang = get_lang()
     return render_template(
-        "about.html",
-        meta_title="À propos — guide voyage Vietnam indépendant",
-        meta_description=(
-            "Inside Vietnam Travel : guide indépendant pour préparer votre voyage au Vietnam. "
-            "Itinéraires, conseils pratiques et transparence sur les liens affiliés."
-        ),
-        meta_keywords="guide Vietnam indépendant, Inside Vietnam Travel, voyage Vietnam",
+        "privacy.html",
+        meta_title=t("meta.privacy.title", lang),
+        meta_description=t("meta.privacy.desc", lang),
+        meta_keywords="RGPD, privacy, cookies, newsletter Vietnam" if lang == "en" else "RGPD, confidentialité, cookies, newsletter Vietnam",
     )
 
 
+@app.route("/mentions-legales")
+@app.route("/en/legal")
+def legal_notices():
+    lang = get_lang()
+    return render_template(
+        "legal.html",
+        meta_title=t("meta.legal.title", lang),
+        meta_description=t("meta.legal.desc", lang),
+        meta_keywords="legal notice, Inside Vietnam Travel" if lang == "en" else "mentions légales, Inside Vietnam Travel",
+    )
+
+
+@app.route("/a-propos")
+@app.route("/en/about")
+def about():
+    lang = get_lang()
+    return render_template(
+        "about.html",
+        meta_title=t("meta.about.title", lang),
+        meta_description=t("meta.about.desc", lang),
+        meta_keywords="independent Vietnam guide, Inside Vietnam Travel" if lang == "en" else "guide Vietnam indépendant, Inside Vietnam Travel, voyage Vietnam",
+    )
+
+
+@app.route("/newsletter/desinscription", methods=["GET", "POST"])
+@app.route("/en/newsletter/unsubscribe", methods=["GET", "POST"])
+def newsletter_unsubscribe():
+    from admin.newsletter_service import remove_newsletter_subscriber
+    from admin.newsletter_tokens import verify_unsubscribe_token
+
+    lang = get_lang()
+    email = (request.form.get("email") or request.args.get("email") or "").strip().lower()
+    token = (request.form.get("token") or request.args.get("token") or "").strip()
+
+    if request.method == "POST":
+        if not verify_unsubscribe_token(email, token):
+            return render_template(
+                "newsletter_unsubscribe.html",
+                error=t("unsub.invalid", lang),
+                meta_title=t("unsub.confirm_title", lang),
+                meta_description=t("meta.privacy.desc", lang),
+            ), 400
+        remove_newsletter_subscriber(email)
+        return render_template(
+            "newsletter_unsubscribe.html",
+            success=True,
+            email=email,
+            meta_title=t("unsub.success", lang),
+            meta_description=t("unsub.success", lang),
+        )
+
+    if email and token:
+        if not verify_unsubscribe_token(email, token):
+            return render_template(
+                "newsletter_unsubscribe.html",
+                error=t("unsub.invalid_short", lang),
+                meta_title=t("unsub.confirm_title", lang),
+                meta_description=t("meta.privacy.desc", lang),
+            ), 400
+        return render_template(
+            "newsletter_unsubscribe.html",
+            email=email,
+            token=token,
+            meta_title=t("unsub.confirm_title", lang),
+            meta_description=t("meta.privacy.desc", lang),
+        )
+
+    return render_template(
+        "newsletter_unsubscribe.html",
+        error=t("unsub.incomplete", lang),
+        meta_title=t("unsub.confirm_title", lang),
+        meta_description=t("meta.privacy.desc", lang),
+    ), 400
+
+
 @app.route("/newsletter", methods=["POST"])
+@app.route("/en/newsletter", methods=["POST"])
 def newsletter_subscribe():
     from admin.newsletter_service import add_newsletter_subscriber
+
+    lang = get_lang()
+    if not request.form.get("consent_rgpd"):
+        flash(t("flash.consent", lang), "error")
+        return redirect(request.referrer or lang_url("index", lang))
+
     email = (request.form.get("email") or "").strip().lower()
     if email and "@" in email:
         if add_newsletter_subscriber(email):
-            flash("Merci ! Vous êtes inscrit à la newsletter.", "success")
+            flash(t("flash.subscribed", lang), "success")
         else:
-            flash("Cette adresse est déjà inscrite.", "success")
+            flash(t("flash.already", lang), "success")
     else:
-        flash("Veuillez entrer une adresse email valide.", "error")
-    return redirect(request.referrer or url_for("index"))
+        flash(t("flash.invalid_email", lang), "error")
+    return redirect(request.referrer or lang_url("index", lang))
 
 
 # ── Destinations (route dynamique — en dernier) ─────────────────────────
 
 @app.route("/<slug>")
+@app.route("/en/<slug>")
 def destination_page(slug):
     if slug in RESERVED_SLUGS:
         abort(404)
-    dest = _destinations().get(slug)
+    lang = get_lang()
+    dest = _destinations(lang).get(slug)
     if not dest:
         abort(404)
     return render_template(
@@ -417,7 +553,7 @@ def destination_page(slug):
         dest=dest,
         meta_title=dest.get("meta_title") or build_meta_title(f"Guide {dest['name']} Vietnam"),
         meta_description=truncate_text(dest.get("meta_description", ""), 160),
-        meta_keywords=f"guide {dest['name']}, voyage {dest['name']}, que faire {dest['name']}, Vietnam",
+        meta_keywords=t("meta.dest.kw", lang, name=dest["name"]),
     )
 
 
@@ -431,31 +567,36 @@ def robots():
 
 @app.route("/sitemap.xml")
 def sitemap():
-    articles = _articles()
-    cats = _categories()
-    pages = [
-        {"loc": url_for("index", _external=True), "priority": "1.0"},
-        {"loc": url_for("blog_index", _external=True), "priority": "0.9"},
-        {"loc": url_for("about", _external=True), "priority": "0.5"},
-    ]
-    for slug in _destinations():
-        pages.append({"loc": f"{config.SITE_URL}/{slug}", "priority": "0.9"})
-    for slug in ITINERARIES:
-        pages.append({
-            "loc": url_for("itinerary", slug=slug, _external=True),
-            "priority": "0.9",
-        })
-    for cat in cats:
-        pages.append({
-            "loc": url_for("category", category=cat, _external=True),
-            "priority": "0.7",
-        })
-    for post in articles:
-        pages.append({
-            "loc": url_for("article", slug=post["slug"], _external=True),
-            "priority": "0.8",
-            "lastmod": post["date"],
-        })
+    base = config.SITE_URL.rstrip("/")
+    pages = []
+
+    for lang in ("fr", "en"):
+        articles = get_articles(lang)
+        cats = get_categories(lang)
+        dests = get_destinations_dict(lang)
+        pages.append({"loc": base + lang_url("index", lang), "priority": "1.0"})
+        pages.append({"loc": base + lang_url("blog_index", lang), "priority": "0.9"})
+        pages.append({"loc": base + lang_url("about", lang), "priority": "0.5"})
+        pages.append({"loc": base + lang_url("privacy", lang), "priority": "0.4"})
+        pages.append({"loc": base + lang_url("legal_notices", lang), "priority": "0.4"})
+        for slug in dests:
+            pages.append({"loc": base + lang_url("destination_page", lang, slug=slug), "priority": "0.9"})
+        for slug in ITINERARIES:
+            pages.append({
+                "loc": base + lang_url("itinerary", lang, slug=slug),
+                "priority": "0.9",
+            })
+        for cat_key in cats:
+            pages.append({
+                "loc": base + lang_url("category", lang, category=cat_key),
+                "priority": "0.7",
+            })
+        for post in articles:
+            pages.append({
+                "loc": base + lang_url("article", lang, slug=post["slug"]),
+                "priority": "0.8",
+                "lastmod": post["date"],
+            })
 
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
@@ -472,10 +613,11 @@ def sitemap():
 
 @app.errorhandler(404)
 def not_found(e):
+    lang = get_lang()
     return render_template(
         "404.html",
-        meta_title="Page introuvable",
-        meta_description="Cette page n'existe pas. Retournez à l'accueil pour préparer votre voyage au Vietnam.",
+        meta_title=t("meta.404.title", lang),
+        meta_description=t("meta.404.desc", lang),
     ), 404
 
 

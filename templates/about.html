@@ -6,16 +6,16 @@
 {{ json_ld_graph([
   {
     "@type": "AboutPage",
-    "name": "À propos — Inside Vietnam Travel",
+    "name": meta_title,
     "description": meta_description,
     "url": canonical_url,
-    "inLanguage": "fr-FR",
+    "inLanguage": "en-GB" if lang == 'en' else "fr-FR",
     "mainEntity": {"@id": site.SITE_URL ~ "/#organization"}
   },
   seo_organization(),
   seo_breadcrumb([
-    ("Accueil", site.SITE_URL),
-    ("À propos", None),
+    (t('nav.home'), site.SITE_URL ~ lang_url('index')),
+    (t('nav.about'), None),
   ]),
 ]) }}
 {% endblock %}
@@ -25,21 +25,39 @@
   <div class="container">
     <nav class="breadcrumb" aria-label="Fil d'Ariane">
       <ol>
-        <li><a href="{{ url_for('index') }}">Accueil</a></li>
-        <li aria-current="page">À propos</li>
+        <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+        <li aria-current="page">{{ t('nav.about') }}</li>
       </ol>
     </nav>
+    {% if lang == 'en' %}
+    <h1>About Inside Vietnam Travel</h1>
+    <p class="page-hero__lead">An independent guide to plan your Vietnam trip — not a travel agency.</p>
+    {% else %}
     <h1>À propos d'Inside Vietnam Travel</h1>
     <p class="page-hero__lead">Un guide indépendant pour préparer votre voyage au Vietnam — sans prétendre être une agence.</p>
+    {% endif %}
   </div>
 </header>
 
 <section class="about-section">
   <div class="container about-content prose">
+    {% if lang == 'en' %}
+    <h2>Our approach</h2>
+    <p>Inside Vietnam Travel is a content site for travellers planning a trip to Vietnam. We publish practical guides, itineraries and articles to help you prepare — not to book on your behalf.</p>
+    <p>We are not a travel agency. We do not sell all-inclusive packages. Our model relies on affiliate links (hotels, activities, eSIM, insurance) and a digital PDF guide.</p>
+    <h2>What you'll find</h2>
+    <ul>
+      <li><strong>City guides</strong> — Hanoi, Ho Chi Minh City, Hội An, Đà Nẵng</li>
+      <li><strong>Itineraries</strong> — 3, 7 and 10 days, day by day</li>
+      <li><strong>Practical articles</strong> — visa, budget, eSIM, safety, transport</li>
+      <li><strong>Recommendations</strong> — hotels and activities via clearly marked affiliate links</li>
+    </ul>
+    <h2>Transparency</h2>
+    <p>Some links on this site are affiliate links. If you book through them, we may earn a commission at no extra cost to you. This funds free content creation.</p>
+    {% else %}
     <h2>Notre approche</h2>
     <p>Inside Vietnam Travel est un site de contenu pour voyageurs français qui souhaitent aller au Vietnam. Nous publions des guides pratiques, des itinéraires et des articles pour vous aider à préparer votre séjour — pas à réserver à votre place.</p>
     <p>Nous ne sommes pas une agence de voyage. Nous ne vendons pas de packages tout compris. Notre modèle repose sur des liens affiliés (hôtels, activités, eSIM, assurance) et un guide PDF numérique.</p>
-
     <h2>Ce que vous trouverez</h2>
     <ul>
       <li><strong>Guides par ville</strong> — Hanoï, Ho Chi Minh-Ville, Hội An, Đà Nẵng</li>
@@ -47,9 +65,9 @@
       <li><strong>Articles pratiques</strong> — visa, budget, eSIM, sécurité, transport</li>
       <li><strong>Recommandations</strong> — hôtels et activités via liens affiliés clairement indiqués</li>
     </ul>
-
     <h2>Transparence</h2>
     <p>Certains liens sur ce site sont des liens affiliés. Si vous réservez via ces liens, nous pouvons percevoir une commission, sans surcoût pour vous. Cela finance la création de contenu gratuit.</p>
+    {% endif %}
     {{ affiliate_disclosure() }}
   </div>
 </section>

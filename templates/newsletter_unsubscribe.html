@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="legal-section">
+  <div class="container legal-content" style="max-width: 560px; padding: 4rem 1.5rem;">
+    {% if success %}
+    <h1>{% if lang == 'en' %}Unsubscribe confirmed{% else %}Désinscription confirmée{% endif %}</h1>
+    <p>{% if lang == 'en' %}The address <strong>{{ email }}</strong> will no longer receive the Inside Vietnam Travel newsletter.{% else %}L'adresse <strong>{{ email }}</strong> ne recevra plus la newsletter Inside Vietnam Travel.{% endif %}</p>
+    <p><a href="{{ lang_url('index') }}" class="btn btn-primary">{{ t('404.cta') }}</a></p>
+    {% elif error %}
+    <h1>{% if lang == 'en' %}Invalid link{% else %}Lien invalide{% endif %}</h1>
+    <p>{{ error }}</p>
+    <p>{% if lang == 'en' %}If the problem persists, email us at{% else %}Si le problème persiste, écrivez-nous à{% endif %} <a href="mailto:{{ legal_contact_email }}">{{ legal_contact_email }}</a>.</p>
+    {% else %}
+    <h1>{{ t('unsub.confirm_title') }}</h1>
+    <p>{% if lang == 'en' %}Confirm unsubscribe for <strong>{{ email }}</strong> from the Inside Vietnam Travel newsletter.{% else %}Confirmez la désinscription de <strong>{{ email }}</strong> de la newsletter Inside Vietnam Travel.{% endif %}</p>
+    <form method="post" class="unsubscribe-form">
+      <input type="hidden" name="email" value="{{ email }}">
+      <input type="hidden" name="token" value="{{ token }}">
+      <button type="submit" class="btn btn-primary">{% if lang == 'en' %}Confirm unsubscribe{% else %}Confirmer la désinscription{% endif %}</button>
+    </form>
+    <p class="muted" style="margin-top: 1.5rem;"><a href="{{ lang_url('index') }}">{% if lang == 'en' %}Cancel — back to site{% else %}Annuler — retour au site{% endif %}</a></p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

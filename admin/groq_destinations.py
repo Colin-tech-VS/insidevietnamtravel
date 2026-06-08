@@ -8,6 +8,8 @@ from datetime import date
 from groq import Groq
 
 from admin.store import get_settings, slugify
+from admin.groq_translate import translate_destination_block
+from i18n_utils import merge_bilingual_destination
 
 MIN_WORDS = 1200
 TARGET_WORDS = 1500
@@ -146,4 +148,15 @@ La page doit convaincre un voyageur de visiter {city} et l'aider à planifier : 
         data = json.loads(expand.choices[0].message.content)
         dest = _build_destination(data, city, slug)
 
-    return dest
+    try:
+        en_data = translate_destination_block(dest)
+        shared = {
+            k: v for k, v in dest.items()
+            if k not in (
+                "name", "meta_title", "meta_description", "tagline", "overview",
+                "things_to_do", "tips", "hotels", "activities", "image_alt",
+            )
+        }
+        return merge_bilingual_destination(dest, en_data, shared)
+    except Exception:
+        return dest

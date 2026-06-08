@@ -1,0 +1,45 @@
+{% macro cookie_banner() %}
+<div id="cookie-banner" class="cookie-banner" role="dialog" aria-labelledby="cookie-title" aria-describedby="cookie-desc" hidden>
+  <div class="cookie-banner__inner container">
+    <div class="cookie-banner__text">
+      <p id="cookie-title" class="cookie-banner__title">{{ t('cookie.title') }}</p>
+      <p id="cookie-desc" class="cookie-banner__desc">
+        {{ t('cookie.lead') }}
+        <a href="{{ lang_url('privacy') }}">{{ t('footer.privacy') }}</a>
+      </p>
+    </div>
+    <div class="cookie-banner__actions">
+      <button type="button" class="btn btn-ghost btn-sm" data-cookie-reject>{{ t('cookie.reject') }}</button>
+      <button type="button" class="btn btn-secondary btn-sm" data-cookie-settings>{{ t('cookie.settings') }}</button>
+      <button type="button" class="btn btn-primary btn-sm" data-cookie-accept>{{ t('cookie.accept') }}</button>
+    </div>
+  </div>
+</div>
+
+<div id="cookie-settings" class="cookie-settings" role="dialog" aria-labelledby="cookie-settings-title" hidden>
+  <div class="cookie-settings__panel" role="document">
+    <h2 id="cookie-settings-title">{{ t('cookie.settings') }}</h2>
+    <div class="cookie-settings__item">
+      <div>
+        <strong>{% if lang == 'en' %}Essential{% else %}Essentiels{% endif %}</strong>
+        <p>{% if lang == 'en' %}Stores your choices. Always active.{% else %}Mémorisation de vos choix. Toujours actifs.{% endif %}</p>
+      </div>
+      <span class="cookie-settings__badge">{% if lang == 'en' %}Required{% else %}Requis{% endif %}</span>
+    </div>
+    <div class="cookie-settings__item">
+      <div>
+        <strong>{{ t('cookie.analytics') }}</strong>
+        <p>{% if lang == 'en' %}Google Analytics 4 audience measurement (page views, traffic sources).{% else %}Mesure d'audience Google Analytics 4 (pages vues, sources de trafic).{% endif %}</p>
+      </div>
+      <label class="cookie-toggle">
+        <input type="checkbox" id="cookie-analytics-toggle">
+        <span class="cookie-toggle__slider"></span>
+      </label>
+    </div>
+    <div class="cookie-settings__footer">
+      <button type="button" class="btn btn-ghost btn-sm" data-cookie-settings-close>{% if lang == 'en' %}Close{% else %}Fermer{% endif %}</button>
+      <button type="button" class="btn btn-primary btn-sm" data-cookie-save>{{ t('cookie.save') }}</button>
+    </div>
+  </div>
+</div>
+{% endmacro %}

@@ -5,17 +5,17 @@
 {% block structured_data %}
 {% set day_items = [] %}
 {% for day in itin.days %}
-{% set _ = day_items.append({"name": "Jour " ~ day.day ~ " — " ~ day.title, "url": canonical_url ~ "#jour-" ~ day.day}) %}
+{% set _ = day_items.append({"name": (t('itin.day') ~ " " ~ day.day ~ " — " ~ day.title), "url": canonical_url ~ "#jour-" ~ day.day}) %}
 {% endfor %}
 {% set trip_schema = {
   "@type": "TouristTrip",
   "name": itin.title,
   "description": meta_description,
   "url": canonical_url,
-  "touristType": "Voyageurs français",
+  "touristType": "Travellers" if lang == 'en' else "Voyageurs français",
   "itinerary": {
     "@type": "ItemList",
-    "name": "Programme jour par jour",
+    "name": "Day-by-day programme" if lang == 'en' else "Programme jour par jour",
     "numberOfItems": itin.days | length,
     "itemListElement": day_items
   }
@@ -23,8 +23,8 @@
 {{ json_ld_graph([
   trip_schema,
   seo_breadcrumb([
-    ("Accueil", site.SITE_URL),
-    ("Itinéraires", site.SITE_URL ~ "/#itin-title"),
+    (t('nav.home'), site.SITE_URL ~ lang_url('index')),
+    (t('nav.itineraries'), site.SITE_URL ~ "/#itin-title"),
     (itin.title, None),
   ]),
 ]) }}
@@ -35,21 +35,21 @@
   <div class="container">
     <nav class="breadcrumb" aria-label="Fil d'Ariane">
       <ol>
-        <li><a href="{{ url_for('index') }}">Accueil</a></li>
+        <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
         <li aria-current="page">{{ itin.title }}</li>
       </ol>
     </nav>
-    <span class="badge">{{ itin.duration }} jours</span>
+    <span class="badge">{{ itin.duration }} {{ t('nav.days') }}</span>
     <h1>{{ itin.title }}</h1>
     <p class="page-hero__lead">{{ itin.summary }}</p>
-    <p class="budget-badge">Budget indicatif : {{ itin.budget_hint }}</p>
+    <p class="budget-badge">{{ t('itin.budget') }} : {{ itin.budget_hint }}</p>
   </div>
 </header>
 
 <div class="container page-layout">
   <article class="page-content">
     <section class="content-block">
-      <h2>Programme jour par jour</h2>
+      <h2>{% if lang == 'en' %}Day-by-day programme{% else %}Programme jour par jour{% endif %}</h2>
       <ol class="timeline">
         {% for day in itin.days %}
         <li class="timeline__item" id="jour-{{ day.day }}">
@@ -58,7 +58,7 @@
           </div>
           <div class="timeline__body">
             <h3>{{ day.title }}</h3>
-            <p class="timeline__location">{{ day.location }}{% if day.stay and day.stay != '—' %} · Nuit : {{ day.stay }}{% endif %}</p>
+            <p class="timeline__location">{{ day.location }}{% if day.stay and day.stay != '—' %} · {% if lang == 'en' %}Overnight{% else %}Nuit{% endif %} : {{ day.stay }}{% endif %}</p>
             <ul>
               {% for act in day.activities %}
               <li>{{ act }}</li>
@@ -71,8 +71,8 @@
     </section>
 
     <section class="content-block">
-      <h2>Réservations recommandées</h2>
-      <p class="section-intro">Liens affiliés — hôtels et activités types pour cet itinéraire.</p>
+      <h2>{% if lang == 'en' %}Recommended bookings{% else %}Réservations recommandées{% endif %}</h2>
+      <p class="section-intro">{% if lang == 'en' %}Affiliate links — sample hotels and activities for this itinerary.{% else %}Liens affiliés — hôtels et activités types pour cet itinéraire.{% endif %}</p>
       <div class="affiliate-grid">
         {{ hotel_card(itin.sample_hotel, itin.location_key) }}
         {{ activity_card(itin.sample_activity, itin.get('activity_location_key', itin.location_key)) }}
@@ -87,10 +87,10 @@
     {{ sim_banner() }}
     {{ insurance_banner() }}
     <div class="sidebar-card">
-      <h3>Guides par ville</h3>
+      <h3>{% if lang == 'en' %}City guides{% else %}Guides par ville{% endif %}</h3>
       <ul>
         {% for slug, d in destinations.items() %}
-        <li><a href="{{ url_for('destination_page', slug=slug) }}">{{ d.name }}</a></li>
+        <li><a href="{{ lang_url('destination_page', slug=slug) }}">{{ d.name }}</a></li>
         {% endfor %}
       </ul>
     </div>

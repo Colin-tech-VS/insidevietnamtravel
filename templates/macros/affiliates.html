@@ -1,6 +1,6 @@
 {% macro hotel_card(hotel, location_slug) %}
 <article class="affiliate-card affiliate-card--hotel">
-  <div class="affiliate-card__badge">Hébergement · {{ affiliate_location(location_slug).label }}</div>
+  <div class="affiliate-card__badge">{{ t('aff.badge.hotel') }} · {{ affiliate_location(location_slug).label }}</div>
   <h3 class="affiliate-card__title">{{ hotel.name }}</h3>
   <p class="affiliate-card__desc">{{ hotel.desc }}</p>
   <div class="affiliate-card__footer">
@@ -18,7 +18,7 @@
 
 {% macro activity_card(activity, location_slug) %}
 <article class="affiliate-card affiliate-card--activity">
-  <div class="affiliate-card__badge">Activité · {{ affiliate_location(location_slug).label }}</div>
+  <div class="affiliate-card__badge">{{ t('aff.badge.activity') }} · {{ affiliate_location(location_slug).label }}</div>
   <h3 class="affiliate-card__title">{{ activity.name }}</h3>
   <p class="affiliate-card__desc">{{ activity.desc }}</p>
   <div class="affiliate-card__footer">
@@ -28,7 +28,7 @@
        rel="sponsored noopener noreferrer"
        target="_blank"
        title="Réserver {{ activity.name }} à {{ affiliate_location(location_slug).label }}">
-      Réserver
+      {{ t('dest.book') }}
     </a>
   </div>
 </article>
@@ -37,9 +37,9 @@
 {% macro sim_banner() %}
 <aside class="affiliate-banner affiliate-banner--sim" aria-label="Offre eSIM Vietnam">
   <div class="affiliate-banner__content">
-    <span class="affiliate-banner__eyebrow">Connectivité</span>
-    <h3 class="affiliate-banner__title">eSIM Vietnam — Internet dès l'atterrissage</h3>
-    <p class="affiliate-banner__text">Évitez les files d'attente à l'aéroport. Forfaits 7 à 30 jours, activation en 2 minutes.</p>
+    <span class="affiliate-banner__eyebrow">{% if lang == 'en' %}Connectivity{% else %}Connectivité{% endif %}</span>
+    <h3 class="affiliate-banner__title">{% if lang == 'en' %}Vietnam eSIM — Internet on landing{% else %}eSIM Vietnam — Internet dès l'atterrissage{% endif %}</h3>
+    <p class="affiliate-banner__text">{% if lang == 'en' %}Skip airport queues. 7 to 30-day plans, activation in 2 minutes.{% else %}Évitez les files d'attente à l'aéroport. Forfaits 7 à 30 jours, activation en 2 minutes.{% endif %}</p>
     <div class="affiliate-banner__actions">
       <a href="{{ esim_airalo_url() }}" class="btn btn-primary btn-sm affiliate-link" rel="sponsored noopener noreferrer" target="_blank">Airalo — eSIM Vietnam</a>
       <a href="{{ esim_holafly_url() }}" class="btn btn-ghost-dark btn-sm affiliate-link" rel="sponsored noopener noreferrer" target="_blank">Holafly — Vietnam</a>
@@ -75,7 +75,7 @@
     <div class="affiliate-banner__footer">
       <span class="affiliate-banner__price">{{ pdf.PDF_GUIDE.price }}</span>
       <a href="{{ pdf_checkout_url() }}" class="btn btn-primary affiliate-link" rel="noopener">
-        Télécharger le guide
+        {{ t('aff.pdf.cta') }}
       </a>
     </div>
   </div>
@@ -84,6 +84,6 @@
 
 {% macro affiliate_disclosure() %}
 <p class="affiliate-disclosure">
-  <small>Ce site contient des liens affiliés. Si vous réservez via nos liens, nous pouvons percevoir une commission sans surcoût pour vous. Les liens ouvrent une recherche pré-remplie (ville, hôtel ou activité).</small>
+  <small>{% if lang == 'en' %}This site contains affiliate links. If you book through our links, we may earn a commission at no extra cost to you. Links open a pre-filled search (city, hotel or activity).{% else %}Ce site contient des liens affiliés. Si vous réservez via nos liens, nous pouvons percevoir une commission sans surcoût pour vous. Les liens ouvrent une recherche pré-remplie (ville, hôtel ou activité).{% endif %}</small>
 </p>
 {% endmacro %}

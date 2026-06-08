@@ -64,10 +64,29 @@ Le `Procfile` lance Gunicorn : `gunicorn app:app --bind 0.0.0.0:$PORT`
 | `requirements.txt` | Dépendances Python |
 | `.python-version` | Version Python (3.12.8) |
 
-### Données en production
+### Base de données — Supabase (PostgreSQL)
 
-- **Articles & destinations** : `data/store/*.json` (versionnés dans Git)
-- **SQLite analytics** (`data/site.db`) et **newsletter** : stockage éphémère sur Scalingo (réinitialisés au redéploiement). Pour persister, ajoutez un [addon Disk](https://doc.scalingo.com/databases/s3) ou migrez vers PostgreSQL.
+En production, définissez `DATABASE_URL` (URI PostgreSQL Supabase). Sans cette variable, le site utilise des fichiers locaux (dev uniquement).
+
+| Table / store | Contenu |
+|---------------|---------|
+| `app_kv` | Articles, destinations, settings, affiliés (JSONB) |
+| `page_views`, `affiliate_clicks`, `revenue` | Analytics admin |
+| `newsletter_subscribers` | Abonnés newsletter |
+
+**Migration initiale** (une fois `DATABASE_URL` dans `.env`) :
+
+```bash
+python scripts/migrate_to_supabase.py
+```
+
+Schéma SQL de référence : `supabase/schema.sql`
+
+Sur Scalingo :
+
+```bash
+scalingo --app insidevietnamtravel env-set DATABASE_URL="postgresql://..."
+```
 
 ## Admin (`/admin`)
 

@@ -1,0 +1,107 @@
+<h2>1. Data controller</h2>
+<p>
+  The website <strong>Inside Vietnam Travel</strong> ({{ site.SITE_URL }}) is published independently.
+  For any questions about your personal data, contact us at
+  <a href="mailto:{{ legal_contact_email }}">{{ legal_contact_email }}</a>.
+</p>
+
+<h2>2. Data we collect</h2>
+<p>We may process the following categories of data:</p>
+<ul>
+  <li><strong>Newsletter</strong>: email address and subscription date.</li>
+  <li><strong>Browsing</strong>: pages viewed, referrer, browser type, hashed IP fingerprint (internal analytics).</li>
+  <li><strong>Affiliate links</strong>: outbound clicks (provider, source page, timestamp) — no name or email.</li>
+  <li><strong>Administration</strong>: admin login session (Flask session cookie).</li>
+  <li><strong>Cookies</strong>: consent preferences stored locally in your browser.</li>
+  <li><strong>Audience measurement</strong> (if you accept): Google Analytics 4 — anonymised or pseudonymised data depending on service configuration.</li>
+</ul>
+
+<h2>3. Purposes and legal bases</h2>
+<table class="legal-table">
+  <thead>
+    <tr><th>Processing</th><th>Purpose</th><th>Legal basis</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Newsletter</td>
+      <td>Vietnam travel tips by email</td>
+      <td>Consent (checkbox on signup)</td>
+    </tr>
+    <tr>
+      <td>Internal analytics</td>
+      <td>Site traffic statistics</td>
+      <td>Legitimate interest (content improvement)</td>
+    </tr>
+    <tr>
+      <td>Google Analytics</td>
+      <td>Aggregated audience measurement</td>
+      <td>Consent (cookie banner)</td>
+    </tr>
+    <tr>
+      <td>Affiliate clicks</td>
+      <td>Tracking recommendation performance</td>
+      <td>Legitimate interest</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>4. Retention periods</h2>
+<ul>
+  <li><strong>Newsletter</strong>: until unsubscribe or 3 years without interaction.</li>
+  <li><strong>Analytics</strong>: 24 months maximum (aggregated data).</li>
+  <li><strong>Consent cookies</strong>: 13 months.</li>
+</ul>
+
+<h2>5. Recipients and processors</h2>
+<p>Your data may be hosted or processed by:</p>
+<ul>
+  <li><strong>Scalingo</strong> — application hosting (France / EU).</li>
+  <li><strong>Supabase</strong> — PostgreSQL database (EU).</li>
+  <li><strong>Google</strong> — Analytics (only if you accept analytics cookies).</li>
+  <li><strong>SMTP provider</strong> — newsletter email delivery (if configured).</li>
+</ul>
+<p>We do not sell your personal data to third parties.</p>
+
+<h2>6. Your rights (GDPR)</h2>
+<p>Under Regulation (EU) 2016/679, you have the following rights:</p>
+<ul>
+  <li>Right of access, rectification and erasure</li>
+  <li>Right to restriction and objection</li>
+  <li>Right to data portability (newsletter data)</li>
+  <li>Right to withdraw consent at any time</li>
+</ul>
+<p>
+  <strong>Newsletter</strong>: instant unsubscribe via the link in each email or on
+  <a href="{{ lang_url('newsletter_unsubscribe') }}">this page</a>.
+</p>
+<p>
+  To exercise your other rights: <a href="mailto:{{ legal_contact_email }}">{{ legal_contact_email }}</a>.
+  You may also lodge a complaint with your local data protection authority (e.g. <a href="https://www.cnil.fr/" rel="noopener noreferrer" target="_blank">CNIL</a> in France).
+</p>
+
+<h2>7. Cookies</h2>
+<p>
+  On your first visit, a banner lets you accept or decline non-essential cookies
+  (audience measurement). You can change your choice at any time via
+  <button type="button" class="link-button" data-cookie-settings>Open cookie preferences</button>.
+</p>
+<ul>
+  <li><strong>Essential</strong>: stores your cookie choice (required for the banner to work).</li>
+  <li><strong>Analytics</strong>: Google Analytics 4 — disabled by default until you consent.</li>
+</ul>
+
+<h2>8. Security</h2>
+<p>
+  We apply reasonable technical measures: HTTPS, admin passwords, secure hosting,
+  restricted database access. No system is infallible; we cannot guarantee absolute security.
+</p>
+
+<h2>9. External links</h2>
+<p>
+  This site contains links to third-party websites (Booking, Agoda, GetYourGuide, etc.).
+  Their privacy policies apply once you leave our site.
+</p>
+
+<p class="legal-nav">
+  See also: <a href="{{ lang_url('legal_notices') }}">Legal notice</a>
+</p>

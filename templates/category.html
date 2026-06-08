@@ -5,19 +5,19 @@
 {% block structured_data %}
 {% set article_items = [] %}
 {% for article in articles %}
-{% set _ = article_items.append({"name": article.title, "url": site.SITE_URL ~ url_for('article', slug=article.slug)}) %}
+{% set _ = article_items.append({"name": article.title, "url": site.SITE_URL ~ lang_url('article', slug=article.slug)}) %}
 {% endfor %}
 {{ json_ld_graph([
   {
     "@type": "CollectionPage",
-    "name": category.label ~ " — voyage Vietnam",
+    "name": category.label ~ " — Vietnam",
     "description": meta_description,
     "url": canonical_url,
-    "inLanguage": "fr-FR"
+    "inLanguage": "en-GB" if lang == 'en' else "fr-FR"
   },
   seo_breadcrumb([
-    ("Accueil", site.SITE_URL),
-    ("Blog", site.SITE_URL ~ url_for('blog_index')),
+    (t('nav.home'), site.SITE_URL ~ lang_url('index')),
+    (t('nav.blog'), site.SITE_URL ~ lang_url('blog_index')),
     (category.label, None),
   ]),
   seo_item_list(category.label, article_items),
@@ -29,14 +29,14 @@
   <div class="container">
     <nav class="breadcrumb" aria-label="Fil d'Ariane">
       <ol>
-        <li><a href="{{ url_for('index') }}">Accueil</a></li>
-        <li><a href="{{ url_for('blog_index') }}">Blog</a></li>
+        <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+        <li><a href="{{ lang_url('blog_index') }}">{{ t('nav.blog') }}</a></li>
         <li aria-current="page">{{ category.label }}</li>
       </ol>
     </nav>
-    <h1>{{ category.label }} — voyage Vietnam</h1>
+    <h1>{{ category.label }} — Vietnam</h1>
     <p>{{ category.description }}</p>
-    <span class="article-count">{{ articles|length }} guide{% if articles|length > 1 %}s{% endif %}</span>
+    <span class="article-count">{{ articles|length }} {{ t('category.articles') }}</span>
   </div>
 </header>
 
@@ -49,7 +49,7 @@
       {% endfor %}
     </div>
     {% else %}
-    <p class="empty-state">Aucun article dans cette catégorie pour le moment.</p>
+    <p class="empty-state">{% if lang == 'en' %}No articles in this category yet.{% else %}Aucun article dans cette catégorie pour le moment.{% endif %}</p>
     {% endif %}
   </div>
 </section>

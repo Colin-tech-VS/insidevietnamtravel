@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block content %}
+<header class="page-hero page-hero--about">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Fil d'Ariane">
+      <ol>
+        <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+        <li aria-current="page">{{ t('footer.legal') }}</li>
+      </ol>
+    </nav>
+    {% if lang == 'en' %}
+    <h1>Legal notice</h1>
+    <p class="page-hero__lead">Legal information about the Inside Vietnam Travel website.</p>
+    {% else %}
+    <h1>Mentions légales</h1>
+    <p class="page-hero__lead">Informations légales relatives au site Inside Vietnam Travel.</p>
+    {% endif %}
+    <p class="legal-updated"><small>{% if lang == 'en' %}Last updated:{% else %}Dernière mise à jour :{% endif %} {{ legal_updated }}</small></p>
+  </div>
+</header>
+
+<section class="legal-section">
+  <div class="container legal-content prose">
+    {% if lang == 'en' %}
+    <h2>1. Site publisher</h2>
+    <p>
+      <strong>Inside Vietnam Travel</strong><br>
+      Independent Vietnam travel guide — not affiliated with a travel agency.<br>
+      Contact: <a href="mailto:{{ legal_contact_email }}">{{ legal_contact_email }}</a>
+    </p>
+    <h2>2. Publication director</h2>
+    <p>The site publisher is responsible for publication (contact above).</p>
+    <h2>3. Hosting</h2>
+    <p>
+      <strong>Scalingo</strong><br>
+      13 rue de la Tour des Dames, 75009 Paris, France<br>
+      <a href="https://scalingo.com" rel="noopener noreferrer" target="_blank">scalingo.com</a>
+    </p>
+    <h2>4. Intellectual property</h2>
+    <p>
+      All texts, visuals, logos and structure of Inside Vietnam Travel are protected by copyright.
+      Any reproduction, even partial, without prior written permission is prohibited.
+    </p>
+    <h2>5. Affiliate links and transparency</h2>
+    <p>
+      Inside Vietnam Travel is a content and affiliate site. Some links (hotels, activities, eSIM, insurance, PDF guide)
+      are affiliate links: we may earn a commission if you make a purchase, at no extra cost to you.
+      This income funds free guide creation.
+    </p>
+    <h2>6. Limitation of liability</h2>
+    <p>
+      Information published (visa, budget, itineraries, prices) is indicative and may change.
+      Always verify official sources before travelling. Inside Vietnam Travel cannot be held liable
+      for decisions made based on site content.
+    </p>
+    <h2>7. Personal data</h2>
+    <p>
+      See our <a href="{{ lang_url('privacy') }}">privacy policy</a> for how we process your data (GDPR).
+    </p>
+    {% else %}
+    <h2>1. Éditeur du site</h2>
+    <p>
+      <strong>Inside Vietnam Travel</strong><br>
+      Site de guide voyage indépendant — non affilié à une agence de voyage.<br>
+      Contact : <a href="mailto:{{ legal_contact_email }}">{{ legal_contact_email }}</a>
+    </p>
+    <h2>2. Directeur de la publication</h2>
+    <p>Le responsable de la publication est l'éditeur du site (contact ci-dessus).</p>
+    <h2>3. Hébergement</h2>
+    <p>
+      <strong>Scalingo</strong><br>
+      13 rue de la Tour des Dames, 75009 Paris, France<br>
+      <a href="https://scalingo.com" rel="noopener noreferrer" target="_blank">scalingo.com</a>
+    </p>
+    <h2>4. Propriété intellectuelle</h2>
+    <p>
+      L'ensemble des textes, visuels, logos et structure du site Inside Vietnam Travel sont protégés par le droit d'auteur.
+      Toute reproduction, même partielle, sans autorisation écrite préalable est interdite.
+    </p>
+    <h2>5. Liens affiliés et transparence</h2>
+    <p>
+      Inside Vietnam Travel est un site de contenu et d'affiliation. Certains liens (hôtels, activités, eSIM, assurance, guide PDF)
+      sont des liens affiliés : nous pouvons percevoir une commission si vous effectuez un achat, sans surcoût pour vous.
+      Cette rémunération finance la création de guides gratuits.
+    </p>
+    <h2>6. Limitation de responsabilité</h2>
+    <p>
+      Les informations publiées (visa, budget, itinéraires, prix) sont fournies à titre indicatif et peuvent évoluer.
+      Vérifiez toujours les sources officielles avant de voyager. Inside Vietnam Travel ne saurait être tenu responsable
+      des décisions prises sur la base des contenus du site.
+    </p>
+    <h2>7. Données personnelles</h2>
+    <p>
+      Consultez notre <a href="{{ lang_url('privacy') }}">politique de confidentialité</a> pour le traitement de vos données (RGPD).
+    </p>
+    {% endif %}
+    <p class="legal-nav">
+      <a href="{{ lang_url('privacy') }}">{{ t('footer.privacy') }}</a>
+    </p>
+  </div>
+</section>
+{% endblock %}

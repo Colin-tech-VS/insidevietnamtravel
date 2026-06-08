@@ -1,33 +1,33 @@
-{% macro article_card(article, index=0) %}
-{% from "macros/images.html" import responsive_img with context %}
-<article class="card card--article">
-  <a href="{{ url_for('article', slug=article.slug) }}" class="card-link">
-    <div class="card-visual">
-      {% if article.image %}
-      {{ responsive_img(
-        article.image,
-        alt=article.image_alt or article.title,
-        width=400,
-        height=225,
-        loading='lazy',
-        class='card-visual__img',
-        sizes='(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px'
-      ) }}
-      {% else %}
-      <div class="card-visual__placeholder card-visual--{{ (index % 6) + 1 }}" aria-hidden="true"></div>
-      {% endif %}
-      <span class="card-category">{{ article.category_label }}</span>
-      {% if is_article_new(article) %}
-      <span class="badge-nouveau">Nouveau</span>
-      {% endif %}
-    </div>
-    <div class="card-body">
-      <time datetime="{{ article.date }}">{{ article.date }}</time>
-      <h2 class="card-title">{{ article.title }}</h2>
-      <p class="card-excerpt">{{ article.excerpt }}</p>
-      <span class="card-meta">{{ article.read_time }} min de lecture</span>
-    </div>
-  </a>
-</article>
-{% endmacro %}
-
+{% macro article_card(article, index=0) %}
+{% from "macros/images.html" import responsive_img with context %}
+<article class="card card--article">
+  <a href="{{ lang_url('article', slug=article.slug) }}" class="card-link">
+    <div class="card-visual">
+      {% if article.image %}
+      {{ responsive_img(
+        article.image,
+        alt=article.image_alt or article.title,
+        width=400,
+        height=225,
+        loading='lazy',
+        class='card-visual__img',
+        sizes='(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px'
+      ) }}
+      {% else %}
+      <div class="card-visual__placeholder card-visual--{{ (index % 6) + 1 }}" aria-hidden="true"></div>
+      {% endif %}
+      <span class="card-category">{{ article.category_label }}</span>
+      {% if is_article_new(article) %}
+      <span class="badge-nouveau">{{ t('article.new') }}</span>
+      {% endif %}
+    </div>
+    <div class="card-body">
+      <time datetime="{{ article.date }}">{{ article.date }}</time>
+      <h2 class="card-title">{{ article.title }}</h2>
+      <p class="card-excerpt">{{ article.excerpt }}</p>
+      <span class="card-meta">{{ article.read_time }} {{ t('article.read_time') }}</span>
+    </div>
+  </a>
+</article>
+{% endmacro %}
+

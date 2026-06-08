@@ -33,7 +33,7 @@
   "mainEntityOfPage": {"@type": "WebPage", "@id": canonical_url},
   "articleSection": article.category_label,
   "keywords": article.tags | join(', '),
-  "inLanguage": "fr-FR"
+  "inLanguage": "en-GB" if lang == 'en' else "fr-FR"
 } %}
 {% if article.image %}
 {% set _ = article_schema.update({"image": site.SITE_URL ~ article.image}) %}
@@ -43,8 +43,8 @@
 {% set schemas = [
   article_schema,
   seo_breadcrumb([
-    ("Accueil", site.SITE_URL),
-    ("Blog", site.SITE_URL ~ url_for('blog_index')),
+    (t('nav.home'), site.SITE_URL ~ lang_url('index')),
+    (t('nav.blog'), site.SITE_URL ~ lang_url('blog_index')),
     (article.title, None),
   ]),
 ] + ([faq_schema_obj] if faq_schema_obj else []) %}
@@ -70,22 +70,22 @@
     <div class="container article-hero-inner">
       <nav class="breadcrumb" aria-label="Fil d'Ariane">
         <ol>
-          <li><a href="{{ url_for('index') }}">Accueil</a></li>
-          <li><a href="{{ url_for('blog_index') }}">Blog</a></li>
+          <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+          <li><a href="{{ lang_url('blog_index') }}">{{ t('nav.blog') }}</a></li>
           <li aria-current="page">{{ article.title[:45] }}{% if article.title|length > 45 %}…{% endif %}</li>
         </ol>
       </nav>
       <div class="article-hero__labels">
         <span class="article-category">{{ article.category_label }}</span>
         {% if is_article_new(article) %}
-        <span class="badge-nouveau badge-nouveau--hero">Nouveau</span>
+        <span class="badge-nouveau badge-nouveau--hero">{{ t('article.new') }}</span>
         {% endif %}
       </div>
       <h1>{{ article.title }}</h1>
       <p class="article-excerpt">{{ article.excerpt }}</p>
       <div class="article-meta">
         <time datetime="{{ article.date }}">{{ article.date }}</time>
-        <span>{{ article.read_time }} min de lecture</span>
+        <span>{{ article.read_time }} {{ t('article.read_time') }}</span>
       </div>
       <div class="article-tags">
         {% for tag in article.tags %}
@@ -108,10 +108,10 @@
       {{ pdf_banner() }}
       {% endif %}
       <div class="sidebar-card">
-        <h3>Articles liés</h3>
+        <h3>{{ t('article.related') }}</h3>
         <ul>
           {% for a in related %}
-          <li><a href="{{ url_for('article', slug=a.slug) }}">{{ a.title }}</a></li>
+          <li><a href="{{ lang_url('article', slug=a.slug) }}">{{ a.title }}</a></li>
           {% endfor %}
         </ul>
       </div>

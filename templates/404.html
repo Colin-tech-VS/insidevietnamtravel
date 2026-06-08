@@ -6,9 +6,9 @@
 <section class="error-page">
   <div class="container error-inner">
     <span class="error-code" aria-hidden="true">404</span>
-    <h1>Page introuvable</h1>
-    <p>La page que vous cherchez n'existe pas ou a été déplacée. Retournez à l'accueil pour préparer votre voyage au Vietnam.</p>
-    <a href="{{ url_for('index') }}" class="btn btn-primary">Retour à l'accueil</a>
+    <h1>{{ t('404.title') }}</h1>
+    <p>{{ t('404.lead') }}</p>
+    <a href="{{ lang_url('index') }}" class="btn btn-primary">{{ t('404.cta') }}</a>
   </div>
 </section>
 {% endblock %}

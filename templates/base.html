@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html lang="{{ site.SITE_LANG }}">
+<html lang="{{ html_lang }}">
 
 <head>
 
@@ -24,6 +24,9 @@
 
   <link rel="canonical" href="{{ canonical_url }}">
 
+  {% from "macros/hreflang.html" import hreflang_tags with context %}
+  {{ hreflang_tags() }}
+
 
 
   {% block head_preload %}{% endblock %}
@@ -40,7 +43,7 @@
 
   <meta property="og:site_name" content="{{ site.SITE_NAME }}">
 
-  <meta property="og:locale" content="fr_FR">
+  <meta property="og:locale" content="{{ og_locale }}">
 
   {% block og_image %}
 
@@ -103,7 +106,7 @@
 
 </head>
 
-<body class="is-loading">
+<body class="is-loading" data-ga4-id="{{ ga4_id }}">
 
   {% from "macros/loader.html" import page_loader %}
   {{ page_loader() }}
@@ -130,7 +133,7 @@
   </script>
   <noscript><style>#page-loader{display:none!important}body.is-loading{overflow:auto!important}</style></noscript>
 
-  <a href="#main" class="skip-link">Aller au contenu principal</a>
+  <a href="#main" class="skip-link">{{ t('skip.main') }}</a>
 
 
 
@@ -158,7 +161,7 @@
 
     <div class="container header-inner">
 
-      <a href="{{ url_for('index') }}" class="logo" aria-label="{{ site.SITE_NAME }} — Accueil">
+      <a href="{{ lang_url('index') }}" class="logo" aria-label="{{ site.SITE_NAME }}{{ t('logo.home') }}">
 
         <svg class="logo-icon" viewBox="0 0 40 40" aria-hidden="true">
 
@@ -180,61 +183,46 @@
 
       </a>
 
-
-
-      <button class="nav-toggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="main-nav">
-
-        <span></span><span></span><span></span>
-
-      </button>
-
-
-
-      <nav id="main-nav" class="main-nav" role="navigation" aria-label="Navigation principale">
-
+      <nav id="main-nav" class="main-nav" role="navigation" aria-label="{{ t('nav.main') }}">
         <ul>
-
-          <li><a href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}aria-current="page"{% endif %}>Accueil</a></li>
-
+          <li><a href="{{ lang_url('index') }}" {% if request.endpoint in ('index',) %}aria-current="page"{% endif %}>{{ t('nav.home') }}</a></li>
           <li class="nav-dropdown">
-
-            <button type="button" class="nav-dropdown__toggle" aria-expanded="false" aria-controls="nav-destinations">Destinations</button>
-
+            <button type="button" class="nav-dropdown__toggle" aria-expanded="false" aria-controls="nav-destinations">{{ t('nav.destinations') }}</button>
             <ul id="nav-destinations" class="nav-dropdown__menu">
-
               {% for slug, d in destinations.items() %}
-
-              <li><a href="{{ url_for('destination_page', slug=slug) }}">{{ d.name }}</a></li>
-
+              <li><a href="{{ lang_url('destination_page', slug=slug) }}">{{ d.name }}</a></li>
               {% endfor %}
-
             </ul>
-
           </li>
-
           <li class="nav-dropdown">
-
-            <button type="button" class="nav-dropdown__toggle" aria-expanded="false" aria-controls="nav-itineraries">Itinéraires</button>
-
+            <button type="button" class="nav-dropdown__toggle" aria-expanded="false" aria-controls="nav-itineraries">{{ t('nav.itineraries') }}</button>
             <ul id="nav-itineraries" class="nav-dropdown__menu">
-
               {% for slug, it in itineraries.items() %}
-
-              <li><a href="{{ url_for('itinerary', slug=slug) }}">{{ it.duration }} jours</a></li>
-
+              <li><a href="{{ lang_url('itinerary', slug=slug) }}">{{ it.duration }} {{ t('nav.days') }}</a></li>
               {% endfor %}
-
             </ul>
-
           </li>
-
-          <li><a href="{{ url_for('blog_index') }}" {% if request.endpoint in ('blog_index', 'article') %}aria-current="page"{% endif %}>Blog</a></li>
-
-          <li><a href="{{ url_for('about') }}" {% if request.endpoint == 'about' %}aria-current="page"{% endif %}>À propos</a></li>
-
+          <li><a href="{{ lang_url('blog_index') }}" {% if request.endpoint in ('blog_index', 'article') %}aria-current="page"{% endif %}>{{ t('nav.blog') }}</a></li>
+          <li><a href="{{ lang_url('about') }}" {% if request.endpoint == 'about' %}aria-current="page"{% endif %}>{{ t('nav.about') }}</a></li>
         </ul>
-
       </nav>
+
+      <div class="header-actions">
+        <nav class="lang-switch" aria-label="{{ t('lang.label') }}">
+          <a href="{{ page_url_in_lang('fr') }}"
+             hreflang="fr"
+             class="lang-switch__btn{% if lang == 'fr' %} is-active{% endif %}"
+             {% if lang == 'fr' %}aria-current="true"{% endif %}>FR</a>
+          <a href="{{ page_url_in_lang('en') }}"
+             hreflang="en"
+             class="lang-switch__btn{% if lang == 'en' %} is-active{% endif %}"
+             {% if lang == 'en' %}aria-current="true"{% endif %}>EN</a>
+        </nav>
+
+        <button class="nav-toggle" aria-label="{{ t('nav.open_menu') }}" aria-expanded="false" aria-controls="main-nav">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
 
     </div>
 
@@ -256,6 +244,9 @@
 
 
 
+  {% from "macros/cookies.html" import cookie_banner with context %}
+  {{ cookie_banner() }}
+
   <footer class="site-footer" role="contentinfo">
 
   {% from "macros/affiliates.html" import affiliate_disclosure with context %}
@@ -266,7 +257,7 @@
 
         <p class="footer-logo">Inside Vietnam Travel</p>
 
-        <p class="footer-tagline">{{ site.SITE_TAGLINE }}</p>
+        <p class="footer-tagline">{{ site_tagline }}</p>
 
         {{ affiliate_disclosure() }}
 
@@ -274,43 +265,31 @@
 
       <div class="footer-links">
 
-        <h3>Destinations</h3>
-
+        <h3>{{ t('footer.destinations') }}</h3>
         <ul>
-
           {% for slug, d in destinations.items() %}
-
-          <li><a href="{{ url_for('destination_page', slug=slug) }}">{{ d.name }}</a></li>
-
+          <li><a href="{{ lang_url('destination_page', slug=slug) }}">{{ d.name }}</a></li>
           {% endfor %}
-
         </ul>
-
       </div>
-
       <div class="footer-links">
-
-        <h3>Itinéraires & Blog</h3>
-
+        <h3>{{ t('footer.itineraries_blog') }}</h3>
         <ul>
-
           {% for slug, it in itineraries.items() %}
-
-          <li><a href="{{ url_for('itinerary', slug=slug) }}">{{ it.title }}</a></li>
-
+          <li><a href="{{ lang_url('itinerary', slug=slug) }}">{{ it.title }}</a></li>
           {% endfor %}
-
-          <li><a href="{{ url_for('blog_index') }}">Tous les articles</a></li>
-
+          <li><a href="{{ lang_url('blog_index') }}">{{ t('footer.all_articles') }}</a></li>
         </ul>
-
       </div>
-
     </div>
-
     <div class="footer-bottom container">
-
-      <p>&copy; {{ current_year }} Inside Vietnam Travel. Site indépendant — non affilié à une agence de voyage.</p>
+      <p>&copy; {{ current_year }} Inside Vietnam Travel. {{ t('footer.copyright') }}</p>
+      <nav class="footer-legal" aria-label="{{ t('footer.legal_nav') }}">
+        <a href="{{ lang_url('privacy') }}">{{ t('footer.privacy') }}</a>
+        <a href="{{ lang_url('legal_notices') }}">{{ t('footer.legal') }}</a>
+        <a href="{{ lang_url('newsletter_unsubscribe') }}">{{ t('footer.unsubscribe') }}</a>
+        <button type="button" class="footer-legal__cookies" data-cookie-settings>{{ t('footer.cookies') }}</button>
+      </nav>
 
     </div>
 
@@ -319,25 +298,8 @@
 
 
   <script src="{{ url_for('static', filename='js/loader.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/cookies.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
-
-  {% if ga4_id %}
-
-  <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga4_id }}"></script>
-
-  <script>
-
-    window.dataLayer = window.dataLayer || [];
-
-    function gtag(){dataLayer.push(arguments);}
-
-    gtag('js', new Date());
-
-    gtag('config', '{{ ga4_id }}');
-
-  </script>
-
-  {% endif %}
 
 </body>
 
