@@ -1,13 +1,11 @@
 """Génération de pages destination via Groq AI."""
 
 import json
-import os
 import re
 from datetime import date
 
-from groq import Groq
-
-from admin.store import get_settings, slugify
+from admin import groq_client
+from admin.store import slugify
 from admin.groq_translate import translate_destination_block
 from i18n_utils import merge_bilingual_destination
 
@@ -94,13 +92,9 @@ def _build_destination(data: dict, city: str, slug: str) -> dict:
 
 
 def generate_destination(city: str, notes: str = "") -> dict:
-    api_key = os.environ.get("GROQ_API_KEY")
-    if not api_key:
-        raise ValueError("GROQ_API_KEY manquante dans le fichier .env")
-
-    settings = get_settings()
-    client = Groq(api_key=api_key)
-    model = settings.get("groq_model", "llama-3.3-70b-versatile")
+    groq_client.require_api_key()
+    client = groq_client.get_client()
+    model = groq_client.main_model()
     year = date.today().year
     slug = slugify(city)
 
@@ -113,7 +107,8 @@ Notes éditoriales : {notes or "Guide complet pour voyageurs français"}
 Minimum {MIN_WORDS} mots (cible {TARGET_WORDS}).
 La page doit convaincre un voyageur de visiter {city} et l'aider à planifier : durée idéale, budget, meilleure période."""
 
-    response = client.chat.completions.create(
+    response = groq_client.chat_completion(
+        client=client,
         model=model,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -121,14 +116,14 @@ La page doit convaincre un voyageur de visiter {city} et l'aider à planifier : 
         ],
         temperature=0.65,
         max_tokens=8192,
-        response_format={"type": "json_object"},
     )
 
     data = json.loads(response.choices[0].message.content)
     dest = _build_destination(data, city, slug)
 
     if _total_words(dest) < MIN_WORDS:
-        expand = client.chat.completions.create(
+        expand = groq_client.chat_completion(
+            client=client,
             model=model,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
@@ -143,13 +138,13 @@ La page doit convaincre un voyageur de visiter {city} et l'aider à planifier : 
             ],
             temperature=0.5,
             max_tokens=8192,
-            response_format={"type": "json_object"},
+            pause_before=3.0,
         )
         data = json.loads(expand.choices[0].message.content)
         dest = _build_destination(data, city, slug)
 
     try:
-        en_data = translate_destination_block(dest)
+        en_data = translate_destination_block(dest, pause_before=3.0)
         shared = {
             k: v for k, v in dest.items()
             if k not in (

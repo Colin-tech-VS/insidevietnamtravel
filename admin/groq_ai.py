@@ -1,13 +1,11 @@
 """Génération de guides via Groq AI — SEO maximal, cible voyageurs Vietnam."""
 
 import json
-import os
 import re
 from datetime import date
 
-from groq import Groq
-
-from admin.store import get_settings, slugify
+from admin import groq_client
+from admin.store import slugify
 from admin.groq_translate import translate_article_block
 from i18n_utils import merge_bilingual_article
 
@@ -114,13 +112,13 @@ def _build_article(data: dict, topic: str, city: str, guide_type: str) -> dict:
     }
 
 
-def _call_groq(client, model: str, messages: list, max_tokens: int) -> dict:
-    response = client.chat.completions.create(
+def _call_groq(client, model: str, messages: list, max_tokens: int, *, pause_before: float = 0) -> dict:
+    response = groq_client.chat_completion(
+        client=client,
         model=model,
         messages=messages,
-        temperature=0.65,
         max_tokens=max_tokens,
-        response_format={"type": "json_object"},
+        pause_before=pause_before,
     )
     return _parse_response(response.choices[0].message.content)
 
@@ -154,6 +152,7 @@ Article :
             {"role": "user", "content": expand_prompt},
         ],
         target["max_tokens"],
+        pause_before=3.0,
     )
 
     article.update({
@@ -173,13 +172,9 @@ Article :
 
 
 def generate_guide(topic: str, guide_type: str, city: str) -> dict:
-    api_key = os.environ.get("GROQ_API_KEY")
-    if not api_key:
-        raise ValueError("GROQ_API_KEY manquante dans le fichier .env")
-
-    settings = get_settings()
-    client = Groq(api_key=api_key)
-    model = settings.get("groq_model", "llama-3.3-70b-versatile")
+    groq_client.require_api_key()
+    client = groq_client.get_client()
+    model = groq_client.main_model()
     year = date.today().year
     seo = _seo_target(guide_type)
 
@@ -214,7 +209,7 @@ Exigences :
     article = _build_article(data, topic, city, guide_type)
     article = _expand_if_short(article, guide_type, client, model)
     try:
-        en_data = translate_article_block(article)
+        en_data = translate_article_block(article, pause_before=3.0)
         shared = {
             k: v for k, v in article.items()
             if k not in (
@@ -234,13 +229,9 @@ Exigences :
 
 
 def improve_guide(article: dict, instructions: str) -> dict:
-    api_key = os.environ.get("GROQ_API_KEY")
-    if not api_key:
-        raise ValueError("GROQ_API_KEY manquante dans le fichier .env")
-
-    settings = get_settings()
-    client = Groq(api_key=api_key)
-    model = settings.get("groq_model", "llama-3.3-70b-versatile")
+    groq_client.require_api_key()
+    client = groq_client.get_client()
+    model = groq_client.main_model()
     guide_type = article.get("guide_type", "Guide pratique")
     seo = _seo_target(guide_type)
 
@@ -278,7 +269,7 @@ def improve_guide(article: dict, instructions: str) -> dict:
     article["read_time"] = _read_time_from_words(wc)
     article = _expand_if_short(article, guide_type, client, model)
     try:
-        en_data = translate_article_block(article)
+        en_data = translate_article_block(article, pause_before=3.0)
         shared = {
             k: v for k, v in article.items()
             if k not in (

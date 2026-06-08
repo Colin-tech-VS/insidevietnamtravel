@@ -11,6 +11,7 @@ from flask import (
 from admin.auth import check_password, do_login, do_logout, login_required
 from admin import db
 from admin import groq_ai
+from admin import groq_client
 from admin import groq_destinations
 from admin import groq_newsletter
 from admin.image_service import attach_image_to_article, attach_image_to_destination, ensure_all_destination_images
@@ -172,9 +173,9 @@ def guides():
         except ValueError as e:
             flash(str(e), "error")
         except Exception as e:
-            flash(f"Erreur : {e}", "error")
+            flash(groq_client.friendly_error(e), "error")
 
-    suggestions = get_topic_suggestions(use_ai=bool(os.environ.get("GROQ_API_KEY")))
+    suggestions = get_topic_suggestions(use_ai=False)
 
     return render_template(
         "admin/guides.html",
@@ -187,6 +188,18 @@ def guides():
         article_categories=[{"value": k, "label": v} for k, v in CATEGORY_LABELS.items()],
         draft_is_manual=bool(session.get("draft_article", {}).get("manual")),
     )
+
+
+@admin_bp.route("/api/guides/suggestions", methods=["POST"])
+@login_required
+def api_guide_suggestions():
+    if not os.environ.get("GROQ_API_KEY"):
+        return jsonify({"ok": False, "error": "GROQ_API_KEY manquante"}), 400
+    try:
+        suggestions = get_topic_suggestions(use_ai=True)
+        return jsonify({"ok": True, "suggestions": suggestions})
+    except Exception as e:
+        return jsonify({"ok": False, "error": groq_client.friendly_error(e)}), 500
 
 
 @admin_bp.route("/api/guides/generate", methods=["POST"])
@@ -207,7 +220,7 @@ def api_generate_guide():
         session["draft_article"] = article
         return jsonify({"ok": True, "title": article["title"], "slug": article["slug"]})
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
+        return jsonify({"ok": False, "error": groq_client.friendly_error(e)}), 500
 
 
 @admin_bp.route("/api/guides/improve", methods=["POST"])
@@ -224,7 +237,7 @@ def api_improve_guide():
         session["draft_article"] = article
         return jsonify({"ok": True, "title": article["title"]})
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
+        return jsonify({"ok": False, "error": groq_client.friendly_error(e)}), 500
 
 
 def _generate_destination_draft(city: str, notes: str = "") -> dict:
@@ -301,7 +314,7 @@ def api_generate_destination():
         session["draft_destination"] = dest
         return jsonify({"ok": True, "name": dest["name"], "slug": dest["slug"]})
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
+        return jsonify({"ok": False, "error": groq_client.friendly_error(e)}), 500
 
 
 @admin_bp.route("/newsletter", methods=["GET", "POST"])
@@ -458,7 +471,7 @@ def api_generate_newsletter():
         session["draft_newsletter"] = draft
         return jsonify({"ok": True, "subject": draft["subject"]})
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
+        return jsonify({"ok": False, "error": groq_client.friendly_error(e)}), 500
 
 
 @admin_bp.route("/affiliates", methods=["GET", "POST"])

@@ -78,6 +78,84 @@
       </section>
     </div>
 
+    <section class="geo-analytics-section seo-analytics-section" aria-labelledby="seo-title">
+      <header class="geo-analytics-header">
+        <h2 id="seo-title">SEO — Trafic organique</h2>
+        <p class="page-sub">Visites depuis Google, Bing et autres moteurs (referrer) — indicateurs clés pour la croissance du site.</p>
+      </header>
+
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-card--gold">
+          <span class="kpi-card__label">Visites SEO</span>
+          <span class="kpi-card__value">{{ stats.seo.total_organic_views }}</span>
+          <span class="kpi-card__hint">{{ stats.seo.organic_share_pct }}% du trafic humain · {{ days }} jours</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-card__label">Trafic direct</span>
+          <span class="kpi-card__value">{{ stats.seo.direct_views }}</span>
+          <span class="kpi-card__hint">{{ stats.seo.direct_share_pct }}% · marque, favoris, URL tapée</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-card__label">Blog (SEO)</span>
+          <span class="kpi-card__value">{{ stats.seo.blog_organic_views }}</span>
+          <span class="kpi-card__hint">Articles trouvés via recherche</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-card__label">Destinations (SEO)</span>
+          <span class="kpi-card__value">{{ stats.seo.destination_organic_views }}</span>
+          <span class="kpi-card__hint">Guides villes via recherche</span>
+        </div>
+      </div>
+
+      <div class="chart-grid">
+        <section class="chart-panel">
+          <h2>Sources de trafic</h2>
+          {% if stats.seo.channels_chart %}
+          <canvas id="seoChannelsChart" height="130"></canvas>
+          {% else %}
+          <p class="muted">Les sources apparaîtront dès les premières visites humaines.</p>
+          {% endif %}
+        </section>
+        <section class="chart-panel">
+          <h2>Moteurs de recherche</h2>
+          {% if stats.seo.engines_chart %}
+          <canvas id="seoEnginesChart" height="130"></canvas>
+          {% else %}
+          <p class="muted">Le trafic Google/Bing s'affichera quand des visiteurs arriveront via recherche.</p>
+          {% endif %}
+        </section>
+        <section class="chart-panel chart-panel--wide">
+          <h2>Visites SEO par jour</h2>
+          {% if stats.seo.daily_organic %}
+          <canvas id="seoDailyChart" height="80"></canvas>
+          {% else %}
+          <p class="muted">Courbe SEO dès les premières visites organiques.</p>
+          {% endif %}
+        </section>
+        <section class="chart-panel">
+          <h2>Top pages SEO</h2>
+          <ul class="top-pages-list">
+            {% for p in stats.seo.top_organic_pages[:12] %}
+            <li>
+              <span class="top-pages-list__path">{{ p.path }}</span>
+              <span class="top-pages-list__count">{{ p.views }}</span>
+            </li>
+            {% else %}
+            <li class="muted">Pas encore de landing pages organiques.</li>
+            {% endfor %}
+          </ul>
+        </section>
+        <section class="chart-panel">
+          <h2>Contenu performant (SEO)</h2>
+          {% if stats.seo.content_organic %}
+          <canvas id="seoContentChart" height="120"></canvas>
+          {% else %}
+          <p class="muted">Répartition blog / destinations / itinéraires quand le SEO décollera.</p>
+          {% endif %}
+        </section>
+      </div>
+    </section>
+
     <section class="geo-analytics-section" aria-labelledby="location-title">
       <header class="geo-analytics-header">
         <h2 id="location-title">Localisation</h2>
@@ -185,6 +263,7 @@
     dailyViews: {{ stats.daily_views | tojson }},
     dailyClicks: {{ stats.daily_clicks | tojson }},
     countries: {{ stats.countries | tojson }},
+    seo: {{ stats.seo | tojson }},
     geo: {{ stats.geo | tojson }},
   };
 </script>

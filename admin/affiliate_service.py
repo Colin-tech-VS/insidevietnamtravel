@@ -126,6 +126,7 @@ def build_affiliate_summary(days: int = 30) -> dict:
 
 def build_site_analytics(days: int = 30) -> dict:
     """Trafic du site — pour l'onglet Analytics."""
+    from admin.seo_analytics import aggregate_seo_views
     from geo_utils import aggregate_geo_views
 
     realtime = db.get_realtime_stats()
@@ -133,6 +134,7 @@ def build_site_analytics(days: int = 30) -> dict:
     aff = db.get_affiliate_stats(days)
     geo_rows = db.get_geo_view_rows(days)
     geo = aggregate_geo_views(geo_rows)
+    seo = aggregate_seo_views(db.get_seo_view_rows(days))
     countries = db.get_country_stats(days)
 
     return {
@@ -147,5 +149,6 @@ def build_site_analytics(days: int = 30) -> dict:
         "top_pages": realtime["top_pages"],
         "recent": realtime["recent"],
         "countries": countries,
+        "seo": seo,
         "geo": geo,
     }

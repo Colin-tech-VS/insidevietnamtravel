@@ -189,6 +189,21 @@ def get_geo_view_rows(days: int = 30) -> list[dict]:
     return [_row_dict(r) for r in rows]
 
 
+def get_seo_view_rows(days: int = 30) -> list[dict]:
+    """Page views humaines avec referrer — analytics SEO (hors robots)."""
+    bot = _human_traffic_sql()
+    with get_connection() as conn:
+        rows = _execute(
+            conn,
+            f"""SELECT path, referrer, user_agent, created_at::text AS created_at
+                FROM page_views WHERE created_at >= %s{bot} ORDER BY id DESC""",
+            f"""SELECT path, referrer, user_agent, created_at
+                FROM page_views WHERE created_at >= ?{bot} ORDER BY id DESC""",
+            (_since_days(days),),
+        ).fetchall()
+    return [_row_dict(r) for r in rows]
+
+
 def get_daily_affiliate_clicks(days: int = 30):
     with get_connection() as conn:
         rows = _execute(

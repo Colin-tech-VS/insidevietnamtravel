@@ -5,9 +5,8 @@ import os
 import random
 from datetime import date
 
-from groq import Groq
-
-from admin.store import get_settings, get_articles
+from admin import groq_client
+from admin.store import get_articles
 from data.vietnam_cities import ALL_CITY_VALUES
 
 SUGGEST_PROMPT = """Tu es éditeur SEO pour un blog voyage Vietnam (audience française).
@@ -90,8 +89,6 @@ def get_topic_suggestions(use_ai: bool = True) -> list[dict]:
 
     if use_ai and os.environ.get("GROQ_API_KEY"):
         try:
-            settings = get_settings()
-            client = Groq(api_key=os.environ["GROQ_API_KEY"])
             cities_str = ", ".join(ALL_CITY_VALUES[:20]) + ", ..."
             prompt = SUGGEST_PROMPT.format(
                 year=today.year,
@@ -99,15 +96,14 @@ def get_topic_suggestions(use_ai: bool = True) -> list[dict]:
                 existing=existing_lines,
                 cities=cities_str,
             )
-            response = client.chat.completions.create(
-                model=settings.get("groq_model", "llama-3.3-70b-versatile"),
+            response = groq_client.chat_completion(
+                model=groq_client.fast_model(),
                 messages=[
                     {"role": "system", "content": "Tu réponds uniquement en JSON valide."},
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.85,
                 max_tokens=1200,
-                response_format={"type": "json_object"},
             )
             data = json.loads(response.choices[0].message.content)
             suggestions = data.get("suggestions", [])[:8]

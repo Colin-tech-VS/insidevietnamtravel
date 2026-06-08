@@ -230,6 +230,42 @@ def get_analytics_recommendations(stats: dict, days: int) -> list[dict]:
             icon="🟢",
         ))
 
+    seo = stats.get("seo") or {}
+    organic = seo.get("total_organic_views", 0)
+    organic_share = seo.get("organic_share_pct", 0)
+
+    if views > 20 and organic == 0:
+        recos.append(_reco(
+            "Peu de trafic SEO détecté",
+            "Les visites viennent surtout du direct ou des liens. Publiez des articles ciblés, "
+            "soumettez le sitemap dans Google Search Console et renforcez les liens internes.",
+            priority="haute",
+            action_label="Guides IA",
+            action_url="/admin/guides",
+            icon="🔍",
+        ))
+    elif views > 50 and organic_share < 15:
+        recos.append(_reco(
+            f"SEO à {organic_share}% du trafic",
+            f"Seulement {organic} visites organiques sur {days} jours. Optimisez titres/meta "
+            "et créez du contenu sur les requêtes « voyage Vietnam » longue traîne.",
+            priority="moyenne",
+            action_label="Créer un guide",
+            action_url="/admin/guides",
+            icon="📈",
+        ))
+    elif organic >= 10:
+        top_org = (seo.get("top_organic_pages") or [{}])[0]
+        recos.append(_reco(
+            f"Page SEO star : {top_org.get('path', '/')}",
+            f"{top_org.get('views', 0)} visites depuis Google/Bing. Dupliquez ce format "
+            "(FAQ, budget, itinéraire) sur d'autres villes.",
+            priority="haute",
+            action_label="Nouvel article",
+            action_url="/admin/guides",
+            icon="🏆",
+        ))
+
     geo = stats.get("geo") or {}
     ai_views = geo.get("total_ai_views", 0)
     ai_share = geo.get("ai_share_pct", 0)

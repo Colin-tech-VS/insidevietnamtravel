@@ -676,6 +676,7 @@ code {
   padding-top: 2rem;
   border-top: 1px solid var(--rice-dark);
 }
+.seo-analytics-section .kpi-card--gold { border-left: 4px solid var(--gold); }
 .geo-analytics-header { margin-bottom: 1.25rem; }
 .geo-analytics-header h2 {
   font-family: var(--font-display);

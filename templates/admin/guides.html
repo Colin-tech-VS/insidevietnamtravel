@@ -8,7 +8,7 @@
 
 {% block content %}
 
-<p class="page-sub">Créez des articles avec l'IA ou rédigez-les vous-même — suggestions rafraîchies à chaque visite.</p>
+<p class="page-sub">Créez des articles avec l'IA ou rédigez-les vous-même — idées locales par défaut, IA sur demande.</p>
 
 
 
@@ -398,15 +398,15 @@
 
         <h2>💡 Idées d'articles</h2>
 
-        <span class="suggestions-refresh" title="Nouvelles suggestions à chaque visite">À jour</span>
+        <button type="button" class="btn btn-secondary btn-sm" id="refresh-suggestions" {% if not groq_ok %}disabled{% endif %} title="Consomme 1 requête Groq">Idées IA</button>
 
       </div>
 
-      <p class="muted suggestions-intro">8 idées générées pour vous — cliquez pour pré-remplir le formulaire IA.</p>
+      <p class="muted suggestions-intro">8 idées locales — cliquez pour pré-remplir. « Idées IA » utilise Groq (évite le rate limit au chargement).</p>
 
 
 
-      <ul class="suggestions-list">
+      <ul class="suggestions-list" id="suggestions-list">
 
         {% for s in suggestions %}
 

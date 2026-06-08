@@ -132,7 +132,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  document.querySelectorAll('.suggestion-card').forEach((btn) => {
+  function bindSuggestionCards() {
+    document.querySelectorAll('.suggestion-card').forEach((btn) => {
     btn.addEventListener('click', () => {
       const topic = btn.dataset.topic;
       const city = btn.dataset.city;
@@ -154,5 +155,48 @@ document.addEventListener('DOMContentLoaded', () => {
       topicInput?.focus();
       form?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
-  });
+    });
+  }
+
+  bindSuggestionCards();
+
+  const refreshBtn = document.getElementById('refresh-suggestions');
+  const suggestionsList = document.getElementById('suggestions-list');
+  if (refreshBtn && suggestionsList) {
+    refreshBtn.addEventListener('click', async () => {
+      refreshBtn.disabled = true;
+      const prev = refreshBtn.textContent;
+      refreshBtn.textContent = '…';
+      try {
+        const data = await postJson('/admin/api/guides/suggestions', {});
+        suggestionsList.innerHTML = (data.suggestions || []).map((s) => `
+          <li>
+            <button type="button" class="suggestion-card" data-topic="${escapeHtml(s.topic)}" data-city="${escapeHtml(s.city)}" data-type="${escapeHtml(s.guide_type)}">
+              <span class="suggestion-card__priority suggestion-card__priority--${escapeHtml(s.priority || 'moyenne')}">${escapeHtml(s.priority || 'moyenne')}</span>
+              <span class="suggestion-card__topic">${escapeHtml(s.topic)}</span>
+              <span class="suggestion-card__meta">
+                <span>📍 ${escapeHtml(s.city)}</span>
+                <span>· ${escapeHtml(s.guide_type)}</span>
+              </span>
+              ${s.reason ? `<span class="suggestion-card__reason">${escapeHtml(s.reason)}</span>` : ''}
+            </button>
+          </li>
+        `).join('') || '<li class="muted">Aucune suggestion.</li>';
+        bindSuggestionCards();
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        refreshBtn.disabled = false;
+        refreshBtn.textContent = prev;
+      }
+    });
+  }
+
+  function escapeHtml(text) {
+    return String(text || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
 });

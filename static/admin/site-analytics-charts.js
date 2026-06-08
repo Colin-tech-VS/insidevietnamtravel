@@ -55,6 +55,101 @@
     });
   }
 
+  const seo = siteAnalyticsData.seo || {};
+  const seoColors = ['#C4A053', '#1B4D4A', '#2A6F6B', '#C4654A', '#7A7772'];
+
+  const seoChannelsCtx = document.getElementById('seoChannelsChart');
+  if (seoChannelsCtx && seo.channels_chart && seo.channels_chart.length) {
+    new Chart(seoChannelsCtx, {
+      type: 'doughnut',
+      data: {
+        labels: seo.channels_chart.map((s) => s.label),
+        datasets: [{
+          data: seo.channels_chart.map((s) => s.views),
+          backgroundColor: seoColors,
+          borderWidth: 0,
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: '#7A7772', boxWidth: 12 } },
+        },
+      },
+    });
+  }
+
+  const seoEnginesCtx = document.getElementById('seoEnginesChart');
+  if (seoEnginesCtx && seo.engines_chart && seo.engines_chart.length) {
+    new Chart(seoEnginesCtx, {
+      type: 'bar',
+      data: {
+        labels: seo.engines_chart.map((s) => s.label),
+        datasets: [{
+          label: 'Visites',
+          data: seo.engines_chart.map((s) => s.views),
+          backgroundColor: '#C4A053',
+          borderRadius: 4,
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: '#7A7772' } },
+          y: { beginAtZero: true, grid: { color: '#F0EBE3' }, ticks: { color: '#7A7772', precision: 0 } },
+        },
+      },
+    });
+  }
+
+  const seoDailyCtx = document.getElementById('seoDailyChart');
+  if (seoDailyCtx && seo.daily_organic && seo.daily_organic.length) {
+    new Chart(seoDailyCtx, {
+      type: 'line',
+      data: {
+        labels: seo.daily_organic.map((d) => d.day.slice(5)),
+        datasets: [{
+          label: 'Visites SEO',
+          data: seo.daily_organic.map((d) => d.views),
+          borderColor: '#C4A053',
+          backgroundColor: 'rgba(196, 160, 83, 0.12)',
+          fill: true,
+          tension: 0.35,
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: '#F0EBE3' }, ticks: { color: '#7A7772', maxTicksLimit: 14 } },
+          y: { beginAtZero: true, grid: { color: '#F0EBE3' }, ticks: { color: '#7A7772', precision: 0 } },
+        },
+      },
+    });
+  }
+
+  const seoContentCtx = document.getElementById('seoContentChart');
+  if (seoContentCtx && seo.content_organic && seo.content_organic.length) {
+    new Chart(seoContentCtx, {
+      type: 'doughnut',
+      data: {
+        labels: seo.content_organic.map((s) => s.label),
+        datasets: [{
+          data: seo.content_organic.map((s) => s.views),
+          backgroundColor: ['#1B4D4A', '#C4A053', '#2A6F6B', '#C4654A', '#6B5B95', '#8B6914'],
+          borderWidth: 0,
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: '#7A7772', boxWidth: 12, font: { size: 11 } } },
+        },
+      },
+    });
+  }
+
   const geo = siteAnalyticsData.geo || {};
   const geoColors = ['#1B4D4A', '#C17F3A', '#2A6F6B', '#8B6914', '#4A7C59', '#6B5B95', '#A0522D', '#4682B4'];
 
