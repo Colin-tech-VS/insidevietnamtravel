@@ -320,6 +320,7 @@
   <script src="{{ url_for('static', filename='js/loader.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/cookies.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+  {% block scripts %}{% endblock %}
 
 </body>
 
