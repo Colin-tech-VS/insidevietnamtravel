@@ -2,6 +2,7 @@
 
 from data.affiliate_partners import BUILTIN_PARTNERS, PARTNER_BY_ID
 from admin import db
+from admin.affiliate_verify import verify_affiliate_id
 from admin.store import get_affiliate_ids, get_custom_partners, get_settings, is_configured
 
 
@@ -58,13 +59,16 @@ def build_partner_rows(days: int = 30) -> list:
         configured = is_configured(aff_id)
         est = round(click_count * p["avg_per_click"], 2) if configured else 0.0
         confirmed = round(revenue.get(pid, 0), 2)
+        verification = verify_affiliate_id(p["id_key"], aff_id)
+        tracking_ok = verification.get("param_found") or verification["status"] == "ok"
         rows.append({
             **p,
             "builtin": True,
             "affiliate_id": aff_id,
-            "configured": is_configured(aff_id),
+            "configured": is_configured(aff_id) and tracking_ok,
+            "verification": verification,
             "clicks": click_count,
-            "estimated_eur": est,
+            "estimated_eur": est if tracking_ok else 0.0,
             "confirmed_eur": confirmed,
         })
 

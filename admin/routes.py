@@ -23,6 +23,7 @@ from admin.admin_recommendations import (
 )
 from data.vietnam_cities import VIETNAM_CITIES, GUIDE_TYPES, ALL_CITY_VALUES
 from admin.affiliate_service import build_affiliate_summary, build_site_analytics, compute_estimated_commission
+from admin.affiliate_verify import normalize_affiliate_input, verify_affiliate_id
 from admin.store import (
     get_settings, save_settings,
     get_affiliate_ids, save_affiliate_ids,
@@ -472,13 +473,20 @@ def affiliates():
 
         if action == "update_partner":
             id_key = request.form.get("id_key", "")
-            value = request.form.get("affiliate_id", "").strip()
+            raw = request.form.get("affiliate_id", "").strip()
+            value = normalize_affiliate_input(id_key, raw)
             if id_key in PARTNER_BY_KEY or id_key in get_affiliate_ids():
                 data = get_affiliate_ids()
                 data[id_key] = value
                 save_affiliate_ids(data)
                 name = PARTNER_BY_KEY.get(id_key, {}).get("name", id_key)
-                flash(f"ID {name} enregistré.", "success")
+                check = verify_affiliate_id(id_key, value)
+                if check["status"] == "ok":
+                    flash(f"ID {name} enregistré — tracking vérifié ({check['param']}={value}).", "success")
+                elif check["status"] == "warn":
+                    flash(f"ID {name} enregistré — {check['message']}", "warning")
+                else:
+                    flash(f"ID {name} enregistré — {check['message']}", "error")
 
         elif action == "add_custom":
             name = request.form.get("name", "").strip()
@@ -569,6 +577,18 @@ def analytics():
         days=days,
         recommendations=get_analytics_recommendations(stats, days),
     )
+
+
+@admin_bp.route("/api/affiliate-verify", methods=["POST"])
+@login_required
+def api_affiliate_verify():
+    payload = request.get_json(silent=True) or {}
+    id_key = (payload.get("id_key") or request.form.get("id_key") or "").strip()
+    value = payload.get("value") if payload else request.form.get("value", "")
+    if not id_key:
+        return jsonify({"ok": False, "error": "id_key manquant"}), 400
+    result = verify_affiliate_id(id_key, value or "")
+    return jsonify({"ok": True, **result})
 
 
 @admin_bp.route("/api/realtime")

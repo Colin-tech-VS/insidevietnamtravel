@@ -200,9 +200,31 @@
 
               <input type="text" id="id-{{ p.id }}" name="affiliate_id" value="{{ p.affiliate_id }}"
 
-                     placeholder="{{ p.id_placeholder }}">
+                     placeholder="{{ p.id_placeholder }}" class="aff-id-input" data-id-key="{{ p.id_key }}"
+
+                     autocomplete="off">
 
               <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+
+            </div>
+
+            {% set v = p.verification %}
+
+            <div class="aff-verify aff-verify--{{ v.status }}" id="verify-{{ p.id }}" data-id-key="{{ p.id_key }}">
+
+              <p class="aff-verify__msg">{{ v.message }}</p>
+
+              {% if v.sample_url and v.sample_url.startswith('http') %}
+
+              <p class="aff-verify__sample">
+
+                <span class="aff-verify__label">Lien exemple généré par le site :</span>
+
+                <a href="{{ v.sample_url }}" target="_blank" rel="noopener" class="aff-verify__link">{{ v.sample_url[:80] }}{% if v.sample_url|length > 80 %}…{% endif %}</a>
+
+              </p>
+
+              {% endif %}
 
             </div>
 
@@ -387,6 +409,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <script src="{{ url_for('static', filename='admin/affiliates-charts.js') }}"></script>
+<script src="{{ url_for('static', filename='admin/affiliate-verify.js') }}"></script>
 
 {% endblock %}
 

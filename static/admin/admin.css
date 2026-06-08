@@ -820,6 +820,42 @@ code {
   margin-top: 0.65rem;
   color: var(--ink-muted);
 }
+.partner-card__hint { margin-top: 0.5rem; }
+
+.aff-verify {
+  margin-top: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  border: 1px solid var(--rice-dark);
+  background: var(--rice);
+}
+.aff-verify__msg { margin: 0; color: var(--ink-soft); }
+.aff-verify__sample { margin: 0.4rem 0 0; }
+.aff-verify__label { color: var(--ink-muted); display: block; margin-bottom: 0.2rem; }
+.aff-verify__link {
+  word-break: break-all;
+  color: var(--teal);
+  font-size: 0.72rem;
+}
+.aff-verify--ok {
+  border-color: rgba(42, 107, 94, 0.35);
+  background: rgba(42, 107, 94, 0.06);
+}
+.aff-verify--ok .aff-verify__msg { color: var(--jade); }
+.aff-verify--warn {
+  border-color: rgba(196, 150, 42, 0.4);
+  background: rgba(196, 150, 42, 0.08);
+}
+.aff-verify--warn .aff-verify__msg { color: #8a6d1a; }
+.aff-verify--error {
+  border-color: rgba(196, 101, 74, 0.35);
+  background: rgba(196, 101, 74, 0.06);
+}
+.aff-verify--error .aff-verify__msg { color: var(--terracotta); }
+.aff-verify--loading { opacity: 0.75; }
+
 .partner-card__delete { margin-top: 0.5rem; }
 .partner-card__delete .btn { margin-top: 0; }
 
