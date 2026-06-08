@@ -405,6 +405,42 @@ def newsletter_preview():
     return Response(render_newsletter_preview(draft), mimetype="text/html; charset=utf-8")
 
 
+@admin_bp.route("/contact", methods=["GET", "POST"])
+@login_required
+def contact_admin():
+    from admin.contact_service import (
+        delete_message,
+        get_contact_messages,
+        mark_message_read,
+    )
+    from admin.mail_service import is_contact_smtp_configured
+
+    if request.method == "POST":
+        action = request.form.get("action")
+        msg_id = request.form.get("msg_id", "")
+        if action == "mark_read" and mark_message_read(msg_id):
+            flash("Message marqué comme lu.", "success")
+        elif action == "delete" and delete_message(msg_id):
+            flash("Message supprimé.", "success")
+        return redirect(url_for("admin.contact_admin"))
+
+    return render_template(
+        "admin/contact.html",
+        messages=get_contact_messages(),
+        smtp_ok=is_contact_smtp_configured(),
+    )
+
+
+@admin_bp.context_processor
+def admin_globals():
+    try:
+        from admin.contact_service import count_unread_messages
+        unread = count_unread_messages()
+    except Exception:
+        unread = 0
+    return {"contact_unread": unread}
+
+
 @admin_bp.route("/api/newsletter/generate", methods=["POST"])
 @login_required
 def api_generate_newsletter():

@@ -204,6 +204,7 @@
           </li>
           <li><a href="{{ lang_url('blog_index') }}" {% if request.endpoint in ('blog_index', 'article') %}aria-current="page"{% endif %}>{{ t('nav.blog') }}</a></li>
           <li><a href="{{ lang_url('about') }}" {% if request.endpoint == 'about' %}aria-current="page"{% endif %}>{{ t('nav.about') }}</a></li>
+          <li><a href="{{ lang_url('contact') }}" {% if request.endpoint == 'contact' %}aria-current="page"{% endif %}>{{ t('nav.contact') }}</a></li>
         </ul>
       </nav>
 
@@ -286,6 +287,7 @@
       <p>&copy; {{ current_year }} Inside Vietnam Travel. {{ t('footer.copyright') }}</p>
       <nav class="footer-legal" aria-label="{{ t('footer.legal_nav') }}">
         <a href="{{ lang_url('privacy') }}">{{ t('footer.privacy') }}</a>
+        <a href="{{ lang_url('contact') }}">{{ t('nav.contact') }}</a>
         <a href="{{ lang_url('legal_notices') }}">{{ t('footer.legal') }}</a>
         <a href="{{ lang_url('newsletter_unsubscribe') }}">{{ t('footer.unsubscribe') }}</a>
         <button type="button" class="footer-legal__cookies" data-cookie-settings>{{ t('footer.cookies') }}</button>

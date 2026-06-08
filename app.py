@@ -59,7 +59,7 @@ RESERVED_SLUGS = frozenset({
     "blog", "admin", "go", "itineraries", "a-propos", "newsletter",
     "politique-confidentialite", "mentions-legales",
     "robots.txt", "sitemap.xml", "categorie", "category", "static", "favicon.ico",
-    "en", "about", "privacy", "legal", "unsubscribe",
+    "en", "about", "privacy", "legal", "unsubscribe", "contact",
 })
 
 load_dotenv()
@@ -465,6 +465,40 @@ def about():
     )
 
 
+@app.route("/contact", methods=["GET", "POST"])
+@app.route("/en/contact", methods=["GET", "POST"])
+def contact():
+    from admin.contact_service import submit_contact_form
+
+    lang = get_lang()
+    if request.method == "POST":
+        if request.form.get("website"):
+            return redirect(lang_url("contact", lang))
+        try:
+            if not request.form.get("consent_rgpd"):
+                raise ValueError(t("flash.consent", lang))
+            submit_contact_form(
+                name=request.form.get("name", ""),
+                email=request.form.get("email", ""),
+                subject=request.form.get("subject", ""),
+                message=request.form.get("message", ""),
+                lang=lang,
+            )
+            flash(t("contact.success", lang), "success")
+        except ValueError as e:
+            flash(str(e), "error")
+        except Exception:
+            flash(t("contact.error", lang), "error")
+        return redirect(lang_url("contact", lang))
+
+    return render_template(
+        "contact.html",
+        meta_title=t("meta.contact.title", lang),
+        meta_description=t("meta.contact.desc", lang),
+        meta_keywords="contact Vietnam travel, Inside Vietnam Travel" if lang == "en" else "contact voyage Vietnam, Inside Vietnam Travel",
+    )
+
+
 @app.route("/newsletter/desinscription", methods=["GET", "POST"])
 @app.route("/en/newsletter/unsubscribe", methods=["GET", "POST"])
 def newsletter_unsubscribe():
@@ -577,6 +611,7 @@ def sitemap():
         pages.append({"loc": base + lang_url("index", lang), "priority": "1.0"})
         pages.append({"loc": base + lang_url("blog_index", lang), "priority": "0.9"})
         pages.append({"loc": base + lang_url("about", lang), "priority": "0.5"})
+        pages.append({"loc": base + lang_url("contact", lang), "priority": "0.5"})
         pages.append({"loc": base + lang_url("privacy", lang), "priority": "0.4"})
         pages.append({"loc": base + lang_url("legal_notices", lang), "priority": "0.4"})
         for slug in dests:

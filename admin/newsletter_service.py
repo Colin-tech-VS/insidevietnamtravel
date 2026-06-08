@@ -4,10 +4,7 @@ from __future__ import annotations
 
 import os
 import re
-import smtplib
 from datetime import datetime
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from pathlib import Path
 
 import config
@@ -20,8 +17,11 @@ SITE_URL = config.SITE_URL
 PRIVACY_URL = f"{SITE_URL}/politique-confidentialite"
 
 
+from admin.mail_service import is_newsletter_smtp_configured, send_email
+
+
 def is_smtp_configured() -> bool:
-    return bool(os.environ.get("SMTP_HOST") and os.environ.get("SMTP_FROM"))
+    return is_newsletter_smtp_configured()
 
 
 def _read_from_file() -> list[dict]:
@@ -241,39 +241,25 @@ def send_newsletter_email(
             "SMTP_PASSWORD et SMTP_FROM dans .env"
         )
 
-    host = os.environ["SMTP_HOST"]
-    port = int(os.environ.get("SMTP_PORT", "587"))
-    user = os.environ.get("SMTP_USER", "")
-    password = os.environ.get("SMTP_PASSWORD", "")
-    from_addr = os.environ["SMTP_FROM"]
-    from_name = os.environ.get("SMTP_FROM_NAME", SITE_NAME)
-    use_tls = os.environ.get("SMTP_USE_TLS", "true").lower() in ("1", "true", "yes")
-
     sent = 0
     failed: list[str] = []
 
-    with smtplib.SMTP(host, port, timeout=30) as server:
-        if use_tls:
-            server.starttls()
-        if user and password:
-            server.login(user, password)
-
-        for addr in recipients:
-            full_html = wrap_email_html(body_html, preheader, recipient_email=addr)
-            plain = _strip_html(body_html)
-            plain += f"\n\nSe désinscrire : {unsubscribe_url(addr)}"
-
-            msg = MIMEMultipart("alternative")
-            msg["Subject"] = subject
-            msg["From"] = f"{from_name} <{from_addr}>"
-            msg["To"] = addr
-            msg["List-Unsubscribe"] = f"<{unsubscribe_url(addr)}>"
-            msg.attach(MIMEText(plain, "plain", "utf-8"))
-            msg.attach(MIMEText(full_html, "html", "utf-8"))
-            try:
-                server.sendmail(from_addr, [addr], msg.as_string())
-                sent += 1
-            except Exception:
-                failed.append(addr)
+    for addr in recipients:
+        full_html = wrap_email_html(body_html, preheader, recipient_email=addr)
+        plain = _strip_html(body_html)
+        plain += f"\n\nSe désinscrire : {unsubscribe_url(addr)}"
+        extra = {"List-Unsubscribe": f"<{unsubscribe_url(addr)}>"}
+        result = send_email(
+            profile="newsletter",
+            to_addrs=[addr],
+            subject=subject,
+            html_body=full_html,
+            plain_body=plain,
+            extra_headers=extra,
+        )
+        if result["sent"]:
+            sent += 1
+        else:
+            failed.append(addr)
 
     return {"sent": sent, "failed": failed, "total": len(recipients)}

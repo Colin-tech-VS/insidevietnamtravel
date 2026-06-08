@@ -242,6 +242,7 @@ ROUTE_PATHS: dict[str, dict[str, str]] = {
     "index": {"fr": "/", "en": "/en/"},
     "blog_index": {"fr": "/blog", "en": "/en/blog"},
     "about": {"fr": "/a-propos", "en": "/en/about"},
+    "contact": {"fr": "/contact", "en": "/en/contact"},
     "privacy": {"fr": "/politique-confidentialite", "en": "/en/privacy"},
     "legal_notices": {"fr": "/mentions-legales", "en": "/en/legal"},
     "newsletter_unsubscribe": {

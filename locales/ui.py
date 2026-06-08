@@ -13,6 +13,7 @@ UI: dict[str, dict[str, str]] = {
     "nav.itineraries": {"fr": "Itinéraires", "en": "Itineraries"},
     "nav.blog": {"fr": "Blog", "en": "Blog"},
     "nav.about": {"fr": "À propos", "en": "About"},
+    "nav.contact": {"fr": "Contact", "en": "Contact"},
     "nav.open_menu": {"fr": "Ouvrir le menu", "en": "Open menu"},
     "nav.main": {"fr": "Navigation principale", "en": "Main navigation"},
     "nav.days": {"fr": "jours", "en": "days"},
@@ -232,6 +233,36 @@ UI: dict[str, dict[str, str]] = {
     "meta.legal.desc": {
         "fr": "Éditeur, hébergeur et informations légales du site Inside Vietnam Travel.",
         "en": "Publisher, hosting and legal information for Inside Vietnam Travel.",
+    },
+    "meta.contact.title": {
+        "fr": "Contact — Inside Vietnam Travel",
+        "en": "Contact — Inside Vietnam Travel",
+    },
+    "meta.contact.desc": {
+        "fr": "Contactez Inside Vietnam Travel pour toute question sur votre voyage au Vietnam.",
+        "en": "Contact Inside Vietnam Travel for any question about your Vietnam trip.",
+    },
+    "contact.title": {"fr": "Nous contacter", "en": "Contact us"},
+    "contact.lead": {
+        "fr": "Une question sur votre voyage au Vietnam ? Écrivez-nous — nous répondons sous 48 h ouvrées.",
+        "en": "A question about your Vietnam trip? Write to us — we reply within 48 business hours.",
+    },
+    "contact.name": {"fr": "Nom", "en": "Name"},
+    "contact.email": {"fr": "Email", "en": "Email"},
+    "contact.subject": {"fr": "Sujet", "en": "Subject"},
+    "contact.message": {"fr": "Message", "en": "Message"},
+    "contact.send": {"fr": "Envoyer le message", "en": "Send message"},
+    "contact.consent": {
+        "fr": "J'accepte que mes données soient utilisées pour répondre à ma demande (voir la",
+        "en": "I agree that my data will be used to reply to my request (see",
+    },
+    "contact.success": {
+        "fr": "Merci ! Votre message a bien été envoyé. Nous vous répondrons rapidement.",
+        "en": "Thank you! Your message was sent. We will reply shortly.",
+    },
+    "contact.error": {
+        "fr": "Impossible d'envoyer le message. Vérifiez les champs ou réessayez plus tard.",
+        "en": "Could not send your message. Check the fields or try again later.",
     },
     "meta.404.title": {"fr": "Page introuvable", "en": "Page not found"},
     "meta.404.desc": {

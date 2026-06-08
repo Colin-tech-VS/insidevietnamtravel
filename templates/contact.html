@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% from "macros/seo.html" import json_ld_graph with context %}
+
+{% block structured_data %}
+{{ json_ld_graph([{
+  "@type": "ContactPage",
+  "name": meta_title,
+  "description": meta_description,
+  "url": canonical_url,
+  "inLanguage": "en-GB" if lang == 'en' else "fr-FR"
+}]) }}
+{% endblock %}
+
+{% block content %}
+<header class="page-hero page-hero--about">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Fil d'Ariane">
+      <ol>
+        <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+        <li aria-current="page">{{ t('nav.contact') }}</li>
+      </ol>
+    </nav>
+    <h1>{{ t('contact.title') }}</h1>
+    <p class="page-hero__lead">{{ t('contact.lead') }}</p>
+  </div>
+</header>
+
+<section class="section">
+  <div class="container contact-layout">
+    <form class="contact-form card" method="post" action="{{ lang_url('contact') }}" novalidate>
+      <div class="contact-form__grid">
+        <div class="form-field">
+          <label for="contact-name">{{ t('contact.name') }}</label>
+          <input type="text" id="contact-name" name="name" required autocomplete="name" maxlength="120">
+        </div>
+        <div class="form-field">
+          <label for="contact-email">{{ t('contact.email') }}</label>
+          <input type="email" id="contact-email" name="email" required autocomplete="email" maxlength="200">
+        </div>
+      </div>
+      <div class="form-field">
+        <label for="contact-subject">{{ t('contact.subject') }}</label>
+        <input type="text" id="contact-subject" name="subject" required maxlength="200">
+      </div>
+      <div class="form-field">
+        <label for="contact-message">{{ t('contact.message') }}</label>
+        <textarea id="contact-message" name="message" rows="7" required maxlength="5000"></textarea>
+      </div>
+      <label class="contact-form__consent">
+        <input type="checkbox" name="consent_rgpd" value="1" required>
+        <span>{{ t('contact.consent') }} <a href="{{ lang_url('privacy') }}" target="_blank" rel="noopener">{{ t('newsletter.privacy_link') }}</a>).</span>
+      </label>
+      <input type="text" name="website" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <button type="submit" class="btn btn-primary">{{ t('contact.send') }}</button>
+    </form>
+
+    <aside class="contact-aside">
+      <div class="sidebar-card">
+        <h3>{% if lang == 'en' %}Direct email{% else %}Email direct{% endif %}</h3>
+        <p><a href="mailto:{{ legal_contact_email }}">{{ legal_contact_email }}</a></p>
+      </div>
+    </aside>
+  </div>
+</section>
+{% endblock %}
