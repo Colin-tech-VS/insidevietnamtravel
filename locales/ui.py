@@ -192,6 +192,16 @@ UI: dict[str, dict[str, str]] = {
         "en": "The guide includes 3 itineraries (7, 10 and 14 days), visa/eSIM/insurance checklists, a detailed budget and tested addresses.",
     },
     "pdf.success.download": {"fr": "Télécharger le PDF", "en": "Download PDF"},
+    "pdf.success.downloading": {"fr": "Téléchargement…", "en": "Downloading…"},
+    "pdf.success.download_again": {"fr": "Télécharger à nouveau", "en": "Download again"},
+    "pdf.success.downloaded": {
+        "fr": "Guide téléchargé — vous pouvez le retrouver dans vos fichiers.",
+        "en": "Guide downloaded — check your downloads folder.",
+    },
+    "pdf.success.stay": {
+        "fr": "Cette page reste accessible : vous pouvez retélécharger votre guide à tout moment.",
+        "en": "This page stays available — you can download your guide again anytime.",
+    },
     "pdf.success.email_note": {
         "fr": "Un lien de téléchargement vous a aussi été envoyé par email si vous en avez indiqué un lors du paiement.",
         "en": "A download link was also emailed to you if you provided an address at checkout.",

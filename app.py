@@ -602,6 +602,7 @@ def pdf_checkout_start():
 @app.route("/guide-pdf/merci")
 @app.route("/en/guide-pdf/success")
 def pdf_success():
+    from admin.pdf_guide_service import pdf_filename
     from admin.pdf_payment_service import (
         build_download_url,
         fulfill_checkout_session,
@@ -611,11 +612,13 @@ def pdf_success():
     lang = get_lang()
     session_id = (request.args.get("session_id") or "").strip()
     download_url = ""
+    pdf_lang = lang
     if session_id:
         result = fulfill_checkout_session(session_id)
         if result.get("ok"):
             token = result["token"]
-            download_url = build_download_url(token, result.get("lang", lang))
+            pdf_lang = result.get("lang", lang)
+            download_url = build_download_url(token, pdf_lang)
             if not result.get("already"):
                 notify_purchase_fulfilled(
                     token=token,
@@ -626,6 +629,7 @@ def pdf_success():
     return render_template(
         "pdf_success.html",
         download_url=download_url,
+        pdf_filename=pdf_filename(pdf_lang),
         meta_title=t("pdf.success.meta_title", lang),
         meta_description=t("pdf.success.meta_desc", lang),
         meta_robots="noindex, nofollow",

@@ -11,21 +11,98 @@
 </header>
 
 <section class="section">
-  <div class="container" style="max-width: 560px;">
-    <div class="card" style="padding: 2rem; text-align: center;">
-      <p style="margin-bottom: 1.5rem;">{{ t('pdf.success.body') }}</p>
+  <div class="container pdf-success-layout">
+    <div class="card pdf-success-card">
+      <p class="pdf-success-card__intro">{{ t('pdf.success.body') }}</p>
       {% if download_url %}
-      <a href="{{ download_url }}" class="btn btn-primary" style="margin-bottom: 1rem;">
+      <button type="button" class="btn btn-primary" id="pdf-download-btn"
+              data-url="{{ download_url }}"
+              data-filename="{{ pdf_filename }}">
         {{ t('pdf.success.download') }}
-      </a>
-      <p class="text-muted" style="font-size: 0.9rem;">{{ t('pdf.success.email_note') }}</p>
+      </button>
+      <p class="pdf-success-card__status" id="pdf-download-status" hidden role="status">
+        {{ t('pdf.success.downloaded') }}
+      </p>
+      <p class="pdf-success-card__hint">{{ t('pdf.success.email_note') }}</p>
+      <p class="pdf-success-card__hint">{{ t('pdf.success.stay') }}</p>
       {% else %}
       <p class="text-muted">{{ t('pdf.success.pending') }}</p>
       {% endif %}
-      <p style="margin-top: 1.5rem;">
+      <p class="pdf-success-card__back">
         <a href="{{ lang_url('index') }}">{{ t('pdf.success.back') }}</a>
       </p>
     </div>
   </div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('pdf-download-btn');
+  const status = document.getElementById('pdf-download-status');
+  if (!btn) return;
+
+  btn.addEventListener('click', async () => {
+    const url = btn.dataset.url;
+    const filename = btn.dataset.filename || 'inside-vietnam-travel-guide.pdf';
+    if (!url) return;
+
+    btn.classList.add('is-loading');
+    btn.textContent = {{ t('pdf.success.downloading') | tojson }};
+
+    try {
+      const res = await fetch(url, { credentials: 'same-origin' });
+      if (!res.ok) throw new Error('download failed');
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+
+      btn.textContent = {{ t('pdf.success.download_again') | tojson }};
+      btn.classList.remove('is-loading');
+      if (status) status.hidden = false;
+    } catch {
+      btn.classList.remove('is-loading');
+      btn.textContent = {{ t('pdf.success.download') | tojson }};
+      window.location.href = url;
+    }
+  });
+});
+</script>
 {% endblock %}
+
+{% block head_preload %}
+<style>
+  .pdf-success-layout { max-width: 560px; }
+  .pdf-success-card {
+    padding: 2rem;
+    text-align: center;
+  }
+  .pdf-success-card__intro { margin-bottom: 1.5rem; }
+  .pdf-success-card__status {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--rice-dark, #F0EBE3);
+    border-radius: var(--radius-md, 12px);
+    color: var(--teal, #1B4D4A);
+    font-weight: 600;
+  }
+  .pdf-success-card__hint {
+    font-size: 0.9rem;
+    color: var(--ink-muted, #7A7772);
+    margin-top: 0.75rem;
+  }
+  .pdf-success-card__back { margin-top: 1.5rem; }
+  .pdf-success-card .btn.is-loading { opacity: 0.7; pointer-events: none; }
+</style>
+{% endblock %}
+
+{% block structured_data %}{% endblock %}
+
+{% block og_image %}{% endblock %}
+
+{% block meta_keywords %}{% endblock %}
