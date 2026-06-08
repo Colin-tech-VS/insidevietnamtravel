@@ -12,7 +12,8 @@ _TRACKING = {
     "booking_aid": ("aid", r"^\d{4,10}$"),
     "agoda_cid": ("cid", r"^\d{3,12}$"),
     "gyg_partner_id": ("partner_id", r"^[A-Za-z0-9]{4,20}$"),
-    "viator_pid": ("pid", r"^[A-Za-z0-9]{4,20}$"),
+    "viator_pid": ("pid", r"^P\d{4,12}$"),
+    "viator_widget_ref": ("widget", r"^W-[a-f0-9-]{20,40}$"),
     "airalo_ref": ("ref", None),
     "holafly_ref": ("ref", None),
     "worldnomads_affiliate": ("affiliate", None),
@@ -22,11 +23,29 @@ _EXTRACT = {
     "booking_aid": [r"[?&]aid=(\d+)", r"aid[=:](\d+)"],
     "agoda_cid": [r"[?&]cid=(\d+)", r"cid[=:](\d+)"],
     "gyg_partner_id": [r"[?&]partner_id=([^&\s]+)", r"partner_id[=:]([A-Za-z0-9]+)"],
-    "viator_pid": [r"[?&]pid=([^&\s]+)", r"[?&]mcid=([^&\s]+)"],
+    "viator_pid": [
+        r"[?&]pid=([^&\s]+)",
+        r"[?&]mcid=([^&\s]+)",
+        r'data-vi-partner-id=["\']([^"\']+)["\']',
+    ],
+    "viator_widget_ref": [r'data-vi-widget-ref=["\']([^"\']+)["\']', r"(W-[a-f0-9-]{20,40})"],
     "airalo_ref": [r"[?&]ref=([^&\s]+)"],
     "holafly_ref": [r"[?&]ref=([^&\s]+)"],
     "worldnomads_affiliate": [r"[?&]affiliate=([^&\s]+)"],
 }
+
+
+def parse_viator_embed(raw: str) -> dict[str, str]:
+    """Extrait PID + réf. widget depuis un code embed Viator."""
+    text = raw or ""
+    out: dict[str, str] = {}
+    m_pid = re.search(r'data-vi-partner-id=["\']([^"\']+)["\']', text, re.I)
+    m_ref = re.search(r'data-vi-widget-ref=["\']([^"\']+)["\']', text, re.I)
+    if m_pid:
+        out["viator_pid"] = m_pid.group(1).strip()
+    if m_ref:
+        out["viator_widget_ref"] = m_ref.group(1).strip()
+    return out
 
 
 def normalize_affiliate_input(id_key: str, raw: str) -> str:
@@ -36,6 +55,11 @@ def normalize_affiliate_input(id_key: str, raw: str) -> str:
         return ""
     if id_key == "pdf_checkout_url":
         return raw
+
+    if "data-vi-partner-id" in raw or "data-vi-widget-ref" in raw:
+        embedded = parse_viator_embed(raw)
+        if id_key in embedded:
+            return embedded[id_key]
 
     lowered = raw.lower()
     if lowered.startswith("http") or "?" in raw or "gyg.me/" in lowered:
@@ -62,6 +86,11 @@ def _sample_url(id_key: str, value: str) -> str:
     if id_key == "viator_pid":
         q = urlencode({"text": "Hanoi food tour Vietnam", "pid": value, "mcid": value, "destId": loc["viator_dest"]})
         return f"https://www.viator.com/searchResults/all?{q}"
+    if id_key == "viator_widget_ref":
+        return (
+            f'Widget destination — data-vi-partner-id + data-vi-widget-ref="{value}" '
+            f'+ data-vi-search-term="{loc["booking_city"]}"'
+        )
     if id_key == "airalo_ref":
         return f"https://www.airalo.com/vietnam-esim?ref={value}"
     if id_key == "holafly_ref":
@@ -148,6 +177,25 @@ def verify_affiliate_id(id_key: str, raw_value: str) -> dict:
             "sample_url": "",
             "param": "partner_id",
             "param_found": False,
+        }
+
+    if id_key == "viator_widget_ref":
+        if not re.match(r"^W-[a-f0-9-]{20,40}$", normalized, re.I):
+            return {
+                "status": "error",
+                "message": "Réf. widget invalide — format W-xxxxxxxx (Widgets → View code).",
+                "normalized": normalized,
+                "sample_url": "",
+                "param": "widget",
+                "param_found": False,
+            }
+        return {
+            "status": "ok",
+            "message": "Widget Viator prêt — activités dynamiques par ville sur le site.",
+            "normalized": normalized,
+            "sample_url": _sample_url(id_key, normalized),
+            "param": "widget",
+            "param_found": True,
         }
 
     param, pattern = _TRACKING.get(id_key, ("", None))

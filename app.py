@@ -347,6 +347,18 @@ def gyg_partner_id() -> str:
 
 
 @app.template_global()
+def viator_widget_config() -> dict:
+    from admin.store import get_affiliate_ids, is_configured
+
+    ids = get_affiliate_ids()
+    pid = ids.get("viator_pid", "")
+    ref = ids.get("viator_widget_ref", "")
+    if is_configured(pid) and is_configured(ref):
+        return {"pid": pid, "ref": ref}
+    return {}
+
+
+@app.template_global()
 def tracked_affiliate_url(provider: str, target_url: str) -> str:
     if target_url.startswith("#"):
         return target_url

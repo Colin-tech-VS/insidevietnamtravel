@@ -63,10 +63,18 @@ BUILTIN_PARTNERS = [
         "description": "Tours et excursions (groupe TripAdvisor).",
         "what_you_earn": "~8% du prix (~3-8 € par réservation).",
         "avg_per_click": 4.0,
-        "signup_url": "https://www.viator.com/affiliates",
-        "dashboard_url": "https://www.viator.com/affiliates/partner/dashboard",
+        "signup_url": "https://partners.viator.com/signup",
+        "dashboard_url": "https://partners.viator.com/",
+        "signup_note": (
+            "Inscription : partners.viator.com → Widgets → Créer un widget (type Destination). "
+            "Collez le PID (data-vi-partner-id) et la réf. widget (data-vi-widget-ref) "
+            "ou le code embed complet — le widget s'affiche sur chaque page destination."
+        ),
         "id_label": "PID (partner ID)",
-        "id_placeholder": "ex: P00012345",
+        "id_placeholder": "ex: P00304778",
+        "widget_id_key": "viator_widget_ref",
+        "widget_id_label": "Réf. widget Viator",
+        "widget_id_placeholder": "W-e126cc1a-… ou code embed complet",
     },
     {
         "id": "esim_airalo",

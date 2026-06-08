@@ -24,7 +24,7 @@ from admin.admin_recommendations import (
 )
 from data.vietnam_cities import VIETNAM_CITIES, GUIDE_TYPES, ALL_CITY_VALUES
 from admin.affiliate_service import build_affiliate_summary, build_site_analytics, compute_estimated_commission
-from admin.affiliate_verify import normalize_affiliate_input, verify_affiliate_id
+from admin.affiliate_verify import normalize_affiliate_input, parse_viator_embed, verify_affiliate_id
 from admin.store import (
     get_settings, save_settings,
     get_affiliate_ids, save_affiliate_ids,
@@ -547,6 +547,7 @@ def affiliates():
             if id_key in PARTNER_BY_KEY or id_key in get_affiliate_ids():
                 data = get_affiliate_ids()
                 data[id_key] = value
+                data.update(parse_viator_embed(raw))
                 save_affiliate_ids(data)
                 name = PARTNER_BY_KEY.get(id_key, {}).get("name", id_key)
                 check = verify_affiliate_id(id_key, value)

@@ -61,12 +61,17 @@ def build_partner_rows(days: int = 30) -> list:
         confirmed = round(revenue.get(pid, 0), 2)
         verification = verify_affiliate_id(p["id_key"], aff_id)
         tracking_ok = verification.get("param_found") or verification["status"] == "ok"
+        widget_key = p.get("widget_id_key")
+        widget_id = ids.get(widget_key, "") if widget_key else ""
+        widget_verification = verify_affiliate_id(widget_key, widget_id) if widget_key else None
         rows.append({
             **p,
             "builtin": True,
             "affiliate_id": aff_id,
             "configured": is_configured(aff_id) and tracking_ok,
             "verification": verification,
+            "widget_affiliate_id": widget_id,
+            "widget_verification": widget_verification,
             "clicks": click_count,
             "estimated_eur": est if tracking_ok else 0.0,
             "confirmed_eur": confirmed,

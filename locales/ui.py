@@ -167,6 +167,14 @@ UI: dict[str, dict[str, str]] = {
         "fr": "Sélection dynamique pour {city} — réservation et paiement sur GetYourGuide.",
         "en": "Live selection for {city} — book and pay on GetYourGuide.",
     },
+    "dest.viator_widget.title": {
+        "fr": "Plus d'activités à {city} sur Viator",
+        "en": "More activities in {city} on Viator",
+    },
+    "dest.viator_widget.sub": {
+        "fr": "Tours et excursions pour {city} — réservation sur Viator (8 % commission affilié).",
+        "en": "Tours and experiences in {city} — book on Viator (8% affiliate commission).",
+    },
     "dest.tips": {"fr": "Conseils pratiques", "en": "Practical tips"},
     "dest.book": {"fr": "Réserver", "en": "Book"},
     "dest.from": {"fr": "dès", "en": "from"},

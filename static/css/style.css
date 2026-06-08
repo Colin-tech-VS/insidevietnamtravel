@@ -2365,12 +2365,17 @@ a.article-category:hover { text-decoration: underline; }
   margin: 0;
   line-height: 1.5;
 }
-.gyg-widget {
+.gyg-widget,
+.viator-widget {
   min-height: 140px;
   border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--white);
   border: 1px solid var(--rice-dark);
+}
+
+.viator-widget-block {
+  margin-top: 1.5rem;
 }
 
 @media (max-width: 720px) {

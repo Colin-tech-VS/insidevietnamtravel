@@ -8,6 +8,7 @@ AFFILIATE_IDS = {
     "agoda_cid": "PLACEHOLDER",
     "gyg_partner_id": "PLACEHOLDER",
     "viator_pid": "PLACEHOLDER",
+    "viator_widget_ref": "W-e126cc1a-6762-441f-bb32-090f8348566f",
     "airalo_ref": "PLACEHOLDER",
     "holafly_ref": "PLACEHOLDER",
     "worldnomads_affiliate": "PLACEHOLDER",

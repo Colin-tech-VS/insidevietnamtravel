@@ -105,6 +105,25 @@
 {% endif %}
 {% endmacro %}
 
+{% macro viator_activities_widget(location_slug) %}
+{% set cfg = viator_widget_config() %}
+{% if cfg %}
+{% set loc = affiliate_location(location_slug) %}
+<section class="gyg-widget-block viator-widget-block" aria-label="{{ t('dest.viator_widget.title', city=loc.label) }}">
+  <header class="gyg-widget-block__head">
+    <h3 class="gyg-widget-block__title">{{ t('dest.viator_widget.title', city=loc.label) }}</h3>
+    <p class="gyg-widget-block__sub">{{ t('dest.viator_widget.sub', city=loc.label) }}</p>
+  </header>
+  <div
+    class="viator-widget"
+    data-vi-partner-id="{{ cfg.pid }}"
+    data-vi-widget-ref="{{ cfg.ref }}"
+    data-vi-search-term="{{ loc.booking_city }}"
+  ></div>
+</section>
+{% endif %}
+{% endmacro %}
+
 {% macro affiliate_disclosure() %}
 <p class="affiliate-disclosure">
   <small>{% if lang == 'en' %}This site contains affiliate links. If you book through our links, we may earn a commission at no extra cost to you. Links open a pre-filled search (city, hotel or activity).{% else %}Ce site contient des liens affiliés. Si vous réservez via nos liens, nous pouvons percevoir une commission sans surcoût pour vous. Les liens ouvrent une recherche pré-remplie (ville, hôtel ou activité).{% endif %}</small>

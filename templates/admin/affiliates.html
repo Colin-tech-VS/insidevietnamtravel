@@ -262,6 +262,26 @@
 
           </form>
 
+          {% if p.widget_id_key %}
+          <form method="post" class="partner-card__form partner-card__form--widget">
+            <input type="hidden" name="action" value="update_partner">
+            <input type="hidden" name="id_key" value="{{ p.widget_id_key }}">
+            <label for="id-{{ p.id }}-widget">{{ p.widget_id_label }}</label>
+            <div class="input-row">
+              <input type="text" id="id-{{ p.id }}-widget" name="affiliate_id" value="{{ p.widget_affiliate_id }}"
+                     placeholder="{{ p.widget_id_placeholder }}" class="aff-id-input" data-id-key="{{ p.widget_id_key }}"
+                     autocomplete="off">
+              <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+            </div>
+            {% set wv = p.widget_verification %}
+            {% if wv %}
+            <div class="aff-verify aff-verify--{{ wv.status }}" data-id-key="{{ p.widget_id_key }}">
+              <p class="aff-verify__msg">{{ wv.message }}</p>
+            </div>
+            {% endif %}
+          </form>
+          {% endif %}
+
           {% else %}
 
           <form method="post" class="partner-card__form">
