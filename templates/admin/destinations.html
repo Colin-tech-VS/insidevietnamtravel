@@ -60,7 +60,7 @@
 
         <h2>🏙️ Nouvelle destination (IA)</h2>
 
-        <form id="dest-form-ai" class="guide-form">
+        <form id="dest-form-ai" class="guide-form" data-no-loader>
 
           <div class="form-field">
 
@@ -260,6 +260,8 @@
 
 
 
+    <div id="draft-slot">
+
     {% if draft %}
 
     <section class="panel draft-panel">
@@ -329,6 +331,8 @@
     </section>
 
     {% endif %}
+
+    </div>
 
   </div>
 

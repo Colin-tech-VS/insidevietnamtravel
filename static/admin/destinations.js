@@ -73,6 +73,26 @@ document.addEventListener('DOMContentLoaded', () => {
     throw new Error('Génération anormalement longue. Rafraîchissez la page dans un instant.');
   }
 
+  // Affiche l'aperçu dynamiquement, sans recharger la page (comme les onglets).
+  async function softReload() {
+    try {
+      const res = await fetch(window.location.href, {
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'fetch' },
+      });
+      const html = await res.text();
+      const fresh = new DOMParser().parseFromString(html, 'text/html').getElementById('draft-slot');
+      const slot = document.getElementById('draft-slot');
+      if (fresh && slot) {
+        slot.innerHTML = fresh.innerHTML;
+        stopLoader();
+        slot.querySelector('.draft-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+    } catch (e) { /* repli ci-dessous */ }
+    window.location.reload();
+  }
+
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -97,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await res.json();
         if (!res.ok || !data.ok) throw new Error(data.error || 'Erreur génération');
         await pollDraft('/admin/api/destinations/draft-status');
-        window.location.reload();
+        await softReload();
       } catch (err) {
         stopLoader();
         alert(err.message);

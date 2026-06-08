@@ -58,7 +58,7 @@
 
         <h2>✦ Nouveau guide (IA)</h2>
 
-        <form method="post" id="guide-form-ai" class="guide-form">
+        <form method="post" id="guide-form-ai" class="guide-form" data-no-loader>
 
           <input type="hidden" name="action" value="generate">
 
@@ -290,6 +290,8 @@
 
 
 
+    <div id="draft-slot">
+
     {% if draft %}
 
     <section class="panel draft-panel">
@@ -364,7 +366,7 @@
 
         {% if not draft.manual %}
 
-        <form method="post" class="draft-action-form draft-action-form--improve">
+        <form method="post" class="draft-action-form draft-action-form--improve" data-no-loader>
 
           <input type="hidden" name="action" value="improve">
 
@@ -385,6 +387,8 @@
     </section>
 
     {% endif %}
+
+    </div>
 
   </div>
 

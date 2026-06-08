@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
           guide_type: guideType,
         });
         await pollDraft('/admin/api/guides/draft-status');
-        window.location.reload();
+        await softReload();
       } catch (err) {
         stopLoader();
         alert(err.message);
@@ -138,26 +138,54 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  document.querySelectorAll('.draft-action-form--improve').forEach((improveForm) => {
-    improveForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const instructions = improveForm.querySelector('[name="instructions"]')?.value
-        || 'Améliore le SEO pour voyageurs préparant un voyage au Vietnam.';
-      const btn = improveForm.querySelector('button[type="submit"]');
-      if (btn) btn.disabled = true;
-      startLoader(IMPROVE_PHRASES);
-
-      try {
-        await postJson('/admin/api/guides/improve', { instructions });
-        await pollDraft('/admin/api/guides/draft-status');
-        window.location.reload();
-      } catch (err) {
+  // Recharge l'aperçu dynamiquement (sans navigation, comme les onglets) :
+  // on récupère la page, on remplace #draft-slot et on rebranche l'amélioration.
+  async function softReload() {
+    try {
+      const res = await fetch(window.location.href, {
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'fetch' },
+      });
+      const html = await res.text();
+      const fresh = new DOMParser().parseFromString(html, 'text/html').getElementById('draft-slot');
+      const slot = document.getElementById('draft-slot');
+      if (fresh && slot) {
+        slot.innerHTML = fresh.innerHTML;
+        bindImproveForms();
         stopLoader();
-        alert(err.message);
-        if (btn) btn.disabled = false;
+        slot.querySelector('.draft-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
       }
+    } catch (e) { /* repli ci-dessous */ }
+    window.location.reload();
+  }
+
+  function bindImproveForms() {
+    document.querySelectorAll('.draft-action-form--improve').forEach((improveForm) => {
+      if (improveForm.dataset.bound) return;
+      improveForm.dataset.bound = '1';
+      improveForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const instructions = improveForm.querySelector('[name="instructions"]')?.value
+          || 'Améliore le SEO pour voyageurs préparant un voyage au Vietnam.';
+        const btn = improveForm.querySelector('button[type="submit"]');
+        if (btn) btn.disabled = true;
+        startLoader(IMPROVE_PHRASES);
+
+        try {
+          await postJson('/admin/api/guides/improve', { instructions });
+          await pollDraft('/admin/api/guides/draft-status');
+          await softReload();
+        } catch (err) {
+          stopLoader();
+          alert(err.message);
+          if (btn) btn.disabled = false;
+        }
+      });
     });
-  });
+  }
+
+  bindImproveForms();
 
   function bindSuggestionCards() {
     document.querySelectorAll('.suggestion-card').forEach((btn) => {
