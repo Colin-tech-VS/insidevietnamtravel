@@ -6,6 +6,10 @@ import re
 
 from geo_utils import GEO_SOURCES, is_ai_crawler
 
+_ANALYTICS_EXCLUDED_PATH_PREFIXES: tuple[str, ...] = (
+    "/.well-known/",
+)
+
 _EXTRA_BOT_PATTERNS: tuple[str, ...] = (
     "googlebot",
     "bingbot",
@@ -49,7 +53,18 @@ _EXTRA_BOT_PATTERNS: tuple[str, ...] = (
     "exabot",
     "petalbot",
     "discordbot",
+    "acme-challenge",
+    "certbot",
+    "lego",
+    "letsencrypt",
+    "caddy",
+    "scalingo",
 )
+
+
+def is_analytics_excluded_path(path: str = "") -> bool:
+    p = path or ""
+    return any(p.startswith(prefix) for prefix in _ANALYTICS_EXCLUDED_PATH_PREFIXES)
 
 
 def _all_bot_patterns() -> list[str]:
@@ -72,7 +87,7 @@ def _all_bot_patterns() -> list[str]:
 def is_analytics_bot(user_agent: str = "") -> bool:
     ua = user_agent or ""
     if not ua.strip():
-        return False
+        return True
     if is_ai_crawler(ua):
         return True
     low = ua.lower()
@@ -92,7 +107,40 @@ def not_bot_sqlite_sql(column: str = "user_agent") -> str:
     return " AND " + " AND ".join(parts)
 
 
+def not_excluded_path_pg_sql(column: str = "path") -> str:
+    clauses = " AND ".join(
+        f"COALESCE({column}, '') NOT LIKE '{prefix}%'"
+        for prefix in _ANALYTICS_EXCLUDED_PATH_PREFIXES
+    )
+    return f" AND {clauses} "
+
+
+def not_excluded_path_sqlite_sql(column: str = "path") -> str:
+    parts = [
+        f"COALESCE({column}, '') NOT LIKE '{prefix}%'"
+        for prefix in _ANALYTICS_EXCLUDED_PATH_PREFIXES
+    ]
+    return " AND " + " AND ".join(parts)
+
+
+def not_excluded_path_sql(column: str = "path", *, postgres: bool) -> str:
+    if postgres:
+        return not_excluded_path_pg_sql(column)
+    return not_excluded_path_sqlite_sql(column)
+
+
 def not_bot_sql(column: str = "user_agent", *, postgres: bool) -> str:
     if postgres:
         return not_bot_pg_sql(column)
     return not_bot_sqlite_sql(column)
+
+
+def visitor_traffic_sql(
+    *,
+    postgres: bool,
+    user_agent_column: str = "user_agent",
+    path_column: str = "path",
+) -> str:
+    return not_bot_sql(user_agent_column, postgres=postgres) + not_excluded_path_sql(
+        path_column, postgres=postgres
+    )

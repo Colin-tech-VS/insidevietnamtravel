@@ -2,7 +2,7 @@
 
 from datetime import date, datetime, timedelta
 
-from admin.analytics_filters import not_bot_sql
+from admin.analytics_filters import not_excluded_path_sql, visitor_traffic_sql
 from admin.database import get_connection, ensure_schema, init_schema, is_postgres
 
 init_db = init_schema
@@ -37,8 +37,8 @@ def _since_days(days: int) -> str:
 
 
 def _human_traffic_sql() -> str:
-    """Exclut crawlers / robots des stats visiteurs (section GEO non concernée)."""
-    return not_bot_sql(postgres=is_postgres())
+    """Exclut crawlers, robots et chemins infra (ACME, etc.) des stats visiteurs."""
+    return visitor_traffic_sql(postgres=is_postgres())
 
 
 def _execute(conn, sql_pg: str, sql_sqlite: str, params=()):
@@ -177,13 +177,14 @@ def get_country_stats(days: int = 30) -> list[dict]:
 
 def get_geo_view_rows(days: int = 30) -> list[dict]:
     """Page views avec referrer + UA pour classification GEO (LLM / moteurs IA)."""
+    path_excl = not_excluded_path_sql(postgres=is_postgres())
     with get_connection() as conn:
         rows = _execute(
             conn,
-            """SELECT path, referrer, user_agent, created_at::text AS created_at
-               FROM page_views WHERE created_at >= %s ORDER BY id DESC""",
-            """SELECT path, referrer, user_agent, created_at
-               FROM page_views WHERE created_at >= ? ORDER BY id DESC""",
+            f"""SELECT path, referrer, user_agent, created_at::text AS created_at
+               FROM page_views WHERE created_at >= %s{path_excl} ORDER BY id DESC""",
+            f"""SELECT path, referrer, user_agent, created_at
+               FROM page_views WHERE created_at >= ?{path_excl} ORDER BY id DESC""",
             (_since_days(days),),
         ).fetchall()
     return [_row_dict(r) for r in rows]

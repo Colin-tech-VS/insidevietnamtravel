@@ -143,10 +143,14 @@ def prepare_request():
 
 @app.before_request
 def track_page_view():
+    from admin.analytics_filters import is_analytics_excluded_path
+
     if request.method != "GET":
         return
     path = request.path
     if path.startswith(("/admin", "/static", "/go/", "/favicon")):
+        return
+    if is_analytics_excluded_path(path):
         return
     if is_analytics_excluded_ip():
         return
