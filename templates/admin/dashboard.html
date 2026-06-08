@@ -1,0 +1,216 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<p class="page-sub">Vue d'ensemble — actions rapides et indicateurs clés.</p>
+
+
+
+<div class="quick-actions">
+
+  <a href="{{ url_for('admin.guides') }}" class="quick-action">
+
+    <span class="quick-action__icon" aria-hidden="true">✦</span>
+
+    <span>
+
+      <span class="quick-action__title">Guides IA</span>
+
+      <span class="quick-action__desc">Générer un article SEO</span>
+
+    </span>
+
+  </a>
+
+  <a href="{{ url_for('admin.affiliates') }}" class="quick-action">
+
+    <span class="quick-action__icon" aria-hidden="true">◇</span>
+
+    <span>
+
+      <span class="quick-action__title">Affiliation</span>
+
+      <span class="quick-action__desc">{{ affiliates_configured }}/{{ affiliates_total }} partenaires actifs</span>
+
+    </span>
+
+  </a>
+
+  <a href="{{ url_for('admin.analytics') }}" class="quick-action">
+
+    <span class="quick-action__icon" aria-hidden="true">↗</span>
+
+    <span>
+
+      <span class="quick-action__title">Analytics</span>
+
+      <span class="quick-action__desc">{{ totals.today_views }} vues aujourd'hui</span>
+
+    </span>
+
+  </a>
+
+  <a href="{{ url_for('admin.revenue') }}" class="quick-action">
+
+    <span class="quick-action__icon" aria-hidden="true">€</span>
+
+    <span>
+
+      <span class="quick-action__title">Revenus</span>
+
+      <span class="quick-action__desc">{{ revenue.total }} € enregistrés</span>
+
+    </span>
+
+  </a>
+
+</div>
+
+
+
+<div class="admin-page-layout">
+
+  <div class="admin-page-main">
+
+    <div class="stat-grid">
+
+      <div class="stat-card stat-card--live">
+
+        <span class="stat-label">Visiteurs actifs <small>(30 min)</small></span>
+
+        <span class="stat-value" id="live-visitors">{{ realtime.active_visitors }}</span>
+
+      </div>
+
+      <div class="stat-card">
+
+        <span class="stat-label">Vues aujourd'hui</span>
+
+        <span class="stat-value">{{ totals.today_views }}</span>
+
+      </div>
+
+      <div class="stat-card">
+
+        <span class="stat-label">Vues totales</span>
+
+        <span class="stat-value">{{ totals.total_views }}</span>
+
+      </div>
+
+      <div class="stat-card">
+
+        <span class="stat-label">Clics affiliés</span>
+
+        <span class="stat-value">{{ totals.total_clicks }}</span>
+
+      </div>
+
+      <div class="stat-card">
+
+        <span class="stat-label">Revenus enregistrés <small>(payés)</small></span>
+
+        <span class="stat-value">{{ revenue.total }} €</span>
+
+        <span class="stat-hint">Commissions réellement reçues — saisies dans Revenus</span>
+
+      </div>
+
+      <div class="stat-card">
+
+        <span class="stat-label">Potentiel estimé <small>(30j)</small></span>
+
+        <span class="stat-value">{% if est_commission %}~{{ est_commission }} €{% else %}—{% endif %}</span>
+
+        <span class="stat-hint">{% if affiliates_configured %}Clics × taux moyen — partenaires actifs uniquement{% else %}Configurez vos IDs dans Affiliation{% endif %}</span>
+
+      </div>
+
+      <div class="stat-card">
+
+        <span class="stat-label">Articles</span>
+
+        <span class="stat-value">{{ articles_count }}</span>
+
+      </div>
+
+      <div class="stat-card">
+
+        <span class="stat-label">Newsletter</span>
+
+        <span class="stat-value">{{ subscribers }}</span>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="panel-grid">
+
+      <section class="panel">
+
+        <h2>Statut système</h2>
+
+        <ul class="status-list">
+
+          <li class="{% if groq_ok %}ok{% else %}warn{% endif %}">Groq AI {% if groq_ok %}connecté{% else %}— clé manquante{% endif %}</li>
+
+          <li class="{% if affiliates_configured > 0 %}ok{% else %}warn{% endif %}">Affiliation : {{ affiliates_configured }}/{{ affiliates_total }} configurés</li>
+
+          <li class="ok">Analytics internes actifs</li>
+
+        </ul>
+
+      </section>
+
+      <section class="panel">
+
+        <h2>Activité récente</h2>
+
+        <ul class="activity-list">
+
+          {% for v in realtime.recent[:10] %}
+
+          <li><span>{{ v.path }}</span><time>{{ v.created_at[:16] }}</time></li>
+
+          {% else %}
+
+          <li class="muted">Aucune visite encore — ouvrez le site pour tester.</li>
+
+          {% endfor %}
+
+        </ul>
+
+      </section>
+
+    </div>
+
+  </div>
+
+
+
+  <aside class="admin-page-aside">
+
+    {% with panel_title="🎯 Prochaines actions", panel_intro="Priorités calculées selon l'état actuel du site.", panel_badge="Contextuel" %}
+
+    {% include "admin/_recommendations.html" %}
+
+    {% endwith %}
+
+  </aside>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>setInterval(() => fetch('{{ url_for("admin.api_realtime") }}').then(r=>r.json()).then(d=>{const el=document.getElementById('live-visitors');if(el)el.textContent=d.active_visitors}), 15000);</script>
+
+{% endblock %}
+

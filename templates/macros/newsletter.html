@@ -1,0 +1,16 @@
+{% macro newsletter_form() %}
+<section class="newsletter" aria-labelledby="newsletter-title">
+  <div class="newsletter__inner">
+    <h2 id="newsletter-title" class="newsletter__title">{{ newsletter.NEWSLETTER.title }}</h2>
+    <p class="newsletter__subtitle">{{ newsletter.NEWSLETTER.subtitle }}</p>
+    <form class="newsletter__form" action="{{ url_for('newsletter_subscribe') }}" method="post" novalidate>
+      <label for="newsletter-email" class="sr-only">Adresse email</label>
+      <input type="email" id="newsletter-email" name="email" required
+             placeholder="{{ newsletter.NEWSLETTER.placeholder }}"
+             autocomplete="email" class="newsletter__input">
+      <button type="submit" class="btn btn-primary">{{ newsletter.NEWSLETTER.cta }}</button>
+    </form>
+    <p class="newsletter__privacy"><small>Pas de spam. Désinscription en un clic.</small></p>
+  </div>
+</section>
+{% endmacro %}

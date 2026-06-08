@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "macros/articles.html" import article_card with context %}
+{% from "macros/seo.html" import json_ld_graph with context %}
+
+{% block structured_data %}
+{% set article_items = [] %}
+{% for article in articles %}
+{% set _ = article_items.append({"name": article.title, "url": site.SITE_URL ~ url_for('article', slug=article.slug)}) %}
+{% endfor %}
+{{ json_ld_graph([
+  {
+    "@type": "CollectionPage",
+    "name": category.label ~ " — voyage Vietnam",
+    "description": meta_description,
+    "url": canonical_url,
+    "inLanguage": "fr-FR"
+  },
+  seo_breadcrumb([
+    ("Accueil", site.SITE_URL),
+    ("Blog", site.SITE_URL ~ url_for('blog_index')),
+    (category.label, None),
+  ]),
+  seo_item_list(category.label, article_items),
+]) }}
+{% endblock %}
+
+{% block content %}
+<header class="page-hero page-hero--{{ category_key }}">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Fil d'Ariane">
+      <ol>
+        <li><a href="{{ url_for('index') }}">Accueil</a></li>
+        <li><a href="{{ url_for('blog_index') }}">Blog</a></li>
+        <li aria-current="page">{{ category.label }}</li>
+      </ol>
+    </nav>
+    <h1>{{ category.label }} — voyage Vietnam</h1>
+    <p>{{ category.description }}</p>
+    <span class="article-count">{{ articles|length }} guide{% if articles|length > 1 %}s{% endif %}</span>
+  </div>
+</header>
+
+<section class="articles-section">
+  <div class="container">
+    {% if articles %}
+    <div class="articles-grid">
+      {% for article in articles %}
+      {{ article_card(article, index=loop.index0) }}
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty-state">Aucun article dans cette catégorie pour le moment.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

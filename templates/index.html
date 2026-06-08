@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% from "macros/affiliates.html" import pdf_banner, sim_banner with context %}
+{% from "macros/articles.html" import article_card with context %}
+{% from "macros/images.html" import responsive_img with context %}
+{% from "macros/seo.html" import json_ld_graph with context %}
+
+{% block meta_keywords %}
+<meta name="keywords" content="{{ meta_keywords or site.SITE_KEYWORDS }}">
+{% endblock %}
+
+{% block structured_data %}
+{% set dest_items = [] %}
+{% for slug, d in destinations.items() %}
+{% set _ = dest_items.append({"name": "Guide " ~ d.name, "url": site.SITE_URL ~ url_for('destination_page', slug=slug)}) %}
+{% endfor %}
+{% set itin_items = [] %}
+{% for slug, it in itineraries.items() %}
+{% set _ = itin_items.append({"name": it.title, "url": site.SITE_URL ~ url_for('itinerary', slug=slug)}) %}
+{% endfor %}
+{{ json_ld_graph([
+  seo_organization(),
+  seo_website(),
+  seo_item_list("Destinations Vietnam", dest_items),
+  seo_item_list("Itinéraires voyage Vietnam", itin_items),
+]) }}
+{% endblock %}
+
+{% block content %}
+<section class="hero" aria-labelledby="hero-title">
+  <div class="hero-bg" aria-hidden="true"></div>
+  <div class="hero-pattern" aria-hidden="true"></div>
+  <div class="container hero-content">
+    <p class="hero-eyebrow">Guide voyage Vietnam</p>
+    <h1 id="hero-title">Votre guide voyage<br><em>au Vietnam</em></h1>
+    <p class="hero-lead">Itinéraires prêts à l'emploi, guides par ville, conseils visa et budget — pour préparer votre séjour au Vietnam en toute sérénité.</p>
+    <div class="hero-actions">
+      <a href="#destinations" class="btn btn-primary">Explorer les destinations</a>
+      <a href="#pdf-guide" class="btn btn-ghost">Télécharger le guide PDF</a>
+    </div>
+  </div>
+</section>
+
+<section id="destinations" class="section" aria-labelledby="dest-title">
+  <div class="container">
+    <header class="section-header">
+      <h2 id="dest-title">Destinations au Vietnam</h2>
+      <p>Guides complets par ville : que faire, où dormir, activités incontournables</p>
+    </header>
+    <div class="dest-grid">
+      {% for slug, d in destinations.items() %}
+      <a href="{{ url_for('destination_page', slug=slug) }}" class="dest-card">
+        {% if d.image %}
+        {{ responsive_img(
+          d.image,
+          alt=d.image_alt or ('Guide ' ~ d.name ~ ', Vietnam'),
+          width=400,
+          height=225,
+          loading='lazy',
+          class='dest-card__img',
+          sizes='(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px'
+        ) }}
+        {% endif %}
+        <span class="dest-card__overlay"></span>
+        <span class="dest-card__content">
+          <span class="dest-card__name">{{ d.name }}</span>
+          <span class="dest-card__tag">{{ d.tagline }}</span>
+          <span class="dest-card__cta">Lire le guide →</span>
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section section--alt" aria-labelledby="itin-title">
+  <div class="container">
+    <header class="section-header">
+      <h2 id="itin-title">Itinéraires Vietnam</h2>
+      <p>Circuits jour par jour — 3, 7 ou 10 jours pour organiser votre voyage</p>
+    </header>
+    <div class="itin-grid">
+      {% for slug, it in itineraries.items() %}
+      <article class="itin-card">
+        <span class="itin-card__days">{{ it.duration }} jours</span>
+        <h3><a href="{{ url_for('itinerary', slug=slug) }}">{{ it.title }}</a></h3>
+        <p>{{ it.summary }}</p>
+        <span class="itin-card__budget">{{ it.budget_hint }}</span>
+        <a href="{{ url_for('itinerary', slug=slug) }}" class="card-link-text">Voir l'itinéraire →</a>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="blog-title">
+  <div class="container">
+    <header class="section-header">
+      <h2 id="blog-title">Guides pratiques voyage Vietnam</h2>
+      <p>Visa, budget, eSIM, sécurité — conseils pour voyageurs français</p>
+    </header>
+    <div class="articles-grid">
+      {% for article in featured_articles[:6] %}
+      {{ article_card(article, index=loop.index0) }}
+      {% endfor %}
+    </div>
+    <p class="section-cta"><a href="{{ url_for('blog_index') }}" class="btn btn-primary">Tous les articles</a></p>
+  </div>
+</section>
+
+<section class="section section--monetize">
+  <div class="container monetize-grid">
+    {{ sim_banner() }}
+    {{ pdf_banner() }}
+  </div>
+</section>
+{% endblock %}

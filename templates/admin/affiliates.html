@@ -1,0 +1,386 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Affiliation{% endblock %}
+
+{% block page_title %}Affiliation{% endblock %}
+
+
+
+{% block content %}
+
+<p class="page-sub">Partenaires, IDs affiliés, clics et revenus. Le trafic général est dans <a href="{{ url_for('admin.analytics') }}">Analytics</a>.</p>
+
+
+
+<div class="admin-page-layout admin-page-layout--wide">
+
+  <div class="admin-page-main">
+
+    <div class="analytics-toolbar">
+
+      <div class="analytics-toolbar__period">
+
+        <span class="analytics-toolbar__label">Période</span>
+
+        <div class="period-pills">
+
+          <a href="{{ url_for('admin.affiliates', days=7) }}" class="period-pill {% if days == 7 %}is-active{% endif %}">7 jours</a>
+
+          <a href="{{ url_for('admin.affiliates', days=30) }}" class="period-pill {% if days == 30 %}is-active{% endif %}">30 jours</a>
+
+          <a href="{{ url_for('admin.affiliates', days=90) }}" class="period-pill {% if days == 90 %}is-active{% endif %}">90 jours</a>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="kpi-grid kpi-grid--aff">
+
+      <div class="kpi-card">
+
+        <span class="kpi-card__label">Clics affiliés</span>
+
+        <span class="kpi-card__value">{{ summary.clicks_period }}</span>
+
+        <span class="kpi-card__hint">vers Booking, Agoda, etc.</span>
+
+      </div>
+
+      <div class="kpi-card kpi-card--gold">
+
+        <span class="kpi-card__label">Potentiel estimé</span>
+
+        <span class="kpi-card__value">{% if summary.estimated_eur %}~{{ summary.estimated_eur }} €{% else %}—{% endif %}</span>
+
+        <span class="kpi-card__hint">{% if configured_count %}clics × taux — IDs actifs{% else %}IDs affiliés non configurés{% endif %}</span>
+
+      </div>
+
+      <div class="kpi-card kpi-card--teal">
+
+        <span class="kpi-card__label">Revenus enregistrés</span>
+
+        <span class="kpi-card__value">{{ summary.confirmed_eur }} €</span>
+
+        <span class="kpi-card__hint"><a href="{{ url_for('admin.revenue') }}">Saisir un paiement reçu →</a></span>
+
+      </div>
+
+      <div class="kpi-card">
+
+        <span class="kpi-card__label">Partenaires configurés</span>
+
+        <span class="kpi-card__value">{{ configured_count }}/{{ partners_total }}</span>
+
+        <span class="kpi-card__hint">IDs renseignés</span>
+
+      </div>
+
+    </div>
+
+
+
+    {% if summary.clicks_by_partner %}
+
+    <div class="chart-grid chart-grid--aff">
+
+      <section class="chart-panel">
+
+        <h2>Clics par jour</h2>
+
+        <canvas id="clicksChart" height="120"></canvas>
+
+      </section>
+
+      <section class="chart-panel">
+
+        <h2>Répartition par partenaire</h2>
+
+        <canvas id="partnerChart" height="200"></canvas>
+
+      </section>
+
+    </div>
+
+    {% endif %}
+
+
+
+    <section class="partners-section">
+
+      <div class="partners-section__header">
+
+        <h2>Mes partenaires affiliés</h2>
+
+        <p class="muted">Collez votre ID pour activer les liens sur le site. Les cartes non configurées sont en priorité dans les recommandations.</p>
+
+      </div>
+
+
+
+      <div class="partners-grid">
+
+        {% for p in summary.partners %}
+
+        <article id="partner-{{ p.id }}" class="partner-card {% if p.configured %}partner-card--active{% endif %}">
+
+          <div class="partner-card__head">
+
+            <span class="partner-card__icon" aria-hidden="true">{{ p.icon }}</span>
+
+            <div>
+
+              <h3>{{ p.name }}</h3>
+
+              <span class="partner-card__cat">{{ p.category }}</span>
+
+            </div>
+
+            <span class="partner-card__status {% if p.configured %}is-on{% else %}is-off{% endif %}">
+
+              {% if p.configured %}Actif{% else %}À configurer{% endif %}
+
+            </span>
+
+          </div>
+
+
+
+          <p class="partner-card__desc">{{ p.description }}</p>
+
+          <p class="partner-card__earn"><strong>Ce que vous gagnez :</strong> {{ p.what_you_earn }}</p>
+
+
+
+          <div class="partner-card__stats">
+
+            <div class="partner-stat">
+
+              <span class="partner-stat__val">{{ p.clicks }}</span>
+
+              <span class="partner-stat__lbl">Clics</span>
+
+            </div>
+
+            <div class="partner-stat">
+
+              <span class="partner-stat__val">~{{ p.estimated_eur }} €</span>
+
+              <span class="partner-stat__lbl">Estimé</span>
+
+            </div>
+
+            <div class="partner-stat">
+
+              <span class="partner-stat__val">{{ p.confirmed_eur }} €</span>
+
+              <span class="partner-stat__lbl">Confirmé</span>
+
+            </div>
+
+          </div>
+
+
+
+          {% if p.builtin %}
+
+          <form method="post" class="partner-card__form">
+
+            <input type="hidden" name="action" value="update_partner">
+
+            <input type="hidden" name="id_key" value="{{ p.id_key }}">
+
+            <label for="id-{{ p.id }}">{{ p.id_label }}</label>
+
+            <div class="input-row">
+
+              <input type="text" id="id-{{ p.id }}" name="affiliate_id" value="{{ p.affiliate_id }}"
+
+                     placeholder="{{ p.id_placeholder }}">
+
+              <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+
+            </div>
+
+            {% if p.signup_url %}
+
+            <p class="partner-card__signup">
+
+              Pas encore inscrit ?
+
+              <a href="{{ p.signup_url }}" target="_blank" rel="noopener">Créer un compte {{ p.name }} →</a>
+
+            </p>
+
+            {% endif %}
+
+          </form>
+
+          {% else %}
+
+          <form method="post" class="partner-card__form">
+
+            <input type="hidden" name="action" value="update_custom">
+
+            <input type="hidden" name="partner_id" value="{{ p.id }}">
+
+            <label for="url-{{ p.id }}">{{ p.id_label }}</label>
+
+            <div class="input-row">
+
+              <input type="url" id="url-{{ p.id }}" name="affiliate_url" value="{{ p.affiliate_id }}" required>
+
+              <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+
+            </div>
+
+          </form>
+
+          <form method="post" class="partner-card__delete">
+
+            <input type="hidden" name="action" value="delete_custom">
+
+            <input type="hidden" name="partner_id" value="{{ p.id }}">
+
+            <button type="submit" class="btn btn-secondary btn-sm" onclick="return confirm('Supprimer ce partenaire ?')">Supprimer</button>
+
+          </form>
+
+          {% endif %}
+
+        </article>
+
+        {% endfor %}
+
+      </div>
+
+    </section>
+
+
+
+    <section class="panel add-partner-panel">
+
+      <h2>➕ Ajouter un nouveau partenaire</h2>
+
+      <p class="muted">Ex : Klook, 12Go, Trip.com, SafetyWing…</p>
+
+      <form method="post" class="add-partner-form">
+
+        <input type="hidden" name="action" value="add_custom">
+
+        <div class="form-row">
+
+          <div>
+
+            <label for="cp-name">Nom du partenaire *</label>
+
+            <input type="text" id="cp-name" name="name" required placeholder="Ex: Klook">
+
+          </div>
+
+          <div>
+
+            <label for="cp-cat">Catégorie</label>
+
+            <select id="cp-cat" name="category">
+
+              <option>Hôtel</option>
+
+              <option>Activité</option>
+
+              <option>Transport</option>
+
+              <option>eSIM</option>
+
+              <option>Assurance</option>
+
+              <option>Autre</option>
+
+            </select>
+
+          </div>
+
+        </div>
+
+        <label for="cp-url">Lien affilié complet *</label>
+
+        <input type="url" id="cp-url" name="affiliate_url" required placeholder="https://www.klook.com/?aid=VOTRE_ID">
+
+        <label for="cp-earn">Ce que vous gagnez</label>
+
+        <input type="text" id="cp-earn" name="what_you_earn" placeholder="Ex: ~5% par activité réservée">
+
+        <div class="form-row">
+
+          <div>
+
+            <label for="cp-avg">Estimation €/clic</label>
+
+            <input type="number" id="cp-avg" name="avg_per_click" step="0.5" min="0" value="3">
+
+          </div>
+
+          <div>
+
+            <label for="cp-signup">Lien inscription programme</label>
+
+            <input type="url" id="cp-signup" name="signup_url" placeholder="https://...">
+
+          </div>
+
+        </div>
+
+        <label for="cp-desc">Description</label>
+
+        <input type="text" id="cp-desc" name="description" placeholder="Ex: Activités et billets en Asie">
+
+        <button type="submit" class="btn btn-primary">Ajouter le partenaire</button>
+
+      </form>
+
+    </section>
+
+  </div>
+
+
+
+  <aside class="admin-page-aside">
+
+    {% with panel_title="💰 Optimiser l'affiliation", panel_intro="Conseils basés sur vos clics et partenaires actifs.", panel_badge="Conseils" %}
+
+    {% include "admin/_recommendations.html" %}
+
+    {% endwith %}
+
+  </aside>
+
+</div>
+
+{% endblock %}
+
+
+
+{% block scripts %}
+
+<script>
+
+  const affChartData = {
+
+    dailyClicks: {{ summary.daily_clicks | tojson }},
+
+    partners: {{ summary.clicks_by_partner | tojson }},
+
+  };
+
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<script src="{{ url_for('static', filename='admin/affiliates-charts.js') }}"></script>
+
+{% endblock %}
+

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block meta_robots %}noindex, follow{% endblock %}
+
+{% block content %}
+<section class="error-page">
+  <div class="container error-inner">
+    <span class="error-code" aria-hidden="true">404</span>
+    <h1>Page introuvable</h1>
+    <p>La page que vous cherchez n'existe pas ou a été déplacée. Retournez à l'accueil pour préparer votre voyage au Vietnam.</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Retour à l'accueil</a>
+  </div>
+</section>
+{% endblock %}

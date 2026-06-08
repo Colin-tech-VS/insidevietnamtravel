@@ -1,0 +1,330 @@
+{
+  "hanoi": {
+    "slug": "hanoi",
+    "name": "Hanoï",
+    "meta_title": "Guide Hanoï 2026 — Que faire, où dormir, conseils pratiques",
+    "meta_description": "Guide complet de Hanoï : incontournables, street food, hôtels recommandés, activités et conseils pratiques pour votre séjour dans la capitale.",
+    "tagline": "Capitale millénaire entre lac, ruelles et street food",
+    "overview": "\n<p>Hanoï est le cœur historique du Vietnam. Entre le Vieux Quartier aux 36 rues corporatives, \nle lac Hoàn Kiếm et les temples centenaires, la ville offre une immersion authentique — \nloin des clichés, proche des habitants.</p>\n<p>Prévoyez 2 à 4 jours pour les essentiels. Le trafic est intense : privilégiez la marche \ndans le centre et Grab pour les longues distances.</p>\n",
+    "things_to_do": [
+      {
+        "title": "Vieux Quartier & lac Hoàn Kiếm",
+        "desc": "Flânerie matinale, pont Thê Húc, Temple de la Littérature."
+      },
+      {
+        "title": "Street food du matin",
+        "desc": "Phở, bún chả, bánh cuốn — les meilleures adresses s'ouvrent à l'aube."
+      },
+      {
+        "title": "Musée d'Ethnographie",
+        "desc": "Panorama des 54 ethnies vietnamiennes, architecture remarquable."
+      },
+      {
+        "title": "Train Street (Lê Đường)",
+        "desc": "Expérience unique — respectez les horaires et la sécurité."
+      },
+      {
+        "title": "Excursion Ninh Bình",
+        "desc": "Baie terrestre à 2h — idéal en journée ou 1 nuit."
+      }
+    ],
+    "hotels": [
+      {
+        "name": "Hanoi La Siesta Premium",
+        "desc": "Boutique-hôtel Vieux Quartier, excellent rapport qualité-prix.",
+        "price_hint": "dès 45 €/nuit",
+        "provider": "booking"
+      },
+      {
+        "name": "Apricot Hotel",
+        "desc": "4* élégant près du lac, parfait pour un séjour confort.",
+        "price_hint": "dès 70 €/nuit",
+        "provider": "agoda"
+      },
+      {
+        "name": "Hanoi Backpackers Hostel",
+        "desc": "Dortoirs propres, ambiance sociale, quartier central.",
+        "price_hint": "dès 8 €/nuit",
+        "provider": "booking"
+      }
+    ],
+    "activities": [
+      {
+        "name": "Food tour à pied",
+        "search": "Hanoi street food walking tour",
+        "desc": "Dégustation guidée de 8 spécialités hanoïennes.",
+        "price_hint": "dès 35 €",
+        "provider": "getyourguide"
+      },
+      {
+        "name": "Croisière Baie d'Halong 2J/1N",
+        "search": "Halong Bay cruise 2 days 1 night",
+        "desc": "Sortie depuis Hanoï, transport inclus.",
+        "price_hint": "dès 89 €",
+        "provider": "viator"
+      },
+      {
+        "name": "Spectacle de marionnettes sur eau",
+        "search": "Hanoi water puppet show Thang Long",
+        "desc": "Tradition unique au Théâtre Thăng Long.",
+        "price_hint": "dès 8 €",
+        "provider": "getyourguide"
+      }
+    ],
+    "tips": [
+      "Réservez Halong en avance en haute saison (nov–mars).",
+      "Évitez les taxis sans compteur — utilisez Grab.",
+      "Le phở du matin se mange avant 9h pour l'expérience locale.",
+      "Négociez poliment au marché Đồng Xuân, pas dans les boutiques à prix fixes."
+    ],
+    "image": "/static/images/destinations/hanoi.webp",
+    "image_alt": "Guide voyage Hanoï, Vietnam",
+    "image_photo_id": "1555921015-5532091f6026"
+  },
+  "ho-chi-minh-city": {
+    "slug": "ho-chi-minh-city",
+    "name": "Ho Chi Minh-Ville",
+    "meta_title": "Guide Ho Chi Minh-Ville 2026 — Saigon, que faire et où dormir",
+    "meta_description": "Guide Saigon : quartiers, street food, musées, rooftop bars, hôtels et excursions dans le delta du Mékong.",
+    "tagline": "Mégalopole vibrante, street food légendaire et énergie du sud",
+    "overview": "\n<p>Ho Chi Minh-Ville (Saigon) pulse jour et nuit. Gratte-ciels, marchés, cafés de rue et \nhistoire de la guerre se côtoient dans une ville qui ne dort jamais vraiment.</p>\n<p>3 à 5 jours permettent de couvrir le centre, les musées majeurs et une excursion \ndans le delta du Mékong.</p>\n",
+    "things_to_do": [
+      {
+        "title": "Quartier colonial & Notre-Dame",
+        "desc": "Hôtel de Ville, Saigon Central Post Office, Opéra."
+      },
+      {
+        "title": "Musée de la Guerre",
+        "desc": "Essentiel pour comprendre l'histoire récente du pays."
+      },
+      {
+        "title": "Marché Bến Thành",
+        "desc": "Souvenirs, fruits exotiques et street food le soir."
+      },
+      {
+        "title": "Quartier Thảo Điền",
+        "desc": "Cafés branchés, expats, ambiance détendue."
+      },
+      {
+        "title": "Excursion Delta du Mékong",
+        "desc": "Canaux, marchés flottants, vergers de coco."
+      }
+    ],
+    "hotels": [
+      {
+        "name": "Liberty Central Saigon Citypoint",
+        "desc": "Central, rooftop pool, bon rapport qualité-prix.",
+        "price_hint": "dès 55 €/nuit",
+        "provider": "booking"
+      },
+      {
+        "name": "The Myst Dong Khoi",
+        "desc": "Design hôtel quartier District 1.",
+        "price_hint": "dès 90 €/nuit",
+        "provider": "agoda"
+      },
+      {
+        "name": "Saigon Backpackers",
+        "desc": "Auberge populaire, tours organisés.",
+        "price_hint": "dès 10 €/nuit",
+        "provider": "booking"
+      }
+    ],
+    "activities": [
+      {
+        "name": "Tour street food moto",
+        "search": "Ho Chi Minh motorbike street food tour night",
+        "desc": "Découverte nocturne à moto avec guide local.",
+        "price_hint": "dès 45 €",
+        "provider": "viator"
+      },
+      {
+        "name": "Tunnel de Củ Chi",
+        "search": "Cu Chi tunnels half day tour Saigon",
+        "desc": "Demi-journée depuis HCMC.",
+        "price_hint": "dès 25 €",
+        "provider": "getyourguide"
+      },
+      {
+        "name": "Croisière Mékong 1 jour",
+        "search": "Mekong Delta day tour from Ho Chi Minh",
+        "desc": "Villages, fabrication de bonbons de coco.",
+        "price_hint": "dès 35 €",
+        "provider": "viator"
+      }
+    ],
+    "tips": [
+      "District 1 pour l'essentiel, District 3 pour un quartier plus local.",
+      "Attention aux arnaques « free tour » vers des boutiques.",
+      "La mousson (mai–oct) apporte des averses courtes mais intenses.",
+      "Grab Moto est pratique et économique pour traverser la ville."
+    ],
+    "image": "/static/images/destinations/ho-chi-minh-city.webp",
+    "image_alt": "Guide voyage Ho Chi Minh-Ville, Vietnam",
+    "image_photo_id": "1583417319070-4a69db38a482"
+  },
+  "hoi-an": {
+    "slug": "hoi-an",
+    "name": "Hội An",
+    "meta_title": "Guide Hội An 2026 — Lanternes, plages et activités incontournables",
+    "meta_description": "Que faire à Hội An : vieille ville UNESCO, cours de cuisine, tailleurs, plage An Bàng et hôtels recommandés.",
+    "tagline": "Ville aux lanternes, rizières et savoir-faire artisanal",
+    "overview": "\n<p>Hội An est la perle du centre. Classée UNESCO, la vieille ville piétonne se parcourt \nà vélo entre temples, pont japonais et ateliers d'artisans. Les plages d'An Bàng et \nCửa Đại sont à quelques kilomètres.</p>\n<p>Comptez 2 à 4 jours — idéal en combinaison avec Huế ou Đà Nẵng.</p>\n",
+    "things_to_do": [
+      {
+        "title": "Vieille ville & pont japonais",
+        "desc": "Ticket combiné pour les monuments historiques."
+      },
+      {
+        "title": "Cours de cuisine vietnamienne",
+        "desc": "Marché + atelier, l'expérience la plus populaire."
+      },
+      {
+        "title": "Vélo vers An Bàng",
+        "desc": "Rizières, buffles, plage tranquille."
+      },
+      {
+        "title": "Tailleur sur mesure",
+        "desc": "Costume ou robe en 24-48h, choisissez bien l'atelier."
+      },
+      {
+        "title": "My Sơn",
+        "desc": "Sanctuaire cham à 40 min — idéal au lever du soleil."
+      }
+    ],
+    "hotels": [
+      {
+        "name": "Anantara Hoi An Resort",
+        "desc": "Luxe au bord de la rivière Thu Bồn.",
+        "price_hint": "dès 120 €/nuit",
+        "provider": "agoda"
+      },
+      {
+        "name": "Hoi An Ancient House Village",
+        "desc": "Charme traditionnel, piscine.",
+        "price_hint": "dès 50 €/nuit",
+        "provider": "booking"
+      },
+      {
+        "name": "Tribee Cham Hostel",
+        "desc": "Auberge conviviale, proche vieille ville.",
+        "price_hint": "dès 12 €/nuit",
+        "provider": "booking"
+      }
+    ],
+    "activities": [
+      {
+        "name": "Cours de cuisine half-day",
+        "search": "Hoi An cooking class market tour",
+        "desc": "Marché + 4 plats à préparer.",
+        "price_hint": "dès 30 €",
+        "provider": "getyourguide"
+      },
+      {
+        "name": "Balade en corbeille au coucher du soleil",
+        "search": "Hoi An basket boat sunset Thu Bon river",
+        "desc": "Rivière Thu Bồn, lanternes.",
+        "price_hint": "dès 12 €",
+        "provider": "viator"
+      },
+      {
+        "name": "Excursion My Sơn",
+        "search": "My Son sanctuary tour from Hoi An",
+        "desc": "Transport + guide francophone.",
+        "price_hint": "dès 28 €",
+        "provider": "getyourguide"
+      }
+    ],
+    "tips": [
+      "La vieille ville est piétonne le soir — location de vélo recommandée.",
+      "Plein lune = lumières éteintes et lanternes — réservez tôt.",
+      "Comparez 2-3 tailleurs avant de commander.",
+      "Évitez la plage en août (mer agitée, algues possibles)."
+    ],
+    "image": "/static/images/destinations/hoi-an.webp",
+    "image_alt": "Guide voyage Hội An, Vietnam",
+    "image_photo_id": "1528127269322-539801943592"
+  },
+  "da-nang": {
+    "slug": "da-nang",
+    "name": "Đà Nẵng",
+    "meta_title": "Guide Đà Nẵng 2026 — Plages, Bà Nà Hills et gastronomie",
+    "meta_description": "Guide Đà Nẵng : plages de My Khê, Golden Bridge, cuisine locale, hôtels en bord de mer et excursions vers Hội An.",
+    "tagline": "Ville côtière moderne entre montagnes et plages de sable blanc",
+    "overview": "\n<p>Đà Nẵng est la plaque tournante du centre. Moins touristique que Hội An, elle offre \nde longues plages, une gastronomie réputée (mì Quảng, bánh xèo) et des excursions \nvers les Montagnes de Marbre ou Bà Nà Hills.</p>\n<p>1 à 3 jours suffisent, souvent en base pour explorer Hội An (30 min) et Huế (2h).</p>\n",
+    "things_to_do": [
+      {
+        "title": "Plage My Khê",
+        "desc": "5 km de sable fin, idéal pour le surf débutant."
+      },
+      {
+        "title": "Bà Nà Hills & Golden Bridge",
+        "desc": "Téléphérique record, parc à thème en altitude."
+      },
+      {
+        "title": "Montagnes de Marbre",
+        "desc": "Grottes, pagodes et vue sur la côte."
+      },
+      {
+        "title": "Pont du Dragon",
+        "desc": "Spectacle de feu le week-end soir."
+      },
+      {
+        "title": "Son Tra Peninsula",
+        "desc": "Pagode Linh Ứng et singes sauvages."
+      }
+    ],
+    "hotels": [
+      {
+        "name": "Fusion Suites Da Nang",
+        "desc": "Vue mer, spa, petit-déjeuner inclus.",
+        "price_hint": "dès 80 €/nuit",
+        "provider": "agoda"
+      },
+      {
+        "name": "Brilliant Hotel",
+        "desc": "Centre-ville, rooftop bar.",
+        "price_hint": "dès 45 €/nuit",
+        "provider": "booking"
+      },
+      {
+        "name": "Funtastic Hostel",
+        "desc": "Ambiance jeune, proche plage.",
+        "price_hint": "dès 9 €/nuit",
+        "provider": "booking"
+      }
+    ],
+    "activities": [
+      {
+        "name": "Bà Nà Hills billet coupe-file",
+        "search": "Ba Na Hills Golden Bridge skip the line ticket",
+        "desc": "Téléphérique + Golden Bridge.",
+        "price_hint": "dès 40 €",
+        "provider": "getyourguide"
+      },
+      {
+        "name": "Tour gastronomique Đà Nẵng",
+        "search": "Da Nang food tour mi quang",
+        "desc": "Mì Quảng, seafood, marché local.",
+        "price_hint": "dès 38 €",
+        "provider": "viator"
+      },
+      {
+        "name": "Excursion Hội An + Tra Que",
+        "search": "Hoi An Tra Que vegetable village tour",
+        "desc": "Village potager et vieille ville.",
+        "price_hint": "dès 25 €",
+        "provider": "getyourguide"
+      }
+    ],
+    "tips": [
+      "Louez un scooter seulement si vous êtes à l'aise avec le trafic vietnamien.",
+      "Bà Nà Hills : partez tôt (7h) pour éviter les bus de groupes.",
+      "La pluie est fréquente oct–déc — prévoyez un plan B indoor.",
+      "Grab fonctionne très bien pour Hội An depuis Đà Nẵng."
+    ],
+    "image": "/static/images/destinations/da-nang.webp",
+    "image_alt": "Guide voyage Đà Nẵng, Vietnam",
+    "image_photo_id": "1555979864-7a8f9b4fddf8"
+  }
+}

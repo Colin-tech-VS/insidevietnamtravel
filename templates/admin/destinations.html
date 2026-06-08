@@ -1,0 +1,407 @@
+{% extends "admin/layout.html" %}
+
+
+
+{% block title %}Destinations{% endblock %}
+
+{% block page_title %}Destinations{% endblock %}
+
+
+
+{% block content %}
+
+<p class="page-sub">Créez des pages ville avec l'IA ou rédigez-les vous-même — contenu SEO + image Vietnam WebP.</p>
+
+
+
+<div id="ai-loader" class="ai-loader" hidden aria-live="polite" aria-label="Génération en cours">
+
+  <div class="ai-loader__panel">
+
+    <div class="ai-loader__spinner" aria-hidden="true"></div>
+
+    <p class="ai-loader__title">Génération destination</p>
+
+    <p class="ai-loader__text" id="ai-loader-text">Analyse de la ville…</p>
+
+    <p class="ai-loader__hint">Contenu complet + hôtels, activités, image — 45 à 90 secondes.</p>
+
+  </div>
+
+</div>
+
+
+
+{% if not groq_ok %}
+
+<div class="alert alert--warn">Ajoutez <code>GROQ_API_KEY</code> dans <code>.env</code> pour l'IA. L'onglet <strong>Manuellement</strong> fonctionne sans clé API.</div>
+
+{% endif %}
+
+
+
+<div class="admin-page-layout admin-page-layout--wide">
+
+  <div class="admin-page-main">
+
+    <section class="panel guides-form-panel">
+
+      <div class="content-tabs" role="tablist" aria-label="Mode de création">
+
+        <button type="button" class="content-tab{% if not draft_is_manual %} is-active{% endif %}" role="tab" data-tab="ai" id="tab-btn-ai">✦ Avec IA</button>
+
+        <button type="button" class="content-tab{% if draft_is_manual %} is-active{% endif %}" role="tab" data-tab="manual" id="tab-btn-manual">✎ Manuellement</button>
+
+      </div>
+
+
+
+      <div id="tab-ai" class="content-panel" role="tabpanel" {% if draft_is_manual %}hidden{% endif %}>
+
+        <h2>🏙️ Nouvelle destination (IA)</h2>
+
+        <form id="dest-form-ai" class="guide-form">
+
+          <div class="form-field">
+
+            <label for="dest-city">Ville / destination <span class="required">*</span></label>
+
+            <select id="dest-city" name="city" required>
+
+              <option value="" disabled selected>— Choisir —</option>
+
+              {% for city in city_options %}
+
+              <option value="{{ city }}">{{ city }}</option>
+
+              {% endfor %}
+
+            </select>
+
+            <p class="field-hint">La page sera publiée sur <code>/slug-ville</code> (ex. /sapa).</p>
+
+          </div>
+
+
+
+          <div class="form-field">
+
+            <label for="dest-notes">Notes éditoriales (optionnel)</label>
+
+            <input type="text" id="dest-notes" name="notes" placeholder="Ex: focus trek et homestay, 3-4 jours minimum">
+
+          </div>
+
+
+
+          <button type="submit" class="btn btn-primary btn-generate" {% if not groq_ok %}disabled{% endif %}>
+
+            Générer la destination avec IA
+
+          </button>
+
+        </form>
+
+      </div>
+
+
+
+      <div id="tab-manual" class="content-panel" role="tabpanel" {% if not draft_is_manual %}hidden{% endif %}>
+
+        <h2>✎ Rédiger manuellement</h2>
+
+        <form method="post" id="dest-form-manual" class="guide-form">
+
+          <div class="form-row form-row--2">
+
+            <div class="form-field">
+
+              <label for="manual-name">Nom affiché <span class="required">*</span></label>
+
+              <input type="text" id="manual-name" name="name" required
+
+                     value="{{ draft.name if draft and draft.manual else '' }}"
+
+                     placeholder="Ex: Sapa">
+
+            </div>
+
+            <div class="form-field">
+
+              <label for="manual-dest-slug">Slug URL (optionnel)</label>
+
+              <input type="text" id="manual-dest-slug" name="slug"
+
+                     value="{{ draft.slug if draft and draft.manual else '' }}"
+
+                     placeholder="ex: sapa">
+
+            </div>
+
+          </div>
+
+
+
+          <div class="form-field">
+
+            <label for="manual-dest-city">Ville (liste) <span class="required">*</span></label>
+
+            <select id="manual-dest-city" name="city" required>
+
+              <option value="" disabled {% if not draft or not draft.manual %}selected{% endif %}>— Choisir —</option>
+
+              {% for city in city_options %}
+
+              <option value="{{ city }}" {% if draft and draft.manual and (draft.city == city or draft.name == city) %}selected{% endif %}>{{ city }}</option>
+
+              {% endfor %}
+
+            </select>
+
+          </div>
+
+
+
+          <div class="form-field">
+
+            <label for="manual-tagline">Accroche <span class="required">*</span></label>
+
+            <input type="text" id="manual-tagline" name="tagline" required maxlength="120"
+
+                   value="{{ draft.tagline if draft and draft.manual else '' }}"
+
+                   placeholder="Ex: Rizières en terrasse et cultures montagnardes">
+
+          </div>
+
+
+
+          <div class="form-field">
+
+            <label for="manual-meta-title">Meta title <span class="required">*</span></label>
+
+            <input type="text" id="manual-meta-title" name="meta_title" required maxlength="70"
+
+                   value="{{ draft.meta_title if draft and draft.manual else '' }}"
+
+                   placeholder="Visiter Sapa — guide voyage Vietnam 2026">
+
+          </div>
+
+
+
+          <div class="form-field wysiwyg-field">
+
+            <label for="manual-meta-desc">Meta description <span class="required">*</span></label>
+
+            <textarea id="manual-meta-desc" name="meta_description" required class="wysiwyg-editor wysiwyg-editor--compact"
+
+                      placeholder="155 caractères max">{{ draft.meta_description if draft and draft.manual else '' }}</textarea>
+
+          </div>
+
+
+
+          <div class="form-field wysiwyg-field">
+
+            <label for="manual-overview">Vue d'ensemble <span class="required">*</span></label>
+
+            <textarea id="manual-overview" name="overview" required class="wysiwyg-editor wysiwyg-editor--full"
+
+                      placeholder="Présentation de la destination…">{{ draft.overview if draft and draft.manual else '' }}</textarea>
+
+          </div>
+
+
+
+          <div class="form-field wysiwyg-field">
+
+            <label for="manual-things">Incontournables</label>
+
+            <textarea id="manual-things" name="things_to_do" class="wysiwyg-editor wysiwyg-editor--list"
+
+                      placeholder="Liste à puces : titre en gras + description">{% if draft and draft.manual and draft.things_to_do %}<ul>{% for item in draft.things_to_do %}<li><strong>{{ item.title }}</strong>{% if item.desc %} — {{ item.desc }}{% endif %}</li>{% endfor %}</ul>{% endif %}</textarea>
+
+            <p class="field-hint">Utilisez une liste : <strong>Titre</strong> — description pour chaque activité.</p>
+
+          </div>
+
+
+
+          <div class="form-field wysiwyg-field">
+
+            <label for="manual-tips">Conseils pratiques</label>
+
+            <textarea id="manual-tips" name="tips" class="wysiwyg-editor wysiwyg-editor--list"
+
+                      placeholder="Une puce par conseil">{% if draft and draft.manual and draft.tips %}<ul>{% for tip in draft.tips %}<li>{{ tip }}</li>{% endfor %}</ul>{% endif %}</textarea>
+
+          </div>
+
+
+
+          <label class="checkbox"><input type="checkbox" name="generate_image" checked> Ajouter une image Vietnam (WebP)</label>
+
+
+
+          <div class="btn-row">
+
+            <button type="submit" name="action" value="manual_draft" class="btn btn-secondary">Enregistrer brouillon</button>
+
+            <button type="submit" name="action" value="manual_publish" class="btn btn-primary">Publier directement</button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </section>
+
+
+
+    {% if draft %}
+
+    <section class="panel draft-panel">
+
+      <span class="draft-badge">{% if draft.manual %}Brouillon manuel{% else %}Aperçu IA{% endif %}</span>
+
+      <h2>{{ draft.name }}</h2>
+
+      <p class="draft-meta">
+
+        <span>🔗 /{{ draft.slug }}</span>
+
+        <span>{{ draft.things_to_do|length }} activités</span>
+
+        {% if draft.hotels %}<span>{{ draft.hotels|length }} hôtels</span>{% endif %}
+
+      </p>
+
+
+
+      {% if draft.image %}
+
+      <figure class="draft-cover">
+
+        <img src="{{ draft.image }}" alt="{{ draft.image_alt or draft.name }}" width="1200" height="675" loading="lazy">
+
+        <figcaption class="muted">Image WebP Vietnam</figcaption>
+
+      </figure>
+
+      {% endif %}
+
+
+
+      <p class="draft-excerpt"><strong>SEO :</strong> {{ draft.meta_description }}</p>
+
+      <p class="muted"><strong>Accroche :</strong> {{ draft.tagline }}</p>
+
+
+
+      <div class="preview-box">
+
+        <div class="preview-content">{{ draft.overview | safe }}</div>
+
+      </div>
+
+
+
+      <div class="draft-actions">
+
+        <form method="post" class="draft-action-form">
+
+          <input type="hidden" name="action" value="publish">
+
+          <button type="submit" class="btn btn-primary">Publier sur le site</button>
+
+        </form>
+
+        {% if draft.manual %}
+
+        <p class="muted draft-manual-hint">Pour modifier, éditez le formulaire manuel puis « Enregistrer brouillon ».</p>
+
+        {% endif %}
+
+      </div>
+
+    </section>
+
+    {% endif %}
+
+  </div>
+
+
+
+  <aside class="admin-page-aside">
+
+    <section class="panel guides-stats-panel">
+
+      <h2>📍 Destinations publiées</h2>
+
+      <p class="guides-stats-count"><strong>{{ destinations|length }}</strong> page(s) ville</p>
+
+      <ul class="published-list">
+
+        {% for d in destinations %}
+
+        <li class="dest-admin-item">
+
+          <div class="dest-admin-item__head">
+
+            {% if d.image %}
+
+            <img src="{{ d.image }}" alt="" class="dest-admin-item__thumb" width="64" height="36" loading="lazy">
+
+            {% endif %}
+
+            <div>
+
+              <a href="{{ url_for('destination_page', slug=d.slug) }}" target="_blank" rel="noopener"><strong>{{ d.name }}</strong></a>
+
+              <span class="published-list__date">/{{ d.slug }}</span>
+
+            </div>
+
+          </div>
+
+          <form method="post" class="dest-admin-item__delete" onsubmit="return confirm('Supprimer {{ d.name }} ?')">
+
+            <input type="hidden" name="action" value="delete">
+
+            <input type="hidden" name="slug" value="{{ d.slug }}">
+
+            <button type="submit" class="btn btn-secondary btn-sm">Supprimer</button>
+
+          </form>
+
+        </li>
+
+        {% else %}
+
+        <li class="muted">Aucune destination — créez Sapa, Phú Quốc, Huế…</li>
+
+        {% endfor %}
+
+      </ul>
+
+    </section>
+
+  </aside>
+
+</div>
+
+{% endblock %}
+
+
+
+{% block scripts %}
+
+<script src="{{ url_for('static', filename='admin/wysiwyg.js') }}"></script>
+
+<script src="{{ url_for('static', filename='admin/destinations.js') }}"></script>
+
+{% endblock %}
+
+

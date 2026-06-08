@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% from "macros/articles.html" import article_card with context %}
+{% from "macros/seo.html" import json_ld_graph with context %}
+
+{% block structured_data %}
+{% set article_items = [] %}
+{% for article in articles %}
+{% set _ = article_items.append({"name": article.title, "url": site.SITE_URL ~ url_for('article', slug=article.slug)}) %}
+{% endfor %}
+{{ json_ld_graph([
+  {
+    "@type": "CollectionPage",
+    "name": "Blog voyage Vietnam",
+    "description": meta_description,
+    "url": canonical_url,
+    "inLanguage": "fr-FR"
+  },
+  seo_breadcrumb([
+    ("Accueil", site.SITE_URL),
+    ("Blog voyage Vietnam", None),
+  ]),
+  seo_item_list("Articles voyage Vietnam", article_items),
+]) }}
+{% endblock %}
+
+{% block content %}
+<header class="page-hero">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Fil d'Ariane">
+      <ol>
+        <li><a href="{{ url_for('index') }}">Accueil</a></li>
+        <li aria-current="page">Blog</li>
+      </ol>
+    </nav>
+    <h1>Blog voyage Vietnam</h1>
+    <p class="page-hero__lead">Visa, budget, eSIM, sécurité, transport et gastronomie — guides pour préparer votre voyage au Vietnam.</p>
+  </div>
+</header>
+
+<section class="section">
+  <div class="container">
+    <div class="articles-grid">
+      {% for article in articles %}
+      {{ article_card(article, index=loop.index0) }}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

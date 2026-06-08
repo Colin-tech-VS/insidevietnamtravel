@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Admin{% endblock %} — Inside Vietnam Travel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin/admin.css') }}">
+  <style>
+    body.is-loading { overflow: hidden; }
+    #page-loader {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #FAF7F2;
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.45s ease, visibility 0.45s ease;
+    }
+    #page-loader.is-hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="admin-body is-loading {% block body_class %}{% endblock %}">
+  {% from "macros/loader.html" import page_loader %}
+  {{ page_loader(hint='Chargement de l\'administration…', sub='Administration') }}
+  <script>
+    (function () {
+      var done = false;
+      function hide() {
+        if (done) return;
+        done = true;
+        var loader = document.getElementById('page-loader');
+        if (!loader) return;
+        loader.classList.add('is-hidden');
+        document.body.classList.remove('is-loading');
+        loader.setAttribute('aria-busy', 'false');
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () { setTimeout(hide, 400); }, { once: true });
+      } else {
+        setTimeout(hide, 400);
+      }
+      window.addEventListener('load', function () { setTimeout(hide, 400); }, { once: true });
+      setTimeout(hide, 3500);
+    })();
+  </script>
+  <noscript><style>#page-loader{display:none!important}body.is-loading{overflow:auto!important}</style></noscript>
+
+  {% if session.get('admin_logged_in') %}
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Navigation admin">
+      <a href="{{ url_for('admin.dashboard') }}" class="admin-logo">
+        <svg class="admin-logo__icon" viewBox="0 0 40 40" aria-hidden="true">
+          <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M8 26 Q20 8 32 26" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="20" cy="18" r="3" fill="currentColor"/>
+        </svg>
+        <span class="admin-logo__text">
+          <span class="admin-logo__name">Inside Vietnam</span>
+          <span class="admin-logo__sub">Administration</span>
+        </span>
+      </a>
+
+      <nav class="admin-nav">
+        <p class="admin-nav__label">Menu</p>
+        <a href="{{ url_for('admin.dashboard') }}" class="admin-nav__link {% if request.endpoint == 'admin.dashboard' %}is-active{% endif %}">
+          <span class="admin-nav__icon" aria-hidden="true">◈</span> Dashboard
+        </a>
+        <a href="{{ url_for('admin.guides') }}" class="admin-nav__link {% if request.endpoint == 'admin.guides' %}is-active{% endif %}">
+          <span class="admin-nav__icon" aria-hidden="true">✦</span> Guides IA
+        </a>
+        <a href="{{ url_for('admin.destinations_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.destinations_admin' %}is-active{% endif %}">
+          <span class="admin-nav__icon" aria-hidden="true">🏙</span> Destinations
+        </a>
+        <a href="{{ url_for('admin.newsletter_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.newsletter_admin' %}is-active{% endif %}">
+          <span class="admin-nav__icon" aria-hidden="true">✉</span> Newsletter
+        </a>
+        <a href="{{ url_for('admin.affiliates') }}" class="admin-nav__link {% if request.endpoint == 'admin.affiliates' %}is-active{% endif %}">
+          <span class="admin-nav__icon" aria-hidden="true">◇</span> Affiliation
+        </a>
+        <a href="{{ url_for('admin.revenue') }}" class="admin-nav__link {% if request.endpoint == 'admin.revenue' %}is-active{% endif %}">
+          <span class="admin-nav__icon" aria-hidden="true">€</span> Revenus
+        </a>
+        <a href="{{ url_for('admin.analytics') }}" class="admin-nav__link {% if request.endpoint == 'admin.analytics' %}is-active{% endif %}">
+          <span class="admin-nav__icon" aria-hidden="true">↗</span> Analytics
+        </a>
+      </nav>
+
+      <div class="admin-sidebar__footer">
+        <a href="{{ url_for('index') }}" class="admin-nav__link admin-nav__link--muted" target="_blank" rel="noopener">
+          <span class="admin-nav__icon" aria-hidden="true">→</span> Voir le site
+        </a>
+        <a href="{{ url_for('admin.logout') }}" class="admin-nav__link admin-nav__link--logout">
+          Déconnexion
+        </a>
+      </div>
+    </aside>
+
+    <div class="admin-content">
+      <header class="admin-topbar">
+        <div class="admin-topbar__inner">
+          <p class="admin-topbar__eyebrow">Panneau de gestion</p>
+          <h1 class="admin-topbar__title">{% block page_title %}Admin{% endblock %}</h1>
+        </div>
+      </header>
+
+      <main class="admin-main">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="admin-flashes" role="status">
+          {% for cat, msg in messages %}
+          <p class="flash flash--{{ cat }}">{{ msg }}</p>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+  {% else %}
+  {% block guest %}{% endblock %}
+  {% endif %}
+
+  <script src="{{ url_for('static', filename='js/loader.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='admin/admin.js') }}" defer></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

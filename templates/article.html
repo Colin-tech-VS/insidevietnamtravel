@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% from "macros/affiliates.html" import sim_banner, insurance_banner, pdf_banner with context %}
+{% from "macros/images.html" import responsive_img with context %}
+{% from "macros/seo.html" import json_ld_graph, og_image_tags with context %}
+
+{% block og_type %}article{% endblock %}
+
+{% block og_image %}
+{% if article.image %}
+{{ og_image_tags(site.SITE_URL ~ article.image) }}
+{% else %}
+{{ super() }}
+{% endif %}
+{% endblock %}
+
+{% block head_preload %}
+{% if article.image %}
+{% set hero = responsive_image(article.image, card=false) %}
+<link rel="preload" as="image" href="{{ hero.src }}"{% if hero.srcset %} imagesrcset="{{ hero.srcset }}" imagesizes="100vw"{% endif %}>
+{% endif %}
+{% endblock %}
+
+{% block structured_data %}
+{% set article_schema = {
+  "@type": "Article",
+  "headline": article.title,
+  "description": meta_description,
+  "datePublished": article.date,
+  "dateModified": article.date,
+  "author": {"@type": "Organization", "name": site.SITE_AUTHOR},
+  "publisher": {"@type": "Organization", "name": site.SITE_NAME, "url": site.SITE_URL},
+  "mainEntityOfPage": {"@type": "WebPage", "@id": canonical_url},
+  "articleSection": article.category_label,
+  "keywords": article.tags | join(', '),
+  "inLanguage": "fr-FR"
+} %}
+{% if article.image %}
+{% set _ = article_schema.update({"image": site.SITE_URL ~ article.image}) %}
+{% endif %}
+{% set faq_items = seo_faq_from_html(article.content) %}
+{% set faq_schema_obj = seo_faq(faq_items) %}
+{% set schemas = [
+  article_schema,
+  seo_breadcrumb([
+    ("Accueil", site.SITE_URL),
+    ("Blog", site.SITE_URL ~ url_for('blog_index')),
+    (article.title, None),
+  ]),
+] + ([faq_schema_obj] if faq_schema_obj else []) %}
+{{ json_ld_graph(schemas) }}
+{% endblock %}
+
+{% block content %}
+<article class="article-page">
+  <header class="article-hero{% if article.image %} article-hero--with-image{% endif %}">
+    {% if article.image %}
+    <div class="article-hero__media" aria-hidden="true">
+      {{ responsive_img(
+        article.image,
+        alt=article.image_alt or article.title,
+        width=1200,
+        height=675,
+        loading='eager',
+        fetchpriority='high',
+        sizes='100vw'
+      ) }}
+    </div>
+    {% endif %}
+    <div class="container article-hero-inner">
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <ol>
+          <li><a href="{{ url_for('index') }}">Accueil</a></li>
+          <li><a href="{{ url_for('blog_index') }}">Blog</a></li>
+          <li aria-current="page">{{ article.title[:45] }}{% if article.title|length > 45 %}…{% endif %}</li>
+        </ol>
+      </nav>
+      <div class="article-hero__labels">
+        <span class="article-category">{{ article.category_label }}</span>
+        {% if is_article_new(article) %}
+        <span class="badge-nouveau badge-nouveau--hero">Nouveau</span>
+        {% endif %}
+      </div>
+      <h1>{{ article.title }}</h1>
+      <p class="article-excerpt">{{ article.excerpt }}</p>
+      <div class="article-meta">
+        <time datetime="{{ article.date }}">{{ article.date }}</time>
+        <span>{{ article.read_time }} min de lecture</span>
+      </div>
+      <div class="article-tags">
+        {% for tag in article.tags %}
+        <span class="tag">#{{ tag }}</span>
+        {% endfor %}
+      </div>
+    </div>
+  </header>
+
+  <div class="container article-layout">
+    <div class="article-content prose">
+      {{ article.content | safe }}
+    </div>
+    <aside class="article-sidebar">
+      {% if article.slug == 'carte-sim-esim-vietnam' %}
+      {{ sim_banner() }}
+      {% elif article.slug == 'securite-voyage-vietnam-conseils' %}
+      {{ insurance_banner() }}
+      {% else %}
+      {{ pdf_banner() }}
+      {% endif %}
+      <div class="sidebar-card">
+        <h3>Articles liés</h3>
+        <ul>
+          {% for a in related %}
+          <li><a href="{{ url_for('article', slug=a.slug) }}">{{ a.title }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </aside>
+  </div>
+</article>
+{% endblock %}

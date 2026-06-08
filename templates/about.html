@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "macros/affiliates.html" import affiliate_disclosure with context %}
+{% from "macros/seo.html" import json_ld_graph with context %}
+
+{% block structured_data %}
+{{ json_ld_graph([
+  {
+    "@type": "AboutPage",
+    "name": "À propos — Inside Vietnam Travel",
+    "description": meta_description,
+    "url": canonical_url,
+    "inLanguage": "fr-FR",
+    "mainEntity": {"@id": site.SITE_URL ~ "/#organization"}
+  },
+  seo_organization(),
+  seo_breadcrumb([
+    ("Accueil", site.SITE_URL),
+    ("À propos", None),
+  ]),
+]) }}
+{% endblock %}
+
+{% block content %}
+<header class="page-hero page-hero--about">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Fil d'Ariane">
+      <ol>
+        <li><a href="{{ url_for('index') }}">Accueil</a></li>
+        <li aria-current="page">À propos</li>
+      </ol>
+    </nav>
+    <h1>À propos d'Inside Vietnam Travel</h1>
+    <p class="page-hero__lead">Un guide indépendant pour préparer votre voyage au Vietnam — sans prétendre être une agence.</p>
+  </div>
+</header>
+
+<section class="about-section">
+  <div class="container about-content prose">
+    <h2>Notre approche</h2>
+    <p>Inside Vietnam Travel est un site de contenu pour voyageurs français qui souhaitent aller au Vietnam. Nous publions des guides pratiques, des itinéraires et des articles pour vous aider à préparer votre séjour — pas à réserver à votre place.</p>
+    <p>Nous ne sommes pas une agence de voyage. Nous ne vendons pas de packages tout compris. Notre modèle repose sur des liens affiliés (hôtels, activités, eSIM, assurance) et un guide PDF numérique.</p>
+
+    <h2>Ce que vous trouverez</h2>
+    <ul>
+      <li><strong>Guides par ville</strong> — Hanoï, Ho Chi Minh-Ville, Hội An, Đà Nẵng</li>
+      <li><strong>Itinéraires</strong> — 3, 7 et 10 jours, jour par jour</li>
+      <li><strong>Articles pratiques</strong> — visa, budget, eSIM, sécurité, transport</li>
+      <li><strong>Recommandations</strong> — hôtels et activités via liens affiliés clairement indiqués</li>
+    </ul>
+
+    <h2>Transparence</h2>
+    <p>Certains liens sur ce site sont des liens affiliés. Si vous réservez via ces liens, nous pouvons percevoir une commission, sans surcoût pour vous. Cela finance la création de contenu gratuit.</p>
+    {{ affiliate_disclosure() }}
+  </div>
+</section>
+{% endblock %}

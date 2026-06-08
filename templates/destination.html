@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% from "macros/affiliates.html" import hotel_card, activity_card, sim_banner, insurance_banner, affiliate_disclosure with context %}
+{% from "macros/images.html" import responsive_img with context %}
+{% from "macros/seo.html" import json_ld_graph, og_image_tags with context %}
+
+{% block og_type %}article{% endblock %}
+
+{% block og_image %}
+{% if dest.image %}
+{{ og_image_tags(site.SITE_URL ~ dest.image) }}
+{% else %}
+{{ super() }}
+{% endif %}
+{% endblock %}
+
+{% block head_preload %}
+{% if dest.image %}
+{% set hero = responsive_image(dest.image, card=false) %}
+<link rel="preload" as="image" href="{{ hero.src }}"{% if hero.srcset %} imagesrcset="{{ hero.srcset }}" imagesizes="100vw"{% endif %}>
+{% endif %}
+{% endblock %}
+
+{% block structured_data %}
+{% set dest_schema = {
+  "@type": "TouristDestination",
+  "name": dest.name,
+  "description": meta_description,
+  "url": canonical_url,
+  "touristType": "Voyageurs français",
+  "inLanguage": "fr-FR"
+} %}
+{% if dest.image %}
+{% set _ = dest_schema.update({"image": site.SITE_URL ~ dest.image}) %}
+{% endif %}
+{{ json_ld_graph([
+  dest_schema,
+  seo_breadcrumb([
+    ("Accueil", site.SITE_URL),
+    ("Destinations", site.SITE_URL ~ "/#destinations"),
+    ("Guide " ~ dest.name, None),
+  ]),
+]) }}
+{% endblock %}
+
+{% block content %}
+<header class="page-hero page-hero--destination{% if dest.image %} page-hero--with-image{% endif %}">
+  {% if dest.image %}
+  <div class="page-hero__media" aria-hidden="true">
+    {{ responsive_img(
+      dest.image,
+      alt=dest.image_alt or ('Guide ' ~ dest.name ~ ', Vietnam'),
+      width=1200,
+      height=675,
+      loading='eager',
+      fetchpriority='high',
+      sizes='100vw'
+    ) }}
+  </div>
+  {% endif %}
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Fil d'Ariane">
+      <ol>
+        <li><a href="{{ url_for('index') }}">Accueil</a></li>
+        <li aria-current="page">{{ dest.name }}</li>
+      </ol>
+    </nav>
+    <h1>Guide {{ dest.name }} — voyage Vietnam</h1>
+    <p class="page-hero__lead">{{ dest.tagline }}</p>
+  </div>
+</header>
+
+<div class="container page-layout">
+  <article class="page-content">
+    <section class="content-block">
+      <h2>Vue d'ensemble</h2>
+      <div class="prose">{{ dest.overview | safe }}</div>
+    </section>
+
+    <section class="content-block">
+      <h2>Top choses à faire à {{ dest.name }}</h2>
+      <ul class="things-list">
+        {% for item in dest.things_to_do %}
+        <li>
+          <strong>{{ item.title }}</strong>
+          <span>{{ item.desc }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="content-block">
+      <h2>Hôtels recommandés</h2>
+      <p class="section-intro">Liens affiliés — comparez les prix avant de réserver.</p>
+      <div class="affiliate-grid">
+        {% for hotel in dest.hotels %}
+        {{ hotel_card(hotel, dest.slug) }}
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="content-block">
+      <h2>Activités & tours</h2>
+      <div class="affiliate-grid">
+        {% for act in dest.activities %}
+        {{ activity_card(act, dest.slug) }}
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="content-block">
+      <h2>Conseils pratiques</h2>
+      <ul class="tips-list">
+        {% for tip in dest.tips %}
+        <li>{{ tip }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    {{ affiliate_disclosure() }}
+  </article>
+
+  <aside class="page-sidebar">
+    {{ sim_banner() }}
+    {{ insurance_banner() }}
+    <div class="sidebar-card">
+      <h3>Itinéraires incluant {{ dest.name }}</h3>
+      <ul>
+        {% for slug, it in itineraries.items() %}
+        <li><a href="{{ url_for('itinerary', slug=slug) }}">{{ it.title }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="sidebar-card">
+      <h3>Autres destinations</h3>
+      <ul>
+        {% for slug, d in destinations.items() if slug != dest.slug %}
+        <li><a href="{{ url_for('destination_page', slug=slug) }}">{{ d.name }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </aside>
+</div>
+{% endblock %}

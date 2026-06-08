@@ -1,0 +1,24 @@
+{# recommendations: list of dicts with title, body, priority, action_label?, action_url?, icon #}
+<section class="panel reco-panel">
+  <div class="panel-head">
+    <h2>{{ panel_title | default("💡 Recommandations") }}</h2>
+    <span class="panel-badge">{{ panel_badge | default("À jour") }}</span>
+  </div>
+  {% if panel_intro %}
+  <p class="reco-panel__intro">{{ panel_intro }}</p>
+  {% endif %}
+  <ul class="reco-list">
+    {% for r in recommendations %}
+    <li class="reco-card reco-card--{{ r.priority }}">
+      <div class="reco-card__head">
+        <span class="reco-card__icon" aria-hidden="true">{{ r.icon }}</span>
+        <span class="reco-card__title">{{ r.title }}</span>
+      </div>
+      <p class="reco-card__body">{{ r.body }}</p>
+      {% if r.action_label and r.action_url %}
+      <a href="{{ r.action_url }}" class="reco-card__action">{{ r.action_label }} →</a>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</section>

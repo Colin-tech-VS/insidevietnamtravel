@@ -1,0 +1,16 @@
+{% macro responsive_img(url, alt='', width=1200, height=675, loading='lazy', fetchpriority=None, sizes='(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px', class='') %}
+{% if url %}
+{% set ri = responsive_image(url, card=(loading == 'lazy' and fetchpriority != 'high')) %}
+<img
+  {% if class %}class="{{ class }}"{% endif %}
+  src="{{ ri.src }}"
+  {% if ri.srcset %}srcset="{{ ri.srcset }}" sizes="{{ sizes }}"{% endif %}
+  alt="{{ alt }}"
+  width="{{ width }}"
+  height="{{ height }}"
+  loading="{{ loading }}"
+  decoding="async"
+  {% if fetchpriority %}fetchpriority="{{ fetchpriority }}"{% endif %}
+>
+{% endif %}
+{% endmacro %}

@@ -1,0 +1,50 @@
+{% extends "admin/layout.html" %}
+{% block title %}Connexion{% endblock %}
+{% block body_class %}admin-body--login{% endblock %}
+
+{% block guest %}
+<div class="login-page">
+  <div class="login-page__bg" aria-hidden="true"></div>
+  <div class="login-page__pattern" aria-hidden="true"></div>
+
+  <div class="login-page__content">
+    <a href="{{ url_for('index') }}" class="login-logo">
+      <svg class="login-logo__icon" viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M8 26 Q20 8 32 26" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        <circle cx="20" cy="18" r="3" fill="currentColor"/>
+      </svg>
+      <span class="login-logo__text">
+        <span class="login-logo__name">Inside Vietnam</span>
+        <span class="login-logo__sub">Travel</span>
+      </span>
+    </a>
+
+    <div class="login-card">
+      <p class="login-card__eyebrow">Espace sécurisé</p>
+      <h1 class="login-card__title">Administration</h1>
+      <p class="login-card__lead">Gérez vos guides, l'affiliation et les analytics du site.</p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="admin-flashes">
+        {% for cat, msg in messages %}
+        <p class="flash flash--{{ cat }}">{{ msg }}</p>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endwith %}
+
+      <form method="post" class="login-form">
+        <label for="password">Mot de passe</label>
+        <input type="password" id="password" name="password" required autofocus placeholder="••••••••">
+        <button type="submit" class="btn btn-primary btn-block">Se connecter</button>
+      </form>
+    </div>
+
+    <p class="login-footer">
+      <a href="{{ url_for('index') }}">← Retour au site public</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends "admin/layout.html" %}
+{% block title %}Analytics{% endblock %}
+{% block page_title %}Analytics{% endblock %}
+
+{% block content %}
+<p class="page-sub">Trafic du site en temps réel — analytics intégrés, sans Google Analytics.</p>
+
+<div class="admin-page-layout">
+  <div class="admin-page-main">
+    <div class="analytics-toolbar">
+      <div class="analytics-toolbar__period">
+        <span class="analytics-toolbar__label">Période</span>
+        <div class="period-pills">
+          <a href="{{ url_for('admin.analytics', days=7) }}" class="period-pill {% if days == 7 %}is-active{% endif %}">7 jours</a>
+          <a href="{{ url_for('admin.analytics', days=30) }}" class="period-pill {% if days == 30 %}is-active{% endif %}">30 jours</a>
+          <a href="{{ url_for('admin.analytics', days=90) }}" class="period-pill {% if days == 90 %}is-active{% endif %}">90 jours</a>
+        </div>
+      </div>
+      <div class="analytics-toolbar__live">
+        <span class="live-dot" aria-hidden="true"></span>
+        <span><strong id="rt-active">{{ stats.active_visitors }}</strong> visiteurs actifs · 30 min</span>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card kpi-card--live">
+        <span class="kpi-card__label">Pages vues</span>
+        <span class="kpi-card__value" id="rt-views-period">{{ stats.views_period }}</span>
+        <span class="kpi-card__hint">{{ days }} derniers jours</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-card__label">Pages vues</span>
+        <span class="kpi-card__value" id="rt-views">{{ stats.views_30m }}</span>
+        <span class="kpi-card__hint">30 dernières minutes</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-card__label">Clics affiliés</span>
+        <span class="kpi-card__value" id="rt-clicks">{{ stats.clicks_30m }}</span>
+        <span class="kpi-card__hint">30 dernières minutes · <a href="{{ url_for('admin.affiliates') }}">détail</a></span>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <section class="chart-panel chart-panel--wide">
+        <h2>Pages vues par jour</h2>
+        <canvas id="viewsChart" height="100"></canvas>
+      </section>
+      <section class="chart-panel">
+        <h2>Top pages (24h)</h2>
+        <ul class="top-pages-list">
+          {% for p in stats.top_pages[:12] %}
+          <li>
+            <span class="top-pages-list__path">{{ p.path }}</span>
+            <span class="top-pages-list__count">{{ p.c }}</span>
+          </li>
+          {% else %}
+          <li class="muted">Pas encore de données — visitez le site pour générer du trafic.</li>
+          {% endfor %}
+        </ul>
+      </section>
+      <section class="chart-panel">
+        <h2>Flux temps réel</h2>
+        <ul class="top-pages-list" id="live-feed">
+          {% for v in stats.recent[:15] %}
+          <li>
+            <span class="top-pages-list__path">{{ v.path }}</span>
+            <span class="top-pages-list__count">{{ v.created_at[11:16] }}</span>
+          </li>
+          {% else %}
+          <li class="muted">En attente de visites…</li>
+          {% endfor %}
+        </ul>
+      </section>
+    </div>
+  </div>
+
+  <aside class="admin-page-aside">
+    {% with panel_title="📈 Actions SEO", panel_intro="Suggestions basées sur votre trafic actuel.", panel_badge="Data-driven" %}
+    {% include "admin/_recommendations.html" %}
+    {% endwith %}
+  </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const siteAnalyticsData = {
+    dailyViews: {{ stats.daily_views | tojson }},
+    dailyClicks: {{ stats.daily_clicks | tojson }},
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='admin/site-analytics-charts.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,158 @@
+{% extends "admin/layout.html" %}
+{% block title %}Newsletter{% endblock %}
+{% block page_title %}Newsletter{% endblock %}
+
+{% block content %}
+<p class="page-sub">Liste des abonnés, rédaction IA ou manuelle, envoi individuel ou groupé.</p>
+
+<div id="ai-loader" class="ai-loader" hidden aria-live="polite">
+  <div class="ai-loader__panel">
+    <div class="ai-loader__spinner" aria-hidden="true"></div>
+    <p class="ai-loader__title">Génération email IA</p>
+    <p class="ai-loader__text" id="ai-loader-text">Analyse du sujet…</p>
+    <p class="ai-loader__hint">Groq rédige l'email — comptez 15 à 45 secondes.</p>
+  </div>
+</div>
+
+{% if not groq_ok %}
+<div class="alert alert--warn">Ajoutez <code>GROQ_API_KEY</code> dans <code>.env</code> pour l'IA. L'onglet <strong>Manuellement</strong> reste disponible.</div>
+{% endif %}
+
+{% if not smtp_ok %}
+<div class="alert alert--warn">
+  Configurez l'envoi SMTP dans <code>.env</code> :
+  <code>SMTP_HOST</code>, <code>SMTP_PORT</code>, <code>SMTP_USER</code>, <code>SMTP_PASSWORD</code>, <code>SMTP_FROM</code>.
+  Vous pouvez composer et prévisualiser sans SMTP.
+</div>
+{% endif %}
+
+<div class="admin-page-layout admin-page-layout--wide">
+  <div class="admin-page-main">
+    <section class="panel guides-form-panel">
+      <div class="content-tabs" role="tablist">
+        <button type="button" class="content-tab{% if not draft_is_manual %} is-active{% endif %}" data-tab="ai" role="tab">✦ Avec IA</button>
+        <button type="button" class="content-tab{% if draft_is_manual %} is-active{% endif %}" data-tab="manual" role="tab">✎ Manuellement</button>
+      </div>
+
+      <div id="tab-ai" class="content-panel" role="tabpanel" {% if draft_is_manual %}hidden{% endif %}>
+        <h2>✦ Rédiger avec Groq</h2>
+        <form id="newsletter-form-ai" class="guide-form">
+          <div class="form-field">
+            <label for="email-type">Type d'email</label>
+            <div class="type-pills">
+              {% for t in email_types %}
+              <label class="type-pill">
+                <input type="radio" name="email_type" value="{{ t.value }}" {% if loop.first %}checked{% endif %}>
+                <span>{{ t.icon }} {{ t.label }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="form-field">
+            <label for="nl-topic">Sujet / angle <span class="required">*</span></label>
+            <input type="text" id="nl-topic" name="topic" required placeholder="Ex: Nouveautés visa Vietnam 2026, meilleure saison pour Hanoï…">
+          </div>
+          <div class="form-field">
+            <label for="nl-notes">Notes (optionnel)</label>
+            <input type="text" id="nl-notes" name="notes" placeholder="Ex: mentionner le guide PDF, ton léger">
+          </div>
+          <button type="submit" class="btn btn-primary btn-generate" {% if not groq_ok %}disabled{% endif %}>Générer l'email avec IA</button>
+        </form>
+      </div>
+
+      <div id="tab-manual" class="content-panel" role="tabpanel" {% if not draft_is_manual %}hidden{% endif %}>
+        <h2>✎ Rédiger manuellement</h2>
+        <form method="post" id="newsletter-form-manual" class="guide-form">
+          <input type="hidden" name="action" value="manual_draft">
+          <div class="form-field">
+            <label for="manual-subject">Objet <span class="required">*</span></label>
+            <input type="text" id="manual-subject" name="subject" required maxlength="120"
+                   value="{{ draft.subject if draft else '' }}" placeholder="Objet visible dans la boîte mail">
+          </div>
+          <div class="form-field wysiwyg-field">
+            <label for="manual-preheader">Preheader (aperçu inbox)</label>
+            <textarea id="manual-preheader" name="preheader" class="wysiwyg-editor wysiwyg-editor--compact"
+                      placeholder="Phrase courte sous l'objet">{{ draft.preheader if draft else '' }}</textarea>
+          </div>
+          <div class="form-field wysiwyg-field">
+            <label for="manual-body">Contenu de l'email <span class="required">*</span></label>
+            <textarea id="manual-body" name="body_html" required class="wysiwyg-editor wysiwyg-editor--full"
+                      placeholder="Rédigez votre newsletter…">{{ draft.body_html if draft else '' }}</textarea>
+          </div>
+          <button type="submit" class="btn btn-secondary">Enregistrer brouillon</button>
+        </form>
+      </div>
+    </section>
+
+    {% if draft %}
+    <section class="panel draft-panel">
+      <span class="draft-badge">{% if draft.manual %}Brouillon manuel{% else %}Aperçu IA{% endif %}</span>
+      <h2>{{ draft.subject }}</h2>
+      {% if draft.preheader %}
+      <p class="draft-meta"><span>Preheader : {{ draft.preheader }}</span></p>
+      {% endif %}
+      <div class="preview-box preview-box--email">
+        <div class="email-preview-header">
+          <strong>Inside Vietnam Travel</strong>
+          <span class="muted">Newsletter</span>
+        </div>
+        <div class="preview-content">{{ draft.body_html | safe }}</div>
+      </div>
+      <div class="draft-actions">
+        {% if smtp_ok and subscribers %}
+        <form method="post" class="draft-action-form" onsubmit="return confirm('Envoyer cet email à TOUS les {{ subscribers|length }} abonnés ?')">
+          <input type="hidden" name="action" value="send_all">
+          <button type="submit" class="btn btn-primary">Envoyer à tout le groupe ({{ subscribers|length }})</button>
+        </form>
+        {% elif not smtp_ok %}
+        <p class="muted draft-manual-hint">Configurez SMTP pour envoyer les emails.</p>
+        {% else %}
+        <p class="muted draft-manual-hint">Aucun abonné pour l'instant.</p>
+        {% endif %}
+      </div>
+    </section>
+    {% endif %}
+  </div>
+
+  <aside class="admin-page-aside">
+    <section class="panel guides-stats-panel">
+      <h2>📬 Abonnés</h2>
+      <p class="guides-stats-count"><strong>{{ subscribers|length }}</strong> inscrit(s)</p>
+      {% if subscribers %}
+      <ul class="subscriber-list">
+        {% for s in subscribers %}
+        <li class="subscriber-item">
+          <div class="subscriber-item__info">
+            <strong>{{ s.email }}</strong>
+            <span class="published-list__date">{{ s.subscribed_at[:10] if s.subscribed_at else '—' }}</span>
+          </div>
+          <div class="subscriber-item__actions">
+            {% if draft and smtp_ok %}
+            <form method="post" class="subscriber-item__send">
+              <input type="hidden" name="action" value="send_one">
+              <input type="hidden" name="email" value="{{ s.email }}">
+              <button type="submit" class="btn btn-secondary btn-sm" title="Envoyer le brouillon à {{ s.email }}">Envoyer</button>
+            </form>
+            {% endif %}
+            <form method="post" class="subscriber-item__delete" onsubmit="return confirm('Supprimer {{ s.email }} ?')">
+              <input type="hidden" name="action" value="delete_subscriber">
+              <input type="hidden" name="email" value="{{ s.email }}">
+              <button type="submit" class="btn btn-secondary btn-sm">×</button>
+            </form>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="muted">Aucun inscrit — le formulaire est sur chaque page du site.</p>
+      {% endif %}
+    </section>
+  </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='admin/wysiwyg.js') }}"></script>
+<script src="{{ url_for('static', filename='admin/newsletter.js') }}"></script>
+{% endblock %}
+

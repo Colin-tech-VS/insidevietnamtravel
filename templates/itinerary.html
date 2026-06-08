@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% from "macros/affiliates.html" import hotel_card, activity_card, sim_banner, pdf_banner, insurance_banner, affiliate_disclosure with context %}
+{% from "macros/seo.html" import json_ld_graph with context %}
+
+{% block structured_data %}
+{% set day_items = [] %}
+{% for day in itin.days %}
+{% set _ = day_items.append({"name": "Jour " ~ day.day ~ " — " ~ day.title, "url": canonical_url ~ "#jour-" ~ day.day}) %}
+{% endfor %}
+{% set trip_schema = {
+  "@type": "TouristTrip",
+  "name": itin.title,
+  "description": meta_description,
+  "url": canonical_url,
+  "touristType": "Voyageurs français",
+  "itinerary": {
+    "@type": "ItemList",
+    "name": "Programme jour par jour",
+    "numberOfItems": itin.days | length,
+    "itemListElement": day_items
+  }
+} %}
+{{ json_ld_graph([
+  trip_schema,
+  seo_breadcrumb([
+    ("Accueil", site.SITE_URL),
+    ("Itinéraires", site.SITE_URL ~ "/#itin-title"),
+    (itin.title, None),
+  ]),
+]) }}
+{% endblock %}
+
+{% block content %}
+<header class="page-hero page-hero--itinerary">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Fil d'Ariane">
+      <ol>
+        <li><a href="{{ url_for('index') }}">Accueil</a></li>
+        <li aria-current="page">{{ itin.title }}</li>
+      </ol>
+    </nav>
+    <span class="badge">{{ itin.duration }} jours</span>
+    <h1>{{ itin.title }}</h1>
+    <p class="page-hero__lead">{{ itin.summary }}</p>
+    <p class="budget-badge">Budget indicatif : {{ itin.budget_hint }}</p>
+  </div>
+</header>
+
+<div class="container page-layout">
+  <article class="page-content">
+    <section class="content-block">
+      <h2>Programme jour par jour</h2>
+      <ol class="timeline">
+        {% for day in itin.days %}
+        <li class="timeline__item" id="jour-{{ day.day }}">
+          <div class="timeline__marker">
+            <span class="timeline__day">J{{ day.day }}</span>
+          </div>
+          <div class="timeline__body">
+            <h3>{{ day.title }}</h3>
+            <p class="timeline__location">{{ day.location }}{% if day.stay and day.stay != '—' %} · Nuit : {{ day.stay }}{% endif %}</p>
+            <ul>
+              {% for act in day.activities %}
+              <li>{{ act }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </li>
+        {% endfor %}
+      </ol>
+    </section>
+
+    <section class="content-block">
+      <h2>Réservations recommandées</h2>
+      <p class="section-intro">Liens affiliés — hôtels et activités types pour cet itinéraire.</p>
+      <div class="affiliate-grid">
+        {{ hotel_card(itin.sample_hotel, itin.location_key) }}
+        {{ activity_card(itin.sample_activity, itin.get('activity_location_key', itin.location_key)) }}
+      </div>
+    </section>
+
+    {{ affiliate_disclosure() }}
+  </article>
+
+  <aside class="page-sidebar">
+    {{ pdf_banner() }}
+    {{ sim_banner() }}
+    {{ insurance_banner() }}
+    <div class="sidebar-card">
+      <h3>Guides par ville</h3>
+      <ul>
+        {% for slug, d in destinations.items() %}
+        <li><a href="{{ url_for('destination_page', slug=slug) }}">{{ d.name }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,495 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Guides{% endblock %}
+
+{% block page_title %}Guides & articles{% endblock %}
+
+
+
+{% block content %}
+
+<p class="page-sub">Créez des articles avec l'IA ou rédigez-les vous-même — suggestions rafraîchies à chaque visite.</p>
+
+
+
+<div id="ai-loader" class="ai-loader" hidden aria-live="polite" aria-label="Génération en cours">
+
+  <div class="ai-loader__panel">
+
+    <div class="ai-loader__spinner" aria-hidden="true"></div>
+
+    <p class="ai-loader__title">Génération IA en cours</p>
+
+    <p class="ai-loader__text" id="ai-loader-text">Analyse du sujet…</p>
+
+    <p class="ai-loader__hint">Groq rédige l'article SEO + image WebP — comptez 30 à 90 secondes.</p>
+
+  </div>
+
+</div>
+
+
+
+{% if not groq_ok %}
+
+<div class="alert alert--warn">Ajoutez <code>GROQ_API_KEY</code> dans <code>.env</code> pour activer la génération IA. L'onglet <strong>Manuellement</strong> reste disponible sans clé API.</div>
+
+{% endif %}
+
+
+
+<div class="admin-page-layout admin-page-layout--wide">
+
+  <div class="admin-page-main">
+
+    <section class="panel guides-form-panel">
+
+      <div class="content-tabs" role="tablist" aria-label="Mode de création">
+
+        <button type="button" class="content-tab{% if not draft_is_manual %} is-active{% endif %}" role="tab" aria-selected="{% if not draft_is_manual %}true{% else %}false{% endif %}" data-tab="ai" id="tab-btn-ai">✦ Avec IA</button>
+
+        <button type="button" class="content-tab{% if draft_is_manual %} is-active{% endif %}" role="tab" aria-selected="{% if draft_is_manual %}true{% else %}false{% endif %}" data-tab="manual" id="tab-btn-manual">✎ Manuellement</button>
+
+      </div>
+
+
+
+      <div id="tab-ai" class="content-panel" role="tabpanel" {% if draft_is_manual %}hidden{% endif %}>
+
+        <h2>✦ Nouveau guide (IA)</h2>
+
+        <form method="post" id="guide-form-ai" class="guide-form">
+
+          <input type="hidden" name="action" value="generate">
+
+
+
+          <div class="form-field">
+
+            <label for="city">Ville ou région <span class="required">*</span></label>
+
+            <select id="city" name="city" required>
+
+              <option value="" disabled selected>— Choisir une destination —</option>
+
+              {% for region, cities in vietnam_cities.items() %}
+
+              <optgroup label="{{ region }}">
+
+                {% for c in cities %}
+
+                <option value="{{ c.value }}">{{ c.label }}</option>
+
+                {% endfor %}
+
+              </optgroup>
+
+              {% endfor %}
+
+            </select>
+
+            <p class="field-hint">Liste officielle — évite les fautes de frappe dans l'article.</p>
+
+          </div>
+
+
+
+          <div class="form-field">
+
+            <label for="guide_type">Type de guide</label>
+
+            <div class="type-pills">
+
+              {% for t in guide_types %}
+
+              <label class="type-pill">
+
+                <input type="radio" name="guide_type" value="{{ t.value }}" {% if loop.first %}checked{% endif %}>
+
+                <span>{{ t.icon }} {{ t.label }}</span>
+
+              </label>
+
+              {% endfor %}
+
+            </div>
+
+          </div>
+
+
+
+          <div class="form-field">
+
+            <label for="topic">Sujet de l'article <span class="required">*</span></label>
+
+            <input type="text" id="topic" name="topic" required
+
+                   placeholder="Ex: Où manger à Hanoï — street food 2026">
+
+            <p class="field-hint">Cliquez une suggestion à droite pour remplir automatiquement.</p>
+
+          </div>
+
+
+
+          <button type="submit" class="btn btn-primary btn-generate" {% if not groq_ok %}disabled{% endif %}>
+
+            Générer avec Groq AI
+
+          </button>
+
+        </form>
+
+      </div>
+
+
+
+      <div id="tab-manual" class="content-panel" role="tabpanel" {% if not draft_is_manual %}hidden{% endif %}>
+
+        <h2>✎ Rédiger manuellement</h2>
+
+        <form method="post" id="guide-form-manual" class="guide-form">
+
+          <div class="form-field">
+
+            <label for="manual-title">Titre <span class="required">*</span></label>
+
+            <input type="text" id="manual-title" name="title" required maxlength="120"
+
+                   value="{{ draft.title if draft and draft.manual else '' }}"
+
+                   placeholder="Ex: Budget 2 semaines au Vietnam — guide 2026">
+
+          </div>
+
+
+
+          <div class="form-row form-row--2">
+
+            <div class="form-field">
+
+              <label for="manual-city">Ville <span class="required">*</span></label>
+
+              <select id="manual-city" name="city" required>
+
+                <option value="" disabled {% if not draft or not draft.manual or not draft.city %}selected{% endif %}>— Choisir —</option>
+
+                {% for region, cities in vietnam_cities.items() %}
+
+                <optgroup label="{{ region }}">
+
+                  {% for c in cities %}
+
+                  <option value="{{ c.value }}" {% if draft and draft.manual and draft.city == c.value %}selected{% endif %}>{{ c.label }}</option>
+
+                  {% endfor %}
+
+                </optgroup>
+
+                {% endfor %}
+
+              </select>
+
+            </div>
+
+            <div class="form-field">
+
+              <label for="manual-category">Catégorie</label>
+
+              <select id="manual-category" name="category">
+
+                {% for cat in article_categories %}
+
+                <option value="{{ cat.value }}" {% if draft and draft.manual and draft.category == cat.value %}selected{% elif not draft and cat.value == 'practical' %}selected{% endif %}>{{ cat.label }}</option>
+
+                {% endfor %}
+
+              </select>
+
+            </div>
+
+          </div>
+
+
+
+          <div class="form-field wysiwyg-field">
+
+            <label for="manual-excerpt">Meta description (extrait SEO) <span class="required">*</span></label>
+
+            <textarea id="manual-excerpt" name="excerpt" required class="wysiwyg-editor wysiwyg-editor--compact"
+
+                      placeholder="155 caractères max — résumé pour Google">{{ draft.excerpt if draft and draft.manual else '' }}</textarea>
+
+          </div>
+
+
+
+          <div class="form-row form-row--2">
+
+            <div class="form-field">
+
+              <label for="manual-slug">Slug URL (optionnel)</label>
+
+              <input type="text" id="manual-slug" name="slug"
+
+                     value="{{ draft.slug if draft and draft.manual else '' }}"
+
+                     placeholder="auto-généré depuis le titre">
+
+            </div>
+
+            <div class="form-field">
+
+              <label for="manual-tags">Tags (virgules)</label>
+
+              <input type="text" id="manual-tags" name="tags"
+
+                     value="{{ draft.tags | join(', ') if draft and draft.manual and draft.tags else '' }}"
+
+                     placeholder="street food, budget, hanoï">
+
+            </div>
+
+          </div>
+
+
+
+          <div class="form-field wysiwyg-field">
+
+            <label for="manual-content">Contenu de l'article <span class="required">*</span></label>
+
+            <textarea id="manual-content" name="content" required class="wysiwyg-editor wysiwyg-editor--full"
+
+                      placeholder="Rédigez votre article comme dans Word…">{{ draft.content if draft and draft.manual else '' }}</textarea>
+
+            <p class="field-hint">Mise en forme visuelle — titres, listes, liens, gras, etc.</p>
+
+          </div>
+
+
+
+          <label class="checkbox"><input type="checkbox" name="generate_image" checked> Ajouter une image Vietnam (WebP)</label>
+
+
+
+          <div class="btn-row">
+
+            <button type="submit" name="action" value="manual_draft" class="btn btn-secondary">Enregistrer brouillon</button>
+
+            <button type="submit" name="action" value="manual_publish" class="btn btn-primary">Publier directement</button>
+
+            <label class="checkbox"><input type="checkbox" name="featured"> À la une</label>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </section>
+
+
+
+    {% if draft %}
+
+    <section class="panel draft-panel">
+
+      <div class="draft-panel__header">
+
+        <div>
+
+          <span class="draft-badge">{% if draft.manual %}Brouillon manuel{% else %}Aperçu IA{% endif %}</span>
+
+          <h2>{{ draft.title if draft.title else draft.name }}</h2>
+
+          <p class="draft-meta">
+
+            {% if draft.city %}<span>📍 {{ draft.city }}</span>{% endif %}
+
+            {% if draft.category_label %}<span>{{ draft.category_label }}</span>{% endif %}
+
+            {% if draft.read_time %}<span>{{ draft.read_time }} min</span>{% endif %}
+
+            {% if draft.word_count %}<span>{{ draft.word_count }} mots</span>{% endif %}
+
+            <span>/blog/{{ draft.slug }}</span>
+
+            {% if draft.focus_keyword %}<span>🔑 {{ draft.focus_keyword }}</span>{% endif %}
+
+          </p>
+
+        </div>
+
+      </div>
+
+
+
+      {% if draft.image %}
+
+      <figure class="draft-cover">
+
+        <img src="{{ draft.image }}" alt="{{ draft.image_alt or draft.title }}" width="1200" height="675" loading="lazy" decoding="async">
+
+        <figcaption class="muted">Image WebP — optimisée pour le web</figcaption>
+
+      </figure>
+
+      {% endif %}
+
+
+
+      <p class="draft-excerpt"><strong>Meta SEO :</strong> {{ draft.excerpt }}</p>
+
+
+
+      <div class="preview-box">
+
+        <div class="preview-content">{{ draft.content | safe }}</div>
+
+      </div>
+
+
+
+      <div class="draft-actions">
+
+        <form method="post" class="draft-action-form">
+
+          <input type="hidden" name="action" value="publish">
+
+          <label class="checkbox"><input type="checkbox" name="featured"> À la une</label>
+
+          <button type="submit" class="btn btn-primary">Publier sur le site</button>
+
+        </form>
+
+        {% if not draft.manual %}
+
+        <form method="post" class="draft-action-form draft-action-form--improve">
+
+          <input type="hidden" name="action" value="improve">
+
+          <input type="text" name="instructions" class="inline-input" placeholder="Ex: Ajoute plus de prix et un tableau budget…">
+
+          <button type="submit" class="btn btn-secondary">Améliorer avec IA</button>
+
+        </form>
+
+        {% else %}
+
+        <p class="muted draft-manual-hint">Pour modifier ce brouillon, éditez le formulaire manuel ci-dessus puis « Enregistrer brouillon ».</p>
+
+        {% endif %}
+
+      </div>
+
+    </section>
+
+    {% endif %}
+
+  </div>
+
+
+
+  <aside class="admin-page-aside">
+
+    <section class="panel suggestions-panel">
+
+      <div class="suggestions-panel__head">
+
+        <h2>💡 Idées d'articles</h2>
+
+        <span class="suggestions-refresh" title="Nouvelles suggestions à chaque visite">À jour</span>
+
+      </div>
+
+      <p class="muted suggestions-intro">8 idées générées pour vous — cliquez pour pré-remplir le formulaire IA.</p>
+
+
+
+      <ul class="suggestions-list">
+
+        {% for s in suggestions %}
+
+        <li>
+
+          <button type="button" class="suggestion-card" data-topic="{{ s.topic }}" data-city="{{ s.city }}" data-type="{{ s.guide_type }}">
+
+            <span class="suggestion-card__priority suggestion-card__priority--{{ s.priority }}">{{ s.priority }}</span>
+
+            <span class="suggestion-card__topic">{{ s.topic }}</span>
+
+            <span class="suggestion-card__meta">
+
+              <span>📍 {{ s.city }}</span>
+
+              <span>· {{ s.guide_type }}</span>
+
+            </span>
+
+            {% if s.reason %}
+
+            <span class="suggestion-card__reason">{{ s.reason }}</span>
+
+            {% endif %}
+
+          </button>
+
+        </li>
+
+        {% endfor %}
+
+      </ul>
+
+    </section>
+
+
+
+    <section class="panel guides-stats-panel">
+
+      <h2>📚 Articles publiés</h2>
+
+      <p class="guides-stats-count"><strong>{{ articles|length }}</strong> récents affichés</p>
+
+      <ul class="published-list">
+
+        {% for a in articles[:8] %}
+
+        <li>
+
+          <a href="{{ url_for('article', slug=a.slug) }}" target="_blank" rel="noopener">
+
+            <span class="published-list__title">{{ a.title[:55] }}{% if a.title|length > 55 %}…{% endif %}</span>
+
+            <span class="published-list__date">{{ a.date }}</span>
+
+          </a>
+
+        </li>
+
+        {% else %}
+
+        <li class="muted">Aucun article — créez votre premier guide.</li>
+
+        {% endfor %}
+
+      </ul>
+
+    </section>
+
+  </aside>
+
+</div>
+
+{% endblock %}
+
+
+
+{% block scripts %}
+
+<script src="{{ url_for('static', filename='admin/wysiwyg.js') }}"></script>
+
+<script src="{{ url_for('static', filename='admin/guides.js') }}"></script>
+
+{% endblock %}
+
+

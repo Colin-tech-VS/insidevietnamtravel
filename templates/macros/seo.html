@@ -1,0 +1,19 @@
+{% macro json_ld(data) %}
+<script type="application/ld+json">{{ data | tojson | safe }}</script>
+{% endmacro %}
+
+{% macro json_ld_graph(schemas) %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": {{ schemas | tojson | safe }}
+}
+</script>
+{% endmacro %}
+
+{% macro og_image_tags(image_url) %}
+<meta property="og:image" content="{{ image_url }}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="675">
+<meta name="twitter:image" content="{{ image_url }}">
+{% endmacro %}

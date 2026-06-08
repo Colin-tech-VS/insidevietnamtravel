@@ -1,0 +1,186 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Revenus{% endblock %}
+
+{% block page_title %}Revenus{% endblock %}
+
+{% block content %}
+
+<p class="page-sub">Commissions <strong>réellement reçues</strong> — à saisir quand une plateforme vous paie. Distinct du potentiel estimé (clics × taux, partenaires actifs).</p>
+
+
+
+<div class="admin-page-layout">
+
+  <div class="admin-page-main">
+
+    <div class="stat-grid stat-grid--3">
+
+      <div class="stat-card stat-card--live">
+
+        <span class="stat-label">Total enregistré</span>
+
+        <span class="stat-value">{{ revenue.total }} €</span>
+
+        <span class="stat-hint">Argent reçu sur votre compte</span>
+
+      </div>
+
+      <div class="stat-card">
+
+        <span class="stat-label">Ce mois</span>
+
+        <span class="stat-value">{{ revenue.month_total }} €</span>
+
+      </div>
+
+      <div class="stat-card">
+
+        <span class="stat-label">Potentiel estimé <small>(30j)</small></span>
+
+        <span class="stat-value">{% if est_commission %}~{{ est_commission }} €{% else %}—{% endif %}</span>
+
+        <span class="stat-hint">{% if affiliates_configured %}Uniquement partenaires avec ID réel{% else %}Aucun ID affilié configuré{% endif %}</span>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="panel-grid">
+
+      <section class="panel revenue-form-panel">
+
+        <h2>➕ Ajouter un revenu</h2>
+
+        <p class="muted" style="margin-bottom:1rem;">Saisissez chaque virement reçu (Booking, Agoda, etc.).</p>
+
+        <form method="post">
+
+          <div class="form-row">
+
+            <div>
+
+              <label for="rev-source">Source</label>
+
+              <select id="rev-source" name="source">
+
+                <option value="booking">Booking.com</option>
+
+                <option value="agoda">Agoda</option>
+
+                <option value="getyourguide">GetYourGuide</option>
+
+                <option value="viator">Viator</option>
+
+                <option value="esim">eSIM</option>
+
+                <option value="pdf">Guide PDF</option>
+
+                <option value="manual">Autre</option>
+
+              </select>
+
+            </div>
+
+            <div>
+
+              <label for="rev-amount">Montant (€) *</label>
+
+              <input type="number" id="rev-amount" name="amount" step="0.01" min="0" required placeholder="Ex: 42.50">
+
+            </div>
+
+          </div>
+
+          <label for="rev-note">Note</label>
+
+          <input type="text" id="rev-note" name="note" placeholder="Ex: Commission mars 2026 — Booking">
+
+          <button type="submit" class="btn btn-primary">Enregistrer le revenu</button>
+
+        </form>
+
+      </section>
+
+
+
+      {% if aff_stats.by_provider %}
+
+      <section class="panel">
+
+        <h2>Clics par source (30j)</h2>
+
+        <ul class="status-list">
+
+          {% for row in aff_stats.by_provider[:8] %}
+
+          <li><span>{{ row.provider }}</span><strong>{{ row.clicks }} clics</strong></li>
+
+          {% endfor %}
+
+        </ul>
+
+      </section>
+
+      {% endif %}
+
+
+
+      <section class="panel panel--wide">
+
+        <h2>Historique des commissions</h2>
+
+        <table class="data-table">
+
+          <thead><tr><th>Date</th><th>Source</th><th>Montant</th><th>Note</th></tr></thead>
+
+          <tbody>
+
+            {% for r in revenue.entries %}
+
+            <tr>
+
+              <td>{{ r.created_at[:10] }}</td>
+
+              <td>{{ r.source }}</td>
+
+              <td><strong>{{ r.amount }} {{ r.currency }}</strong></td>
+
+              <td>{{ r.note or '—' }}</td>
+
+            </tr>
+
+            {% else %}
+
+            <tr><td colspan="4" class="muted">Aucun revenu enregistré — ajoutez vos commissions reçues des plateformes.</td></tr>
+
+            {% endfor %}
+
+          </tbody>
+
+        </table>
+
+      </section>
+
+    </div>
+
+  </div>
+
+
+
+  <aside class="admin-page-aside">
+
+    {% with panel_title="📋 Bonnes pratiques", panel_intro="Rappels pour suivre vos revenus affiliés.", panel_badge="Routine" %}
+
+    {% include "admin/_recommendations.html" %}
+
+    {% endwith %}
+
+  </aside>
+
+</div>
+
+{% endblock %}
+
