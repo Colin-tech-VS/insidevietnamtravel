@@ -90,6 +90,7 @@ def render_llms_txt(*, full: bool = False) -> str:
         f"- [Blog FR]({base}/blog): Practical Vietnam travel guides",
         f"- [Blog EN]({base}/en/blog): English travel guides",
         f"- [Contact]({base}/contact): Editorial contact",
+        f"- [Plan my trip]({base}/preparer-mon-voyage): Trip planner wizard (FR) / {base}/en/plan-my-trip (EN)",
         "",
         "## Destinations (city guides)",
     ]

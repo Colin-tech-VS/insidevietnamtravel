@@ -62,6 +62,7 @@ RESERVED_SLUGS = frozenset({
     "robots.txt", "sitemap.xml", "llms.txt", "llms-full.txt",
     "categorie", "category", "static", "favicon.ico",
     "en", "about", "privacy", "legal", "unsubscribe", "contact", "guide-pdf",
+    "preparer-mon-voyage", "plan-my-trip",
 })
 
 load_dotenv()
@@ -359,6 +360,32 @@ def index():
         meta_title=t("meta.home.title", lang),
         meta_description=t("meta.home.desc", lang),
         meta_keywords=t("meta.home.kw", lang),
+    )
+
+
+# ── Préparer mon voyage ───────────────────────────────────────────────
+
+@app.route("/preparer-mon-voyage")
+@app.route("/en/plan-my-trip")
+def prepare_trip():
+    from data.trip_planner import build_planner_catalog
+    from locales.ui import t as ui_t
+
+    lang = get_lang()
+    catalog = build_planner_catalog(
+        lang,
+        articles=_articles(lang),
+        itineraries=_itineraries(lang),
+        destinations=_destinations(lang),
+        categories=_categories(lang),
+        lang_url_fn=lang_url,
+        t_fn=ui_t,
+    )
+    return render_template(
+        "prepare_trip.html",
+        planner_catalog=catalog,
+        meta_title=ui_t("meta.prepare.title", lang),
+        meta_description=ui_t("meta.prepare.desc", lang),
     )
 
 

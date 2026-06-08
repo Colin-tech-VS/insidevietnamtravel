@@ -194,6 +194,7 @@
       <nav id="main-nav" class="main-nav" role="navigation" aria-label="{{ t('nav.main') }}">
         <ul>
           <li><a href="{{ lang_url('index') }}" {% if request.endpoint in ('index',) %}aria-current="page"{% endif %}>{{ t('nav.home') }}</a></li>
+          <li><a href="{{ lang_url('prepare_trip') }}" {% if request.endpoint == 'prepare_trip' %}aria-current="page"{% endif %} class="nav-highlight">{{ t('nav.prepare') }}</a></li>
           <li class="nav-dropdown">
             <button type="button" class="nav-dropdown__toggle" aria-expanded="false" aria-controls="nav-destinations">{{ t('nav.destinations') }}</button>
             <ul id="nav-destinations" class="nav-dropdown__menu">
@@ -210,7 +211,15 @@
               {% endfor %}
             </ul>
           </li>
-          <li><a href="{{ lang_url('blog_index') }}" {% if request.endpoint in ('blog_index', 'article') %}aria-current="page"{% endif %}>{{ t('nav.blog') }}</a></li>
+          <li class="nav-dropdown">
+            <button type="button" class="nav-dropdown__toggle" aria-expanded="false" aria-controls="nav-blog">{{ t('nav.blog') }}</button>
+            <ul id="nav-blog" class="nav-dropdown__menu">
+              <li><a href="{{ lang_url('blog_index') }}">{{ t('blog.title') }}</a></li>
+              {% for cat_key, cat in categories.items() %}
+              <li><a href="{{ lang_url('category', category=cat_key) }}">{{ cat.label }}</a></li>
+              {% endfor %}
+            </ul>
+          </li>
           <li><a href="{{ lang_url('about') }}" {% if request.endpoint == 'about' %}aria-current="page"{% endif %}>{{ t('nav.about') }}</a></li>
           <li><a href="{{ lang_url('contact') }}" {% if request.endpoint == 'contact' %}aria-current="page"{% endif %}>{{ t('nav.contact') }}</a></li>
         </ul>
@@ -284,6 +293,7 @@
       <div class="footer-links">
         <h3>{{ t('footer.itineraries_blog') }}</h3>
         <ul>
+          <li><a href="{{ lang_url('prepare_trip') }}">{{ t('nav.prepare') }}</a></li>
           {% for slug, it in itineraries.items() %}
           <li><a href="{{ lang_url('itinerary', slug=slug) }}">{{ it.title }}</a></li>
           {% endfor %}

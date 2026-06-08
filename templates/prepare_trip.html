@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% from "macros/seo.html" import json_ld_graph with context %}
+
+{% block structured_data %}
+{{ json_ld_graph([
+  {
+    "@type": "WebPage",
+    "name": meta_title,
+    "description": meta_description,
+    "url": canonical_url,
+    "inLanguage": "en-GB" if lang == 'en' else "fr-FR"
+  },
+  seo_breadcrumb([
+    (t('nav.home'), site.SITE_URL ~ lang_url('index')),
+    (t('prepare.title'), None),
+  ]),
+]) }}
+{% endblock %}
+
+{% block content %}
+<header class="page-hero page-hero--prepare">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Fil d'Ariane">
+      <ol>
+        <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+        <li aria-current="page">{{ t('nav.prepare') }}</li>
+      </ol>
+    </nav>
+    <h1>{{ t('prepare.title') }}</h1>
+    <p class="page-hero__lead">{{ t('prepare.sub') }}</p>
+  </div>
+</header>
+
+<section class="section prepare-trip" id="prepare-trip" aria-labelledby="prepare-wizard-title">
+  <div class="container prepare-trip__inner">
+    <div class="prepare-wizard" id="prepare-wizard">
+      <div class="prepare-wizard__progress" aria-hidden="true">
+        <span class="prepare-wizard__dot is-active" data-step="1"></span>
+        <span class="prepare-wizard__dot" data-step="2"></span>
+        <span class="prepare-wizard__dot" data-step="3"></span>
+      </div>
+
+      <div class="prepare-step is-active" data-step="1">
+        <h2 id="prepare-wizard-title">{{ t('prepare.step1') }}</h2>
+        <div class="prepare-options" role="group" aria-label="{{ t('prepare.step1') }}"></div>
+      </div>
+
+      <div class="prepare-step" data-step="2" hidden>
+        <h2>{{ t('prepare.step2') }}</h2>
+        <div class="prepare-options prepare-options--grid" role="group" aria-label="{{ t('prepare.step2') }}"></div>
+      </div>
+
+      <div class="prepare-step" data-step="3" hidden>
+        <h2>{{ t('prepare.step3') }}</h2>
+        <div class="prepare-options" role="group" aria-label="{{ t('prepare.step3') }}"></div>
+      </div>
+
+      <div class="prepare-wizard__nav">
+        <button type="button" class="btn btn-ghost prepare-back" hidden>{{ t('prepare.back') }}</button>
+        <button type="button" class="btn btn-primary prepare-next">{{ t('prepare.next') }}</button>
+      </div>
+    </div>
+
+    <div class="prepare-results" id="prepare-results" hidden>
+      <header class="prepare-results__header">
+        <h2 class="prepare-results__title"></h2>
+        <p class="prepare-results__sub"></p>
+        <button type="button" class="btn btn-ghost prepare-restart"></button>
+      </header>
+      <div class="prepare-results__sections"></div>
+      <p class="prepare-results__cta">
+        <a href="{{ pdf_checkout_url() }}" class="btn btn-primary prepare-pdf-cta" data-no-loader></a>
+      </p>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.prepareTripCatalog = {{ planner_catalog | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/prepare_trip.js') }}" defer></script>
+{% endblock %}

@@ -1753,3 +1753,129 @@ a:hover { color: var(--terracotta); }
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Blog categories ───────────────────────────────── */
+.blog-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+.blog-categories__chip {
+  display: inline-flex;
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--rice-dark);
+  background: var(--white);
+  color: var(--ink-soft);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.blog-categories__chip:hover,
+.blog-categories__chip.is-active {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: var(--white);
+}
+.card--article .card-visual__link { display: block; height: 100%; }
+.card--article .card-category { z-index: 2; text-decoration: none; }
+a.article-category { text-decoration: none; }
+a.article-category:hover { text-decoration: underline; }
+
+/* ── Préparer mon voyage ───────────────────────────── */
+.nav-highlight { color: var(--teal) !important; font-weight: 600; }
+.page-hero--prepare {
+  background: linear-gradient(135deg, var(--teal-deep) 0%, var(--teal) 100%);
+  color: var(--white);
+}
+.page-hero--prepare .breadcrumb a,
+.page-hero--prepare .breadcrumb li { color: rgba(255,255,255,0.85); }
+.prepare-trip__inner { max-width: 820px; margin: 0 auto; }
+.prepare-wizard {
+  background: var(--white);
+  border: 1px solid var(--rice-dark);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+}
+.prepare-wizard__progress {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+.prepare-wizard__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--rice-dark);
+}
+.prepare-wizard__dot.is-active { background: var(--teal); }
+.prepare-step h2 { font-size: 1.35rem; margin-bottom: 1.25rem; text-align: center; }
+.prepare-options { display: grid; gap: 0.75rem; }
+.prepare-options--grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.prepare-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  padding: 1rem 1.15rem;
+  border: 2px solid var(--rice-dark);
+  border-radius: var(--radius-md);
+  background: var(--rice);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--transition), background var(--transition);
+}
+.prepare-option:hover { border-color: var(--teal-light); }
+.prepare-option.is-selected {
+  border-color: var(--teal);
+  background: rgba(27, 77, 74, 0.06);
+}
+.prepare-option__label { font-weight: 600; color: var(--ink); }
+.prepare-option__desc { font-size: 0.85rem; color: var(--ink-muted); }
+.prepare-wizard__nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+.prepare-results__header { text-align: center; margin-bottom: 2rem; }
+.prepare-results__block { margin-bottom: 2rem; }
+.prepare-results__block h3 {
+  font-size: 1.15rem;
+  margin-bottom: 1rem;
+  color: var(--teal);
+}
+.prepare-cards {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+.prepare-card {
+  display: block;
+  padding: 1.15rem;
+  border: 1px solid var(--rice-dark);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow var(--transition), transform var(--transition);
+}
+.prepare-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+  color: inherit;
+}
+.prepare-card h3 { font-size: 1rem; margin: 0.35rem 0; color: var(--teal); }
+.prepare-card p { font-size: 0.875rem; color: var(--ink-muted); margin: 0; }
+.prepare-card__meta {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gold);
+}
+.prepare-card__hint { display: block; margin-top: 0.5rem; font-size: 0.8rem; color: var(--ink-soft); }
+.prepare-results__cta { text-align: center; margin-top: 2rem; }

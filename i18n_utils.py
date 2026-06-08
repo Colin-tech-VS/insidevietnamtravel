@@ -241,6 +241,7 @@ def merge_bilingual_destination(fr_data: dict, en_data: dict, shared: dict) -> d
 ROUTE_PATHS: dict[str, dict[str, str]] = {
     "index": {"fr": "/", "en": "/en/"},
     "blog_index": {"fr": "/blog", "en": "/en/blog"},
+    "prepare_trip": {"fr": "/preparer-mon-voyage", "en": "/en/plan-my-trip"},
     "about": {"fr": "/a-propos", "en": "/en/about"},
     "contact": {"fr": "/contact", "en": "/en/contact"},
     "privacy": {"fr": "/politique-confidentialite", "en": "/en/privacy"},

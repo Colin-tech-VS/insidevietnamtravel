@@ -109,8 +109,38 @@ def get_categories(lang: str | None = None) -> dict:
     }
 
 
+def _auto_translate_article(article: dict) -> dict:
+    article = wrap_article_i18n(article)
+    en = article.get("i18n", {}).get("en", {})
+    if en.get("content"):
+        return article
+    try:
+        from admin.groq_translate import translate_article_block
+        fr = article["i18n"]["fr"]
+        translated = translate_article_block({**article, **fr})
+        article["i18n"]["en"] = {k: translated.get(k, fr.get(k, "")) for k in fr}
+    except Exception:
+        pass
+    return article
+
+
+def _auto_translate_destination(dest: dict) -> dict:
+    dest = wrap_destination_i18n(dest)
+    en = dest.get("i18n", {}).get("en", {})
+    if en.get("overview"):
+        return dest
+    try:
+        from admin.groq_translate import translate_destination_block
+        fr = dest["i18n"]["fr"]
+        translated = translate_destination_block({**dest, **fr})
+        dest["i18n"]["en"] = {k: translated.get(k, fr.get(k, "")) for k in fr}
+    except Exception:
+        pass
+    return dest
+
+
 def save_articles(articles: list):
-    normalized = [wrap_article_i18n(a) for a in articles]
+    normalized = [_auto_translate_article(wrap_article_i18n(a)) for a in articles]
     set_json("articles", normalized, file_name="articles.json")
 
 
@@ -150,7 +180,11 @@ def get_destinations_dict(lang: str | None = None) -> dict:
 
 
 def save_destinations(destinations: dict):
-    set_json("destinations", destinations, file_name="destinations.json")
+    normalized = {
+        slug: _auto_translate_destination(wrap_destination_i18n(d))
+        for slug, d in destinations.items()
+    }
+    set_json("destinations", normalized, file_name="destinations.json")
 
 
 def get_destination_by_slug(slug: str, lang: str | None = None) -> dict | None:

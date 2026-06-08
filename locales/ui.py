@@ -71,15 +71,80 @@ UI: dict[str, dict[str, str]] = {
         "fr": "Visa, budget, transport, gastronomie — articles pratiques pour préparer votre séjour",
         "en": "Visa, budget, transport, food — practical articles to plan your trip",
     },
+    "blog.all_categories": {"fr": "Toutes les catégories", "en": "All categories"},
+    "blog.filter_by": {"fr": "Filtrer par catégorie", "en": "Filter by category"},
+
+    # Category
+    "category.articles": {"fr": "articles", "en": "articles"},
+    "category.empty": {
+        "fr": "Aucun article dans cette catégorie pour le moment.",
+        "en": "No articles in this category yet.",
+    },
+    "category.view": {"fr": "Voir la catégorie", "en": "View category"},
+
+    # Préparer mon voyage
+    "nav.prepare": {"fr": "Préparer mon voyage", "en": "Plan my trip"},
+    "prepare.title": {"fr": "Préparer mon voyage au Vietnam", "en": "Plan my Vietnam trip"},
+    "prepare.sub": {
+        "fr": "Répondez à 3 questions — nous vous proposons itinéraires, guides et articles adaptés à votre profil.",
+        "en": "Answer 3 questions — we'll suggest itineraries, guides and articles tailored to your profile.",
+    },
+    "prepare.step1": {"fr": "Qui voyage ?", "en": "Who is travelling?"},
+    "prepare.step2": {"fr": "Quel type de voyage ?", "en": "What kind of trip?"},
+    "prepare.step3": {"fr": "Quelle durée ?", "en": "How long?"},
+    "prepare.next": {"fr": "Continuer", "en": "Continue"},
+    "prepare.back": {"fr": "Retour", "en": "Back"},
+    "prepare.restart": {"fr": "Recommencer", "en": "Start over"},
+    "prepare.see_all": {"fr": "Voir tout", "en": "See all"},
+    "prepare.group.solo": {"fr": "Solo", "en": "Solo"},
+    "prepare.group.couple": {"fr": "En couple", "en": "As a couple"},
+    "prepare.group.family": {"fr": "En famille", "en": "With family"},
+    "prepare.group.friends": {"fr": "Entre amis", "en": "With friends"},
+    "prepare.style.culture.label": {"fr": "Culture & patrimoine", "en": "Culture & heritage"},
+    "prepare.style.culture.desc": {"fr": "Temples, histoire, musées et villes anciennes", "en": "Temples, history, museums and old towns"},
+    "prepare.style.food.label": {"fr": "Gastronomie", "en": "Food & dining"},
+    "prepare.style.food.desc": {"fr": "Street food, marchés et tables locales", "en": "Street food, markets and local restaurants"},
+    "prepare.style.adventure.label": {"fr": "Aventure", "en": "Adventure"},
+    "prepare.style.adventure.desc": {"fr": "Trek, baie d'Halong, delta du Mékong", "en": "Trekking, Halong Bay, Mekong Delta"},
+    "prepare.style.romantic.label": {"fr": "Romantique", "en": "Romantic"},
+    "prepare.style.romantic.desc": {"fr": "Hội An, plages, couchers de soleil", "en": "Hội An, beaches, sunsets"},
+    "prepare.style.roadtrip.label": {"fr": "Road trip", "en": "Road trip"},
+    "prepare.style.roadtrip.desc": {"fr": "Nord au Sud, trains et paysages", "en": "North to South, trains and scenery"},
+    "prepare.style.relax.label": {"fr": "Détente", "en": "Relaxation"},
+    "prepare.style.relax.desc": {"fr": "Plages, spa, rythme lent", "en": "Beaches, spa, slow pace"},
+    "prepare.style.budget.label": {"fr": "Petit budget", "en": "Budget travel"},
+    "prepare.style.budget.desc": {"fr": "Backpacker, astuces économiques", "en": "Backpacker, money-saving tips"},
+    "prepare.duration.short": {"fr": "7 jours", "en": "7 days"},
+    "prepare.duration.medium": {"fr": "10 jours", "en": "10 days"},
+    "prepare.duration.long": {"fr": "14 jours et +", "en": "14+ days"},
+    "prepare.results.title": {"fr": "Votre voyage sur mesure", "en": "Your tailored trip"},
+    "prepare.results.sub": {
+        "fr": "Voici tout ce que nous recommandons pour votre profil — itinéraires, destinations et guides.",
+        "en": "Here's everything we recommend for your profile — itineraries, destinations and guides.",
+    },
+    "prepare.results.itineraries": {"fr": "Itinéraires recommandés", "en": "Recommended itineraries"},
+    "prepare.results.destinations": {"fr": "Destinations à explorer", "en": "Destinations to explore"},
+    "prepare.results.articles": {"fr": "Guides à lire", "en": "Guides to read"},
+    "prepare.results.categories": {"fr": "Catégories du blog", "en": "Blog categories"},
+    "prepare.results.pdf": {"fr": "Télécharger le guide PDF complet", "en": "Download the full PDF guide"},
+    "prepare.results.empty": {
+        "fr": "Sélectionnez vos préférences pour voir nos recommandations.",
+        "en": "Select your preferences to see our recommendations.",
+    },
+    "meta.prepare.title": {
+        "fr": "Préparer mon voyage au Vietnam — itinéraires sur mesure",
+        "en": "Plan my Vietnam trip — tailored itineraries",
+    },
+    "meta.prepare.desc": {
+        "fr": "Quiz voyage : nombre de personnes, type de séjour et durée — obtenez itinéraires, destinations et guides adaptés.",
+        "en": "Trip quiz: group size, travel style and duration — get matching itineraries, destinations and guides.",
+    },
 
     # Article
     "article.read_time": {"fr": "min de lecture", "en": "min read"},
     "article.new": {"fr": "Nouveau", "en": "New"},
     "article.related": {"fr": "Articles similaires", "en": "Related articles"},
     "article.updated": {"fr": "Mis à jour le", "en": "Updated on"},
-
-    # Category
-    "category.articles": {"fr": "articles", "en": "articles"},
 
     # Destination
     "dest.things": {"fr": "À faire", "en": "Things to do"},

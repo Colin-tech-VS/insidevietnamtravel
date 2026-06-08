@@ -154,4 +154,32 @@ CATEGORIES = {
             },
         },
     },
+    "itinerary": {
+        "label": "Itinéraires",
+        "description": "Circuits jour par jour, idées de parcours et organisation de séjour au Vietnam.",
+        "i18n": {
+            "fr": {
+                "label": "Itinéraires",
+                "description": "Circuits jour par jour, idées de parcours et organisation de séjour au Vietnam.",
+            },
+            "en": {
+                "label": "Itineraries",
+                "description": "Day-by-day routes, trip ideas and Vietnam travel planning.",
+            },
+        },
+    },
+    "budget": {
+        "label": "Budget",
+        "description": "Coûts, astuces économiques et fourchettes de prix pour voyager au Vietnam.",
+        "i18n": {
+            "fr": {
+                "label": "Budget",
+                "description": "Coûts, astuces économiques et fourchettes de prix pour voyager au Vietnam.",
+            },
+            "en": {
+                "label": "Budget",
+                "description": "Costs, money-saving tips and price ranges for travelling in Vietnam.",
+            },
+        },
+    },
 }

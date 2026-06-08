@@ -72,11 +72,12 @@
         <ol>
           <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
           <li><a href="{{ lang_url('blog_index') }}">{{ t('nav.blog') }}</a></li>
+          <li><a href="{{ lang_url('category', category=article.category) }}">{{ article.category_label }}</a></li>
           <li aria-current="page">{{ article.title[:45] }}{% if article.title|length > 45 %}…{% endif %}</li>
         </ol>
       </nav>
       <div class="article-hero__labels">
-        <span class="article-category">{{ article.category_label }}</span>
+        <a href="{{ lang_url('category', category=article.category) }}" class="article-category">{{ article.category_label }}</a>
         {% if is_article_new(article) %}
         <span class="badge-nouveau badge-nouveau--hero">{{ t('article.new') }}</span>
         {% endif %}

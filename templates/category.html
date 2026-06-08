@@ -40,8 +40,14 @@
   </div>
 </header>
 
-<section class="articles-section">
+<section class="section">
   <div class="container">
+    <nav class="blog-categories" aria-label="{{ t('blog.filter_by') }}">
+      <a href="{{ lang_url('blog_index') }}" class="blog-categories__chip">{{ t('blog.all_categories') }}</a>
+      {% for cat_key, cat in categories.items() %}
+      <a href="{{ lang_url('category', category=cat_key) }}" class="blog-categories__chip{% if cat_key == category_key %} is-active{% endif %}">{{ cat.label }}</a>
+      {% endfor %}
+    </nav>
     {% if articles %}
     <div class="articles-grid">
       {% for article in articles %}
@@ -49,7 +55,7 @@
       {% endfor %}
     </div>
     {% else %}
-    <p class="empty-state">{% if lang == 'en' %}No articles in this category yet.{% else %}Aucun article dans cette catégorie pour le moment.{% endif %}</p>
+    <p class="empty-state">{{ t('category.empty') }}</p>
     {% endif %}
   </div>
 </section>
