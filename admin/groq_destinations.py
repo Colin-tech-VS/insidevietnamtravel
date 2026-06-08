@@ -11,6 +11,11 @@ from i18n_utils import merge_bilingual_destination
 
 MIN_WORDS = 1200
 TARGET_WORDS = 1500
+# max_tokens dimensionné sur la cible (≈ mots × 2,2 + JSON) plutôt que 8192,
+# pour ne pas réserver tout le budget tokens/minute de Groq.
+GEN_MAX_TOKENS = 5120
+# On ne relance un enrichissement que si la page est nettement sous la cible.
+EXPAND_TOLERANCE = 0.9
 
 SYSTEM_PROMPT = """Tu es un expert SEO voyage Vietnam pour "Inside Vietnam Travel".
 
@@ -115,16 +120,17 @@ La page doit convaincre un voyageur de visiter {city} et l'aider à planifier : 
             {"role": "user", "content": user_prompt},
         ],
         temperature=0.65,
-        max_tokens=8192,
+        max_tokens=GEN_MAX_TOKENS,
     )
 
     data = json.loads(response.choices[0].message.content)
     dest = _build_destination(data, city, slug)
 
-    if _total_words(dest) < MIN_WORDS:
+    if _total_words(dest) < MIN_WORDS * EXPAND_TOLERANCE:
+        # Enrichissement sur le modèle rapide : bucket TPM distinct + plus véloce.
         expand = groq_client.chat_completion(
             client=client,
-            model=model,
+            model=groq_client.fast_model(),
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {
@@ -137,14 +143,14 @@ La page doit convaincre un voyageur de visiter {city} et l'aider à planifier : 
                 },
             ],
             temperature=0.5,
-            max_tokens=8192,
-            pause_before=3.0,
+            max_tokens=GEN_MAX_TOKENS,
+            pause_before=1.5,
         )
         data = json.loads(expand.choices[0].message.content)
         dest = _build_destination(data, city, slug)
 
     try:
-        en_data = translate_destination_block(dest, pause_before=3.0)
+        en_data = translate_destination_block(dest, pause_before=1.5)
         shared = {
             k: v for k, v in dest.items()
             if k not in (
