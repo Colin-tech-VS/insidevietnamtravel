@@ -59,7 +59,8 @@ from data.affiliates import PDF_GUIDE, NEWSLETTER
 RESERVED_SLUGS = frozenset({
     "blog", "admin", "go", "itineraries", "a-propos", "newsletter",
     "politique-confidentialite", "mentions-legales",
-    "robots.txt", "sitemap.xml", "categorie", "category", "static", "favicon.ico",
+    "robots.txt", "sitemap.xml", "llms.txt", "llms-full.txt",
+    "categorie", "category", "static", "favicon.ico",
     "en", "about", "privacy", "legal", "unsubscribe", "contact", "guide-pdf",
 })
 
@@ -186,6 +187,7 @@ def inject_globals():
         "lang_url": lang_url,
         "html_lang": "en" if lang == "en" else "fr",
         "og_locale": "en_GB" if lang == "en" else "fr_FR",
+        "llms_txt_url": config.SITE_URL.rstrip("/") + "/llms.txt",
     }
 
 
@@ -217,6 +219,12 @@ def seo_organization():
 @app.template_global()
 def seo_website():
     return website_schema(get_lang())
+
+
+@app.template_global()
+def geo_faq_items():
+    from geo_utils import geo_faq_for_lang
+    return geo_faq_for_lang(get_lang())
 
 
 @app.template_global()
@@ -684,14 +692,26 @@ def destination_page(slug):
 
 @app.route("/robots.txt")
 def robots():
-    content = f"User-agent: *\nAllow: /\nDisallow: /admin/\n\nSitemap: {config.SITE_URL}/sitemap.xml\n"
-    return Response(content, mimetype="text/plain")
+    from geo_utils import render_robots_txt
+    return Response(render_robots_txt(), mimetype="text/plain")
 
 
 @app.route("/sitemap.xml")
 def sitemap():
     xml = render_sitemap_xml()
     return Response(xml, mimetype="application/xml")
+
+
+@app.route("/llms.txt")
+def llms_txt():
+    from geo_utils import render_llms_txt
+    return Response(render_llms_txt(full=False), mimetype="text/plain; charset=utf-8")
+
+
+@app.route("/llms-full.txt")
+def llms_full_txt():
+    from geo_utils import render_llms_txt
+    return Response(render_llms_txt(full=True), mimetype="text/plain; charset=utf-8")
 
 
 @app.errorhandler(404)

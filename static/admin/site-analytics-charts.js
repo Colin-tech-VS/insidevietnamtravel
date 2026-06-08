@@ -27,6 +27,54 @@
     });
   }
 
+  const geo = siteAnalyticsData.geo || {};
+  const geoColors = ['#1B4D4A', '#C17F3A', '#2A6F6B', '#8B6914', '#4A7C59', '#6B5B95', '#A0522D', '#4682B4'];
+
+  const geoSourcesCtx = document.getElementById('geoSourcesChart');
+  if (geoSourcesCtx && geo.sources_chart && geo.sources_chart.length) {
+    new Chart(geoSourcesCtx, {
+      type: 'doughnut',
+      data: {
+        labels: geo.sources_chart.map((s) => s.label),
+        datasets: [{
+          data: geo.sources_chart.map((s) => s.views),
+          backgroundColor: geoColors,
+          borderWidth: 0,
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: '#7A7772', boxWidth: 12 } },
+        },
+      },
+    });
+  }
+
+  const geoDailyCtx = document.getElementById('geoDailyChart');
+  if (geoDailyCtx && geo.daily_ai && geo.daily_ai.length) {
+    new Chart(geoDailyCtx, {
+      type: 'bar',
+      data: {
+        labels: geo.daily_ai.map((d) => d.day.slice(5)),
+        datasets: [{
+          label: 'Vues IA',
+          data: geo.daily_ai.map((d) => d.total),
+          backgroundColor: 'rgba(27, 77, 74, 0.75)',
+          borderRadius: 4,
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: '#7A7772', maxTicksLimit: 14 } },
+          y: { beginAtZero: true, grid: { color: '#F0EBE3' }, ticks: { color: '#7A7772', precision: 0 } },
+        },
+      },
+    });
+  }
+
   setInterval(() => {
     fetch('/admin/api/realtime')
       .then((r) => r.json())

@@ -79,30 +79,60 @@ def _strip_tags(html: str) -> str:
 
 def organization_schema(lang: str = "fr") -> dict:
     desc = config.SITE_DESCRIPTION_I18N.get(lang, config.SITE_DESCRIPTION)
+    base = config.SITE_URL.rstrip("/")
     return {
         "@type": "Organization",
-        "@id": f"{config.SITE_URL}/#organization",
+        "@id": f"{base}/#organization",
         "name": config.SITE_NAME,
-        "url": config.SITE_URL,
+        "url": base,
         "description": desc,
         "logo": {
             "@type": "ImageObject",
-            "url": f"{config.SITE_URL}/static/images/favicon.svg",
+            "url": f"{base}/static/images/favicon.svg",
+        },
+        "image": f"{base}/static/images/og-default.svg",
+        "email": config.LEGAL_CONTACT_EMAIL,
+        "areaServed": {"@type": "Country", "name": "Vietnam"},
+        "knowsAbout": [
+            "Vietnam travel", "Vietnam visa", "Vietnam itinerary",
+            "Hanoi travel", "Hội An travel", "Ho Chi Minh City travel",
+            "Halong Bay", "Mekong Delta", "Vietnam budget travel",
+            "Vietnam eSIM", "Vietnam street food",
+        ],
+        "audience": {
+            "@type": "Audience",
+            "audienceType": "International travellers planning a trip to Vietnam",
+        },
+        "sameAs": [base, f"{base}/llms.txt"],
+        "contactPoint": {
+            "@type": "ContactPoint",
+            "contactType": "customer support",
+            "email": config.LEGAL_CONTACT_EMAIL,
+            "availableLanguage": ["French", "English"],
         },
     }
 
 
 def website_schema(lang: str = "fr") -> dict:
-    from i18n_utils import schema_language
+    from i18n_utils import schema_language, lang_url
     desc = config.SITE_DESCRIPTION_I18N.get(lang, config.SITE_DESCRIPTION)
+    base = config.SITE_URL.rstrip("/")
     return {
         "@type": "WebSite",
-        "@id": f"{config.SITE_URL}/#website",
+        "@id": f"{base}/#website",
         "name": config.SITE_NAME,
-        "url": config.SITE_URL,
+        "url": base,
         "description": desc,
-        "inLanguage": schema_language(lang),
-        "publisher": {"@id": f"{config.SITE_URL}/#organization"},
+        "inLanguage": [schema_language("fr"), schema_language("en")],
+        "publisher": {"@id": f"{base}/#organization"},
+        "about": {"@type": "Place", "name": "Vietnam"},
+        "isAccessibleForFree": True,
+        "copyrightHolder": {"@id": f"{base}/#organization"},
+        "hasPart": {
+            "@type": "WebPage",
+            "url": base + lang_url("index", lang),
+            "name": config.SITE_NAME,
+        },
     }
 
 

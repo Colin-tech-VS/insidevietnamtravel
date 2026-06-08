@@ -230,6 +230,41 @@ def get_analytics_recommendations(stats: dict, days: int) -> list[dict]:
             icon="🟢",
         ))
 
+    geo = stats.get("geo") or {}
+    ai_views = geo.get("total_ai_views", 0)
+    ai_share = geo.get("ai_share_pct", 0)
+
+    if views > 0 and ai_views == 0:
+        recos.append(_reco(
+            "Activer la visibilité GEO",
+            "Soumettez /llms.txt à Google Search Console et partagez vos guides sur Perplexity ou ChatGPT. "
+            "Les robots IA (GPTBot, ClaudeBot) sont autorisés dans robots.txt.",
+            priority="moyenne",
+            action_label="Voir llms.txt",
+            action_url="/llms.txt",
+            icon="🤖",
+        ))
+    elif ai_views > 0 and ai_share < 5:
+        recos.append(_reco(
+            f"{ai_views} vues IA ({ai_share}%)",
+            "Le trafic LLM est faible. Enrichissez vos FAQ et titres avec des questions directes "
+            "(« comment préparer un voyage au Vietnam ? »).",
+            priority="moyenne",
+            action_label="Accueil",
+            action_url="/",
+            icon="🤖",
+        ))
+    elif ai_views >= 5:
+        top_ai = (geo.get("top_ai_pages") or [{}])[0]
+        recos.append(_reco(
+            f"{ai_views} vues depuis les LLM ({ai_share}%)",
+            f"Page la plus citée : {top_ai.get('path', '/')} — renforcez ce contenu et ajoutez des liens internes.",
+            priority="haute",
+            action_label="Analytics GEO",
+            action_url="/admin/analytics",
+            icon="🤖",
+        ))
+
     if not recos:
         recos.append(_reco(
             "Analysez chaque semaine",

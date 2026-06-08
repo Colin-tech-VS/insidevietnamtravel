@@ -19,12 +19,14 @@
 {% endfor %}
 {% set list_dest = "Destinations Vietnam" if lang == 'fr' else "Vietnam destinations" %}
 {% set list_itin = "Itinéraires voyage Vietnam" if lang == 'fr' else "Vietnam travel itineraries" %}
+{% set geo_faq = geo_faq_items() %}
+{% set geo_faq_schema = seo_faq(geo_faq) %}
 {{ json_ld_graph([
   seo_organization(),
   seo_website(),
   seo_item_list(list_dest, dest_items),
   seo_item_list(list_itin, itin_items),
-]) }}
+] + ([geo_faq_schema] if geo_faq_schema else [])) }}
 {% endblock %}
 
 {% block content %}
@@ -113,6 +115,23 @@
   <div class="container monetize-grid">
     {{ sim_banner() }}
     {{ pdf_banner() }}
+  </div>
+</section>
+
+<section class="section section--alt" aria-labelledby="faq-title">
+  <div class="container">
+    <header class="section-header">
+      <h2 id="faq-title">{{ 'Questions fréquentes' if lang == 'fr' else 'Frequently asked questions' }}</h2>
+      <p>{{ 'Réponses concises pour préparer votre voyage au Vietnam.' if lang == 'fr' else 'Concise answers to plan your Vietnam trip.' }}</p>
+    </header>
+    <div class="faq-list">
+      {% for item in geo_faq %}
+      <details class="faq-item">
+        <summary><h3>{{ item.question }}</h3></summary>
+        <p>{{ item.answer }}</p>
+      </details>
+      {% endfor %}
+    </div>
   </div>
 </section>
 {% endblock %}

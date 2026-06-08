@@ -671,6 +671,19 @@ code {
   padding: 0;
 }
 
+.geo-analytics-section {
+  margin-top: 2.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--rice-dark);
+}
+.geo-analytics-header { margin-bottom: 1.25rem; }
+.geo-analytics-header h2 {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  margin-bottom: 0.35rem;
+}
+.geo-analytics-header .page-sub { margin: 0; }
+
 .top-pages-list { list-style: none; }
 .top-pages-list li {
   display: flex;

@@ -112,6 +112,20 @@ def get_daily_views(days: int = 30):
     return [dict(r) for r in rows]
 
 
+def get_geo_view_rows(days: int = 30) -> list[dict]:
+    """Page views avec referrer + UA pour classification GEO (LLM / moteurs IA)."""
+    with get_connection() as conn:
+        rows = _execute(
+            conn,
+            """SELECT path, referrer, user_agent, created_at::text AS created_at
+               FROM page_views WHERE created_at >= %s ORDER BY id DESC""",
+            """SELECT path, referrer, user_agent, created_at
+               FROM page_views WHERE created_at >= ? ORDER BY id DESC""",
+            (_since_days(days),),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
 def get_daily_affiliate_clicks(days: int = 30):
     with get_connection() as conn:
         rows = _execute(
