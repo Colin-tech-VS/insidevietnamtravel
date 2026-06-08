@@ -21,6 +21,25 @@ SITE_TAGLINE_I18N = {
     "en": "Guides, itineraries and tips for travelling in Vietnam",
 }
 SITE_URL = _resolve_site_url()
+
+
+def scalingo_app_url() -> str | None:
+    app_name = os.environ.get("SCALINGO_APP", "").strip()
+    if not app_name:
+        return None
+    region = os.environ.get("SCALINGO_REGION", "osc-fr1").strip() or "osc-fr1"
+    return f"https://{app_name}.{region}.scalingo.io"
+
+
+def pdf_flow_base_url() -> str:
+    """Base URL fiable pour checkout / téléchargement PDF (évite boucles DNS www/LWS)."""
+    explicit = os.environ.get("PDF_FLOW_BASE_URL", "").strip()
+    if explicit:
+        return explicit.rstrip("/")
+    sco = scalingo_app_url()
+    if sco and os.environ.get("PDF_USE_SCALINGO_HOST", "true").lower() in ("1", "true", "yes"):
+        return sco
+    return SITE_URL.rstrip("/")
 SITE_DESCRIPTION = (
     "Préparez votre voyage au Vietnam : itinéraires jour par jour, guides Hanoï, Hội An, "
     "Saigon et Đà Nẵng, visa, budget, eSIM et conseils pour voyageurs français."

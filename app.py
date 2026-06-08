@@ -318,7 +318,7 @@ def travel_insurance_url() -> str:
 def pdf_checkout_url() -> str:
     from admin.pdf_payment_service import is_payment_configured
     if is_payment_configured():
-        return lang_url("pdf_checkout")
+        return config.pdf_flow_base_url() + lang_url("pdf_checkout")
     url = pdf_checkout()
     if url.startswith("#"):
         return url
@@ -586,7 +586,7 @@ def pdf_checkout_start():
         flash(t("pdf.error.payment", lang), "error")
         return redirect(lang_url("index", lang) + "#pdf-guide")
 
-    base = config.SITE_URL.rstrip("/")
+    base = config.pdf_flow_base_url()
     success_url = base + lang_url("pdf_success", lang) + "?session_id={CHECKOUT_SESSION_ID}"
     cancel_url = base + lang_url("index", lang) + "#pdf-guide"
     result = create_checkout_session(lang=lang, success_url=success_url, cancel_url=cancel_url)

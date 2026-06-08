@@ -37,7 +37,7 @@
     <p class="hero-lead">{{ t('home.hero.lead') }}</p>
     <div class="hero-actions">
       <a href="#destinations" class="btn btn-primary">{{ t('home.hero.cta_dest') }}</a>
-      <a href="#pdf-guide" class="btn btn-ghost">{{ t('home.hero.cta_pdf') }}</a>
+      <a href="{{ pdf_checkout_url() }}" class="btn btn-ghost" data-no-loader>{{ t('home.hero.cta_pdf') }}</a>
     </div>
   </div>
 </section>

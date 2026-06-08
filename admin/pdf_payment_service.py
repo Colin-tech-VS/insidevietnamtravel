@@ -195,7 +195,7 @@ def record_download(token: str):
 def build_download_url(token: str, lang: str) -> str:
     from i18n_utils import lang_url
 
-    base = config.SITE_URL.rstrip("/")
+    base = config.pdf_flow_base_url()
     path = lang_url("pdf_download", lang, token=token)
     return base + path
 
