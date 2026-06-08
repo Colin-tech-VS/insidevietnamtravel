@@ -88,6 +88,7 @@ def build_partner_rows(days: int = 30) -> list:
             "what_you_earn": p.get("what_you_earn", "Variable"),
             "avg_per_click": avg,
             "signup_url": p.get("signup_url", ""),
+            "dashboard_url": p.get("dashboard_url") or p.get("signup_url", ""),
             "id_label": "Lien affilié complet",
             "id_placeholder": "https://...?ref=VOTRE_ID",
             "builtin": False,

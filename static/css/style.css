@@ -2189,11 +2189,16 @@ a.article-category:hover { text-decoration: underline; }
 /* ── GetYourGuide activity widget ─────────────────── */
 .gyg-widget-block {
   margin-top: 2rem;
-  padding-top: 1.75rem;
-  border-top: 1px solid var(--rice-dark);
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(160deg, var(--white) 0%, var(--rice) 100%);
+  border: 1px solid var(--rice-dark);
+  box-shadow: var(--shadow-sm);
 }
 .gyg-widget-block__head {
   margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--rice-dark);
 }
 .gyg-widget-block__title {
   font-family: var(--font-display);
@@ -2209,9 +2214,11 @@ a.article-category:hover { text-decoration: underline; }
   line-height: 1.5;
 }
 .gyg-widget {
-  min-height: 120px;
-  border-radius: var(--radius-lg);
+  min-height: 140px;
+  border-radius: var(--radius-md);
   overflow: hidden;
+  background: var(--white);
+  border: 1px solid var(--rice-dark);
 }
 
 @media (max-width: 720px) {

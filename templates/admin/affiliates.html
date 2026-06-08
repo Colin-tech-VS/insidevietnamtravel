@@ -154,6 +154,20 @@
 
           <p class="partner-card__earn"><strong>Ce que vous gagnez :</strong> {{ p.what_you_earn }}</p>
 
+          {% if p.dashboard_url %}
+
+          <p class="partner-card__dashboard">
+
+            <a href="{{ p.dashboard_url }}" target="_blank" rel="noopener" class="partner-card__dashboard-link">
+
+              Dashboard {{ p.name }} →
+
+            </a>
+
+          </p>
+
+          {% endif %}
+
 
 
           <div class="partner-card__stats">

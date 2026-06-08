@@ -780,6 +780,27 @@ code {
 }
 .partner-card__earn strong { color: var(--ink-soft); }
 
+.partner-card__dashboard { margin: 0 0 1rem; }
+.partner-card__dashboard-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--teal);
+  background: rgba(27, 77, 74, 0.07);
+  border: 1px solid rgba(27, 77, 74, 0.18);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  transition: background var(--transition), border-color var(--transition);
+}
+.partner-card__dashboard-link:hover {
+  background: rgba(27, 77, 74, 0.12);
+  border-color: var(--teal-light);
+  color: var(--teal-deep);
+}
+
 .partner-card__stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
