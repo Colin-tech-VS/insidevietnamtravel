@@ -108,8 +108,9 @@ def not_bot_sqlite_sql(column: str = "user_agent") -> str:
 
 
 def not_excluded_path_pg_sql(column: str = "path") -> str:
+    # %% — psycopg2 interprète % comme placeholder (LIKE '…%' sinon → IndexError).
     clauses = " AND ".join(
-        f"COALESCE({column}, '') NOT LIKE '{prefix}%'"
+        f"COALESCE({column}, '') NOT LIKE '{prefix}%%'"
         for prefix in _ANALYTICS_EXCLUDED_PATH_PREFIXES
     )
     return f" AND {clauses} "
