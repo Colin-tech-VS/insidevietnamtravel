@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const nav = document.querySelector('.main-nav');
   const backdrop = document.getElementById('nav-backdrop');
   const dropdowns = document.querySelectorAll('.nav-dropdown');
-  const MOBILE_NAV_MQ = window.matchMedia('(max-width: 768px)');
+  const MOBILE_NAV_MQ = window.matchMedia('(max-width: 1024px)');
 
   const closeDropdowns = (except) => {
     dropdowns.forEach((dd) => {

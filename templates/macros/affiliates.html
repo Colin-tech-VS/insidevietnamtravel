@@ -9,8 +9,8 @@
        class="btn btn-primary btn-sm affiliate-link"
        rel="sponsored noopener noreferrer"
        target="_blank"
-       title="Rechercher {{ hotel.name }} à {{ affiliate_location(location_slug).label }} sur {{ hotel.provider | capitalize }}">
-      Voir sur {{ hotel.provider | capitalize }}
+       title="{{ t('aff.hotel.search_title', name=hotel.name, city=affiliate_location(location_slug).label, provider=hotel.provider | capitalize) }}">
+      {{ t('aff.hotel.see_on', provider=hotel.provider | capitalize) }}
     </a>
   </div>
 </article>
@@ -27,7 +27,7 @@
        class="btn btn-primary btn-sm affiliate-link"
        rel="sponsored noopener noreferrer"
        target="_blank"
-       title="Réserver {{ activity.name }} à {{ affiliate_location(location_slug).label }}">
+       title="{{ t('aff.activity.book_title', name=activity.name, city=affiliate_location(location_slug).label) }}">
       {{ t('dest.book') }}
     </a>
   </div>
@@ -35,7 +35,7 @@
 {% endmacro %}
 
 {% macro sim_banner() %}
-<aside class="affiliate-banner affiliate-banner--sim" aria-label="Offre eSIM Vietnam">
+<aside class="affiliate-banner affiliate-banner--sim" aria-label="{{ t('aff.sim.aria') }}">
   <div class="affiliate-banner__content">
     <span class="affiliate-banner__eyebrow">{% if lang == 'en' %}Connectivity{% else %}Connectivité{% endif %}</span>
     <h3 class="affiliate-banner__title">{% if lang == 'en' %}Vietnam eSIM — Internet on landing{% else %}eSIM Vietnam — Internet dès l'atterrissage{% endif %}</h3>
@@ -49,22 +49,22 @@
 {% endmacro %}
 
 {% macro insurance_banner() %}
-<aside class="affiliate-banner affiliate-banner--insurance" aria-label="Assurance voyage">
+<aside class="affiliate-banner affiliate-banner--insurance" aria-label="{{ t('aff.insurance.aria') }}">
   <div class="affiliate-banner__content">
-    <span class="affiliate-banner__eyebrow">Protection</span>
-    <h3 class="affiliate-banner__title">Assurance voyage Vietnam</h3>
-    <p class="affiliate-banner__text">Frais médicaux, rapatriement, annulation — indispensable pour voyager l'esprit tranquille.</p>
+    <span class="affiliate-banner__eyebrow">{{ t('aff.insurance.eyebrow') }}</span>
+    <h3 class="affiliate-banner__title">{{ t('aff.insurance.title') }}</h3>
+    <p class="affiliate-banner__text">{{ t('aff.insurance.text') }}</p>
     <a href="{{ travel_insurance_url() }}" class="btn btn-primary btn-sm affiliate-link" rel="sponsored noopener noreferrer" target="_blank">
-      Devis assurance Vietnam
+      {{ t('aff.insurance.cta') }}
     </a>
   </div>
 </aside>
 {% endmacro %}
 
 {% macro pdf_banner() %}
-<aside class="affiliate-banner affiliate-banner--pdf" id="pdf-guide" aria-label="Guide PDF Vietnam">
+<aside class="affiliate-banner affiliate-banner--pdf" id="pdf-guide" aria-label="{{ t('aff.pdf.aria') }}">
   <div class="affiliate-banner__content">
-    <span class="affiliate-banner__eyebrow">Produit numérique</span>
+    <span class="affiliate-banner__eyebrow">{{ t('aff.pdf.eyebrow') }}</span>
     <h3 class="affiliate-banner__title">{{ pdf.PDF_GUIDE.title }}</h3>
     <p class="affiliate-banner__text">{{ pdf.PDF_GUIDE.subtitle }}</p>
     <ul class="pdf-features">

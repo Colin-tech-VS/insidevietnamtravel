@@ -259,6 +259,33 @@ UI: dict[str, dict[str, str]] = {
         "en": "eSIM recommended before departure — activate on landing.",
     },
     "aff.pdf.cta": {"fr": "Obtenir le guide PDF", "en": "Get the PDF guide"},
+    "aff.hotel.see_on": {"fr": "Voir sur {provider}", "en": "See on {provider}"},
+    "aff.hotel.search_title": {
+        "fr": "Rechercher {name} à {city} sur {provider}",
+        "en": "Search {name} in {city} on {provider}",
+    },
+    "aff.activity.book_title": {
+        "fr": "Réserver {name} à {city}",
+        "en": "Book {name} in {city}",
+    },
+    "aff.sim.aria": {"fr": "Offre eSIM Vietnam", "en": "Vietnam eSIM offer"},
+    "aff.insurance.aria": {"fr": "Assurance voyage", "en": "Travel insurance"},
+    "aff.insurance.eyebrow": {"fr": "Protection", "en": "Protection"},
+    "aff.insurance.title": {
+        "fr": "Assurance voyage Vietnam",
+        "en": "Vietnam travel insurance",
+    },
+    "aff.insurance.text": {
+        "fr": "Frais médicaux, rapatriement, annulation — indispensable pour voyager l'esprit tranquille.",
+        "en": "Medical fees, repatriation, cancellation — essential for worry-free travel.",
+    },
+    "aff.insurance.cta": {
+        "fr": "Devis assurance Vietnam",
+        "en": "Get an insurance quote",
+    },
+    "aff.pdf.aria": {"fr": "Guide PDF Vietnam", "en": "Vietnam PDF guide"},
+    "aff.pdf.eyebrow": {"fr": "Produit numérique", "en": "Digital product"},
+    "breadcrumb.aria": {"fr": "Fil d'Ariane", "en": "Breadcrumb"},
 
     "pdf.error.payment": {
         "fr": "Le paiement n'est pas encore disponible. Réessayez plus tard ou contactez-nous.",
@@ -316,6 +343,11 @@ UI: dict[str, dict[str, str]] = {
 
     # Loader
     "loader.text": {"fr": "Chargement…", "en": "Loading…"},
+    "loader.hint": {
+        "fr": "Préparation de votre voyage…",
+        "en": "Preparing your trip…",
+    },
+    "loader.aria": {"fr": "Chargement en cours", "en": "Loading"},
 
     # SEO meta (pages statiques)
     "meta.home.title": {
