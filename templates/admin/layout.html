@@ -31,7 +31,7 @@
   </style>
 </head>
 <body class="admin-body is-loading {% block body_class %}{% endblock %}">
-  {% from "macros/loader.html" import page_loader %}
+  {% from "macros/loader.html" import page_loader with context %}
   {{ page_loader(hint='Chargement de l\'administration…', sub='Administration') }}
   <script>
     (function () {
