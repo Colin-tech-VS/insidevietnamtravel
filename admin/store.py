@@ -222,3 +222,29 @@ def slugify(text: str) -> str:
 def count_newsletter_subscribers() -> int:
     from admin.newsletter_service import get_newsletter_subscribers
     return len(get_newsletter_subscribers())
+
+
+# ── Avis voyageurs ────────────────────────────────────────────────────
+def get_reviews() -> list:
+    from data.reviews import DEFAULT_REVIEWS
+
+    stored = get_json("reviews", None, file_name="reviews.json")
+    if stored is None:
+        return deepcopy(DEFAULT_REVIEWS)
+    return stored
+
+
+def save_reviews(reviews: list):
+    set_json("reviews", reviews, file_name="reviews.json")
+
+
+def localized_reviews(lang: str) -> list:
+    out = []
+    for r in get_reviews():
+        text = r.get("text", {})
+        if isinstance(text, dict):
+            body = text.get(lang) or text.get(DEFAULT_LANG) or ""
+        else:
+            body = text
+        out.append({**r, "body": body})
+    return out

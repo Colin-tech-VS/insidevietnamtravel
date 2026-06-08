@@ -33,6 +33,7 @@ from admin.store import (
     count_newsletter_subscribers,
     add_custom_partner, delete_custom_partner, get_custom_partners,
     save_custom_partners, slugify,
+    get_reviews, save_reviews,
 )
 from admin.newsletter_service import (
     get_newsletter_subscribers,
@@ -442,6 +443,61 @@ def contact_admin():
         "admin/contact.html",
         messages=get_contact_messages(),
         smtp_ok=is_contact_smtp_configured(),
+    )
+
+
+@admin_bp.route("/reviews", methods=["GET", "POST"])
+@login_required
+def reviews_admin():
+    from datetime import date
+
+    if request.method == "POST":
+        action = request.form.get("action")
+        reviews = get_reviews()
+
+        if action == "delete":
+            rid = request.form.get("id", "")
+            reviews = [r for r in reviews if r.get("id") != rid]
+            save_reviews(reviews)
+            flash("Avis supprimé.", "success")
+
+        elif action == "save":
+            author = (request.form.get("author") or "").strip()
+            text_fr = (request.form.get("text_fr") or "").strip()
+            if not author or not text_fr:
+                flash("Nom et témoignage (FR) obligatoires.", "error")
+                return redirect(url_for("admin.reviews_admin"))
+            rid = request.form.get("id") or f"r-{slugify(author)}-{int(date.today().strftime('%y%m%d'))}"
+            try:
+                rating = max(1, min(5, int(request.form.get("rating", 5))))
+            except (TypeError, ValueError):
+                rating = 5
+            review = {
+                "id": rid,
+                "author": author,
+                "location": (request.form.get("location") or "").strip(),
+                "rating": rating,
+                "date": (request.form.get("date") or date.today().isoformat()),
+                "text": {
+                    "fr": text_fr,
+                    "en": (request.form.get("text_en") or "").strip() or text_fr,
+                },
+            }
+            reviews = [r for r in reviews if r.get("id") != rid]
+            reviews.insert(0, review)
+            save_reviews(reviews)
+            flash("Avis enregistré.", "success")
+
+        return redirect(url_for("admin.reviews_admin"))
+
+    reviews = get_reviews()
+    edit_id = request.args.get("edit", "")
+    editing = next((r for r in reviews if r.get("id") == edit_id), None)
+    return render_template(
+        "admin/reviews.html",
+        reviews=reviews,
+        editing=editing,
+        avg=round(sum(r.get("rating", 0) for r in reviews) / len(reviews), 1) if reviews else 0,
     )
 
 

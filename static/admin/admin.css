@@ -333,6 +333,16 @@ input:focus, select:focus, textarea:focus {
   background: var(--teal);
   color: var(--white);
 }
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-soft);
+  border-color: var(--rice-dark);
+}
+.btn-ghost:hover {
+  background: var(--rice);
+  color: var(--teal);
+  border-color: var(--teal-light);
+}
 .btn-block { width: 100%; }
 .btn-row { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-top: 1rem; }
 

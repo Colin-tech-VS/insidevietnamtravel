@@ -245,6 +245,22 @@ def geo_faq_items():
 
 
 @app.template_global()
+def traveller_reviews():
+    from admin.store import localized_reviews
+    return localized_reviews(get_lang())
+
+
+@app.template_global()
+def reviews_aggregate():
+    from admin.store import get_reviews
+    reviews = get_reviews()
+    ratings = [r.get("rating", 0) for r in reviews if r.get("rating")]
+    if not ratings:
+        return {"count": 0, "average": 0}
+    return {"count": len(ratings), "average": round(sum(ratings) / len(ratings), 1)}
+
+
+@app.template_global()
 def is_article_new(article, days: int = 14) -> bool:
     """Badge « Nouveau » pour les articles publiés récemment."""
     try:

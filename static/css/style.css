@@ -2497,3 +2497,33 @@ a.article-category:hover { text-decoration: underline; }
   color: var(--ink-muted);
   padding: 2rem 0;
 }
+
+/* ── Avis voyageurs ─────────────────────────────────────────────────── */
+.reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+.review-card {
+  background: var(--white);
+  border: 1px solid var(--rice-dark);
+  border-radius: var(--radius-lg);
+  padding: 1.6rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin: 0;
+}
+.review-stars { color: var(--gold); font-size: 1.05rem; letter-spacing: 0.1em; }
+.review-card__text {
+  font-family: var(--font-display);
+  font-size: 1.12rem;
+  line-height: 1.5;
+  color: var(--ink);
+  margin: 0;
+  font-style: italic;
+}
+.review-card__meta { display: flex; flex-direction: column; gap: 0.1rem; margin-top: auto; }
+.review-card__author { font-weight: 600; color: var(--ink); }
+.review-card__loc { font-size: 0.85rem; color: var(--ink-muted); }
