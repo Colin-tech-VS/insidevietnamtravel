@@ -27,6 +27,7 @@ from i18n_utils import (
     switch_lang_url,
 )
 from locales.ui import t
+from seo_sitemap import render_sitemap_xml
 from seo_utils import (
     article_meta_description,
     article_meta_title,
@@ -689,48 +690,7 @@ def robots():
 
 @app.route("/sitemap.xml")
 def sitemap():
-    base = config.SITE_URL.rstrip("/")
-    pages = []
-
-    for lang in ("fr", "en"):
-        articles = get_articles(lang)
-        cats = get_categories(lang)
-        dests = get_destinations_dict(lang)
-        pages.append({"loc": base + lang_url("index", lang), "priority": "1.0"})
-        pages.append({"loc": base + lang_url("blog_index", lang), "priority": "0.9"})
-        pages.append({"loc": base + lang_url("about", lang), "priority": "0.5"})
-        pages.append({"loc": base + lang_url("contact", lang), "priority": "0.5"})
-        pages.append({"loc": base + lang_url("privacy", lang), "priority": "0.4"})
-        pages.append({"loc": base + lang_url("legal_notices", lang), "priority": "0.4"})
-        for slug in dests:
-            pages.append({"loc": base + lang_url("destination_page", lang, slug=slug), "priority": "0.9"})
-        for slug in ITINERARIES:
-            pages.append({
-                "loc": base + lang_url("itinerary", lang, slug=slug),
-                "priority": "0.9",
-            })
-        for cat_key in cats:
-            pages.append({
-                "loc": base + lang_url("category", lang, category=cat_key),
-                "priority": "0.7",
-            })
-        for post in articles:
-            pages.append({
-                "loc": base + lang_url("article", lang, slug=post["slug"]),
-                "priority": "0.8",
-                "lastmod": post["date"],
-            })
-
-    xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
-    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-    for page in pages:
-        xml += "  <url>\n"
-        xml += f"    <loc>{page['loc']}</loc>\n"
-        if "lastmod" in page:
-            xml += f"    <lastmod>{page['lastmod']}</lastmod>\n"
-        xml += f"    <priority>{page['priority']}</priority>\n"
-        xml += "  </url>\n"
-    xml += "</urlset>"
+    xml = render_sitemap_xml()
     return Response(xml, mimetype="application/xml")
 
 
