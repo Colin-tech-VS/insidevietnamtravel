@@ -33,6 +33,8 @@ CREATE TABLE IF NOT EXISTS affiliate_clicks (
     provider TEXT NOT NULL,
     target_url TEXT NOT NULL,
     source_page TEXT,
+    user_agent TEXT,
+    ip_hash TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE TABLE IF NOT EXISTS revenue (
@@ -153,6 +155,19 @@ def _migrate_page_views_columns(conn, *, postgres: bool) -> None:
             conn.execute("ALTER TABLE page_views ADD COLUMN country_name TEXT")
 
 
+def _migrate_affiliate_clicks_columns(conn, *, postgres: bool) -> None:
+    if postgres:
+        with conn.cursor() as cur:
+            cur.execute("ALTER TABLE affiliate_clicks ADD COLUMN IF NOT EXISTS user_agent TEXT")
+            cur.execute("ALTER TABLE affiliate_clicks ADD COLUMN IF NOT EXISTS ip_hash TEXT")
+    else:
+        cols = {row[1] for row in conn.execute("PRAGMA table_info(affiliate_clicks)")}
+        if "user_agent" not in cols:
+            conn.execute("ALTER TABLE affiliate_clicks ADD COLUMN user_agent TEXT")
+        if "ip_hash" not in cols:
+            conn.execute("ALTER TABLE affiliate_clicks ADD COLUMN ip_hash TEXT")
+
+
 def _init_postgres():
     import psycopg2
 
@@ -164,6 +179,7 @@ def _init_postgres():
                 if stmt:
                     cur.execute(stmt)
         _migrate_page_views_columns(conn, postgres=True)
+        _migrate_affiliate_clicks_columns(conn, postgres=True)
         conn.commit()
     finally:
         conn.close()
@@ -188,6 +204,8 @@ def _init_sqlite():
                 provider TEXT NOT NULL,
                 target_url TEXT NOT NULL,
                 source_page TEXT,
+                user_agent TEXT,
+                ip_hash TEXT,
                 created_at TEXT NOT NULL
             );
             CREATE TABLE IF NOT EXISTS revenue (
@@ -202,6 +220,7 @@ def _init_sqlite():
             CREATE INDEX IF NOT EXISTS idx_clicks_created ON affiliate_clicks(created_at);
         """)
         _migrate_page_views_columns(conn, postgres=False)
+        _migrate_affiliate_clicks_columns(conn, postgres=False)
 
 
 @contextmanager

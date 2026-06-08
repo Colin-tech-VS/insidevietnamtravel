@@ -1,6 +1,5 @@
 """Inside Vietnam Travel — affiliate travel guide (Flask)."""
 
-import hashlib
 import threading
 from datetime import datetime
 from pathlib import Path
@@ -19,7 +18,6 @@ from i18n_utils import (
     detect_lang_from_path,
     get_lang,
     hreflang_urls,
-    is_analytics_excluded_ip,
     lang_url,
     localize_itinerary,
     set_lang,
@@ -144,27 +142,24 @@ def prepare_request():
 
 @app.before_request
 def track_page_view():
-    from admin.analytics_filters import is_analytics_excluded_path
+    from admin.analytics_filters import analytics_ip_hash, should_track_page_view
 
     if request.method != "GET":
         return
     path = request.path
     if path.startswith(("/admin", "/static", "/go/", "/favicon")):
         return
-    if is_analytics_excluded_path(path):
-        return
-    if is_analytics_excluded_ip():
-        return
     client_ip = (request.remote_addr or "").strip()
-    ip_hash = hashlib.sha256(
-        (client_ip or "unknown").encode()
-    ).hexdigest()[:16]
+    user_agent = (request.user_agent.string or "")[:200]
+    if not should_track_page_view(path=path, user_agent=user_agent, client_ip=client_ip):
+        return
+    ip_hash = analytics_ip_hash(client_ip)
     threading.Thread(
         target=_log_page_view_async,
         args=(
             path,
             request.referrer or "",
-            (request.user_agent.string or "")[:200],
+            user_agent,
             ip_hash,
             client_ip,
         ),
@@ -394,11 +389,26 @@ def pdf_checkout_url() -> str:
 
 @app.route("/go/<provider>")
 def affiliate_redirect(provider):
+    from admin.analytics_filters import analytics_ip_hash, should_track_affiliate_click
+
     target = request.args.get("to", "")
     if not target or not target.startswith("http"):
         abort(404)
-    if not is_analytics_excluded_ip():
-        analytics_db.log_affiliate_click(provider, target, request.referrer or "")
+    client_ip = (request.remote_addr or "").strip()
+    user_agent = (request.user_agent.string or "")[:200]
+    if should_track_affiliate_click(
+        user_agent=user_agent,
+        client_ip=client_ip,
+        referrer=request.referrer or "",
+        host=request.host or "",
+    ):
+        analytics_db.log_affiliate_click(
+            provider,
+            target,
+            request.referrer or "",
+            user_agent=user_agent,
+            ip_hash=analytics_ip_hash(client_ip),
+        )
     return redirect(target)
 
 
@@ -757,8 +767,18 @@ def pdf_checkout_start():
         flash(t("pdf.error.payment", lang), "error")
         return redirect(lang_url("index", lang) + "#pdf-guide")
 
-    if not is_analytics_excluded_ip():
-        analytics_db.log_affiliate_click("pdf", result.get("url", ""), request.referrer or "")
+    from admin.analytics_filters import analytics_ip_hash, should_track_affiliate_click
+
+    client_ip = (request.remote_addr or "").strip()
+    user_agent = (request.user_agent.string or "")[:200]
+    if should_track_affiliate_click(user_agent=user_agent, client_ip=client_ip):
+        analytics_db.log_affiliate_click(
+            "pdf",
+            result.get("url", ""),
+            request.referrer or "",
+            user_agent=user_agent,
+            ip_hash=analytics_ip_hash(client_ip),
+        )
     return redirect(result["url"])
 
 

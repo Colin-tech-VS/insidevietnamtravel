@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS affiliate_clicks (
     provider TEXT NOT NULL,
     target_url TEXT NOT NULL,
     source_page TEXT,
+    user_agent TEXT,
+    ip_hash TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

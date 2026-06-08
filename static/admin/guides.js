@@ -81,6 +81,31 @@ document.addEventListener('DOMContentLoaded', () => {
     return data;
   }
 
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  // La génération tourne côté serveur en tâche de fond : on interroge le statut
+  // jusqu'à done/error. Plus de "Failed to fetch" même si Groq impose des pauses.
+  async function pollDraft(statusUrl, maxMs = 360000) {
+    const start = Date.now();
+    while (Date.now() - start < maxMs) {
+      await sleep(2500);
+      let st;
+      try {
+        const res = await fetch(statusUrl, {
+          credentials: 'same-origin',
+          headers: { 'Accept': 'application/json' },
+        });
+        st = await res.json();
+      } catch (e) {
+        continue; // micro-coupure réseau : on retente
+      }
+      if (st.status === 'done') return;
+      if (st.status === 'error') throw new Error(st.error || 'Échec de la génération.');
+      if (st.status === 'missing') throw new Error('Session expirée — relancez la génération.');
+    }
+    throw new Error('Génération anormalement longue. Rafraîchissez la page dans un instant.');
+  }
+
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -103,6 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
           topic,
           guide_type: guideType,
         });
+        await pollDraft('/admin/api/guides/draft-status');
         window.location.reload();
       } catch (err) {
         stopLoader();
@@ -123,6 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       try {
         await postJson('/admin/api/guides/improve', { instructions });
+        await pollDraft('/admin/api/guides/draft-status');
         window.location.reload();
       } catch (err) {
         stopLoader();

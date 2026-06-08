@@ -38,8 +38,9 @@ def client_ip() -> str:
 
 
 def is_analytics_excluded_ip() -> bool:
-    ip = client_ip()
-    return bool(ip and ip in ANALYTICS_EXCLUDED_IPS)
+    from admin.analytics_filters import is_analytics_excluded_ip as _is_excluded
+
+    return _is_excluded(client_ip())
 
 
 def detect_lang_from_path(path: str | None = None) -> str:

@@ -15,3 +15,5 @@ data/store/reviews.json
 data/store/settings.json
 data/store/affiliate_ids.json
 data/store/custom_partners.json
+
+.tools/

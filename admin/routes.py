@@ -14,6 +14,7 @@ from admin import groq_ai
 from admin import groq_client
 from admin import groq_destinations
 from admin import groq_newsletter
+from admin import draft_store
 from admin.image_service import attach_image_to_article, attach_image_to_destination, ensure_all_destination_images
 from admin.topic_suggestions import get_topic_suggestions
 from admin.admin_recommendations import (
@@ -47,6 +48,40 @@ from admin.manual_content import build_manual_article, build_manual_destination,
 from data.affiliate_partners import PARTNER_BY_KEY
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin", template_folder="../templates/admin")
+
+
+# ── Brouillons serveur ────────────────────────────────────────────────
+# Les brouillons (guides, destinations, newsletters) sont stockés côté serveur via
+# admin.draft_store : seul un petit token transite dans le cookie de session. Cela
+# contourne la limite 4 Ko du cookie ET permet une génération IA en tâche de fond
+# (cf. docstring de draft_store) — fini les « Failed to fetch » / timeouts Scalingo.
+
+def _draft_token_key(kind: str) -> str:
+    return f"{kind}_draft_token"
+
+
+def _get_draft(kind: str) -> dict | None:
+    return draft_store.get_draft(session.get(_draft_token_key(kind)))
+
+
+def _store_draft(kind: str, draft: dict) -> None:
+    token = draft_store.new_token()
+    draft_store.set_draft(token, draft)
+    session[_draft_token_key(kind)] = token
+
+
+def _clear_draft(kind: str) -> None:
+    draft_store.clear(session.pop(_draft_token_key(kind), None))
+
+
+def _start_draft_job(kind: str, fn) -> None:
+    token = draft_store.new_token()
+    session[_draft_token_key(kind)] = token
+    draft_store.start_job(token, fn, groq_client.friendly_error)
+
+
+def _draft_status(kind: str) -> dict:
+    return draft_store.status(session.get(_draft_token_key(kind)))
 
 
 def _generate_draft(topic: str, guide_type: str, city: str) -> dict:
@@ -136,27 +171,28 @@ def guides():
                     guide_type=request.form.get("guide_type", "article blog"),
                     city=city,
                 )
-                session["draft_article"] = article
+                _store_draft("article", article)
                 flash("Guide généré — vérifiez l'aperçu avant publication.", "success")
-            elif action == "publish" and session.get("draft_article"):
-                article = session["draft_article"]
+            elif action == "publish" and _get_draft("article"):
+                article = _get_draft("article")
                 if request.form.get("featured") == "on":
                     article["featured"] = True
                 if not article.get("image"):
                     article.update(attach_image_to_article(article, article.get("image_prompt")))
                 add_article(article)
-                session.pop("draft_article", None)
+                _clear_draft("article")
                 flash(f"Article publié : /blog/{article['slug']}", "success")
                 return redirect(url_for("admin.guides"))
-            elif action == "improve" and session.get("draft_article"):
-                if session["draft_article"].get("manual"):
+            elif action == "improve" and _get_draft("article"):
+                current = _get_draft("article")
+                if current.get("manual"):
                     flash("Utilisez l'onglet Manuel pour modifier ce brouillon.", "error")
                 else:
                     article = _improve_draft(
-                        session["draft_article"],
+                        current,
                         request.form.get("instructions", "Améliore le SEO et ajoute plus de détails pratiques."),
                     )
-                    session["draft_article"] = article
+                    _store_draft("article", article)
                     flash("Article amélioré par l'IA.", "success")
             elif action in ("manual_draft", "manual_publish"):
                 article = build_manual_article(request.form)
@@ -166,10 +202,10 @@ def guides():
                     if request.form.get("featured") == "on":
                         article["featured"] = True
                     add_article(article)
-                    session.pop("draft_article", None)
+                    _clear_draft("article")
                     flash(f"Article publié : /blog/{article['slug']}", "success")
                     return redirect(url_for("admin.guides"))
-                session["draft_article"] = article
+                _store_draft("article", article)
                 flash("Brouillon manuel enregistré — vérifiez l'aperçu.", "success")
         except ValueError as e:
             flash(str(e), "error")
@@ -178,16 +214,17 @@ def guides():
 
     suggestions = get_topic_suggestions(use_ai=False)
 
+    draft = _get_draft("article")
     return render_template(
         "admin/guides.html",
-        draft=session.get("draft_article"),
+        draft=draft,
         articles=get_articles()[:20],
         groq_ok=bool(os.environ.get("GROQ_API_KEY")),
         suggestions=suggestions,
         vietnam_cities=VIETNAM_CITIES,
         guide_types=GUIDE_TYPES,
         article_categories=[{"value": k, "label": v} for k, v in CATEGORY_LABELS.items()],
-        draft_is_manual=bool(session.get("draft_article", {}).get("manual")),
+        draft_is_manual=bool((draft or {}).get("manual")),
     )
 
 
@@ -211,34 +248,38 @@ def api_generate_guide():
     topic = (data.get("topic") or "").strip()
     guide_type = data.get("guide_type") or "article blog"
 
+    if not os.environ.get("GROQ_API_KEY"):
+        return jsonify({"ok": False, "error": "GROQ_API_KEY manquante"}), 400
     if not city or city not in ALL_CITY_VALUES:
         return jsonify({"ok": False, "error": "Ville obligatoire"}), 400
     if not topic:
         return jsonify({"ok": False, "error": "Sujet obligatoire"}), 400
 
-    try:
-        article = _generate_draft(topic, guide_type, city)
-        session["draft_article"] = article
-        return jsonify({"ok": True, "title": article["title"], "slug": article["slug"]})
-    except Exception as e:
-        return jsonify({"ok": False, "error": groq_client.friendly_error(e)}), 500
+    # Génération en tâche de fond : la requête répond aussitôt, le client interroge
+    # /api/guides/draft-status. Évite le timeout du routeur et rend les pauses
+    # anti rate-limit de Groq sans effet sur la requête HTTP.
+    _start_draft_job("article", lambda: _generate_draft(topic, guide_type, city))
+    return jsonify({"ok": True, "started": True})
 
 
 @admin_bp.route("/api/guides/improve", methods=["POST"])
 @login_required
 def api_improve_guide():
-    if not session.get("draft_article"):
+    draft = _get_draft("article")
+    if not draft:
         return jsonify({"ok": False, "error": "Aucun brouillon"}), 400
-    if session["draft_article"].get("manual"):
+    if draft.get("manual"):
         return jsonify({"ok": False, "error": "Brouillon manuel — utilisez l'onglet Manuel pour modifier."}), 400
     data = request.get_json(silent=True) or {}
     instructions = data.get("instructions") or "Améliore le SEO pour voyageurs français préparant un trip Vietnam."
-    try:
-        article = _improve_draft(session["draft_article"], instructions)
-        session["draft_article"] = article
-        return jsonify({"ok": True, "title": article["title"]})
-    except Exception as e:
-        return jsonify({"ok": False, "error": groq_client.friendly_error(e)}), 500
+    _start_draft_job("article", lambda: _improve_draft(draft, instructions))
+    return jsonify({"ok": True, "started": True})
+
+
+@admin_bp.route("/api/guides/draft-status")
+@login_required
+def api_guide_draft_status():
+    return jsonify(_draft_status("article"))
 
 
 def _generate_destination_draft(city: str, notes: str = "") -> dict:
@@ -258,10 +299,10 @@ def destinations_admin():
     if request.method == "POST":
         action = request.form.get("action")
         try:
-            if action == "publish" and session.get("draft_destination"):
-                dest = session["draft_destination"]
+            if action == "publish" and _get_draft("destination"):
+                dest = _get_draft("destination")
                 add_or_update_destination(dest)
-                session.pop("draft_destination", None)
+                _clear_draft("destination")
                 flash(f"Destination publiée : /{dest['slug']}", "success")
                 return redirect(url_for("admin.destinations_admin"))
             elif action == "delete":
@@ -275,10 +316,10 @@ def destinations_admin():
                     dest.update(attach_image_to_destination(dest, None))
                 if action == "manual_publish":
                     add_or_update_destination(dest)
-                    session.pop("draft_destination", None)
+                    _clear_draft("destination")
                     flash(f"Destination publiée : /{dest['slug']}", "success")
                     return redirect(url_for("admin.destinations_admin"))
-                session["draft_destination"] = dest
+                _store_draft("destination", dest)
                 flash("Brouillon manuel enregistré — vérifiez l'aperçu.", "success")
         except ValueError as e:
             flash(str(e), "error")
@@ -290,13 +331,14 @@ def destinations_admin():
     dest_list = sorted(get_destinations_dict().values(), key=lambda d: d.get("name", ""))
     city_options = [c for c in ALL_CITY_VALUES if c != "Tout le Vietnam"]
 
+    draft = _get_draft("destination")
     return render_template(
         "admin/destinations.html",
-        draft=session.get("draft_destination"),
+        draft=draft,
         destinations=dest_list,
         city_options=city_options,
         groq_ok=bool(os.environ.get("GROQ_API_KEY")),
-        draft_is_manual=bool(session.get("draft_destination", {}).get("manual")),
+        draft_is_manual=bool((draft or {}).get("manual")),
     )
 
 
@@ -307,15 +349,19 @@ def api_generate_destination():
     city = (data.get("city") or "").strip()
     notes = (data.get("notes") or "").strip()
 
+    if not os.environ.get("GROQ_API_KEY"):
+        return jsonify({"ok": False, "error": "GROQ_API_KEY manquante"}), 400
     if not city or city not in ALL_CITY_VALUES or city == "Tout le Vietnam":
         return jsonify({"ok": False, "error": "Ville obligatoire"}), 400
 
-    try:
-        dest = _generate_destination_draft(city, notes)
-        session["draft_destination"] = dest
-        return jsonify({"ok": True, "name": dest["name"], "slug": dest["slug"]})
-    except Exception as e:
-        return jsonify({"ok": False, "error": groq_client.friendly_error(e)}), 500
+    _start_draft_job("destination", lambda: _generate_destination_draft(city, notes))
+    return jsonify({"ok": True, "started": True})
+
+
+@admin_bp.route("/api/destinations/draft-status")
+@login_required
+def api_destination_draft_status():
+    return jsonify(_draft_status("destination"))
 
 
 @admin_bp.route("/newsletter", methods=["GET", "POST"])
@@ -326,10 +372,10 @@ def newsletter_admin():
         try:
             if action in ("manual_draft",):
                 draft = build_manual_newsletter(request.form)
-                session["draft_newsletter"] = draft
+                _store_draft("newsletter", draft)
                 flash("Brouillon email enregistré — vérifiez l'aperçu.", "success")
             elif action == "send_test":
-                draft = session.get("draft_newsletter")
+                draft = _get_draft("newsletter")
                 if not draft:
                     flash("Composez d'abord un email (IA ou manuel).", "error")
                     return redirect(url_for("admin.newsletter_admin"))
@@ -348,7 +394,7 @@ def newsletter_admin():
                 else:
                     flash(f"Échec d'envoi vers {test_email}.", "error")
             elif action == "send_one":
-                draft = session.get("draft_newsletter")
+                draft = _get_draft("newsletter")
                 if not draft:
                     flash("Composez d'abord un email (IA ou manuel).", "error")
                     return redirect(url_for("admin.newsletter_admin"))
@@ -364,7 +410,7 @@ def newsletter_admin():
                 else:
                     flash(f"Échec d'envoi vers {email}.", "error")
             elif action == "send_all":
-                draft = session.get("draft_newsletter")
+                draft = _get_draft("newsletter")
                 if not draft:
                     flash("Composez d'abord un email (IA ou manuel).", "error")
                     return redirect(url_for("admin.newsletter_admin"))
@@ -395,7 +441,7 @@ def newsletter_admin():
         return redirect(url_for("admin.newsletter_admin"))
 
     subscribers = get_newsletter_subscribers()
-    draft = session.get("draft_newsletter")
+    draft = _get_draft("newsletter")
     preview_html = render_newsletter_preview(draft) if draft else ""
     return render_template(
         "admin/newsletter.html",
@@ -414,7 +460,7 @@ def newsletter_admin():
 @login_required
 def newsletter_preview():
     from flask import Response
-    draft = session.get("draft_newsletter")
+    draft = _get_draft("newsletter")
     if not draft:
         return "Aucun brouillon.", 404
     return Response(render_newsletter_preview(draft), mimetype="text/html; charset=utf-8")
@@ -519,15 +565,22 @@ def api_generate_newsletter():
     email_type = data.get("email_type") or "actualite"
     notes = (data.get("notes") or "").strip()
 
+    if not os.environ.get("GROQ_API_KEY"):
+        return jsonify({"ok": False, "error": "GROQ_API_KEY manquante"}), 400
     if not topic:
         return jsonify({"ok": False, "error": "Sujet obligatoire"}), 400
 
-    try:
-        draft = groq_newsletter.generate_newsletter_email(topic, email_type, notes)
-        session["draft_newsletter"] = draft
-        return jsonify({"ok": True, "subject": draft["subject"]})
-    except Exception as e:
-        return jsonify({"ok": False, "error": groq_client.friendly_error(e)}), 500
+    _start_draft_job(
+        "newsletter",
+        lambda: groq_newsletter.generate_newsletter_email(topic, email_type, notes),
+    )
+    return jsonify({"ok": True, "started": True})
+
+
+@admin_bp.route("/api/newsletter/draft-status")
+@login_required
+def api_newsletter_draft_status():
+    return jsonify(_draft_status("newsletter"))
 
 
 @admin_bp.route("/affiliates", methods=["GET", "POST"])

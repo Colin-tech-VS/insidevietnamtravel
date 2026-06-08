@@ -49,6 +49,30 @@ document.addEventListener('DOMContentLoaded', () => {
     if (overlay) overlay.hidden = true;
   }
 
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  // Génération serveur en tâche de fond : on interroge le statut jusqu'à done/error.
+  async function pollDraft(statusUrl, maxMs = 360000) {
+    const start = Date.now();
+    while (Date.now() - start < maxMs) {
+      await sleep(2500);
+      let st;
+      try {
+        const res = await fetch(statusUrl, {
+          credentials: 'same-origin',
+          headers: { 'Accept': 'application/json' },
+        });
+        st = await res.json();
+      } catch (e) {
+        continue;
+      }
+      if (st.status === 'done') return;
+      if (st.status === 'error') throw new Error(st.error || 'Échec de la génération.');
+      if (st.status === 'missing') throw new Error('Session expirée — relancez la génération.');
+    }
+    throw new Error('Génération anormalement longue. Rafraîchissez la page dans un instant.');
+  }
+
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -72,6 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         const data = await res.json();
         if (!res.ok || !data.ok) throw new Error(data.error || 'Erreur génération');
+        await pollDraft('/admin/api/destinations/draft-status');
         window.location.reload();
       } catch (err) {
         stopLoader();

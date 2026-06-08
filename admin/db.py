@@ -2,7 +2,11 @@
 
 from datetime import date, datetime, timedelta
 
-from admin.analytics_filters import not_excluded_path_sql, visitor_traffic_sql
+from admin.analytics_filters import (
+    not_excluded_path_sql,
+    real_affiliate_click_sql,
+    visitor_traffic_sql,
+)
 from admin.database import get_connection, ensure_schema, init_schema, is_postgres
 
 init_db = init_schema
@@ -37,8 +41,13 @@ def _since_days(days: int) -> str:
 
 
 def _human_traffic_sql() -> str:
-    """Exclut crawlers, robots et chemins infra (ACME, etc.) des stats visiteurs."""
+    """Exclut crawlers, robots, localhost et chemins infra des stats visiteurs."""
     return visitor_traffic_sql(postgres=is_postgres())
+
+
+def _real_affiliate_click_sql() -> str:
+    """Clics affiliés humains vérifiés (user-agent + IP, hors legacy sans métadonnées)."""
+    return real_affiliate_click_sql(postgres=is_postgres())
 
 
 def _execute(conn, sql_pg: str, sql_sqlite: str, params=()):
@@ -70,13 +79,24 @@ def log_page_view(
         )
 
 
-def log_affiliate_click(provider: str, target_url: str, source_page: str):
+def log_affiliate_click(
+    provider: str,
+    target_url: str,
+    source_page: str,
+    *,
+    user_agent: str = "",
+    ip_hash: str = "",
+):
     with get_connection() as conn:
         _execute(
             conn,
-            "INSERT INTO affiliate_clicks (provider, target_url, source_page, created_at) VALUES (%s,%s,%s,%s)",
-            "INSERT INTO affiliate_clicks (provider, target_url, source_page, created_at) VALUES (?,?,?,?)",
-            (provider, target_url, source_page, _now_iso()),
+            """INSERT INTO affiliate_clicks
+               (provider, target_url, source_page, user_agent, ip_hash, created_at)
+               VALUES (%s,%s,%s,%s,%s,%s)""",
+            """INSERT INTO affiliate_clicks
+               (provider, target_url, source_page, user_agent, ip_hash, created_at)
+               VALUES (?,?,?,?,?,?)""",
+            (provider, target_url, source_page, user_agent, ip_hash, _now_iso()),
         )
 
 
@@ -105,10 +125,11 @@ def get_realtime_stats():
             f"SELECT COUNT(*) FROM page_views WHERE created_at >= ?{bot}",
             (_since(30),),
         ).fetchone()
+        aff = _real_affiliate_click_sql()
         clicks_30m = _execute(
             conn,
-            "SELECT COUNT(*) AS c FROM affiliate_clicks WHERE created_at >= %s",
-            "SELECT COUNT(*) FROM affiliate_clicks WHERE created_at >= ?",
+            f"SELECT COUNT(*) AS c FROM affiliate_clicks WHERE created_at >= %s{aff}",
+            f"SELECT COUNT(*) FROM affiliate_clicks WHERE created_at >= ?{aff}",
             (_since(30),),
         ).fetchone()
         recent = _execute(
@@ -206,13 +227,14 @@ def get_seo_view_rows(days: int = 30) -> list[dict]:
 
 
 def get_daily_affiliate_clicks(days: int = 30):
+    aff = _real_affiliate_click_sql()
     with get_connection() as conn:
         rows = _execute(
             conn,
-            """SELECT created_at::date AS day, COUNT(*) AS clicks
-               FROM affiliate_clicks WHERE created_at >= %s GROUP BY day ORDER BY day""",
-            """SELECT date(created_at) as day, COUNT(*) as clicks
-               FROM affiliate_clicks WHERE created_at >= ? GROUP BY day ORDER BY day""",
+            f"""SELECT created_at::date AS day, COUNT(*) AS clicks
+               FROM affiliate_clicks WHERE created_at >= %s{aff} GROUP BY day ORDER BY day""",
+            f"""SELECT date(created_at) as day, COUNT(*) as clicks
+               FROM affiliate_clicks WHERE created_at >= ?{aff} GROUP BY day ORDER BY day""",
             (_since_days(days),),
         ).fetchall()
     return [_row_dict(r) for r in rows]
@@ -232,19 +254,20 @@ def get_revenue_by_source(days: int = 90):
 
 
 def get_affiliate_stats(days: int = 30):
+    aff = _real_affiliate_click_sql()
     with get_connection() as conn:
         by_provider = _execute(
             conn,
-            """SELECT provider, COUNT(*) AS clicks FROM affiliate_clicks
-               WHERE created_at >= %s GROUP BY provider ORDER BY clicks DESC""",
-            """SELECT provider, COUNT(*) as clicks FROM affiliate_clicks
-               WHERE created_at >= ? GROUP BY provider ORDER BY clicks DESC""",
+            f"""SELECT provider, COUNT(*) AS clicks FROM affiliate_clicks
+               WHERE created_at >= %s{aff} GROUP BY provider ORDER BY clicks DESC""",
+            f"""SELECT provider, COUNT(*) as clicks FROM affiliate_clicks
+               WHERE created_at >= ?{aff} GROUP BY provider ORDER BY clicks DESC""",
             (_since_days(days),),
         ).fetchall()
         total_clicks = _execute(
             conn,
-            "SELECT COUNT(*) AS c FROM affiliate_clicks WHERE created_at >= %s",
-            "SELECT COUNT(*) FROM affiliate_clicks WHERE created_at >= ?",
+            f"SELECT COUNT(*) AS c FROM affiliate_clicks WHERE created_at >= %s{aff}",
+            f"SELECT COUNT(*) FROM affiliate_clicks WHERE created_at >= ?{aff}",
             (_since_days(days),),
         ).fetchone()
     tc = total_clicks["c"] if isinstance(total_clicks, dict) else total_clicks[0]
@@ -291,10 +314,11 @@ def get_dashboard_totals():
             f"SELECT COUNT(*) AS c FROM page_views WHERE created_at::date = CURRENT_DATE{bot}",
             f"SELECT COUNT(*) FROM page_views WHERE date(created_at) = date('now'){bot}",
         ).fetchone()
+        aff = _real_affiliate_click_sql()
         total_clicks = _execute(
             conn,
-            "SELECT COUNT(*) AS c FROM affiliate_clicks",
-            "SELECT COUNT(*) FROM affiliate_clicks",
+            f"SELECT COUNT(*) AS c FROM affiliate_clicks WHERE 1=1{aff}",
+            f"SELECT COUNT(*) FROM affiliate_clicks WHERE 1=1{aff}",
         ).fetchone()
     def _v(row):
         return row["c"] if isinstance(row, dict) else row[0]

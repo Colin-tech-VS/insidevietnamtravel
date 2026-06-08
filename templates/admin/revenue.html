@@ -6,7 +6,7 @@
 
 {% block content %}
 
-<p class="page-sub">Commissions <strong>réellement reçues</strong> — à saisir quand une plateforme vous paie. Distinct du potentiel estimé (clics × taux, partenaires actifs).</p>
+<p class="page-sub">Commissions <strong>réellement reçues</strong> — à saisir quand une plateforme vous paie. Le potentiel estimé compte uniquement les clics humains vérifiés (hors robots, scanners et vos visites).</p>
 
 
 
@@ -40,7 +40,7 @@
 
         <span class="stat-value">{% if est_commission %}~{{ est_commission }} €{% else %}—{% endif %}</span>
 
-        <span class="stat-hint">{% if affiliates_configured %}Uniquement partenaires avec ID réel{% else %}Aucun ID affilié configuré{% endif %}</span>
+        <span class="stat-hint">{% if affiliates_configured %}Clics humains vérifiés × taux{% else %}Aucun ID affilié configuré{% endif %}</span>
 
       </div>
 
