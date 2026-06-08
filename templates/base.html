@@ -236,10 +236,12 @@
       </nav>
 
       <div class="header-actions">
-        <button type="button" class="site-search__open" data-search-open aria-label="{{ t('search.open') }}" aria-haspopup="dialog">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <button type="button" class="site-search-bar" data-search-open aria-label="{{ t('search.open') }}" aria-haspopup="dialog">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
           </svg>
+          <span class="site-search-bar__text">{{ t('search.bar') }}</span>
+          <kbd class="site-search-bar__kbd">/</kbd>
         </button>
         <nav class="lang-switch" aria-label="{{ t('lang.label') }}">
           <a href="{{ page_url_in_lang('fr') }}"
@@ -268,6 +270,8 @@
        data-empty="{{ t('search.empty') }}"
        data-group-destination="{{ t('search.group.destination') }}"
        data-group-itinerary="{{ t('search.group.itinerary') }}"
+       data-group-hotel="{{ t('search.group.hotel') }}"
+       data-group-activity="{{ t('search.group.activity') }}"
        data-group-article="{{ t('search.group.article') }}"
        data-group-tool="{{ t('search.group.tool') }}">
     <div class="search-overlay__panel">

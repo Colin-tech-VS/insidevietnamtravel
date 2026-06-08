@@ -878,6 +878,34 @@ def search_index():
             "u": lang_url("destination_page", lang, slug=slug),
             "g": "destination",
         })
+        loc = affiliate_location(slug)
+        dest_name = d.get("name", slug)
+        # Hôtels — uniquement des liens affiliés trackés (Booking / Agoda).
+        for hotel in (d.get("hotels") or []):
+            provider = hotel.get("provider")
+            if not provider:
+                continue
+            price = hotel.get("price_hint", "")
+            items.append({
+                "t": hotel.get("name", ""),
+                "s": f"{dest_name} · {price}".strip(" ·"),
+                "u": tracked_affiliate_url(provider, build_hotel_link(provider, hotel, loc)),
+                "g": "hotel",
+                "x": 1,
+            })
+        # Activités & tours — liens affiliés trackés (GetYourGuide / Viator).
+        for act in (d.get("activities") or []):
+            provider = act.get("provider")
+            if not provider:
+                continue
+            price = act.get("price_hint", "")
+            items.append({
+                "t": act.get("name", ""),
+                "s": f"{dest_name} · {price}".strip(" ·"),
+                "u": tracked_affiliate_url(provider, build_activity_link(provider, act, loc)),
+                "g": "activity",
+                "x": 1,
+            })
     for slug, it in _itineraries(lang).items():
         items.append({
             "t": it.get("title", slug),

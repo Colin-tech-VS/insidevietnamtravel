@@ -435,19 +435,25 @@ UI: dict[str, dict[str, str]] = {
     "search.open": {"fr": "Ouvrir la recherche", "en": "Open search"},
     "search.close": {"fr": "Fermer la recherche", "en": "Close search"},
     "search.placeholder": {
-        "fr": "Destination, itinéraire, visa, budget…",
-        "en": "Destination, itinerary, visa, budget…",
+        "fr": "Destination, hôtel, activité, itinéraire…",
+        "en": "Destination, hotel, activity, itinerary…",
+    },
+    "search.bar": {
+        "fr": "Rechercher une destination, un hôtel, une activité…",
+        "en": "Search a destination, hotel, activity…",
     },
     "search.hint": {
-        "fr": "Tapez pour filtrer guides, articles et outils.",
-        "en": "Type to filter guides, articles and tools.",
+        "fr": "Tapez pour trouver une destination, un hôtel, une activité, un guide ou un outil.",
+        "en": "Type to find a destination, hotel, activity, guide or tool.",
     },
     "search.empty": {
-        "fr": "Aucun résultat — essayez « Hanoï », « budget » ou « visa ».",
-        "en": "No result — try “Hanoi”, “budget” or “visa”.",
+        "fr": "Aucun résultat — essayez « Hanoï », « food tour » ou « budget ».",
+        "en": "No result — try “Hanoi”, “food tour” or “budget”.",
     },
     "search.group.destination": {"fr": "Destinations", "en": "Destinations"},
     "search.group.itinerary": {"fr": "Itinéraires", "en": "Itineraries"},
+    "search.group.hotel": {"fr": "Hôtels", "en": "Hotels"},
+    "search.group.activity": {"fr": "Activités & tours", "en": "Activities & tours"},
     "search.group.article": {"fr": "Articles", "en": "Articles"},
     "search.group.tool": {"fr": "Outils", "en": "Tools"},
 

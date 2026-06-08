@@ -11,9 +11,11 @@
   var loading = false;
   var lastFocus = null;
 
-  var GROUPS = ['destination', 'itinerary', 'article', 'tool'];
+  var GROUPS = ['destination', 'hotel', 'activity', 'itinerary', 'article', 'tool'];
   var groupLabel = {
     destination: overlay.dataset.groupDestination,
+    hotel: overlay.dataset.groupHotel,
+    activity: overlay.dataset.groupActivity,
     itinerary: overlay.dataset.groupItinerary,
     article: overlay.dataset.groupArticle,
     tool: overlay.dataset.groupTool,
@@ -76,8 +78,13 @@
       if (!group.length) return;
       html += '<div class="search-group"><p class="search-group__label">' + esc(groupLabel[g]) + '</p>';
       group.forEach(function (m) {
-        html += '<a class="search-result" href="' + esc(m.u) + '">' +
-          '<span class="search-result__title">' + esc(m.t) + '</span>' +
+        // Les hôtels et activités sont des liens affiliés (m.x) : nouvel onglet + rel.
+        var attrs = m.x
+          ? ' target="_blank" rel="sponsored nofollow noopener"'
+          : '';
+        var badge = m.x ? '<span class="search-result__ext" aria-hidden="true">↗</span>' : '';
+        html += '<a class="search-result' + (m.x ? ' search-result--affiliate' : '') + '" href="' + esc(m.u) + '"' + attrs + '>' +
+          '<span class="search-result__title">' + esc(m.t) + badge + '</span>' +
           (m.s ? '<span class="search-result__sub">' + esc(m.s) + '</span>' : '') +
           '</a>';
       });
