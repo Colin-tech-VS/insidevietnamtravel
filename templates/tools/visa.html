@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% from "macros/seo.html" import json_ld_graph with context %}
+{% from "macros/affiliates.html" import insurance_banner with context %}
+
+{% block head_preload %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tools.css') }}">
+{% endblock %}
+
+{% set steps = [
+  ("🌐", ("Portail officiel", "Official portal"), ("Créez votre demande sur evisa.gov.vn.", "Create your application on evisa.gov.vn.")),
+  ("📄", ("Documents", "Documents"), ("Photo d'identité + scan de la page passeport.", "Passport photo + scan of the passport page.")),
+  ("💳", ("Paiement", "Payment"), ("Réglez les frais (~25 $) par carte en ligne.", "Pay the fee (~$25) by card online.")),
+  ("✅", ("Réception", "Receive"), ("Recevez l'e-visa par email sous 3 à 5 jours, à imprimer.", "Get the e-visa by email within 3–5 days, to print.")),
+] %}
+
+{% block structured_data %}
+{{ json_ld_graph([
+  {
+    "@type": "WebPage",
+    "name": meta_title,
+    "description": meta_description,
+    "url": canonical_url,
+    "inLanguage": "en-GB" if lang == 'en' else "fr-FR"
+  },
+  seo_breadcrumb([
+    (t('nav.home'), site.SITE_URL ~ lang_url('index')),
+    (t('visa.title'), None),
+  ]),
+]) }}
+{% endblock %}
+
+{% block content %}
+<header class="page-hero">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="{{ t('nav.main') }}">
+      <ol>
+        <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+        <li aria-current="page">{{ t('tools.visa') }}</li>
+      </ol>
+    </nav>
+    <span class="tool-eyebrow">{{ t('visa.eyebrow') }}</span>
+    <h1>{{ t('visa.title') }}</h1>
+    <p class="page-hero__lead">{{ t('visa.lead') }}</p>
+  </div>
+</header>
+
+<section class="section">
+  <div class="container">
+    <div class="visa-tool">
+      <form class="visa-form" id="visa-form"
+            data-msg-exempt="{{ t('visa.result.exempt') }}"
+            data-msg-exempt-over="{{ t('visa.result.exempt_over') }}"
+            data-msg-evisa="{{ t('visa.result.evisa') }}"
+            data-msg-over90="{{ t('visa.result.over90') }}"
+            data-evisa-max="{{ visa.evisa_max_days }}">
+        <div class="visa-form__row">
+          <div class="form-field">
+            <label for="visa-country">{{ t('visa.q_country') }}</label>
+            <select id="visa-country">
+              {% for c in visa.countries %}
+              <option value="{{ c.exempt_days }}">{{ c.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="visa-days">{{ t('visa.q_days') }}</label>
+            <input type="number" id="visa-days" min="1" max="180" value="15" inputmode="numeric">
+          </div>
+        </div>
+      </form>
+
+      <output class="visa-result" id="visa-result" for="visa-form" aria-live="polite"></output>
+
+      <a href="{{ visa.evisa_url }}" target="_blank" rel="noopener" class="btn btn-primary visa-apply">
+        {{ t('visa.apply') }} →
+      </a>
+    </div>
+
+    <div class="visa-steps-block">
+      <div class="section-header">
+        <h2>{{ t('visa.steps_title') }}</h2>
+      </div>
+      <ol class="visa-steps">
+        {% for icon, title, desc in steps %}
+        <li class="visa-step">
+          <span class="visa-step__num">{{ loop.index }}</span>
+          <span class="visa-step__icon" aria-hidden="true">{{ icon }}</span>
+          <span class="visa-step__title">{{ title[1] if lang == 'en' else title[0] }}</span>
+          <span class="visa-step__desc">{{ desc[1] if lang == 'en' else desc[0] }}</span>
+        </li>
+        {% endfor %}
+      </ol>
+    </div>
+
+    <p class="tool-note tool-note--warn">⚠️ {{ t('visa.disclaimer') }}</p>
+  </div>
+</section>
+
+<section class="section section--monetize">
+  <div class="container">
+    {{ insurance_banner() }}
+  </div>
+</section>
+
+<script>
+  window.visaInit = function () {
+    var form = document.getElementById('visa-form');
+    var out = document.getElementById('visa-result');
+    if (!form || !out) return;
+    var country = document.getElementById('visa-country');
+    var days = document.getElementById('visa-days');
+    var max = parseInt(form.dataset.evisaMax, 10) || 90;
+
+    function compute() {
+      var exempt = parseInt(country.value, 10) || 0;
+      var stay = parseInt(days.value, 10) || 0;
+      var cls = 'ok', msg;
+      if (stay > max) { cls = 'warn'; msg = form.dataset.msgOver90; }
+      else if (exempt && stay <= exempt) { cls = 'ok'; msg = form.dataset.msgExempt.replace('{days}', exempt); }
+      else if (exempt && stay > exempt) { cls = 'info'; msg = form.dataset.msgExemptOver.replace('{days}', exempt); }
+      else { cls = 'info'; msg = form.dataset.msgEvisa; }
+      out.className = 'visa-result is-visible visa-result--' + cls;
+      out.textContent = msg;
+    }
+    country.addEventListener('change', compute);
+    days.addEventListener('input', compute);
+    compute();
+  };
+  document.addEventListener('DOMContentLoaded', window.visaInit);
+</script>
+{% endblock %}

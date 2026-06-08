@@ -212,6 +212,15 @@
             </ul>
           </li>
           <li class="nav-dropdown">
+            <button type="button" class="nav-dropdown__toggle" aria-expanded="false" aria-controls="nav-tools">{{ t('nav.tools') }}</button>
+            <ul id="nav-tools" class="nav-dropdown__menu">
+              <li><a href="{{ lang_url('best_season') }}">{{ t('tools.season') }}</a></li>
+              <li><a href="{{ lang_url('budget_tool') }}">{{ t('tools.budget') }}</a></li>
+              <li><a href="{{ lang_url('visa_tool') }}">{{ t('tools.visa') }}</a></li>
+              <li><a href="{{ lang_url('essentials_tool') }}">{{ t('tools.essentials') }}</a></li>
+            </ul>
+          </li>
+          <li class="nav-dropdown">
             <button type="button" class="nav-dropdown__toggle" aria-expanded="false" aria-controls="nav-blog">{{ t('nav.blog') }}</button>
             <ul id="nav-blog" class="nav-dropdown__menu">
               <li><a href="{{ lang_url('blog_index') }}">{{ t('blog.title') }}</a></li>
@@ -226,6 +235,11 @@
       </nav>
 
       <div class="header-actions">
+        <button type="button" class="site-search__open" data-search-open aria-label="{{ t('search.open') }}" aria-haspopup="dialog">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
+          </svg>
+        </button>
         <nav class="lang-switch" aria-label="{{ t('lang.label') }}">
           <a href="{{ page_url_in_lang('fr') }}"
              hreflang="fr"
@@ -247,6 +261,28 @@
   </header>
 
   <div class="nav-backdrop" id="nav-backdrop" aria-hidden="true"></div>
+
+  <div class="search-overlay" id="search-overlay" role="dialog" aria-modal="true" aria-label="{{ t('search.label') }}" hidden
+       data-index-url="{{ url_for('search_index') }}?lang={{ lang }}"
+       data-empty="{{ t('search.empty') }}"
+       data-group-destination="{{ t('search.group.destination') }}"
+       data-group-itinerary="{{ t('search.group.itinerary') }}"
+       data-group-article="{{ t('search.group.article') }}"
+       data-group-tool="{{ t('search.group.tool') }}">
+    <div class="search-overlay__panel">
+      <div class="search-overlay__bar">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
+        </svg>
+        <input type="search" class="search-overlay__input" id="search-input"
+               placeholder="{{ t('search.placeholder') }}" aria-label="{{ t('search.label') }}"
+               autocomplete="off" spellcheck="false">
+        <button type="button" class="search-overlay__close" data-search-close aria-label="{{ t('search.close') }}">✕</button>
+      </div>
+      <p class="search-overlay__hint" id="search-hint">{{ t('search.hint') }}</p>
+      <div class="search-results" id="search-results"></div>
+    </div>
+  </div>
 
   <main id="main" role="main">
 
@@ -300,6 +336,15 @@
           <li><a href="{{ lang_url('blog_index') }}">{{ t('footer.all_articles') }}</a></li>
         </ul>
       </div>
+      <div class="footer-links">
+        <h3>{{ t('footer.tools') }}</h3>
+        <ul>
+          <li><a href="{{ lang_url('best_season') }}">{{ t('tools.season') }}</a></li>
+          <li><a href="{{ lang_url('budget_tool') }}">{{ t('tools.budget') }}</a></li>
+          <li><a href="{{ lang_url('visa_tool') }}">{{ t('tools.visa') }}</a></li>
+          <li><a href="{{ lang_url('essentials_tool') }}">{{ t('tools.essentials') }}</a></li>
+        </ul>
+      </div>
     </div>
     <div class="footer-bottom container">
       <p>&copy; {{ current_year }} Inside Vietnam Travel. {{ t('footer.copyright') }}</p>
@@ -320,6 +365,7 @@
   <script src="{{ url_for('static', filename='js/loader.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/cookies.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/search.js') }}" defer></script>
   {% block scripts %}{% endblock %}
 
 </body>

@@ -132,35 +132,39 @@
 
         <h2>Historique des commissions</h2>
 
-        <table class="data-table">
+        <div class="table-scroll">
 
-          <thead><tr><th>Date</th><th>Source</th><th>Montant</th><th>Note</th></tr></thead>
+          <table class="data-table">
 
-          <tbody>
+            <thead><tr><th>Date</th><th>Source</th><th>Montant</th><th>Note</th></tr></thead>
 
-            {% for r in revenue.entries %}
+            <tbody>
 
-            <tr>
+              {% for r in revenue.entries %}
 
-              <td>{{ r.created_at[:10] }}</td>
+              <tr>
 
-              <td>{{ r.source }}</td>
+                <td>{{ r.created_at[:10] }}</td>
 
-              <td><strong>{{ r.amount }} {{ r.currency }}</strong></td>
+                <td>{{ r.source }}</td>
 
-              <td>{{ r.note or '—' }}</td>
+                <td><strong>{{ r.amount }} {{ r.currency }}</strong></td>
 
-            </tr>
+                <td>{{ r.note or '—' }}</td>
 
-            {% else %}
+              </tr>
 
-            <tr><td colspan="4" class="muted">Aucun revenu enregistré — ajoutez vos commissions reçues des plateformes.</td></tr>
+              {% else %}
 
-            {% endfor %}
+              <tr><td colspan="4" class="muted">Aucun revenu enregistré — ajoutez vos commissions reçues des plateformes.</td></tr>
 
-          </tbody>
+              {% endfor %}
 
-        </table>
+            </tbody>
+
+          </table>
+
+        </div>
 
       </section>
 

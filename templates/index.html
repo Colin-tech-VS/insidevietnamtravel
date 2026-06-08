@@ -3,6 +3,7 @@
 {% from "macros/articles.html" import article_card with context %}
 {% from "macros/images.html" import responsive_img with context %}
 {% from "macros/seo.html" import json_ld_graph with context %}
+{% from "macros/reviews.html" import reviews_section with context %}
 
 {% block meta_keywords %}
 <meta name="keywords" content="{{ meta_keywords or site.SITE_KEYWORDS }}">
@@ -110,6 +111,8 @@
     <p class="section-cta"><a href="{{ lang_url('blog_index') }}" class="btn btn-primary">{{ t('home.blog.cta') }}</a></p>
   </div>
 </section>
+
+{{ reviews_section() }}
 
 <section class="section section--monetize">
   <div class="container monetize-grid">

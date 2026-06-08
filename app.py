@@ -63,6 +63,10 @@ RESERVED_SLUGS = frozenset({
     "categorie", "category", "static", "favicon.ico",
     "en", "about", "privacy", "legal", "unsubscribe", "contact", "guide-pdf",
     "preparer-mon-voyage", "plan-my-trip",
+    "quand-partir-au-vietnam", "best-time-to-visit-vietnam",
+    "calculateur-budget-vietnam", "vietnam-budget-calculator",
+    "visa-vietnam", "vietnam-visa",
+    "esim-assurance-vietnam", "esim-insurance-vietnam",
 })
 
 load_dotenv()
@@ -241,6 +245,22 @@ def geo_faq_items():
 
 
 @app.template_global()
+def traveller_reviews():
+    from admin.store import localized_reviews
+    return localized_reviews(get_lang())
+
+
+@app.template_global()
+def reviews_aggregate():
+    from admin.store import get_reviews
+    reviews = get_reviews()
+    ratings = [r.get("rating", 0) for r in reviews if r.get("rating")]
+    if not ratings:
+        return {"count": 0, "average": 0}
+    return {"count": len(ratings), "average": round(sum(ratings) / len(ratings), 1)}
+
+
+@app.template_global()
 def is_article_new(article, days: int = 14) -> bool:
     """Badge « Nouveau » pour les articles publiés récemment."""
     try:
@@ -406,6 +426,76 @@ def prepare_trip():
         planner_catalog=catalog,
         meta_title=ui_t("meta.prepare.title", lang),
         meta_description=ui_t("meta.prepare.desc", lang),
+    )
+
+
+# ── Outils voyageurs ──────────────────────────────────────────────────
+
+@app.route("/quand-partir-au-vietnam")
+@app.route("/en/best-time-to-visit-vietnam")
+def best_season():
+    from data.travel_tools import build_seasons
+
+    lang = get_lang()
+    return render_template(
+        "tools/best_season.html",
+        seasons=build_seasons(lang),
+        meta_title=t("meta.season.title", lang),
+        meta_description=t("meta.season.desc", lang),
+        meta_keywords="meilleure saison Vietnam, quand partir Vietnam, météo Vietnam"
+        if lang == "fr"
+        else "best time Vietnam, when to visit Vietnam, Vietnam weather",
+    )
+
+
+@app.route("/calculateur-budget-vietnam")
+@app.route("/en/vietnam-budget-calculator")
+def budget_tool():
+    from data.travel_tools import build_budget
+
+    lang = get_lang()
+    return render_template(
+        "tools/budget.html",
+        budget=build_budget(lang),
+        meta_title=t("meta.budget.title", lang),
+        meta_description=t("meta.budget.desc", lang),
+        meta_keywords="budget voyage Vietnam, coût voyage Vietnam, prix Vietnam"
+        if lang == "fr"
+        else "Vietnam travel budget, Vietnam trip cost, Vietnam prices",
+    )
+
+
+@app.route("/visa-vietnam")
+@app.route("/en/vietnam-visa")
+def visa_tool():
+    from data.travel_tools import build_visa
+
+    lang = get_lang()
+    return render_template(
+        "tools/visa.html",
+        visa=build_visa(lang),
+        meta_title=t("meta.visa.title", lang),
+        meta_description=t("meta.visa.desc", lang),
+        meta_keywords="visa Vietnam, e-visa Vietnam, exemption visa Vietnam"
+        if lang == "fr"
+        else "Vietnam visa, Vietnam e-visa, Vietnam visa exemption",
+    )
+
+
+@app.route("/esim-assurance-vietnam")
+@app.route("/en/esim-insurance-vietnam")
+def essentials_tool():
+    from data.travel_tools import build_comparators
+
+    lang = get_lang()
+    return render_template(
+        "tools/essentials.html",
+        compare=build_comparators(lang),
+        meta_title=t("meta.essentials.title", lang),
+        meta_description=t("meta.essentials.desc", lang),
+        meta_keywords="eSIM Vietnam, assurance voyage Vietnam, Airalo Holafly"
+        if lang == "fr"
+        else "Vietnam eSIM, Vietnam travel insurance, Airalo Holafly",
     )
 
 
@@ -733,6 +823,53 @@ def destination_page(slug):
         meta_description=truncate_text(dest.get("meta_description", ""), 160),
         meta_keywords=t("meta.dest.kw", lang, name=dest["name"]),
     )
+
+
+# ── Recherche (index client) ──────────────────────────────────────────
+
+@app.route("/search-index.json")
+def search_index():
+    from flask import jsonify
+
+    lang = "en" if (request.args.get("lang") == "en") else "fr"
+    items = []
+
+    for slug, d in _destinations(lang).items():
+        items.append({
+            "t": d.get("name", slug),
+            "s": d.get("tagline", ""),
+            "u": lang_url("destination_page", lang, slug=slug),
+            "g": "destination",
+        })
+    for slug, it in _itineraries(lang).items():
+        items.append({
+            "t": it.get("title", slug),
+            "s": it.get("summary", ""),
+            "u": lang_url("itinerary", lang, slug=slug),
+            "g": "itinerary",
+        })
+    for a in _articles(lang):
+        items.append({
+            "t": a.get("title", ""),
+            "s": a.get("excerpt", ""),
+            "u": lang_url("article", lang, slug=a["slug"]),
+            "g": "article",
+        })
+    for endpoint, key in (
+        ("best_season", "tools.season"),
+        ("budget_tool", "tools.budget"),
+        ("visa_tool", "tools.visa"),
+        ("essentials_tool", "tools.essentials"),
+        ("prepare_trip", "nav.prepare"),
+    ):
+        items.append({
+            "t": t(key, lang),
+            "s": "",
+            "u": lang_url(endpoint, lang),
+            "g": "tool",
+        })
+
+    return jsonify(items)
 
 
 # ── SEO ───────────────────────────────────────────────────────────────

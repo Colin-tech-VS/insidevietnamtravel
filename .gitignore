@@ -1,6 +1,7 @@
 .env
 .env.local
 data/site.db
+data/site.db-journal
 data/newsletter_subscribers.txt
 __pycache__/
 *.pyc
@@ -10,3 +11,7 @@ venv/
 *.log
 .DS_Store
 Thumbs.db
+data/store/reviews.json
+data/store/settings.json
+data/store/affiliate_ids.json
+data/store/custom_partners.json

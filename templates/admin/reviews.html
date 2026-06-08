@@ -1,0 +1,106 @@
+{% extends "admin/layout.html" %}
+{% block title %}Avis{% endblock %}
+{% block page_title %}Avis voyageurs{% endblock %}
+
+{% block content %}
+<p class="page-sub">Témoignages affichés sur la page d'accueil. Note moyenne : <strong>{{ avg }}/5</strong> · {{ reviews|length }} avis.</p>
+
+<div class="admin-page-layout admin-page-layout--wide">
+  <div class="admin-page-main">
+    <section class="panel">
+      <h2>{% if editing %}✎ Modifier l'avis{% else %}➕ Ajouter un avis{% endif %}</h2>
+      <form method="post">
+        <input type="hidden" name="action" value="save">
+        {% if editing %}<input type="hidden" name="id" value="{{ editing.id }}">{% endif %}
+
+        <div class="form-row form-row--2">
+          <div class="form-field">
+            <label for="rv-author">Nom affiché <span class="required">*</span></label>
+            <input type="text" id="rv-author" name="author" required maxlength="80"
+                   value="{{ editing.author if editing else '' }}" placeholder="Ex: Claire & Thomas">
+          </div>
+          <div class="form-field">
+            <label for="rv-location">Ville / pays</label>
+            <input type="text" id="rv-location" name="location" maxlength="80"
+                   value="{{ editing.location if editing else '' }}" placeholder="Ex: Lyon, France">
+          </div>
+        </div>
+
+        <div class="form-row form-row--2">
+          <div class="form-field">
+            <label for="rv-rating">Note (1 à 5)</label>
+            <select id="rv-rating" name="rating">
+              {% for n in [5, 4, 3, 2, 1] %}
+              <option value="{{ n }}" {% if editing and editing.rating == n %}selected{% elif not editing and n == 5 %}selected{% endif %}>{{ '★' * n }}{{ '☆' * (5 - n) }} ({{ n }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="rv-date">Date</label>
+            <input type="date" id="rv-date" name="date" value="{{ editing.date if editing else '' }}">
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="rv-text-fr">Témoignage (FR) <span class="required">*</span></label>
+          <textarea id="rv-text-fr" name="text_fr" required rows="3" class="textarea-code"
+                    placeholder="Le témoignage en français…">{{ editing.text.fr if editing else '' }}</textarea>
+        </div>
+        <div class="form-field">
+          <label for="rv-text-en">Témoignage (EN) <small>— optionnel, repli sur le FR</small></label>
+          <textarea id="rv-text-en" name="text_en" rows="3" class="textarea-code"
+                    placeholder="The testimonial in English…">{{ editing.text.en if editing else '' }}</textarea>
+        </div>
+
+        <div class="btn-row">
+          <button type="submit" class="btn btn-primary">{% if editing %}Enregistrer les modifications{% else %}Ajouter l'avis{% endif %}</button>
+          {% if editing %}<a href="{{ url_for('admin.reviews_admin') }}" class="btn btn-secondary">Annuler</a>{% endif %}
+        </div>
+      </form>
+    </section>
+
+    {% if reviews %}
+    <section class="panel">
+      <h2>Avis publiés</h2>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr><th>Note</th><th>Auteur</th><th>Lieu</th><th>Date</th><th>Extrait (FR)</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for r in reviews %}
+            <tr>
+              <td style="color:var(--gold);white-space:nowrap;">{{ '★' * r.rating }}</td>
+              <td>{{ r.author }}</td>
+              <td>{{ r.location or '—' }}</td>
+              <td>{{ r.date }}</td>
+              <td style="white-space:normal;max-width:280px;">{{ (r.text.fr if r.text is mapping else r.text)[:90] }}…</td>
+              <td class="admin-table__actions">
+                <a href="{{ url_for('admin.reviews_admin', edit=r.id) }}" class="btn btn-ghost btn-sm">Modifier</a>
+                <form method="post" style="display:inline;" onsubmit="return confirm('Supprimer cet avis ?');">
+                  <input type="hidden" name="action" value="delete">
+                  <input type="hidden" name="id" value="{{ r.id }}">
+                  <button type="submit" class="btn btn-ghost btn-sm">Supprimer</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    {% endif %}
+  </div>
+
+  <aside class="admin-page-aside">
+    <section class="panel">
+      <h2>💡 Bon à savoir</h2>
+      <ul class="status-list">
+        <li class="ok">Les avis s'affichent sur la page d'accueil.</li>
+        <li class="ok">La note moyenne alimente le SEO (AggregateRating).</li>
+        <li class="warn">N'inventez pas d'avis — utilisez de vrais retours.</li>
+      </ul>
+    </section>
+  </aside>
+</div>
+{% endblock %}
