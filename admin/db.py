@@ -1,10 +1,26 @@
 """Analytics, revenus et clics affiliés — PostgreSQL (Supabase) ou SQLite local."""
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from admin.database import get_connection, ensure_schema, init_schema, is_postgres
 
 init_db = init_schema
+
+
+def _serialize_value(v):
+    if isinstance(v, datetime):
+        return v.isoformat()
+    if isinstance(v, date):
+        return v.isoformat()
+    return v
+
+
+def _row_dict(row) -> dict:
+    if row is None:
+        return {}
+    if isinstance(row, dict):
+        return {k: _serialize_value(v) for k, v in row.items()}
+    return {k: _serialize_value(row[k]) for k in row.keys()}
 
 
 def _now_iso() -> str:
@@ -94,8 +110,8 @@ def get_realtime_stats():
         "active_visitors": active["c"] if isinstance(active, dict) else active[0],
         "views_30m": views_30m["c"] if isinstance(views_30m, dict) else views_30m[0],
         "clicks_30m": clicks_30m["c"] if isinstance(clicks_30m, dict) else clicks_30m[0],
-        "recent": [dict(r) for r in recent],
-        "top_pages": [dict(r) for r in top_pages],
+        "recent": [_row_dict(r) for r in recent],
+        "top_pages": [_row_dict(r) for r in top_pages],
     }
 
 
@@ -109,7 +125,7 @@ def get_daily_views(days: int = 30):
                FROM page_views WHERE created_at >= ? GROUP BY day ORDER BY day""",
             (_since_days(days),),
         ).fetchall()
-    return [dict(r) for r in rows]
+    return [_row_dict(r) for r in rows]
 
 
 def get_geo_view_rows(days: int = 30) -> list[dict]:
@@ -123,7 +139,7 @@ def get_geo_view_rows(days: int = 30) -> list[dict]:
                FROM page_views WHERE created_at >= ? ORDER BY id DESC""",
             (_since_days(days),),
         ).fetchall()
-    return [dict(r) for r in rows]
+    return [_row_dict(r) for r in rows]
 
 
 def get_daily_affiliate_clicks(days: int = 30):
@@ -136,7 +152,7 @@ def get_daily_affiliate_clicks(days: int = 30):
                FROM affiliate_clicks WHERE created_at >= ? GROUP BY day ORDER BY day""",
             (_since_days(days),),
         ).fetchall()
-    return [dict(r) for r in rows]
+    return [_row_dict(r) for r in rows]
 
 
 def get_revenue_by_source(days: int = 90):
@@ -149,7 +165,7 @@ def get_revenue_by_source(days: int = 90):
                FROM revenue WHERE created_at >= ? GROUP BY source ORDER BY total DESC""",
             (_since_days(days),),
         ).fetchall()
-    return [dict(r) for r in rows]
+    return [_row_dict(r) for r in rows]
 
 
 def get_affiliate_stats(days: int = 30):
@@ -169,7 +185,7 @@ def get_affiliate_stats(days: int = 30):
             (_since_days(days),),
         ).fetchone()
     tc = total_clicks["c"] if isinstance(total_clicks, dict) else total_clicks[0]
-    return {"by_provider": [dict(r) for r in by_provider], "total_clicks": tc}
+    return {"by_provider": [_row_dict(r) for r in by_provider], "total_clicks": tc}
 
 
 def get_revenue_stats():
@@ -193,7 +209,7 @@ def get_revenue_stats():
     t = total["t"] if isinstance(total, dict) else total[0]
     m = month_total["t"] if isinstance(month_total, dict) else month_total[0]
     return {
-        "entries": [dict(r) for r in rows],
+        "entries": [_row_dict(r) for r in rows],
         "total": round(float(t), 2),
         "month_total": round(float(m), 2),
     }
