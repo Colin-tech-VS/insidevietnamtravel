@@ -19,10 +19,11 @@
   var genStatus = document.getElementById("gen-status");
   var blocks = { page: form.querySelector('[data-block="page"]'), "new": form.querySelector('[data-block="new"]') };
 
-  var preview = document.getElementById("preview");
   var previewImg = document.getElementById("preview-img");
+  var previewMedia = document.getElementById("preview-media");
   var previewText = document.getElementById("preview-text");
   var previewLink = document.getElementById("preview-link");
+  var previewLinkText = document.getElementById("preview-link-text");
 
   function sanitizeCampaign(v) {
     v = (v || "").toLowerCase()
@@ -59,23 +60,22 @@
 
   function updatePreview() {
     var text = fMessage.value;
-    if (!text) { preview.hidden = true; return; }
-    preview.hidden = false;
-    previewText.textContent = text;
+    previewText.textContent = text || "Votre texte apparaîtra ici…";
+    previewText.classList.toggle("is-empty", !text);
+
     var img = fImage.value;
-    if (img) { previewImg.src = img; previewImg.hidden = false; } else { previewImg.hidden = true; }
+    if (img) { previewImg.src = img; previewMedia.hidden = false; } else { previewMedia.hidden = true; }
+
+    var url = "";
     if (currentMode() === "page") {
       var opt = selectedPageOption();
-      var url = opt ? opt.getAttribute("data-url") : "";
-      previewLink.hidden = !url;
-      previewLink.href = url || "#";
-      previewLink.textContent = url || "";
+      url = opt ? opt.getAttribute("data-url") : "";
     } else {
-      var l = customLink.value.trim();
-      previewLink.hidden = !l;
-      previewLink.href = l || "#";
-      previewLink.textContent = l || "";
+      url = customLink.value.trim();
     }
+    previewLink.hidden = !url;
+    previewLink.href = url || "#";
+    if (previewLinkText) previewLinkText.textContent = url || "";
   }
 
   function applyMode() {
