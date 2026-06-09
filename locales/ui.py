@@ -589,8 +589,8 @@ UI: dict[str, dict[str, str]] = {
     # ── Chat IA (Mai) ────────────────────────────────────────────────
     "chat.name": {"fr": "Mai — conseillère Vietnam", "en": "Mai — Vietnam advisor"},
     "chat.subtitle": {
-        "fr": "Inside Vietnam Travel · propulsée par Mistral AI",
-        "en": "Inside Vietnam Travel · powered by Mistral AI",
+        "fr": "Votre guide indépendant au Vietnam",
+        "en": "Your independent Vietnam travel guide",
     },
     "chat.open": {"fr": "Discuter avec Mai", "en": "Chat with Mai"},
     "chat.close": {"fr": "Fermer le chat", "en": "Close chat"},
