@@ -6,8 +6,6 @@ from datetime import date
 
 from admin import ai_client
 from admin.store import slugify
-from admin.groq_translate import translate_article_block
-from i18n_utils import merge_bilingual_article
 
 # Longueur minimale selon type de guide (recommandations SEO).
 # max_tokens dimensionné sur la cible réelle (≈ mots × 2,2 + ~400 de JSON/HTML)
@@ -208,35 +206,27 @@ Exigences :
 - Erreurs à éviter pour débutants
 - image_prompt : scène Vietnam UNIQUE et spécifique à CE sujet (pas générique)"""
 
+    # Modèle RAPIDE pour la rédaction : bucket tokens/minute 5× plus large que le 70B
+    # (30 000 vs 6 000 TPM) → plus de file d'attente 429 qui faisait « pendre » la
+    # génération, et sortie ~3× plus véloce. La structure SEO (JSON imposé) reste
+    # parfaitement respectée. Le 70B reste sélectionnable dans l'admin si souhaité.
     data = _call_ai(
         [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},
         ],
         seo["max_tokens"],
+        fast=True,
     )
 
     article = _build_article(data, topic, city, guide_type)
     article = _expand_if_short(article, guide_type, progress=report)
-    try:
-        report("Traduction de la version anglaise…")
-        en_data = translate_article_block(article, pause_before=1.5)
-        shared = {
-            k: v for k, v in article.items()
-            if k not in (
-                "title", "meta_title", "meta_description", "excerpt", "content",
-                "category_label", "tags", "focus_keyword", "image_alt",
-            )
-        }
-        return merge_bilingual_article(article, en_data, shared)
-    except Exception:
-        return merge_bilingual_article(article, {}, {
-            k: v for k, v in article.items()
-            if k not in (
-                "title", "meta_title", "meta_description", "excerpt", "content",
-                "category_label", "tags", "focus_keyword", "image_alt",
-            )
-        })
+    # La version EN n'est PAS générée ici : elle est produite automatiquement à la
+    # publication (store.save_articles → _auto_translate_article). L'inclure dans le
+    # brouillon ajoutait un appel IA + une pause anti rate-limit à CHAQUE aperçu — pour
+    # un contenu que l'admin relit en FR avant de publier. On rend donc un article FR
+    # plat (wrap_article_i18n l'enveloppe ensuite), ce qui accélère nettement l'aperçu.
+    return article
 
 
 def improve_guide(article: dict, instructions: str, progress=None) -> dict:
@@ -260,6 +250,7 @@ def improve_guide(article: dict, instructions: str, progress=None) -> dict:
             },
         ],
         seo["max_tokens"],
+        fast=True,
     )
 
     article.update({
@@ -277,16 +268,6 @@ def improve_guide(article: dict, instructions: str, progress=None) -> dict:
     article["word_count"] = wc
     article["read_time"] = _read_time_from_words(wc)
     article = _expand_if_short(article, guide_type, progress=report)
-    try:
-        report("Traduction de la version anglaise…")
-        en_data = translate_article_block(article, pause_before=1.5)
-        shared = {
-            k: v for k, v in article.items()
-            if k not in (
-                "title", "meta_title", "meta_description", "excerpt", "content",
-                "category_label", "tags", "focus_keyword", "image_alt", "i18n",
-            )
-        }
-        return merge_bilingual_article(article, en_data, shared)
-    except Exception:
-        return article
+    # EN générée à la publication (cf. generate_guide) — on ne bloque pas l'aperçu.
+    article.pop("i18n", None)
+    return article

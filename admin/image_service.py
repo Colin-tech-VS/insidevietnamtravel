@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import re
 import threading
 import time
 import urllib.parse
@@ -57,6 +58,65 @@ VIETNAM_PHOTO_POOL: list[tuple[str, str]] = [
     ("1605649487212-47bdab064df7", "Paysage campagne Vietnam"),
     ("1432405972618-c60b0225b8f9", "Nature tropicale Vietnam"),
 ]
+
+# Thèmes par photo : tokens d'un vocabulaire partagé avec _article_keywords().
+# Sert à choisir une image EN RAPPORT avec le sujet de l'article (ville, gastronomie,
+# nature, plage, ville, temple…) plutôt qu'une photo tirée au hasard.
+PHOTO_THEMES: dict[str, set[str]] = {
+    "1528127269322-539801943592": {"halong", "hoian", "beach", "cruise", "nature"},
+    "1772867342647-6e6d87a0b014": {"halong", "nature", "cruise"},
+    "1559592413-7cec4d0cae2b": {"city", "local"},
+    "1557750255-c76072a7aad1": {"ninhbinh", "nature", "temple", "mountain"},
+    "1583417319070-4a69db38a482": {"hochiminh", "city", "skyline"},
+    "1531737212413-667205e1cda7": {"sapa", "nature", "mountain", "trekking"},
+    "1545172538-171a802bd867": {"halong", "nature", "cruise"},
+    "1609412058473-c199497c3c5d": {"nature", "countryside"},
+    "1555921015-5532091f6026": {"hanoi", "city", "transport"},
+    "1526139334526-f591a54b477c": {"food", "market", "hoian", "night"},
+    "1555979864-7a8f9b4fddf8": {"danang", "beach", "nature"},
+    "1480996408299-fc0e830b5db1": {"nature", "mountain"},
+    "1521993117367-b7f70ccd029d": {"city", "transport"},
+    "1602646993875-70bc0ba52c87": {"halong", "nature"},
+    "1504457047772-27faf1c00561": {"nature", "countryside"},
+    "1603852452378-a4e8d84324a2": {"city"},
+    "1578662996442-48f60103fc96": {"hue", "temple", "culture"},
+    "1605649487212-47bdab064df7": {"nature", "countryside"},
+    "1432405972618-c60b0225b8f9": {"nature"},
+}
+
+# Indices ville → token thématique (normalisés sans accents/espaces).
+_CITY_TOKENS: dict[str, str] = {
+    "hanoi": "hanoi",
+    "hochiminh": "hochiminh", "saigon": "hochiminh", "hcmville": "hochiminh",
+    "hoian": "hoian",
+    "danang": "danang",
+    "sapa": "sapa",
+    "ninhbinh": "ninhbinh",
+    "halong": "halong", "halongbay": "halong",
+    "hue": "hue",
+    "phuquoc": "beach", "nhatrang": "beach", "mui ne": "beach", "muine": "beach",
+    "mekong": "nature", "deltadumekong": "nature",
+}
+
+# Mots-clés (FR/EN) → token thématique, cherchés dans titre/tags/focus.
+_KEYWORD_TOKENS: list[tuple[tuple[str, ...], str]] = [
+    (("gastronom", "cuisine", "restaurant", "manger", "street food", "food", "pho", "plat"), "food"),
+    (("march", "market", "night market", "lanterne"), "market"),
+    (("plage", "beach", "ile", "island", "mer", "balnea"), "beach"),
+    (("trek", "randonn", "rizi", "montagne", "mountain", "sapa"), "trekking"),
+    (("nature", "campagne", "paysage", "parc", "baie", "karst"), "nature"),
+    (("temple", "pagode", "pagoda", "culture", "histoire", "patrimoine"), "temple"),
+    (("transport", "train", "bus", "scooter", "moto", "vol", "avion", "taxi", "deplac"), "transport"),
+    (("ville", "city", "urbain", "skyline"), "city"),
+    (("croisi", "cruise", "bateau", "kayak", "jonque"), "cruise"),
+]
+
+_CATEGORY_TOKENS: dict[str, str] = {
+    "food": "food",
+    "itinerary": "city",
+    "budget": "city",
+    "practical": "city",
+}
 
 # Correspondance thématique slug → photo (prioritaire, toujours unique)
 SLUG_PHOTO_MAP: dict[str, str] = {
@@ -133,14 +193,64 @@ def _used_photo_ids(exclude_slug: str | None = None) -> set[str]:
     return used
 
 
-def _pick_unique_photo_id(slug: str, nonce: int = 0) -> str:
+def _normalize_token(text: str) -> str:
+    """Minuscule sans accents ni séparateurs — pour matcher 'Hội An' → 'hoian'."""
+    text = (text or "").lower()
+    for a, b in (("àâä", "a"), ("éèêë", "e"), ("îï", "i"), ("ôö", "o"), ("ùûü", "u"), ("ç", "c")):
+        for ch in a:
+            text = text.replace(ch, b)
+    return re.sub(r"[^a-z0-9]+", "", text)
+
+
+def _article_keywords(article: dict) -> set[str]:
+    """Tokens thématiques (ville + concepts) déduits de l'article pour choisir l'image."""
+    tokens: set[str] = set()
+
+    city_tok = _normalize_token(article.get("city", ""))
+    if city_tok in _CITY_TOKENS:
+        tokens.add(_CITY_TOKENS[city_tok])
+
+    cat = (article.get("category") or "").lower()
+    if cat in _CATEGORY_TOKENS:
+        tokens.add(_CATEGORY_TOKENS[cat])
+
+    haystack = " ".join(str(article.get(k, "")) for k in ("title", "focus_keyword", "guide_type")).lower()
+    haystack += " " + " ".join(str(t) for t in article.get("tags", [])).lower()
+    for needles, token in _KEYWORD_TOKENS:
+        if any(n in haystack for n in needles):
+            tokens.add(token)
+    # Villes citées dans le titre/tags même si le champ city est générique.
+    for city_key, token in _CITY_TOKENS.items():
+        if city_key in _normalize_token(haystack):
+            tokens.add(token)
+    return tokens
+
+
+def _pick_unique_photo_id(slug: str, nonce: int = 0, article: dict | None = None) -> str:
     if slug in SLUG_PHOTO_MAP:
         return SLUG_PHOTO_MAP[slug]
 
     used = _used_photo_ids(exclude_slug=slug)
     pool_ids = [p[0] for p in VIETNAM_PHOTO_POOL]
+    keywords = _article_keywords(article) if article else set()
 
-    start = (abs(hash(f"{slug}-{nonce}")) % len(pool_ids))
+    # 1) Photo la plus EN RAPPORT avec le sujet : meilleur recouvrement de thèmes,
+    #    en privilégiant celles pas encore utilisées (image unique par article).
+    if keywords:
+        def score(pid: str) -> tuple[int, int]:
+            overlap = len(PHOTO_THEMES.get(pid, set()) & keywords)
+            return (overlap, 0 if pid in used else 1)
+
+        # Départ pseudo-aléatoire stable pour ne pas toujours renvoyer le même id à
+        # score égal (variété entre articles d'un même thème).
+        start = abs(hash(f"{slug}-{nonce}")) % len(pool_ids)
+        ordered = [pool_ids[(start + i) % len(pool_ids)] for i in range(len(pool_ids))]
+        best = max(ordered, key=score)
+        if len(PHOTO_THEMES.get(best, set()) & keywords) > 0:
+            return best
+
+    # 2) Aucun thème exploitable : 1re photo libre à partir d'un départ stable.
+    start = abs(hash(f"{slug}-{nonce}")) % len(pool_ids)
     for offset in range(len(pool_ids)):
         pid = pool_ids[(start + offset) % len(pool_ids)]
         if pid not in used:
@@ -370,7 +480,7 @@ def attach_image_to_article(
     slug = article["slug"]
     out_path = BLOG_IMAGES_DIR / f"{slug}.webp"
     nonce = image_nonce if image_nonce is not None else int(time.time())
-    photo_id = _pick_unique_photo_id(slug, nonce)
+    photo_id = _pick_unique_photo_id(slug, nonce, article)
     prompt = build_image_prompt(article, ai_prompt)
     seed = abs(hash(f"{slug}-{prompt}-{nonce}")) % 999_999
 
