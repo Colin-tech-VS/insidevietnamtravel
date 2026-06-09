@@ -30,8 +30,8 @@
         <small>Laissez vide pour conserver le token déjà enregistré{% if fb_token_masked %} ({{ fb_token_masked }}){% endif %}.</small>
       </div>
       <div class="social-config__actions">
-        <button type="submit" class="btn-admin btn-admin--primary">Enregistrer</button>
-        <button type="submit" formaction="{{ url_for('admin.social_test') }}" class="btn-admin btn-admin--ghost">Tester la connexion</button>
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+        <button type="submit" formaction="{{ url_for('admin.social_test') }}" class="btn btn-secondary">Tester la connexion</button>
       </div>
     </form>
   </section>
@@ -108,7 +108,7 @@
 
           <div class="social-compose">
             <div class="social-compose__bar">
-              <button type="button" id="btn-generate" class="btn-admin btn-admin--primary"{% if not ai_ready %} disabled{% endif %}>✦ Rédiger avec l'IA</button>
+              <button type="button" id="btn-generate" class="btn btn-primary btn-sm"{% if not ai_ready %} disabled{% endif %}>✦ Rédiger avec l'IA</button>
               <span id="gen-status" class="social-genstatus" aria-live="polite"></span>
               <span class="social-counter"><span id="char-count">0</span> car.</span>
             </div>
@@ -117,7 +117,7 @@
           </div>
 
           <div class="social-actions">
-            <button type="submit" class="btn-admin btn-admin--primary btn-admin--lg"{% if not fb_configured %} disabled{% endif %}>
+            <button type="submit" class="btn btn-primary social-publish"{% if not fb_configured %} disabled{% endif %}>
               <span aria-hidden="true">📣</span> Publier sur Facebook
             </button>
             {% if not fb_configured %}<span class="social-hint">Configurez la connexion ci-dessus pour publier.</span>{% endif %}
