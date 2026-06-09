@@ -1,0 +1,58 @@
+{% macro chat_widget() %}
+{% if chat_enabled %}
+<div class="mai-chat" id="mai-chat"
+     data-api-url="{{ url_for('api_chat') }}"
+     data-lang="{{ lang }}"
+     data-name="{{ t('chat.name') }}"
+     data-greeting="{{ t('chat.greeting') }}"
+     data-placeholder="{{ t('chat.placeholder') }}"
+     data-send="{{ t('chat.send') }}"
+     data-close="{{ t('chat.close') }}"
+     data-open="{{ t('chat.open') }}"
+     data-typing="{{ t('chat.typing') }}"
+     data-error="{{ t('chat.error') }}"
+     data-affiliate-badge="{{ t('chat.affiliate_badge') }}"
+     data-suggestions='{{ [t("chat.suggest1"), t("chat.suggest2"), t("chat.suggest3")] | tojson }}'>
+  <button type="button" class="mai-chat__fab" id="mai-chat-fab" aria-expanded="false" aria-controls="mai-chat-panel">
+    <span class="mai-chat__fab-ring" aria-hidden="true"></span>
+    <span class="mai-chat__avatar" aria-hidden="true">
+      <svg viewBox="0 0 48 48" class="mai-chat__avatar-svg">
+        <circle cx="24" cy="24" r="22" fill="currentColor" opacity="0.12"/>
+        <text x="24" y="30" text-anchor="middle" font-size="22">🌸</text>
+      </svg>
+    </span>
+    <span class="mai-chat__fab-label">{{ t('chat.open') }}</span>
+  </button>
+
+  <div class="mai-chat__panel" id="mai-chat-panel" hidden role="dialog" aria-modal="true" aria-labelledby="mai-chat-title">
+    <header class="mai-chat__head">
+      <div class="mai-chat__brand">
+        <span class="mai-chat__head-avatar" aria-hidden="true">🌸</span>
+        <div>
+          <h2 class="mai-chat__title" id="mai-chat-title">{{ t('chat.name') }}</h2>
+          <p class="mai-chat__subtitle">{{ t('chat.subtitle') }}</p>
+        </div>
+      </div>
+      <button type="button" class="mai-chat__close" id="mai-chat-close" aria-label="{{ t('chat.close') }}">✕</button>
+    </header>
+
+    <div class="mai-chat__messages" id="mai-chat-messages" aria-live="polite"></div>
+
+    <div class="mai-chat__suggestions" id="mai-chat-suggestions"></div>
+
+    <form class="mai-chat__form" id="mai-chat-form">
+      <label class="sr-only" for="mai-chat-input">{{ t('chat.placeholder') }}</label>
+      <textarea id="mai-chat-input" class="mai-chat__input" rows="1"
+                placeholder="{{ t('chat.placeholder') }}" maxlength="900"></textarea>
+      <button type="submit" class="mai-chat__send" aria-label="{{ t('chat.send') }}">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/>
+        </svg>
+      </button>
+    </form>
+    <p class="mai-chat__disclaimer">{{ t('chat.disclaimer') }}</p>
+  </div>
+</div>
+<script src="{{ url_for('static', filename='js/chat.js') }}" defer></script>
+{% endif %}
+{% endmacro %}

@@ -586,6 +586,50 @@ UI: dict[str, dict[str, str]] = {
     "search.group.article": {"fr": "Articles", "en": "Articles"},
     "search.group.tool": {"fr": "Outils", "en": "Tools"},
 
+    # ── Chat IA (Mai) ────────────────────────────────────────────────
+    "chat.name": {"fr": "Mai — conseillère Vietnam", "en": "Mai — Vietnam advisor"},
+    "chat.subtitle": {
+        "fr": "Inside Vietnam Travel · propulsée par Mistral AI",
+        "en": "Inside Vietnam Travel · powered by Mistral AI",
+    },
+    "chat.open": {"fr": "Discuter avec Mai", "en": "Chat with Mai"},
+    "chat.close": {"fr": "Fermer le chat", "en": "Close chat"},
+    "chat.send": {"fr": "Envoyer", "en": "Send"},
+    "chat.placeholder": {
+        "fr": "Posez votre question sur le Vietnam…",
+        "en": "Ask anything about Vietnam…",
+    },
+    "chat.greeting": {
+        "fr": "Xin chào ! 👋 Je suis Mai, votre conseillère voyage chez Inside Vietnam Travel. "
+              "Itinéraires, visa, budget, gastronomie… je connais tout le site et je suis là pour "
+              "vous donner envie — et les bons plans — pour votre aventure au Vietnam ! 🇻🇳✨",
+        "en": "Xin chào! 👋 I'm Mai, your travel advisor at Inside Vietnam Travel. "
+              "Itineraries, visa, budget, food… I know every page on the site and I'm here to "
+              "inspire your Vietnam adventure with practical tips! 🇻🇳✨",
+    },
+    "chat.typing": {"fr": "Mai réfléchit…", "en": "Mai is thinking…"},
+    "chat.error": {
+        "fr": "Oups, je n'ai pas pu répondre. Réessayez dans un instant.",
+        "en": "Sorry, I couldn't reply. Please try again in a moment.",
+    },
+    "chat.affiliate_badge": {"fr": "Partenaire", "en": "Partner"},
+    "chat.disclaimer": {
+        "fr": "Conseils IA à titre informatif — vérifiez visa & santé auprès des sources officielles.",
+        "en": "AI tips for guidance only — check visa & health with official sources.",
+    },
+    "chat.suggest1": {
+        "fr": "Que faire 10 jours au Vietnam ?",
+        "en": "What to do in 10 days in Vietnam?",
+    },
+    "chat.suggest2": {
+        "fr": "Quelle est la meilleure saison ?",
+        "en": "What's the best season to visit?",
+    },
+    "chat.suggest3": {
+        "fr": "Comment préparer mon visa ?",
+        "en": "How do I prepare my visa?",
+    },
+
     # ── Filtres blog ─────────────────────────────────────────────────
     "blog.filter.all": {"fr": "Tout", "en": "All"},
     "blog.filter.label": {"fr": "Filtrer par thème", "en": "Filter by topic"},

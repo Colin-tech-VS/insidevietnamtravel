@@ -180,7 +180,7 @@ def track_page_view():
     if request.method != "GET":
         return
     path = request.path
-    if path.startswith(("/admin", "/static", "/go/", "/favicon")):
+    if path.startswith(("/admin", "/static", "/go/", "/favicon", "/api/")):
         return
     client_ip = (request.remote_addr or "").strip()
     user_agent = (request.user_agent.string or "")[:200]
@@ -265,7 +265,16 @@ def inject_globals():
         "html_lang": "en" if lang == "en" else "fr",
         "og_locale": "en_GB" if lang == "en" else "fr_FR",
         "llms_txt_url": config.SITE_URL.rstrip("/") + "/llms.txt",
+        "chat_enabled": _chat_enabled(),
     }
+
+
+def _chat_enabled() -> bool:
+    try:
+        from admin import chat_service
+        return chat_service.is_enabled()
+    except Exception:
+        return False
 
 
 @app.template_global()
@@ -1046,6 +1055,43 @@ def search_index():
         })
 
     return jsonify(items)
+
+
+# ── Chat IA (Mai) ─────────────────────────────────────────────────────
+
+@app.route("/api/chat", methods=["POST"])
+def api_chat():
+    from flask import jsonify
+    from admin import chat_service
+
+    if not chat_service.is_enabled():
+        return jsonify({"ok": False, "error": "Chat indisponible."}), 503
+
+    payload = request.get_json(silent=True) or {}
+    message = (payload.get("message") or "").strip()
+    lang = "en" if payload.get("lang") == "en" else get_lang()
+    history = payload.get("history") if isinstance(payload.get("history"), list) else []
+
+    try:
+        result = chat_service.chat_reply(
+            message,
+            history,
+            lang,
+            client_ip=(request.remote_addr or "").strip(),
+            track_url_fn=tracked_affiliate_url,
+        )
+    except ValueError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    except Exception as exc:  # noqa: BLE001
+        from admin import ai_client
+        return jsonify({"ok": False, "error": ai_client.friendly_error(exc)}), 502
+
+    return jsonify(result)
+
+
+@app.route("/en/api/chat", methods=["POST"])
+def api_chat_en():
+    return api_chat()
 
 
 # ── SEO ───────────────────────────────────────────────────────────────

@@ -320,6 +320,9 @@
   {% from "macros/cookies.html" import cookie_banner with context %}
   {{ cookie_banner() }}
 
+  {% from "macros/chat_widget.html" import chat_widget with context %}
+  {{ chat_widget() }}
+
   <footer class="site-footer" role="contentinfo">
 
   {% from "macros/affiliates.html" import affiliate_disclosure with context %}
