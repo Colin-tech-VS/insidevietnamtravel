@@ -83,7 +83,13 @@ def log_page_view(
 
 
 def get_social_traffic(days: int = 30):
-    """Vues issues des réseaux sociaux (UTM), agrégées par source et campagne."""
+    """Vues issues des réseaux sociaux (UTM), agrégées par source et campagne.
+
+    Le maillage interne (utm_source='interne') porte aussi des UTM mais N'EST PAS du
+    trafic social : on l'exclut ici pour ne pas fausser ce tableau.
+    """
+    from admin.internal_links import UTM_SOURCE as INTERNAL_UTM_SOURCE
+
     since = _since_days(days)
     bot = _human_traffic_sql()
     out = {"total": 0, "by_source": [], "by_campaign": []}
@@ -91,12 +97,12 @@ def get_social_traffic(days: int = 30):
         cur = _execute(
             conn,
             f"SELECT COALESCE(utm_source,'') AS s, COUNT(*) AS n FROM page_views "
-            f"WHERE created_at >= %s AND COALESCE(utm_source,'') <> '' {bot} "
+            f"WHERE created_at >= %s AND COALESCE(utm_source,'') NOT IN ('', %s) {bot} "
             f"GROUP BY s ORDER BY n DESC",
             f"SELECT COALESCE(utm_source,'') AS s, COUNT(*) AS n FROM page_views "
-            f"WHERE created_at >= ? AND COALESCE(utm_source,'') <> '' {bot} "
+            f"WHERE created_at >= ? AND COALESCE(utm_source,'') NOT IN ('', ?) {bot} "
             f"GROUP BY s ORDER BY n DESC",
-            (since,),
+            (since, INTERNAL_UTM_SOURCE),
         )
         rows = [_row_dict(r) for r in cur.fetchall()]
         out["by_source"] = rows
@@ -105,12 +111,14 @@ def get_social_traffic(days: int = 30):
         cur = _execute(
             conn,
             f"SELECT COALESCE(utm_campaign,'') AS c, COUNT(*) AS n FROM page_views "
-            f"WHERE created_at >= %s AND COALESCE(utm_campaign,'') <> '' {bot} "
+            f"WHERE created_at >= %s AND COALESCE(utm_campaign,'') <> '' "
+            f"AND COALESCE(utm_source,'') <> %s {bot} "
             f"GROUP BY c ORDER BY n DESC LIMIT 20",
             f"SELECT COALESCE(utm_campaign,'') AS c, COUNT(*) AS n FROM page_views "
-            f"WHERE created_at >= ? AND COALESCE(utm_campaign,'') <> '' {bot} "
+            f"WHERE created_at >= ? AND COALESCE(utm_campaign,'') <> '' "
+            f"AND COALESCE(utm_source,'') <> ? {bot} "
             f"GROUP BY c ORDER BY n DESC LIMIT 20",
-            (since,),
+            (since, INTERNAL_UTM_SOURCE),
         )
         out["by_campaign"] = [_row_dict(r) for r in cur.fetchall()]
     return out

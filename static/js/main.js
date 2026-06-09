@@ -1,3 +1,29 @@
+// Maillage interne : les liens internes portent des paramètres UTM pour l'analytics.
+// Ils sont comptabilisés côté serveur dès le chargement (log au GET) puis, si présent,
+// par GA4. On les retire ensuite discrètement de la barre d'adresse pour qu'ils restent
+// INVISIBLES à l'utilisateur, sans perdre le suivi. Le délai laisse à GA4 (chargé après
+// consentement) le temps de lire l'URL d'origine.
+(function stripTrackingParams() {
+  try {
+    const url = new URL(window.location.href);
+    const utmKeys = Array.from(url.searchParams.keys()).filter(
+      (k) => k.toLowerCase().indexOf('utm_') === 0,
+    );
+    if (!utmKeys.length || !window.history || !window.history.replaceState) return;
+    window.setTimeout(() => {
+      utmKeys.forEach((k) => url.searchParams.delete(k));
+      const qs = url.searchParams.toString();
+      window.history.replaceState(
+        window.history.state,
+        document.title,
+        url.pathname + (qs ? '?' + qs : '') + url.hash,
+      );
+    }, 1200);
+  } catch (e) {
+    /* no-op */
+  }
+})();
+
 document.addEventListener('DOMContentLoaded', () => {
   const toggle = document.querySelector('.nav-toggle');
   const nav = document.querySelector('.main-nav');

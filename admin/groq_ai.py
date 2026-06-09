@@ -4,7 +4,7 @@ import json
 import re
 from datetime import date
 
-from admin import ai_client
+from admin import ai_client, internal_links
 from admin.store import slugify
 
 # Longueur minimale selon type de guide (recommandations SEO).
@@ -41,12 +41,12 @@ RÈGLES SEO STRICTES :
 3. meta_description : 140–160 car., incitatif, mot-clé principal, cible voyageurs français.
 4. Excerpt : 140–160 car., résumé visible sur la page.
 5. Longueur : RESPECTER le nombre de mots minimum indiqué dans le message utilisateur (compter le texte du HTML sans balises).
-6. HTML : uniquement <h2>, <h3>, <p>, <ul>, <li>, <blockquote>, <table> — pas de <h1>.
+6. HTML : uniquement <h2>, <h3>, <p>, <ul>, <li>, <blockquote>, <table>, <a> — pas de <h1>.
 7. Structure : Intro, sections <h2> (min 5), FAQ (4–6 Q/R en <h3>+<p>), Conclusion.
 8. Mot-clé principal dans les 100 premiers mots.
 9. Listes <ul>, 1+ <blockquote>, tableau si budget/comparatif.
 10. Fourchettes de prix en euros. Paragraphes courts.
-11. Pas de liens externes. Contenu 100% Vietnam.
+11. MAILLAGE INTERNE OBLIGATOIRE : insère 2 à 4 liens internes pertinents DIRECTEMENT dans les phrases du corps, sous la forme <a href="/blog/...">ancre descriptive</a>. Utilise UNIQUEMENT des URLs de la liste « LIENS INTERNES DISPONIBLES » du message — n'invente JAMAIS d'URL. Ancre naturelle et descriptive (jamais « cliquez ici », jamais l'URL brute). INTERDIT : liens en note de bas de page, en fin d'article, en liste séparée ou en commentaire HTML. Aucun lien externe. Contenu 100% Vietnam.
 
 JSON uniquement :
 {
@@ -77,6 +77,16 @@ def _read_time_from_words(word_count: int) -> int:
 
 def _seo_target(guide_type: str) -> dict:
     return SEO_WORD_TARGETS.get(guide_type, DEFAULT_SEO)
+
+
+def _links_section(link_block: str) -> str:
+    """Bloc « liens internes disponibles » à concaténer au prompt utilisateur."""
+    if not link_block:
+        return ""
+    return (
+        "\n\nLIENS INTERNES DISPONIBLES (intègre 2 à 4 des plus pertinents DANS les "
+        "phrases, ancre naturelle, jamais en fin d'article) :\n" + link_block
+    )
 
 
 def _parse_response(raw: str) -> dict:
@@ -128,7 +138,7 @@ def _call_ai(messages: list, max_tokens: int, *, fast: bool = False, pause_befor
     return _parse_response(response.choices[0].message.content)
 
 
-def _expand_if_short(article: dict, guide_type: str, progress=None) -> dict:
+def _expand_if_short(article: dict, guide_type: str, progress=None, link_block: str = "") -> dict:
     target = _seo_target(guide_type)
     min_words = target["min"]
     current = _count_words(article["content"])
@@ -151,7 +161,7 @@ Enrichis SANS changer le slug implicite ni le sujet :
 - Voyageurs français préparant un trip Vietnam
 
 Article :
-{json.dumps({k: article[k] for k in ('title', 'excerpt', 'content', 'tags', 'city') if k in article}, ensure_ascii=False)}"""
+{json.dumps({k: article[k] for k in ('title', 'excerpt', 'content', 'tags', 'city') if k in article}, ensure_ascii=False)}""" + _links_section(link_block)
 
     # Enrichissement sur le modèle rapide : bucket tokens/minute distinct du
     # modèle principal (ne grignote pas son quota) et nettement plus véloce.
@@ -188,6 +198,9 @@ def generate_guide(topic: str, guide_type: str, city: str, progress=None) -> dic
     seo = _seo_target(guide_type)
     report("Rédaction de l'article SEO (titres, sections, FAQ)…")
 
+    catalog = internal_links.build_catalog()
+    link_block = internal_links.prompt_block(catalog)
+
     user_prompt = f"""Rédige un guide COMPLET ultra-optimisé SEO.
 
 Année : {year}
@@ -204,7 +217,7 @@ Exigences :
 - FAQ : 4–6 questions Google réelles
 - Budget avec tableau si pertinent
 - Erreurs à éviter pour débutants
-- image_prompt : scène Vietnam UNIQUE et spécifique à CE sujet (pas générique)"""
+- image_prompt : scène Vietnam UNIQUE et spécifique à CE sujet (pas générique)""" + _links_section(link_block)
 
     # Modèle RAPIDE pour la rédaction : bucket tokens/minute 5× plus large que le 70B
     # (30 000 vs 6 000 TPM) → plus de file d'attente 429 qui faisait « pendre » la
@@ -220,7 +233,12 @@ Exigences :
     )
 
     article = _build_article(data, topic, city, guide_type)
-    article = _expand_if_short(article, guide_type, progress=report)
+    article = _expand_if_short(article, guide_type, progress=report, link_block=link_block)
+    # Maillage interne : ne garde que les liens vers des URLs RÉELLES (anti-hallucination)
+    # et ajoute les UTM (invisibles pour l'utilisateur, suivis par l'analytics).
+    article["content"], _ = internal_links.process_content(
+        article["content"], article["slug"], catalog
+    )
     # La version EN n'est PAS générée ici : elle est produite automatiquement à la
     # publication (store.save_articles → _auto_translate_article). L'inclure dans le
     # brouillon ajoutait un appel IA + une pause anti rate-limit à CHAQUE aperçu — pour
@@ -236,6 +254,9 @@ def improve_guide(article: dict, instructions: str, progress=None) -> dict:
     seo = _seo_target(guide_type)
     report("Analyse et amélioration du brouillon…")
 
+    catalog = internal_links.build_catalog(exclude_slug=article.get("slug"))
+    link_block = internal_links.prompt_block(catalog)
+
     data = _call_ai(
         [
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -246,6 +267,7 @@ def improve_guide(article: dict, instructions: str, progress=None) -> dict:
                     f"Instructions : {instructions}\n"
                     f"Minimum {seo['min']} mots dans content.\n\n"
                     f"Article :\n{json.dumps(article, ensure_ascii=False)}"
+                    + _links_section(link_block)
                 ),
             },
         ],
@@ -267,7 +289,10 @@ def improve_guide(article: dict, instructions: str, progress=None) -> dict:
     wc = _count_words(article["content"])
     article["word_count"] = wc
     article["read_time"] = _read_time_from_words(wc)
-    article = _expand_if_short(article, guide_type, progress=report)
+    article = _expand_if_short(article, guide_type, progress=report, link_block=link_block)
+    article["content"], _ = internal_links.process_content(
+        article["content"], article.get("slug", ""), catalog
+    )
     # EN générée à la publication (cf. generate_guide) — on ne bloque pas l'aperçu.
     article.pop("i18n", None)
     return article
