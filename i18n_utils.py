@@ -259,6 +259,7 @@ ROUTE_PATHS: dict[str, dict[str, str]] = {
     "category": {"fr": "/categorie/{category}", "en": "/en/category/{category}"},
     "article": {"fr": "/blog/{slug}", "en": "/en/blog/{slug}"},
     "itinerary": {"fr": "/itineraries/{slug}", "en": "/en/itineraries/{slug}"},
+    "pillar": {"fr": "/guide/{slug}", "en": "/en/guide/{slug}"},
     "pdf_checkout": {"fr": "/guide-pdf/checkout", "en": "/en/guide-pdf/checkout"},
     "pdf_success": {"fr": "/guide-pdf/merci", "en": "/en/guide-pdf/success"},
     "pdf_download": {"fr": "/guide-pdf/telecharger/{token}", "en": "/en/guide-pdf/download/{token}"},
@@ -314,6 +315,8 @@ def switch_lang_url() -> str:
         return lang_url("itinerary", alt, slug=view_args.get("slug", ""))
     if base_endpoint == "destination_page":
         return lang_url("destination_page", alt, slug=view_args.get("slug", ""))
+    if base_endpoint == "pillar":
+        return lang_url("pillar", alt, slug=view_args.get("slug", ""))
 
     if base_endpoint in ROUTE_PATHS:
         return lang_url(base_endpoint, alt)

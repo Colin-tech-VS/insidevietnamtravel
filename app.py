@@ -53,13 +53,14 @@ from data.affiliate_urls import (
 )
 from data.itineraries import ITINERARIES
 from data.affiliates import PDF_GUIDE, NEWSLETTER
+from data import pillars
 
 RESERVED_SLUGS = frozenset({
     "blog", "admin", "go", "itineraries", "a-propos", "newsletter",
     "politique-confidentialite", "mentions-legales",
     "robots.txt", "sitemap.xml", "llms.txt", "llms-full.txt",
     "AgodaPartnerVerification.htm",
-    "categorie", "category", "static", "favicon.ico",
+    "categorie", "category", "static", "favicon.ico", "guide",
     "en", "about", "privacy", "legal", "unsubscribe", "contact", "guide-pdf",
     "preparer-mon-voyage", "plan-my-trip",
     "quand-partir-au-vietnam", "best-time-to-visit-vietnam",
@@ -229,6 +230,7 @@ def inject_globals():
         "current_year": datetime.now().year,
         "destinations": _destinations(lang),
         "itineraries": _itineraries(lang),
+        "pillars": pillars.thematic_list(lang, lang_url),
         "pdf": {"PDF_GUIDE": _localized_block(PDF_GUIDE, lang)},
         "newsletter": {"NEWSLETTER": _localized_block(NEWSLETTER, lang)},
         "ga4_id": settings.get("ga4_measurement_id", ""),
@@ -882,6 +884,26 @@ def pdf_download(token):
             "Content-Disposition": f'attachment; filename="{pdf_filename(pdf_lang)}"',
             "Cache-Control": "private, no-store",
         },
+    )
+
+
+# ── Guides piliers (silos thématiques SEO) ──────────────────────────────
+
+@app.route("/guide/<slug>")
+@app.route("/en/guide/<slug>")
+def pillar(slug):
+    lang = get_lang()
+    found = pillars.hub_by_slug(slug)
+    if not found:
+        abort(404)
+    key, raw = found
+    p = pillars.localize_hub(key, raw, lang, lang_url)
+    return render_template(
+        "pillar.html",
+        pillar=p,
+        meta_title=p["meta_title"],
+        meta_description=p["meta_description"],
+        meta_keywords=f"{p['title']}, Vietnam, voyage Vietnam, guide Vietnam",
     )
 
 

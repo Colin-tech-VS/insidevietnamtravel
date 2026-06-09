@@ -9,6 +9,7 @@ from typing import Callable
 import config
 from admin.store import get_articles, get_categories, get_destinations_dict
 from data.itineraries import ITINERARIES
+from data.pillars import hub_slugs
 from i18n_utils import ROUTE_PATHS, SUPPORTED_LANGS, lang_url
 
 # Pages statiques indexables (clés = ROUTE_PATHS)
@@ -60,6 +61,10 @@ def _itinerary_entries() -> list[tuple[str, str | None]]:
     return [(slug, None) for slug in ITINERARIES.keys()]
 
 
+def _pillar_entries() -> list[tuple[str, str | None]]:
+    return [(slug, None) for slug in hub_slugs()]
+
+
 SITEMAP_DYNAMIC: dict[str, dict] = {
     "article": {
         "priority": "0.8",
@@ -84,6 +89,12 @@ SITEMAP_DYNAMIC: dict[str, dict] = {
         "changefreq": "monthly",
         "param": "slug",
         "items": _itinerary_entries,
+    },
+    "pillar": {
+        "priority": "0.9",
+        "changefreq": "weekly",
+        "param": "slug",
+        "items": _pillar_entries,
     },
 }
 

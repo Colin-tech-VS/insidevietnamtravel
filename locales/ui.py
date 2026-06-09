@@ -11,6 +11,7 @@ UI: dict[str, dict[str, str]] = {
     "nav.home": {"fr": "Accueil", "en": "Home"},
     "nav.destinations": {"fr": "Destinations", "en": "Destinations"},
     "nav.itineraries": {"fr": "Itinéraires", "en": "Itineraries"},
+    "nav.guides": {"fr": "Guides", "en": "Guides"},
     "nav.blog": {"fr": "Blog", "en": "Blog"},
     "nav.about": {"fr": "À propos", "en": "About"},
     "nav.contact": {"fr": "Contact", "en": "Contact"},
@@ -144,6 +145,20 @@ UI: dict[str, dict[str, str]] = {
     "prepare.step4_hint": {
         "fr": "Choisissez une ou plusieurs villes (sélection multiple).",
         "en": "Pick one or more cities (multiple choice).",
+    },
+
+    # Piliers SEO (hubs thématiques)
+    "pillar.soon": {"fr": "Bientôt", "en": "Coming soon"},
+    "pillar.related_destinations": {"fr": "Destinations associées", "en": "Related destinations"},
+    "pillar.faq": {"fr": "Questions fréquentes", "en": "Frequently asked questions"},
+    "pillar.related": {"fr": "Guides liés", "en": "Related guides"},
+    "pillar.cta.title": {
+        "fr": "Prêt à passer à l'action ?",
+        "en": "Ready to take the next step?",
+    },
+    "pillar.cta.text": {
+        "fr": "Répondez à 4 questions et obtenez un itinéraire et des guides adaptés à votre voyage.",
+        "en": "Answer 4 questions and get an itinerary and guides tailored to your trip.",
     },
     "prepare.region.north": {"fr": "Nord", "en": "North"},
     "prepare.region.central": {"fr": "Centre", "en": "Central"},
