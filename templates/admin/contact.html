@@ -3,62 +3,168 @@
 {% block page_title %}Contact{% endblock %}
 
 {% block content %}
-<header class="admin-page-header">
-  <div>
-    <h1>Messages contact</h1>
-    <p class="page-sub">
-      Formulaire public :
-      <a href="{{ url_for('contact') }}" target="_blank" rel="noopener">/contact</a>
-      · SMTP contact : {% if smtp_ok %}<span class="badge badge--ok">OK</span>{% else %}<span class="badge badge--warn">Non configuré</span>{% endif %}
-    </p>
-  </div>
-</header>
+{% set unread_count = messages|selectattr('read', 'equalto', false)|list|length %}
 
-{% if messages %}
-<div class="admin-table-wrap">
-  <table class="admin-table">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Nom</th>
-        <th>Email</th>
-        <th>Sujet</th>
-        <th>Langue</th>
-        <th>Statut</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for m in messages %}
-      <tr class="{% if not m.read %}is-unread{% endif %}">
-        <td>{{ m.created_at[:16].replace('T', ' ') }}</td>
-        <td>{{ m.name }}</td>
-        <td><a href="mailto:{{ m.email }}">{{ m.email }}</a></td>
-        <td>{{ m.subject }}</td>
-        <td>{{ m.lang|upper }}</td>
-        <td>{% if m.read %}Lu{% else %}<strong>Nouveau</strong>{% endif %}</td>
-        <td class="admin-table__actions">
-          <details>
-            <summary>Voir</summary>
-            <p style="white-space:pre-wrap;margin:0.5rem 0;">{{ m.message }}</p>
-            <form method="post" style="display:inline;">
-              <input type="hidden" name="action" value="mark_read">
-              <input type="hidden" name="msg_id" value="{{ m.id }}">
-              <button type="submit" class="btn btn-ghost btn-sm">Marquer lu</button>
-            </form>
-            <form method="post" style="display:inline;" onsubmit="return confirm('Supprimer ce message ?');">
-              <input type="hidden" name="action" value="delete">
-              <input type="hidden" name="msg_id" value="{{ m.id }}">
-              <button type="submit" class="btn btn-ghost btn-sm">Supprimer</button>
-            </form>
-          </details>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="contact-admin">
+  <p class="page-sub">
+    Messages reçus via le formulaire public
+    <a href="{{ url_for('contact') }}" target="_blank" rel="noopener">/contact</a>.
+  </p>
+
+  <div class="stat-grid stat-grid--3 contact-admin__stats">
+    <div class="stat-card">
+      <span class="stat-label">Messages reçus</span>
+      <span class="stat-value">{{ messages|length }}</span>
+      <span class="stat-hint">Tous les envois enregistrés</span>
+    </div>
+    <div class="stat-card{% if unread_count %} stat-card--live{% endif %}">
+      <span class="stat-label">Non lus</span>
+      <span class="stat-value">{{ unread_count }}</span>
+      <span class="stat-hint">{% if unread_count %}À traiter en priorité{% else %}Boîte à jour{% endif %}</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Notification email</span>
+      <span class="stat-value stat-value--sm">{% if smtp_ok %}Actif{% else %}Off{% endif %}</span>
+      <span class="stat-hint">SMTP contact {% if smtp_ok %}<span class="badge badge--ok">OK</span>{% else %}<span class="badge badge--warn">Non configuré</span>{% endif %}</span>
+    </div>
+  </div>
+
+  <div class="admin-page-layout">
+    <div class="admin-page-main">
+      <section class="panel contact-inbox-panel">
+        <div class="panel-head">
+          <h2>Boîte de réception</h2>
+          {% if messages %}
+          <div class="contact-filter" role="tablist" aria-label="Filtrer les messages">
+            <button type="button" class="contact-filter__btn is-active" data-filter="all" role="tab" aria-selected="true">
+              Tous <span class="contact-filter__count">{{ messages|length }}</span>
+            </button>
+            <button type="button" class="contact-filter__btn" data-filter="unread" role="tab" aria-selected="false">
+              Non lus <span class="contact-filter__count">{{ unread_count }}</span>
+            </button>
+          </div>
+          {% endif %}
+        </div>
+
+        {% if messages %}
+        <ul class="contact-inbox" id="contact-inbox">
+          {% for m in messages %}
+          <li class="contact-msg{% if not m.read %} contact-msg--unread{% endif %}" data-read="{{ '1' if m.read else '0' }}">
+            <header class="contact-msg__head">
+              <div class="contact-msg__who">
+                <p class="contact-msg__name">{{ m.name }}</p>
+                <a class="contact-msg__email" href="mailto:{{ m.email }}">{{ m.email }}</a>
+              </div>
+              <div class="contact-msg__meta">
+                <time class="contact-msg__date" datetime="{{ m.created_at }}">{{ m.created_at[:16].replace('T', ' ') }}</time>
+                <span class="contact-msg__lang">{{ m.lang|upper }}</span>
+                {% if m.read %}
+                <span class="contact-msg__status contact-msg__status--read">Lu</span>
+                {% else %}
+                <span class="contact-msg__status contact-msg__status--new">Nouveau</span>
+                {% endif %}
+              </div>
+            </header>
+
+            <h3 class="contact-msg__subject">{{ m.subject }}</h3>
+
+            <div class="contact-msg__body">{{ m.message }}</div>
+
+            <footer class="contact-msg__actions">
+              <a href="mailto:{{ m.email }}?subject={{ ('Re: ' ~ m.subject)|urlencode }}"
+                 class="btn btn-primary btn-sm">Répondre</a>
+              {% if not m.read %}
+              <form method="post" class="contact-msg__form">
+                <input type="hidden" name="action" value="mark_read">
+                <input type="hidden" name="msg_id" value="{{ m.id }}">
+                <button type="submit" class="btn btn-secondary btn-sm">Marquer lu</button>
+              </form>
+              {% endif %}
+              <form method="post" class="contact-msg__form" onsubmit="return confirm('Supprimer ce message ?');">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="msg_id" value="{{ m.id }}">
+                <button type="submit" class="btn btn-ghost btn-sm">Supprimer</button>
+              </form>
+            </footer>
+          </li>
+          {% endfor %}
+        </ul>
+        <p class="contact-inbox__empty contact-inbox__empty--filtered muted" id="contact-inbox-empty" hidden>
+          Aucun message non lu.
+        </p>
+        {% else %}
+        <div class="contact-empty">
+          <div class="contact-empty__icon" aria-hidden="true">✉</div>
+          <p class="contact-empty__title">Aucun message pour le moment</p>
+          <p class="contact-empty__hint">Les visiteurs peuvent vous écrire depuis la page contact du site.</p>
+          <a href="{{ url_for('contact') }}" class="btn btn-secondary" target="_blank" rel="noopener">Voir le formulaire public</a>
+        </div>
+        {% endif %}
+      </section>
+    </div>
+
+    <aside class="admin-page-aside">
+      <section class="panel">
+        <h2>Formulaire public</h2>
+        <p class="contact-aside__text">Page visible par les visiteurs — bilingue FR/EN.</p>
+        <a href="{{ url_for('contact') }}" class="btn btn-secondary contact-aside__link" target="_blank" rel="noopener">
+          Ouvrir /contact ↗
+        </a>
+      </section>
+
+      <section class="panel">
+        <h2>Configuration SMTP</h2>
+        <ul class="status-list">
+          {% if smtp_ok %}
+          <li class="ok">Les nouveaux messages déclenchent un email de notification.</li>
+          {% else %}
+          <li class="warn">SMTP contact absent — les messages sont stockés ici uniquement.</li>
+          {% endif %}
+          <li class="ok">Répondez via le bouton « Répondre » (client mail).</li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2>💡 Bon à savoir</h2>
+        <ul class="status-list">
+          <li class="ok">Marquez lu après traitement pour suivre la file.</li>
+          <li class="warn">La suppression est définitive (pas de corbeille).</li>
+        </ul>
+      </section>
+    </aside>
+  </div>
 </div>
-{% else %}
-<p class="muted">Aucun message pour le moment.</p>
+{% endblock %}
+
+{% block scripts %}
+{% if messages %}
+<script>
+(function () {
+  var buttons = document.querySelectorAll('.contact-filter__btn');
+  var items = document.querySelectorAll('.contact-msg');
+  var empty = document.getElementById('contact-inbox-empty');
+  if (!buttons.length) return;
+
+  function apply(filter) {
+    var visible = 0;
+    items.forEach(function (el) {
+      var show = filter === 'all' || el.dataset.read === '0';
+      el.hidden = !show;
+      if (show) visible++;
+    });
+    if (empty) empty.hidden = visible > 0 || filter === 'all';
+  }
+
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      buttons.forEach(function (b) {
+        b.classList.toggle('is-active', b === btn);
+        b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+      });
+      apply(btn.dataset.filter);
+    });
+  });
+})();
+</script>
 {% endif %}
 {% endblock %}
