@@ -68,6 +68,7 @@ RESERVED_SLUGS = frozenset({
     "calculateur-budget-vietnam", "vietnam-budget-calculator",
     "visa-vietnam", "vietnam-visa",
     "esim-assurance-vietnam", "esim-insurance-vietnam",
+    "applications-utiles-vietnam", "useful-apps-vietnam",
 })
 
 load_dotenv()
@@ -581,6 +582,26 @@ def essentials_tool():
         meta_keywords="eSIM Vietnam, assurance voyage Vietnam, Airalo Holafly"
         if lang == "fr"
         else "Vietnam eSIM, Vietnam travel insurance, Airalo Holafly",
+    )
+
+
+# ── Applications utiles (guide anti-arnaque) ──────────────────────────
+
+@app.route("/applications-utiles-vietnam")
+@app.route("/en/useful-apps-vietnam")
+def useful_apps():
+    from data.vietnam_apps import app_categories, app_faq
+
+    lang = get_lang()
+    return render_template(
+        "apps.html",
+        app_cats=app_categories(lang),
+        apps_faq=app_faq(lang),
+        meta_title=t("meta.apps.title", lang),
+        meta_description=t("meta.apps.desc", lang),
+        meta_keywords="applications Vietnam, Grab Vietnam, apps voyage Vietnam, éviter arnaques Vietnam"
+        if lang == "fr"
+        else "Vietnam apps, Grab Vietnam, travel apps Vietnam, avoid scams Vietnam",
     )
 
 

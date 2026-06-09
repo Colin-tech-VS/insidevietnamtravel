@@ -530,7 +530,34 @@ UI: dict[str, dict[str, str]] = {
     "tools.budget": {"fr": "Calculateur de budget", "en": "Budget calculator"},
     "tools.visa": {"fr": "Visa Vietnam", "en": "Vietnam visa"},
     "tools.essentials": {"fr": "eSIM & assurance", "en": "eSIM & insurance"},
+    "tools.apps": {"fr": "Applications utiles", "en": "Useful apps"},
     "footer.tools": {"fr": "Outils voyage", "en": "Travel tools"},
+
+    # ── Page Applications utiles ─────────────────────────────────────────
+    "apps.eyebrow": {"fr": "Guide pratique", "en": "Practical guide"},
+    "apps.title": {
+        "fr": "Applications indispensables pour voyager au Vietnam",
+        "en": "Essential apps for travelling in Vietnam",
+    },
+    "apps.lead": {
+        "fr": "Notre sélection d'applications pour vous débrouiller seul au Vietnam — et "
+              "surtout éviter les arnaques au taxi, au change et aux billets « gonflés ».",
+        "en": "Our pick of apps to get around Vietnam on your own — and above all avoid "
+              "taxi, exchange and inflated-ticket scams.",
+    },
+    "apps.why": {"fr": "Pourquoi", "en": "Why"},
+    "apps.open": {"fr": "Ouvrir", "en": "Open"},
+    "apps.get": {"fr": "Obtenir l'app", "en": "Get the app"},
+    "apps.badge.essential": {"fr": "Indispensable", "en": "Must-have"},
+    "apps.badge.affiliate": {"fr": "Partenaire", "en": "Partner"},
+    "apps.badge.free": {"fr": "Gratuit", "en": "Free"},
+    "apps.faq": {"fr": "Questions fréquentes", "en": "Frequently asked questions"},
+    "apps.disclosure": {
+        "fr": "Certains liens sont des liens partenaires : nous pouvons toucher une "
+              "commission sans surcoût pour vous. Cela n'influence pas notre sélection.",
+        "en": "Some links are partner links: we may earn a commission at no extra cost to "
+              "you. It does not influence our selection.",
+    },
 
     # ── Recherche ────────────────────────────────────────────────────
     "search.label": {"fr": "Rechercher", "en": "Search"},
@@ -729,6 +756,16 @@ UI: dict[str, dict[str, str]] = {
               "voyage pour le Vietnam : data, prix, validité et garanties.",
         "en": "Compare eSIMs (Airalo, Holafly) and choose your travel insurance for "
               "Vietnam: data, price, validity and cover.",
+    },
+    "meta.apps.title": {
+        "fr": "Applications utiles au Vietnam (2026) — Grab & anti-arnaque",
+        "en": "Useful apps for Vietnam (2026) — Grab & anti-scam",
+    },
+    "meta.apps.desc": {
+        "fr": "Les applications indispensables pour voyager au Vietnam sans se faire "
+              "arnaquer : Grab, Google Maps, XE, Google Translate, eSIM et plus.",
+        "en": "The essential apps to travel Vietnam without getting scammed: Grab, "
+              "Google Maps, XE, Google Translate, eSIM and more.",
     },
 }
 

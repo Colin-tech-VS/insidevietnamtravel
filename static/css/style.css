@@ -3221,6 +3221,70 @@ a.pillar-card:hover .pillar-card__arrow { opacity: 1; transform: translateX(0); 
 .sidebar-card--pillar { border-left: 3px solid var(--gold); }
 .sidebar-card--pillar a { font-weight: 600; }
 
+/* ── Page Applications utiles ───────────────────────────────────────── */
+.apps-disclosure {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  background: var(--rice);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1.1rem;
+  margin: 0 0 2.5rem;
+}
+.apps-cat { margin-bottom: 2.75rem; scroll-margin-top: 90px; }
+.apps-cat__title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  margin: 0 0 0.4rem;
+  color: var(--ink);
+}
+.apps-cat__intro { margin: 0 0 1.25rem; color: var(--ink-soft); max-width: 70ch; line-height: 1.6; }
+.apps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+.app-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1.4rem;
+  background: var(--white);
+  border: 1px solid var(--rice-dark);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+.app-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.app-card__head { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.app-card__icon { font-size: 1.5rem; line-height: 1; }
+.app-card__name { font-size: 1.1rem; margin: 0; color: var(--ink); }
+.app-badge {
+  margin-left: auto;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.app-badge--essential { background: var(--teal); color: var(--white); }
+.app-badge--affiliate { background: var(--gold); color: #3a2e0c; }
+.app-badge--free { background: var(--rice); color: var(--ink-muted); }
+.app-card__tagline { margin: 0; font-weight: 600; color: var(--ink); }
+.app-card__why { margin: 0; font-size: 0.9rem; line-height: 1.5; color: var(--ink-muted); }
+.app-card__link {
+  margin-top: auto;
+  align-self: flex-start;
+  font-weight: 600;
+  color: var(--teal);
+}
+.app-card__link:hover { text-decoration: underline; }
+
+@media (max-width: 768px) {
+  .apps-grid { grid-template-columns: 1fr; }
+}
+
 /* Grille des piliers sur la homepage (hub principal → silos) */
 .pillars-grid {
   display: grid;

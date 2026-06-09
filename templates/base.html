@@ -204,19 +204,20 @@
             </ul>
           </li>
           <li class="nav-dropdown">
+            <button type="button" class="nav-dropdown__toggle" aria-expanded="false" aria-controls="nav-guides">{{ t('nav.guides') }}</button>
+            <ul id="nav-guides" class="nav-dropdown__menu">
+              {% for p in pillars if p.is_hub %}
+              <li><a href="{{ p.url }}">{{ p.title }}</a></li>
+              {% endfor %}
+            </ul>
+          </li>
+          <li class="nav-dropdown">
             <button type="button" class="nav-dropdown__toggle" aria-expanded="false" aria-controls="nav-itineraries">{{ t('nav.itineraries') }}</button>
             <ul id="nav-itineraries" class="nav-dropdown__menu">
               {% for slug, it in itineraries.items() %}
               <li><a href="{{ lang_url('itinerary', slug=slug) }}">{{ it.duration }} {{ t('nav.days') }}</a></li>
               {% endfor %}
-            </ul>
-          </li>
-          <li class="nav-dropdown">
-            <button type="button" class="nav-dropdown__toggle" aria-expanded="false" aria-controls="nav-guides">{{ t('nav.guides') }}</button>
-            <ul id="nav-guides" class="nav-dropdown__menu">
-              {% for p in pillars %}
-              <li><a href="{{ p.url }}">{{ p.title }}</a></li>
-              {% endfor %}
+              <li><a href="{{ lang_url('pillar', slug='itineraires-vietnam') }}">{{ t('prepare.see_all') }} →</a></li>
             </ul>
           </li>
           <li class="nav-dropdown">
@@ -226,6 +227,7 @@
               <li><a href="{{ lang_url('budget_tool') }}">{{ t('tools.budget') }}</a></li>
               <li><a href="{{ lang_url('visa_tool') }}">{{ t('tools.visa') }}</a></li>
               <li><a href="{{ lang_url('essentials_tool') }}">{{ t('tools.essentials') }}</a></li>
+              <li><a href="{{ lang_url('useful_apps') }}">{{ t('tools.apps') }}</a></li>
             </ul>
           </li>
           <li class="nav-dropdown">
@@ -360,6 +362,7 @@
           <li><a href="{{ lang_url('budget_tool') }}">{{ t('tools.budget') }}</a></li>
           <li><a href="{{ lang_url('visa_tool') }}">{{ t('tools.visa') }}</a></li>
           <li><a href="{{ lang_url('essentials_tool') }}">{{ t('tools.essentials') }}</a></li>
+          <li><a href="{{ lang_url('useful_apps') }}">{{ t('tools.apps') }}</a></li>
         </ul>
       </div>
     </div>

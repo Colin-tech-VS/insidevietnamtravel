@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% from "macros/images.html" import responsive_img with context %}
+{% from "macros/seo.html" import json_ld_graph with context %}
+
+{% set hero_img = '/static/images/pool/1521993117367-b7f70ccd029d.webp' %}
+
+{% block head_preload %}
+<link rel="preload" as="image" href="{{ hero_img }}" fetchpriority="high">
+{% endblock %}
+
+{% block structured_data %}
+{% set app_items = [] %}
+{% for cat in app_cats %}{% for a in cat.apps %}{% set _ = app_items.append({"name": a.name, "url": canonical_url ~ '#' ~ cat.key}) %}{% endfor %}{% endfor %}
+{% set graph = [
+  {"@type": "WebPage", "name": meta_title, "description": meta_description,
+   "url": canonical_url, "inLanguage": "en-GB" if lang == 'en' else "fr-FR"},
+  seo_breadcrumb([
+    (t('nav.home'), site.SITE_URL ~ lang_url('index')),
+    (t('apps.title'), None),
+  ]),
+  seo_item_list(t('apps.title'), app_items),
+] %}
+{% if apps_faq %}{% set _ = graph.append(seo_faq(apps_faq)) %}{% endif %}
+{{ json_ld_graph(graph) }}
+{% endblock %}
+
+{% block content %}
+<header class="pillar-hero">
+  <div class="pillar-hero__media" aria-hidden="true">
+    {{ responsive_img(hero_img, alt='', width=1600, height=900, loading='eager',
+       fetchpriority='high', class='pillar-hero__img', sizes='100vw') }}
+  </div>
+  <div class="container pillar-hero__inner">
+    <nav class="breadcrumb breadcrumb--light" aria-label="{{ t('breadcrumb.aria') }}">
+      <ol>
+        <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+        <li aria-current="page">{{ t('apps.title') }}</li>
+      </ol>
+    </nav>
+    <span class="pillar-hero__eyebrow">{{ t('apps.eyebrow') }}</span>
+    <h1 class="pillar-hero__title">{{ t('apps.title') }}</h1>
+    <p class="pillar-hero__lede">{{ t('apps.lead') }}</p>
+  </div>
+</header>
+
+<section class="section">
+  <div class="container">
+    <p class="apps-disclosure">{{ t('apps.disclosure') }}</p>
+
+    {% for cat in app_cats %}
+    <div class="apps-cat" id="{{ cat.key }}">
+      <h2 class="apps-cat__title">{{ cat.title }}</h2>
+      <p class="apps-cat__intro">{{ cat.intro }}</p>
+      <div class="apps-grid">
+        {% for a in cat.apps %}
+        {% if a.affiliate == 'airalo' %}{% set href = esim_airalo_url() %}
+        {% elif a.affiliate == 'holafly' %}{% set href = esim_holafly_url() %}
+        {% else %}{% set href = a.url %}{% endif %}
+        <article class="app-card">
+          <div class="app-card__head">
+            <span class="app-card__icon" aria-hidden="true">{{ a.icon }}</span>
+            <h3 class="app-card__name">{{ a.name }}</h3>
+            <span class="app-badge app-badge--{{ a.badge }}">{{ t('apps.badge.' ~ a.badge) }}</span>
+          </div>
+          <p class="app-card__tagline">{{ a.tagline }}</p>
+          <p class="app-card__why"><strong>{{ t('apps.why') }} :</strong> {{ a.why }}</p>
+          {% if href %}
+          <a class="app-card__link" href="{{ href }}" target="_blank"
+             rel="{% if a.affiliate %}sponsored noopener{% else %}noopener{% endif %}">
+            {{ t('apps.get') if a.badge == 'affiliate' else t('apps.open') }}
+            <span aria-hidden="true">↗</span>
+          </a>
+          {% endif %}
+        </article>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+{% if apps_faq %}
+<section class="section section--alt">
+  <div class="container container--narrow">
+    <h2 class="pillar-section-title">{{ t('apps.faq') }}</h2>
+    <div class="pillar-faq">
+      {% for item in apps_faq %}
+      <details class="pillar-faq__item">
+        <summary>{{ item.question }}</summary>
+        <p>{{ item.answer }}</p>
+      </details>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="section">
+  <div class="container">
+    <div class="pillar-cta">
+      <div>
+        <h2 class="pillar-cta__title">{{ t('pillar.cta.title') }}</h2>
+        <p class="pillar-cta__text">{{ t('pillar.cta.text') }}</p>
+      </div>
+      <a class="btn btn-primary btn-lg" href="{{ lang_url('prepare_trip') }}">{{ t('nav.prepare') }}</a>
+    </div>
+    <nav class="pillar-related" aria-label="{{ t('pillar.related') }}">
+      <span class="pillar-related__label">{{ t('pillar.related') }}</span>
+      {% for p in pillars if p.key in ['preparer-son-voyage', 'transport'] %}
+      <a href="{{ p.url }}">{{ p.title }}</a>
+      {% endfor %}
+      <a href="{{ lang_url('essentials_tool') }}">{{ t('tools.essentials') }}</a>
+    </nav>
+  </div>
+</section>
+{% endblock %}

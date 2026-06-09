@@ -247,6 +247,7 @@ ROUTE_PATHS: dict[str, dict[str, str]] = {
     "budget_tool": {"fr": "/calculateur-budget-vietnam", "en": "/en/vietnam-budget-calculator"},
     "visa_tool": {"fr": "/visa-vietnam", "en": "/en/vietnam-visa"},
     "essentials_tool": {"fr": "/esim-assurance-vietnam", "en": "/en/esim-insurance-vietnam"},
+    "useful_apps": {"fr": "/applications-utiles-vietnam", "en": "/en/useful-apps-vietnam"},
     "about": {"fr": "/a-propos", "en": "/en/about"},
     "contact": {"fr": "/contact", "en": "/en/contact"},
     "privacy": {"fr": "/politique-confidentialite", "en": "/en/privacy"},

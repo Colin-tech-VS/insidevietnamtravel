@@ -96,6 +96,10 @@ PILLARS: dict[str, dict] = {
                        "Quelle option data choisir, et comment l'activer.",
                        "Which data option to pick, and how to activate it.",
                        slug="carte-sim-esim-vietnam"),
+                 _link("useful_apps", "Applications indispensables",
+                       "Essential apps",
+                       "Grab, Maps, traduction, eSIM : se débrouiller sans arnaque.",
+                       "Grab, Maps, translation, eSIM: get around scam-free."),
              ]},
             {"title": {"fr": "Sur place en toute sérénité", "en": "Stay safe on the ground"},
              "links": [
@@ -517,5 +521,6 @@ def thematic_list(lang: str, lang_url: Callable[..., str]) -> list[dict]:
             "lede": _pick(raw["lede"], lang),
             "url": pillar_url(raw, lang, lang_url),
             "photo_id": raw["photo_id"],
+            "is_hub": raw.get("kind") == "hub",
         })
     return items
