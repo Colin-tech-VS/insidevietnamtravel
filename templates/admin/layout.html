@@ -28,32 +28,30 @@
       visibility: hidden;
       pointer-events: none;
     }
+    html.admin-skip-page-loader #page-loader { display: none !important; }
+    html.admin-skip-page-loader body.is-loading { overflow: auto !important; }
   </style>
+  <script>
+    (function () {
+      try {
+        if (sessionStorage.getItem('adminLoader') === 'action') {
+          document.documentElement.classList.add('admin-skip-page-loader');
+        }
+      } catch (e) { /* private browsing */ }
+    })();
+  </script>
 </head>
 <body class="admin-body is-loading {% block body_class %}{% endblock %}">
   {% from "macros/loader.html" import page_loader with context %}
   {{ page_loader(hint='Chargement de l\'administration…', sub='Administration') }}
-  <script>
-    (function () {
-      var done = false;
-      function hide() {
-        if (done) return;
-        done = true;
-        var loader = document.getElementById('page-loader');
-        if (!loader) return;
-        loader.classList.add('is-hidden');
-        document.body.classList.remove('is-loading');
-        loader.setAttribute('aria-busy', 'false');
-      }
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function () { setTimeout(hide, 400); }, { once: true });
-      } else {
-        setTimeout(hide, 400);
-      }
-      window.addEventListener('load', function () { setTimeout(hide, 400); }, { once: true });
-      setTimeout(hide, 3500);
-    })();
-  </script>
+
+  <div id="admin-action-loader" class="admin-action-loader" hidden aria-live="polite" aria-busy="false" aria-hidden="true">
+    <div class="admin-action-loader__panel">
+      <span class="admin-action-loader__spinner" aria-hidden="true"></span>
+      <span class="admin-action-loader__text" id="admin-action-loader-text">Traitement en cours…</span>
+    </div>
+    <div class="admin-action-loader__bar" aria-hidden="true"><span></span></div>
+  </div>
   <noscript><style>#page-loader{display:none!important}body.is-loading{overflow:auto!important}</style></noscript>
 
   {% if session.get('admin_logged_in') %}
@@ -147,7 +145,7 @@
   {% block guest %}{% endblock %}
   {% endif %}
 
-  <script src="{{ url_for('static', filename='js/loader.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='admin/admin-loader.js') }}" defer></script>
   <script src="{{ url_for('static', filename='admin/admin.js') }}" defer></script>
   {% block scripts %}{% endblock %}
 </body>

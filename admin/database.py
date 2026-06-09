@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS page_views (
     ip_hash TEXT,
     country_code TEXT,
     country_name TEXT,
+    city TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE TABLE IF NOT EXISTS affiliate_clicks (
@@ -149,6 +150,7 @@ def _migrate_page_views_columns(conn, *, postgres: bool) -> None:
             cur.execute("ALTER TABLE page_views ADD COLUMN IF NOT EXISTS country_name TEXT")
             cur.execute("ALTER TABLE page_views ADD COLUMN IF NOT EXISTS utm_source TEXT")
             cur.execute("ALTER TABLE page_views ADD COLUMN IF NOT EXISTS utm_campaign TEXT")
+            cur.execute("ALTER TABLE page_views ADD COLUMN IF NOT EXISTS city TEXT")
     else:
         cols = {row[1] for row in conn.execute("PRAGMA table_info(page_views)")}
         if "country_code" not in cols:
@@ -159,6 +161,8 @@ def _migrate_page_views_columns(conn, *, postgres: bool) -> None:
             conn.execute("ALTER TABLE page_views ADD COLUMN utm_source TEXT")
         if "utm_campaign" not in cols:
             conn.execute("ALTER TABLE page_views ADD COLUMN utm_campaign TEXT")
+        if "city" not in cols:
+            conn.execute("ALTER TABLE page_views ADD COLUMN city TEXT")
 
 
 def _migrate_affiliate_clicks_columns(conn, *, postgres: bool) -> None:

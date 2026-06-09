@@ -29,7 +29,14 @@
   }
 
   const countries = siteAnalyticsData.countries || [];
+  const cities = siteAnalyticsData.cities || [];
   const countryColors = ['#1B4D4A', '#C17F3A', '#2A6F6B', '#8B6914', '#4A7C59', '#6B5B95', '#A0522D', '#4682B4', '#5F7A61', '#9B6B4F'];
+
+  function cityChartLabel(c) {
+    if (c.city === 'Inconnu') return c.country_name !== 'Inconnu' ? c.country_name : 'Inconnu';
+    if (c.country_code && c.country_code !== '??') return `${c.city} · ${c.country_code}`;
+    return c.city;
+  }
 
   const countriesCtx = document.getElementById('countriesChart');
   if (countriesCtx && countries.length) {
@@ -41,6 +48,32 @@
           label: 'Pages vues',
           data: countries.map((c) => c.views),
           backgroundColor: countryColors,
+          borderRadius: 4,
+        }],
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { beginAtZero: true, grid: { color: '#F0EBE3' }, ticks: { color: '#7A7772', precision: 0 } },
+          y: { grid: { display: false }, ticks: { color: '#7A7772', font: { size: 11 } } },
+        },
+      },
+    });
+  }
+
+  const citiesCtx = document.getElementById('citiesChart');
+  if (citiesCtx && cities.length) {
+    new Chart(citiesCtx, {
+      type: 'bar',
+      data: {
+        labels: cities.map(cityChartLabel),
+        datasets: [{
+          label: 'Pages vues',
+          data: cities.map((c) => c.views),
+          backgroundColor: countryColors.slice().reverse(),
           borderRadius: 4,
         }],
       },
@@ -219,10 +252,13 @@
         const feed = document.getElementById('live-feed');
         if (feed && d.recent) {
           feed.innerHTML = d.recent.slice(0, 12).map((v) => {
-            const country = v.country_code && v.country_code !== '??'
-              ? `<span class="top-pages-list__country">${v.country_code}</span>`
-              : '';
-            return `<li><span class="top-pages-list__path">${country}${v.path}</span><span class="top-pages-list__count">${v.created_at.slice(11, 16)}</span></li>`;
+            let loc = '';
+            if (v.city && v.city !== 'Inconnu') {
+              loc = `<span class="top-pages-list__loc">${v.city}${v.country_code && v.country_code !== '??' ? ` · ${v.country_code}` : ''}</span> `;
+            } else if (v.country_code && v.country_code !== '??') {
+              loc = `<span class="top-pages-list__country">${v.country_code}</span> `;
+            }
+            return `<li><span class="top-pages-list__path">${loc}${v.path}</span><span class="top-pages-list__count">${v.created_at.slice(11, 16)}</span></li>`;
           }).join('') || '<li class="muted">En attente de visites…</li>';
         }
       })

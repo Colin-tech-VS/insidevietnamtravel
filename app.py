@@ -150,9 +150,9 @@ def _localized_block(block: dict, lang: str) -> dict:
 def _log_page_view_async(path: str, referrer: str, user_agent: str, ip_hash: str,
                          client_ip: str, utm_source: str = "", utm_campaign: str = ""):
     try:
-        from admin.geoip import resolve_country
+        from admin.geoip import resolve_location
 
-        country_code, country_name = resolve_country(client_ip)
+        country_code, country_name, city = resolve_location(client_ip)
         analytics_db.log_page_view(
             path=path,
             referrer=referrer,
@@ -160,6 +160,7 @@ def _log_page_view_async(path: str, referrer: str, user_agent: str, ip_hash: str
             ip_hash=ip_hash,
             country_code=country_code,
             country_name=country_name,
+            city=city,
             utm_source=utm_source,
             utm_campaign=utm_campaign,
         )

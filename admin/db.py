@@ -65,6 +65,7 @@ def log_page_view(
     ip_hash: str,
     country_code: str = "",
     country_name: str = "",
+    city: str = "",
     utm_source: str = "",
     utm_campaign: str = "",
 ):
@@ -72,12 +73,14 @@ def log_page_view(
         _execute(
             conn,
             """INSERT INTO page_views
-               (path, referrer, user_agent, ip_hash, country_code, country_name, utm_source, utm_campaign, created_at)
-               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+               (path, referrer, user_agent, ip_hash, country_code, country_name, city,
+                utm_source, utm_campaign, created_at)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
             """INSERT INTO page_views
-               (path, referrer, user_agent, ip_hash, country_code, country_name, utm_source, utm_campaign, created_at)
-               VALUES (?,?,?,?,?,?,?,?,?)""",
-            (path, referrer, user_agent, ip_hash, country_code, country_name,
+               (path, referrer, user_agent, ip_hash, country_code, country_name, city,
+                utm_source, utm_campaign, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?)""",
+            (path, referrer, user_agent, ip_hash, country_code, country_name, city,
              utm_source, utm_campaign, _now_iso()),
         )
 
@@ -179,9 +182,9 @@ def get_realtime_stats():
         ).fetchone()
         recent = _execute(
             conn,
-            f"""SELECT path, created_at, country_code, country_name
+            f"""SELECT path, created_at, country_code, country_name, city
                 FROM page_views WHERE 1=1{bot} ORDER BY id DESC LIMIT 15""",
-            f"""SELECT path, created_at, country_code, country_name
+            f"""SELECT path, created_at, country_code, country_name, city
                 FROM page_views WHERE 1=1{bot} ORDER BY id DESC LIMIT 15""",
         ).fetchall()
         top_pages = _execute(
@@ -234,6 +237,36 @@ def get_country_stats(days: int = 30) -> list[dict]:
                 FROM page_views
                 WHERE created_at >= ?{bot}
                 GROUP BY country_code, country_name
+                ORDER BY views DESC
+                LIMIT 15""",
+            (_since_days(days),),
+        ).fetchall()
+    return [_row_dict(r) for r in rows]
+
+
+def get_city_stats(days: int = 30) -> list[dict]:
+    bot = _human_traffic_sql()
+    with get_connection() as conn:
+        rows = _execute(
+            conn,
+            f"""SELECT COALESCE(NULLIF(city, ''), 'Inconnu') AS city,
+                       COALESCE(NULLIF(country_code, ''), '??') AS country_code,
+                       COALESCE(NULLIF(country_name, ''), 'Inconnu') AS country_name,
+                       COUNT(*) AS views
+                FROM page_views
+                WHERE created_at >= %s
+                  AND COALESCE(NULLIF(city, ''), '') <> ''{bot}
+                GROUP BY city, country_code, country_name
+                ORDER BY views DESC
+                LIMIT 15""",
+            f"""SELECT COALESCE(NULLIF(city, ''), 'Inconnu') AS city,
+                       COALESCE(NULLIF(country_code, ''), '??') AS country_code,
+                       COALESCE(NULLIF(country_name, ''), 'Inconnu') AS country_name,
+                       COUNT(*) AS views
+                FROM page_views
+                WHERE created_at >= ?
+                  AND COALESCE(NULLIF(city, ''), '') <> ''{bot}
+                GROUP BY city, country_code, country_name
                 ORDER BY views DESC
                 LIMIT 15""",
             (_since_days(days),),

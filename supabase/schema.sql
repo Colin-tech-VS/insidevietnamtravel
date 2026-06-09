@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS page_views (
     ip_hash TEXT,
     country_code TEXT,
     country_name TEXT,
+    city TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

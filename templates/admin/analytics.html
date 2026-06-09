@@ -83,7 +83,9 @@
           {% for v in stats.recent[:15] %}
           <li>
             <span class="top-pages-list__path">
-              {% if v.country_code and v.country_code != '??' %}
+              {% if v.city and v.city != 'Inconnu' %}
+              <span class="top-pages-list__loc">{{ v.city }}{% if v.country_code and v.country_code != '??' %} · {{ v.country_code }}{% endif %}</span>
+              {% elif v.country_code and v.country_code != '??' %}
               <span class="top-pages-list__country">{{ v.country_code }}</span>
               {% endif %}
               {{ v.path }}
@@ -178,7 +180,7 @@
     <section class="geo-analytics-section" aria-labelledby="location-title">
       <header class="geo-analytics-header">
         <h2 id="location-title">Localisation</h2>
-        <p class="page-sub">Pays d'origine des visiteurs humains (hors robots) — {{ days }} derniers jours.</p>
+        <p class="page-sub">Pays et villes d'origine des visiteurs humains (hors robots) — {{ days }} derniers jours.</p>
       </header>
       <div class="chart-grid">
         <section class="chart-panel">
@@ -204,6 +206,34 @@
             </li>
             {% else %}
             <li class="muted">Pas encore de données géographiques.</li>
+            {% endfor %}
+          </ul>
+        </section>
+        <section class="chart-panel">
+          <h2>Top villes</h2>
+          {% if stats.cities %}
+          <div class="chart-box chart-box--tall"><canvas id="citiesChart"></canvas></div>
+          {% else %}
+          <p class="muted">Les villes apparaîtront dès les prochaines visites (géolocalisation IP).</p>
+          {% endif %}
+        </section>
+        <section class="chart-panel">
+          <h2>Détail par ville</h2>
+          <ul class="top-pages-list">
+            {% for c in stats.cities[:12] %}
+            <li>
+              <span class="top-pages-list__path">
+                {{ c.city }}
+                {% if c.country_code != '??' %}
+                <span class="top-pages-list__country">{{ c.country_code }}</span>
+                {% elif c.country_name != 'Inconnu' %}
+                <span class="top-pages-list__loc-sub">{{ c.country_name }}</span>
+                {% endif %}
+              </span>
+              <span class="top-pages-list__count">{{ c.views }}</span>
+            </li>
+            {% else %}
+            <li class="muted">Pas encore de données par ville.</li>
             {% endfor %}
           </ul>
         </section>
@@ -282,6 +312,7 @@
     dailyViews: {{ stats.daily_views | tojson }},
     dailyClicks: {{ stats.daily_clicks | tojson }},
     countries: {{ stats.countries | tojson }},
+    cities: {{ stats.cities | tojson }},
     seo: {{ stats.seo | tojson }},
     geo: {{ stats.geo | tojson }},
   };

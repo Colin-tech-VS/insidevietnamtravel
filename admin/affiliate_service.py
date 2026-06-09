@@ -141,6 +141,7 @@ def build_site_analytics(days: int = 30) -> dict:
     geo = aggregate_geo_views(geo_rows)
     seo = aggregate_seo_views(db.get_seo_view_rows(days))
     countries = db.get_country_stats(days)
+    cities = db.get_city_stats(days)
 
     return {
         "days": days,
@@ -154,6 +155,7 @@ def build_site_analytics(days: int = 30) -> dict:
         "top_pages": realtime["top_pages"],
         "recent": realtime["recent"],
         "countries": countries,
+        "cities": cities,
         "seo": seo,
         "geo": geo,
     }
