@@ -59,6 +59,19 @@ CREATE TABLE IF NOT EXISTS newsletter_subscribers (
 CREATE INDEX IF NOT EXISTS idx_pv_created ON page_views(created_at);
 CREATE INDEX IF NOT EXISTS idx_clicks_created ON affiliate_clicks(created_at);
 CREATE INDEX IF NOT EXISTS idx_newsletter_email ON newsletter_subscribers(email);
+CREATE TABLE IF NOT EXISTS visitor_profile_snapshots (
+    id SERIAL PRIMARY KEY,
+    visitor_hash TEXT NOT NULL,
+    trip_group TEXT,
+    trip_style TEXT,
+    trip_duration TEXT,
+    cities TEXT,
+    interests TEXT,
+    path TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_vps_created ON visitor_profile_snapshots(created_at);
+CREATE INDEX IF NOT EXISTS idx_vps_hash ON visitor_profile_snapshots(visitor_hash);
 """
 
 
@@ -178,6 +191,45 @@ def _migrate_affiliate_clicks_columns(conn, *, postgres: bool) -> None:
             conn.execute("ALTER TABLE affiliate_clicks ADD COLUMN ip_hash TEXT")
 
 
+def _migrate_visitor_profile_table(conn, *, postgres: bool) -> None:
+    if postgres:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS visitor_profile_snapshots (
+                    id SERIAL PRIMARY KEY,
+                    visitor_hash TEXT NOT NULL,
+                    trip_group TEXT,
+                    trip_style TEXT,
+                    trip_duration TEXT,
+                    cities TEXT,
+                    interests TEXT,
+                    path TEXT,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )""")
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_vps_created ON visitor_profile_snapshots(created_at)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_vps_hash ON visitor_profile_snapshots(visitor_hash)"
+            )
+    else:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS visitor_profile_snapshots (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                visitor_hash TEXT NOT NULL,
+                trip_group TEXT,
+                trip_style TEXT,
+                trip_duration TEXT,
+                cities TEXT,
+                interests TEXT,
+                path TEXT,
+                created_at TEXT NOT NULL
+            )""")
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_vps_created ON visitor_profile_snapshots(created_at)"
+        )
+
+
 def _init_postgres():
     import psycopg2
 
@@ -190,6 +242,7 @@ def _init_postgres():
                     cur.execute(stmt)
         _migrate_page_views_columns(conn, postgres=True)
         _migrate_affiliate_clicks_columns(conn, postgres=True)
+        _migrate_visitor_profile_table(conn, postgres=True)
         conn.commit()
     finally:
         conn.close()
@@ -231,6 +284,7 @@ def _init_sqlite():
         """)
         _migrate_page_views_columns(conn, postgres=False)
         _migrate_affiliate_clicks_columns(conn, postgres=False)
+        _migrate_visitor_profile_table(conn, postgres=False)
 
 
 @contextmanager

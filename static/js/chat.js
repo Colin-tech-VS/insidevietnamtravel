@@ -285,6 +285,20 @@
     return !panel.hidden;
   }
 
+  function loadDynamicSuggestions() {
+    var api = document.body.dataset.profileApi;
+    if (!window.ivtProfile || !window.ivtProfile.enabled() || !api) return;
+    fetch(api, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data && data.suggestions && data.suggestions.length) {
+          suggestions = data.suggestions;
+          if (opened && !busy) renderSuggestions();
+        }
+      })
+      .catch(function () {});
+  }
+
   function openPanel() {
     panel.hidden = false;
     if (backdrop) {
@@ -297,6 +311,7 @@
     document.body.classList.add('mai-chat-open');
     if (!opened) {
       opened = true;
+      loadDynamicSuggestions();
       streamAssistantMessage(i18n.greeting, '').then(renderSuggestions);
     }
     input.focus();
@@ -329,7 +344,13 @@
     fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ message: text, history: history.slice(-8), lang: lang }),
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        message: text,
+        history: history.slice(-8),
+        lang: lang,
+        profile: window.ivtProfile ? window.ivtProfile.toJSON() : null,
+      }),
     })
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
       .then(function (res) {

@@ -51,7 +51,9 @@
 </nav></div>
 {% endif %}
 
-<p class="container apps-disclosure">{{ t('apps.disclosure') }}</p>
+<div class="container">
+  <p class="apps-disclosure">{{ t('apps.disclosure') }}</p>
+</div>
 
 {% for sec in guide.sections %}
 <section class="travel-guide__section{% if loop.index is odd %} section--alt{% endif %}" id="{{ sec.key }}">

@@ -223,8 +223,16 @@ def invalidate_cache() -> None:
     _CHUNK_CACHE.clear()
 
 
-def retrieve(query: str, lang: str, track_url_fn, top_n: int = 8) -> list[dict]:
+def retrieve(query: str, lang: str, track_url_fn, top_n: int = 8, visitor_profile: dict | None = None) -> list[dict]:
     q_tokens = _tokenize(query, lang)
+    profile_tags = set()
+    if visitor_profile:
+        try:
+            from data.visitor_profile import retrieve_boost_tags
+            profile_tags = retrieve_boost_tags(visitor_profile)
+            q_tokens = q_tokens | _tokenize(" ".join(profile_tags), lang)
+        except Exception:
+            pass
     hay = query.lower()
     if any(w in hay for w in ("hotel", "hôtel", "dormir", "heberg", "héberg", "stay", "carte", "map")):
         top_n = max(top_n, 12)
@@ -260,6 +268,13 @@ def retrieve(query: str, lang: str, track_url_fn, top_n: int = 8) -> list[dict]:
             t in q_tokens for t in _tokenize("visa meteo securite coutume phrase arnaque vaccin", lang)
         ):
             score += 2
+        if profile_tags and chunk.get("group") in (
+            "Sécurité Vietnam", "Coutumes Vietnam", "Phrases vietnamiennes",
+            "Visa Vietnam", "Météo Vietnam",
+        ):
+            hay_l = hay.lower()
+            if any(tag in hay_l or tag.replace("-", " ") in hay_l for tag in profile_tags if len(tag) > 2):
+                score += 2
         if score > 0:
             scored.append((score, chunk))
 
@@ -483,6 +498,8 @@ def _system_prompt(lang: str) -> str:
             "The site has dedicated guides: travel safety & scams, customs & etiquette, useful Vietnamese phrases, "
             "visa checker (evisa.gov.vn), weather planner by region/destination, useful apps (Grab), eSIM & insurance — "
             "recommend the matching page from CONTEXT when relevant. "
+            "When a VISITOR PROFILE block is present, prioritize advice and links aligned with their "
+            "travel style, cities, duration and pages already viewed — without mentioning tracking. "
             "Tone: warm, enthusiastic, expert, with a few well-placed emojis — never cheesy. "
             "Highlight 2–5 key terms per answer with **double asterisks** (destinations, seasons, durations, practical tips). "
             "Write a COMPLETE message (never end with a colon or an unfinished list). "
@@ -503,6 +520,8 @@ def _system_prompt(lang: str) -> str:
         "Le site propose des guides dédiés : sécurité & arnaques, coutumes & étiquette, phrases utiles en vietnamien, "
         "test visa (evisa.gov.vn), météo par région/ville avec planificateur, apps utiles (Grab), eSIM & assurance — "
         "orientez vers la page correspondante du CONTEXTE quand c'est pertinent. "
+        "Si un bloc VISITOR PROFILE est présent, priorisez conseils et liens alignés avec "
+        "son style, ses villes, sa durée et les pages déjà consultées — sans parler de tracking. "
         "Ton : chaleureux, enthousiaste, expert, quelques emojis bien placés — jamais lourd. "
         "Mets en valeur 2 à 5 mots-clés par réponse avec **double astérisques** (destinations, saisons, durées, conseils pratiques). "
         "Rédige un message COMPLET (ne termine jamais par « : » ni une liste inachevée). "
@@ -520,6 +539,7 @@ def chat_reply(
     *,
     client_ip: str = "",
     track_url_fn,
+    visitor_profile: dict | None = None,
 ) -> dict:
     from admin import ai_client, mistral_client
 
@@ -537,8 +557,17 @@ def chat_reply(
         raise ValueError(rate_err)
 
     lang = "en" if lang == "en" else "fr"
-    chunks = retrieve(message, lang, track_url_fn)
+    chunks = retrieve(message, lang, track_url_fn, visitor_profile=visitor_profile)
     context = _format_context(chunks)
+
+    profile_block = ""
+    if visitor_profile:
+        try:
+            from data.visitor_profile import profile_for_mai
+            from locales.ui import t as ui_t
+            profile_block = profile_for_mai(visitor_profile, lang, ui_t)
+        except Exception:
+            pass
 
     hist_lines = []
     for turn in (history or [])[-6:]:
@@ -549,7 +578,8 @@ def chat_reply(
 
     user_block = (
         f"CONTEXTE SITE (pages & liens affiliés autorisés):\n{context}\n\n"
-        f"HISTORIQUE:\n" + ("\n".join(hist_lines) if hist_lines else "(premier message)") + "\n\n"
+        + (f"{profile_block}\n\n" if profile_block else "")
+        + f"HISTORIQUE:\n" + ("\n".join(hist_lines) if hist_lines else "(premier message)") + "\n\n"
         f"QUESTION:\n{message}"
     )
 

@@ -5,6 +5,7 @@
   const banner = document.getElementById('cookie-banner');
   const settingsPanel = document.getElementById('cookie-settings');
   const analyticsToggle = document.getElementById('cookie-analytics-toggle');
+  const personalizationToggle = document.getElementById('cookie-personalization-toggle');
   if (!banner) return;
 
   const readConsent = () => {
@@ -19,11 +20,15 @@
     }
   };
 
-  const writeConsent = (analytics) => {
+  const writeConsent = (analytics, personalization) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       essential: true,
       analytics: !!analytics,
+      personalization: !!personalization,
       ts: Date.now(),
+    }));
+    window.dispatchEvent(new CustomEvent('ivt:consent-updated', {
+      detail: { analytics: !!analytics, personalization: !!personalization },
     }));
   };
 
@@ -57,21 +62,24 @@
     if (analyticsToggle) {
       analyticsToggle.checked = consent ? !!consent.analytics : false;
     }
+    if (personalizationToggle) {
+      personalizationToggle.checked = consent ? !!consent.personalization : false;
+    }
     if (settingsPanel) settingsPanel.hidden = false;
     banner.hidden = true;
   };
 
   document.querySelectorAll('[data-cookie-accept]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      writeConsent(true);
-      applyConsent({ analytics: true });
+      writeConsent(true, true);
+      applyConsent({ analytics: true, personalization: true });
     });
   });
 
   document.querySelectorAll('[data-cookie-reject]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      writeConsent(false);
-      applyConsent({ analytics: false });
+      writeConsent(false, false);
+      applyConsent({ analytics: false, personalization: false });
     });
   });
 
@@ -82,8 +90,9 @@
   document.querySelectorAll('[data-cookie-save]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const analytics = analyticsToggle ? analyticsToggle.checked : false;
-      writeConsent(analytics);
-      applyConsent({ analytics });
+      const personalization = personalizationToggle ? personalizationToggle.checked : false;
+      writeConsent(analytics, personalization);
+      applyConsent({ analytics, personalization });
     });
   });
 

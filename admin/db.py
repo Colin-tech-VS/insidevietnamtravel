@@ -405,3 +405,88 @@ def get_dashboard_totals():
         "today_views": _v(today_views),
         "total_clicks": _v(total_clicks),
     }
+
+
+def log_visitor_profile_snapshot(
+    *,
+    visitor_hash: str,
+    trip_group: str = "",
+    trip_style: str = "",
+    trip_duration: str = "",
+    cities: str = "",
+    interests: str = "",
+    path: str = "",
+):
+    if not visitor_hash:
+        return
+    with get_connection() as conn:
+        _execute(
+            conn,
+            """INSERT INTO visitor_profile_snapshots
+               (visitor_hash, trip_group, trip_style, trip_duration, cities, interests, path, created_at)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s)""",
+            """INSERT INTO visitor_profile_snapshots
+               (visitor_hash, trip_group, trip_style, trip_duration, cities, interests, path, created_at)
+               VALUES (?,?,?,?,?,?,?,?)""",
+            (
+                visitor_hash[:32],
+                (trip_group or "")[:20],
+                (trip_style or "")[:20],
+                (trip_duration or "")[:20],
+                (cities or "")[:200],
+                (interests or "")[:300],
+                (path or "")[:300],
+                _now_iso(),
+            ),
+        )
+
+
+def get_visitor_profile_stats(days: int = 30) -> dict:
+    since = _since_days(days)
+    out = {
+        "total_snapshots": 0,
+        "unique_visitors": 0,
+        "by_style": [],
+        "by_group": [],
+        "by_duration": [],
+        "top_cities": [],
+    }
+    try:
+        with get_connection() as conn:
+            cur = _execute(
+                conn,
+                "SELECT COUNT(*) AS c FROM visitor_profile_snapshots WHERE created_at >= %s",
+                "SELECT COUNT(*) AS c FROM visitor_profile_snapshots WHERE created_at >= ?",
+                (since,),
+            )
+            row = cur.fetchone()
+            out["total_snapshots"] = row["c"] if isinstance(row, dict) else row[0]
+
+            cur = _execute(
+                conn,
+                "SELECT COUNT(DISTINCT visitor_hash) AS c FROM visitor_profile_snapshots WHERE created_at >= %s",
+                "SELECT COUNT(DISTINCT visitor_hash) AS c FROM visitor_profile_snapshots WHERE created_at >= ?",
+                (since,),
+            )
+            row = cur.fetchone()
+            out["unique_visitors"] = row["c"] if isinstance(row, dict) else row[0]
+
+            for field, key in (
+                ("trip_style", "by_style"),
+                ("trip_group", "by_group"),
+                ("trip_duration", "by_duration"),
+            ):
+                cur = _execute(
+                    conn,
+                    f"SELECT COALESCE({field}, '') AS k, COUNT(*) AS n "
+                    f"FROM visitor_profile_snapshots WHERE created_at >= %s AND COALESCE({field}, '') <> '' "
+                    f"GROUP BY k ORDER BY n DESC LIMIT 8",
+                    f"SELECT COALESCE({field}, '') AS k, COUNT(*) AS n "
+                    f"FROM visitor_profile_snapshots WHERE created_at >= ? AND COALESCE({field}, '') <> '' "
+                    f"GROUP BY k ORDER BY n DESC LIMIT 8",
+                    (since,),
+                )
+                out[key] = [_row_dict(r) for r in cur.fetchall()]
+    except Exception:
+        pass
+    return out

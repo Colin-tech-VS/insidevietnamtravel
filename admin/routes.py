@@ -728,11 +728,13 @@ def analytics():
     if days not in (7, 30, 90):
         days = 30
     stats = build_site_analytics(days)
+    profile_stats = db.get_visitor_profile_stats(days)
     return render_template(
         "admin/analytics.html",
         stats=stats,
         days=days,
         social=db.get_social_traffic(days),
+        profile_stats=profile_stats,
         recommendations=get_analytics_recommendations(stats, days),
     )
 

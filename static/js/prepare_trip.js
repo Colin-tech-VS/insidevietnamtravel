@@ -387,9 +387,29 @@
     wizard.hidden = true;
     resultsEl.hidden = false;
     resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    if (window.ivtProfile && window.ivtProfile.saveTripPrefs) {
+      window.ivtProfile.saveTripPrefs({
+        group: state.group,
+        style: state.style,
+        duration: state.duration,
+        cities: state.cities,
+      });
+    }
+  }
+
+  function applySavedProfile() {
+    if (!window.ivtProfile || !window.ivtProfile.enabled()) return;
+    var p = window.ivtProfile.load();
+    if (!p) return;
+    if (p.g) state.group = p.g;
+    if (p.s) state.style = p.s;
+    if (p.d) state.duration = p.d;
+    if (p.c && p.c.length) state.cities = p.c.slice();
   }
 
   function init() {
+    applySavedProfile();
     const step1 = wizard.querySelector('[data-step="1"] .prepare-options');
     const step2 = wizard.querySelector('[data-step="2"] .prepare-options');
     const step3 = wizard.querySelector('[data-step="3"] .prepare-options');

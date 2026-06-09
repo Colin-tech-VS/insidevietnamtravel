@@ -115,7 +115,9 @@
 
 </head>
 
-<body class="is-loading" data-ga4-id="{{ ga4_id }}">
+<body class="is-loading" data-ga4-id="{{ ga4_id }}"
+      data-profile-api="{{ url_for('api_visitor_recommendations') }}"
+      data-profile-sync="{{ url_for('api_visitor_profile_sync') }}">
 
   {% from "macros/loader.html" import page_loader with context %}
   {{ page_loader() }}
@@ -325,6 +327,13 @@
     </div>
   </div>
 
+  <aside id="ivt-continue-bar" class="ivt-continue-bar" hidden>
+    <div class="container ivt-continue-bar__inner">
+      <p class="ivt-continue-bar__text"><span data-continue-text>{{ t('profile.continue') }}</span></p>
+      <a class="btn btn-secondary btn-sm" data-continue-link href="{{ lang_url('prepare_trip') }}">{{ t('profile.prepare_cta') }}</a>
+    </div>
+  </aside>
+
   <main id="main" role="main">
 
     {% block content %}{% endblock %}
@@ -412,6 +421,7 @@
 
   <script src="{{ url_for('static', filename='js/loader.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/cookies.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/visitor_profile.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/search.js') }}" defer></script>
   {% block scripts %}{% endblock %}

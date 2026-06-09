@@ -3396,7 +3396,10 @@ a.pillar-card:hover .pillar-card__arrow { opacity: 1; transform: translateX(0); 
   background: var(--rice);
   border-radius: var(--radius-md);
   padding: 0.85rem 1.1rem;
-  margin: 0 0 2.5rem;
+  max-width: 760px;
+  margin: 0 auto 2.5rem;
+  text-align: center;
+  line-height: 1.55;
 }
 .apps-cat { margin-bottom: 2.75rem; scroll-margin-top: 90px; }
 .apps-cat__title {
@@ -4063,3 +4066,53 @@ body.mai-chat-open .mai-chat__fab {
 }
 .dest-map-popup__cta:hover { background: var(--teal-light); }
 .leaflet-container { font-family: var(--font-body); }
+
+/* ── Profil visiteur (cookie) ───────────────────────────────────────── */
+.ivt-continue-bar {
+  background: linear-gradient(90deg, rgba(42, 107, 94, 0.12), rgba(196, 160, 83, 0.12));
+  border-bottom: 1px solid var(--rice-dark);
+  padding: 0.65rem 0;
+}
+.ivt-continue-bar__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.ivt-continue-bar__text { margin: 0; font-size: 0.92rem; color: var(--ink-soft); }
+
+.ivt-for-you__block { margin-bottom: 2rem; }
+.ivt-for-you__label {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  margin-bottom: 0.85rem;
+  color: var(--teal-deep);
+}
+.ivt-for-you__cta { margin-top: 1.5rem; text-align: center; }
+.dest-grid--compact { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.ivt-for-you .tool-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+.ivt-for-you .tool-link-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.2rem;
+  background: var(--white);
+  border: 1px solid var(--rice-dark);
+  border-radius: var(--radius-lg);
+  color: var(--ink);
+  font-weight: 600;
+  transition: all var(--transition);
+  text-decoration: none;
+}
+.ivt-for-you .tool-link-card:hover {
+  border-color: var(--teal);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  color: var(--teal);
+}
+.ivt-for-you .tool-link-card__icon { font-size: 1.35rem; }

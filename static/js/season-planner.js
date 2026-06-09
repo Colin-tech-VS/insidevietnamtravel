@@ -116,6 +116,9 @@
       "season-planner__result season-planner__result--" + agg.verdict;
     resultEl.textContent = verdictMessage(agg.verdict);
     renderCalendar(slugs);
+    if (window.ivtProfile && slugs.length) {
+      window.ivtProfile.merge({ c: slugs, u: ["season"] });
+    }
   }
 
   monthSelect.addEventListener("change", update);

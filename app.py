@@ -1126,6 +1126,74 @@ def search_index():
     return jsonify(items)
 
 
+@app.route("/api/visitor-recommendations")
+@app.route("/en/api/visitor-recommendations")
+def api_visitor_recommendations():
+    from flask import jsonify
+    from data.visitor_profile import (
+        PROFILE_COOKIE,
+        mai_suggestions,
+        parse_cookie,
+        resolve_from_profile,
+    )
+
+    lang = get_lang()
+    profile = parse_cookie(request.cookies.get(PROFILE_COOKIE))
+    if not profile:
+        return jsonify({
+            "ok": True,
+            "personalized": False,
+            "suggestions": mai_suggestions(None, lang, t),
+        })
+
+    rec = resolve_from_profile(
+        profile,
+        lang,
+        destinations=_destinations(lang),
+        itineraries=_itineraries(lang),
+        articles=_articles(lang),
+        categories=_categories(lang),
+        lang_url_fn=lang_url,
+        t_fn=t,
+    )
+    rec["ok"] = True
+    rec["suggestions"] = mai_suggestions(profile, lang, t)
+    return jsonify(rec)
+
+
+@app.route("/api/visitor-profile/sync", methods=["POST"])
+@app.route("/en/api/visitor-profile/sync", methods=["POST"])
+def api_visitor_profile_sync():
+    from flask import jsonify
+    from data.visitor_profile import hash_visitor_id, parse_cookie, PROFILE_COOKIE
+
+    profile = parse_cookie(request.cookies.get(PROFILE_COOKIE))
+    payload = request.get_json(silent=True) or {}
+    if not profile and not payload.get("id"):
+        return jsonify({"ok": False, "error": "no profile"}), 400
+
+    vid = (profile or {}).get("id") or payload.get("id") or ""
+    visitor_hash = hash_visitor_id(str(vid))
+    if not visitor_hash:
+        return jsonify({"ok": False}), 400
+
+    cities = payload.get("c") or (profile or {}).get("c") or []
+    interests = payload.get("i") or (profile or {}).get("i") or []
+    try:
+        analytics_db.log_visitor_profile_snapshot(
+            visitor_hash=visitor_hash,
+            trip_group=str(payload.get("g") or (profile or {}).get("g") or "")[:20],
+            trip_style=str(payload.get("s") or (profile or {}).get("s") or "")[:20],
+            trip_duration=str(payload.get("d") or (profile or {}).get("d") or "")[:20],
+            cities=",".join(cities[:8])[:200],
+            interests=",".join(interests[:12])[:300],
+            path=str(payload.get("path") or request.path or "")[:300],
+        )
+    except Exception:
+        pass
+    return jsonify({"ok": True})
+
+
 # ── Chat IA (Mai) ─────────────────────────────────────────────────────
 
 @app.route("/api/chat", methods=["POST"])
@@ -1141,6 +1209,12 @@ def api_chat():
     lang = "en" if payload.get("lang") == "en" else get_lang()
     history = payload.get("history") if isinstance(payload.get("history"), list) else []
 
+    from data.visitor_profile import PROFILE_COOKIE, parse_cookie
+    visitor_profile = parse_cookie(request.cookies.get(PROFILE_COOKIE))
+    if not visitor_profile and isinstance(payload.get("profile"), dict):
+        from data.visitor_profile import normalize_profile
+        visitor_profile = normalize_profile(payload["profile"])
+
     try:
         result = chat_service.chat_reply(
             message,
@@ -1148,6 +1222,7 @@ def api_chat():
             lang,
             client_ip=(request.remote_addr or "").strip(),
             track_url_fn=tracked_affiliate_url,
+            visitor_profile=visitor_profile,
         )
     except ValueError as exc:
         return jsonify({"ok": False, "error": str(exc)}), 400

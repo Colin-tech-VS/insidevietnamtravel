@@ -36,6 +36,16 @@
         <span class="cookie-toggle__slider"></span>
       </label>
     </div>
+    <div class="cookie-settings__item">
+      <div>
+        <strong>{{ t('cookie.personalization') }}</strong>
+        <p>{{ t('cookie.personalization_desc') }}</p>
+      </div>
+      <label class="cookie-toggle">
+        <input type="checkbox" id="cookie-personalization-toggle">
+        <span class="cookie-toggle__slider"></span>
+      </label>
+    </div>
     <div class="cookie-settings__footer">
       <button type="button" class="btn btn-ghost btn-sm" data-cookie-settings-close>{% if lang == 'en' %}Close{% else %}Fermer{% endif %}</button>
       <button type="button" class="btn btn-primary btn-sm" data-cookie-save>{{ t('cookie.save') }}</button>

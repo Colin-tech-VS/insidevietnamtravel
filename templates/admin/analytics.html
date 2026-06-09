@@ -59,6 +59,45 @@
     </section>
     {% endif %}
 
+    {% if profile_stats and profile_stats.unique_visitors %}
+    <section class="chart-panel">
+      <h2>Profils visiteurs (cookie personnalisation · {{ days }} j)</h2>
+      <p class="muted">Visiteurs anonymes ayant accepté le cookie de personnalisation — sans compte.</p>
+      <div class="kpi-grid" style="margin-top:1rem">
+        <div class="kpi-card">
+          <span class="kpi-card__label">Profils uniques</span>
+          <span class="kpi-card__value">{{ profile_stats.unique_visitors }}</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-card__label">Snapshots enregistrés</span>
+          <span class="kpi-card__value">{{ profile_stats.total_snapshots }}</span>
+        </div>
+      </div>
+      {% if profile_stats.by_style %}
+      <h3 style="margin-top:1.25rem;font-size:1rem">Styles de voyage</h3>
+      <table class="admin-table">
+        <thead><tr><th>Style</th><th>Profils</th></tr></thead>
+        <tbody>
+          {% for row in profile_stats.by_style %}
+          <tr><td>{{ row.k }}</td><td>{{ row.n }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+      {% if profile_stats.by_group %}
+      <h3 style="margin-top:1.25rem;font-size:1rem">Composition du groupe</h3>
+      <table class="admin-table">
+        <thead><tr><th>Groupe</th><th>Profils</th></tr></thead>
+        <tbody>
+          {% for row in profile_stats.by_group %}
+          <tr><td>{{ row.k }}</td><td>{{ row.n }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+    </section>
+    {% endif %}
+
     <div class="chart-grid">
       <section class="chart-panel chart-panel--wide">
         <h2>Pages vues par jour</h2>

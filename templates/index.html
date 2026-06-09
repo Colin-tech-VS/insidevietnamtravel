@@ -46,6 +46,31 @@
   </div>
 </section>
 
+<section id="ivt-for-you" class="section section--alt ivt-for-you" hidden
+         data-api-url="{{ url_for('api_visitor_recommendations') }}">
+  <div class="container">
+    <header class="section-header">
+      <h2>{{ t('profile.for_you') }}</h2>
+      <p><span data-profile-summary></span> — {{ t('profile.for_you_sub') }}</p>
+    </header>
+    <div class="ivt-for-you__block">
+      <h3 class="ivt-for-you__label">{{ t('profile.destinations') }}</h3>
+      <div class="dest-grid dest-grid--compact" data-profile-dests></div>
+    </div>
+    <div class="ivt-for-you__block">
+      <h3 class="ivt-for-you__label">{{ t('profile.itineraries') }}</h3>
+      <div class="tool-links" data-profile-itins></div>
+    </div>
+    <div class="ivt-for-you__block">
+      <h3 class="ivt-for-you__label">{{ t('profile.tools') }}</h3>
+      <div class="tool-links" data-profile-tools></div>
+    </div>
+    <p class="ivt-for-you__cta">
+      <a class="btn btn-primary" data-profile-prepare href="{{ lang_url('prepare_trip') }}">{{ t('profile.prepare_cta') }}</a>
+    </p>
+  </div>
+</section>
+
 <section class="section section--alt" aria-labelledby="pillars-title">
   <div class="container">
     <header class="section-header">
@@ -156,4 +181,8 @@
     </div>
   </div>
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/home_personalize.js') }}" defer></script>
 {% endblock %}

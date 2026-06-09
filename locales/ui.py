@@ -403,14 +403,44 @@ UI: dict[str, dict[str, str]] = {
     # Cookies
     "cookie.title": {"fr": "Cookies & confidentialité", "en": "Cookies & privacy"},
     "cookie.lead": {
-        "fr": "Nous utilisons des cookies pour mesurer l'audience (Google Analytics) et améliorer le site. Vous pouvez accepter ou refuser.",
-        "en": "We use cookies to measure traffic (Google Analytics) and improve the site. You can accept or decline.",
+        "fr": "Nous utilisons des cookies pour mesurer l'audience, mémoriser vos préférences de voyage "
+              "et améliorer le site. Vous pouvez accepter ou personnaliser.",
+        "en": "We use cookies to measure traffic, remember your travel preferences "
+              "and improve the site. You can accept or customize.",
     },
     "cookie.accept": {"fr": "Tout accepter", "en": "Accept all"},
     "cookie.reject": {"fr": "Refuser", "en": "Decline"},
     "cookie.settings": {"fr": "Personnaliser", "en": "Customize"},
     "cookie.analytics": {"fr": "Mesure d'audience", "en": "Analytics"},
+    "cookie.personalization": {"fr": "Expérience personnalisée", "en": "Personalized experience"},
+    "cookie.personalization_desc": {
+        "fr": "Mémorise vos destinations consultées, votre profil voyage (durée, style) et adapte "
+              "Mai et les recommandations — cookie ivt_vp, sans compte.",
+        "en": "Remembers destinations viewed, your trip profile (length, style) and adapts "
+              "Mai and recommendations — ivt_vp cookie, no account.",
+    },
     "cookie.save": {"fr": "Enregistrer", "en": "Save"},
+
+    # Profil visiteur (UI)
+    "profile.summary_default": {
+        "fr": "Voyageur curieux du Vietnam",
+        "en": "Curious Vietnam traveller",
+    },
+    "profile.for_you": {"fr": "Pour vous", "en": "For you"},
+    "profile.for_you_sub": {
+        "fr": "Suggestions basées sur votre navigation et vos préférences (cookie local, sans compte).",
+        "en": "Suggestions based on your browsing and preferences (local cookie, no account).",
+    },
+    "profile.continue": {"fr": "Reprendre votre exploration", "en": "Continue exploring"},
+    "profile.destinations": {"fr": "Destinations pour vous", "en": "Destinations for you"},
+    "profile.itineraries": {"fr": "Itinéraires adaptés", "en": "Matching itineraries"},
+    "profile.tools": {"fr": "Outils utiles pour votre profil", "en": "Tools for your profile"},
+    "profile.prepare_cta": {"fr": "Affiner mon profil voyage", "en": "Refine my trip profile"},
+
+    "chat.suggest_visa": {"fr": "Ai-je besoin d'un visa ?", "en": "Do I need a visa?"},
+    "chat.suggest_season": {"fr": "Quelle est la meilleure saison ?", "en": "What's the best season?"},
+    "chat.suggest_budget": {"fr": "Quel budget prévoir ?", "en": "What budget should I plan?"},
+    "chat.suggest_safety": {"fr": "Quelles arnaques éviter ?", "en": "What scams should I avoid?"},
 
     # Loader
     "loader.text": {"fr": "Chargement…", "en": "Loading…"},
