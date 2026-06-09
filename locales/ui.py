@@ -651,6 +651,11 @@ UI: dict[str, dict[str, str]] = {
     "chat.map_cta": {"fr": "Voir la carte complète", "en": "View full map"},
     "chat.map_on": {"fr": "Sur la carte", "en": "On the map"},
     "chat.map_error": {"fr": "Carte indisponible", "en": "Map unavailable"},
+    "chat.resize": {
+        "fr": "Redimensionner le chat — glisser le coin ou double-clic pour réinitialiser",
+        "en": "Resize chat — drag corner or double-click to reset",
+    },
+    "chat.resize_reset": {"fr": "Taille réinitialisée", "en": "Size reset"},
     "chat.disclaimer": {
         "fr": "Conseils IA à titre informatif — vérifiez visa & santé auprès des sources officielles.",
         "en": "AI tips for guidance only — check visa & health with official sources.",

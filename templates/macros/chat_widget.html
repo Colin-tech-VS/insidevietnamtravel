@@ -16,6 +16,8 @@
      data-map-cta="{{ t('chat.map_cta') }}"
      data-map-on="{{ t('chat.map_on') }}"
      data-map-error="{{ t('chat.map_error') }}"
+     data-resize-label="{{ t('chat.resize') }}"
+     data-resize-reset="{{ t('chat.resize_reset') }}"
      data-suggestions='{{ [t("chat.suggest1"), t("chat.suggest2"), t("chat.suggest3")] | tojson }}'>
   <button type="button" class="mai-chat__fab" id="mai-chat-fab" aria-expanded="false" aria-controls="mai-chat-panel" aria-label="{{ t('chat.open') }}">
     <span class="mai-chat__fab-ring" aria-hidden="true"></span>
@@ -31,6 +33,9 @@
   <button type="button" class="mai-chat__backdrop" id="mai-chat-backdrop" hidden aria-hidden="true" tabindex="-1"></button>
 
   <div class="mai-chat__panel" id="mai-chat-panel" hidden role="dialog" aria-modal="true" aria-labelledby="mai-chat-title">
+    <div class="mai-chat__resize" id="mai-chat-resize" role="separator"
+         aria-orientation="both" aria-label="{{ t('chat.resize') }}" tabindex="0"
+         title="{{ t('chat.resize') }}"></div>
     <header class="mai-chat__head">
       <div class="mai-chat__brand">
         <span class="mai-chat__head-avatar" aria-hidden="true">🌸</span>

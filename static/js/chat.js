@@ -9,6 +9,7 @@
   var panel = document.getElementById('mai-chat-panel');
   var backdrop = document.getElementById('mai-chat-backdrop');
   var closeBtn = document.getElementById('mai-chat-close');
+  var resizeHandle = document.getElementById('mai-chat-resize');
   var messagesEl = document.getElementById('mai-chat-messages');
   var suggestionsEl = document.getElementById('mai-chat-suggestions');
   var form = document.getElementById('mai-chat-form');
@@ -28,7 +29,167 @@
     mapCta: root.dataset.mapCta || 'View full map',
     mapOn: root.dataset.mapOn || 'On the map',
     mapError: root.dataset.mapError || 'Map unavailable',
+    resizeReset: root.dataset.resizeReset || 'Size reset',
   };
+
+  var SIZE_KEY = 'ivt_mai_chat_size';
+  var SIZE_MIN_W = 280;
+  var SIZE_MIN_H = 320;
+  var SIZE_DEFAULT_W = 320;
+  var SIZE_DEFAULT_H = 480;
+  var resizeActive = false;
+  var resizeStartX = 0;
+  var resizeStartY = 0;
+  var resizeStartW = 0;
+  var resizeStartH = 0;
+
+  function clamp(n, min, max) {
+    return Math.min(max, Math.max(min, n));
+  }
+
+  function sizeLimits() {
+    var pad = 48;
+    return {
+      maxW: Math.max(SIZE_MIN_W, Math.min(560, window.innerWidth - pad)),
+      maxH: Math.max(SIZE_MIN_H, Math.min(720, window.innerHeight - pad)),
+    };
+  }
+
+  function resizeEnabled() {
+    return window.matchMedia('(min-width: 481px)').matches;
+  }
+
+  function applyChatSize(w, h, persist) {
+    if (!resizeEnabled()) return;
+    var limits = sizeLimits();
+    w = Math.round(clamp(w, SIZE_MIN_W, limits.maxW));
+    h = Math.round(clamp(h, SIZE_MIN_H, limits.maxH));
+    root.style.setProperty('--mai-panel-w', w + 'px');
+    root.style.setProperty('--mai-panel-h', h + 'px');
+    root.classList.add('mai-chat--custom-size');
+    if (persist) {
+      try {
+        localStorage.setItem(SIZE_KEY, JSON.stringify({ w: w, h: h }));
+      } catch (e) { /* ignore */ }
+    }
+  }
+
+  function resetChatSize() {
+    root.classList.remove('mai-chat--custom-size');
+    root.style.removeProperty('--mai-panel-w');
+    root.style.removeProperty('--mai-panel-h');
+    try {
+      localStorage.removeItem(SIZE_KEY);
+    } catch (e) { /* ignore */ }
+    invalidateChatMaps();
+  }
+
+  function loadSavedChatSize() {
+    if (!resizeEnabled()) return;
+    try {
+      var raw = localStorage.getItem(SIZE_KEY);
+      if (!raw) return;
+      var saved = JSON.parse(raw);
+      if (saved && saved.w && saved.h) {
+        applyChatSize(saved.w, saved.h, false);
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  function invalidateChatMaps() {
+    if (!window.maiChatMaps || !messagesEl) return;
+    window.requestAnimationFrame(function () {
+      if (window.maiChatMaps.invalidateIn) {
+        window.maiChatMaps.invalidateIn(messagesEl);
+      }
+    });
+  }
+
+  function onResizeMove(clientX, clientY) {
+    var dw = resizeStartX - clientX;
+    var dh = resizeStartY - clientY;
+    applyChatSize(resizeStartW + dw, resizeStartH + dh, false);
+  }
+
+  function stopResize() {
+    if (!resizeActive) return;
+    resizeActive = false;
+    document.body.classList.remove('mai-chat-resizing');
+    document.removeEventListener('mousemove', onResizeMouseMove);
+    document.removeEventListener('mouseup', stopResize);
+    document.removeEventListener('touchmove', onResizeTouchMove);
+    document.removeEventListener('touchend', stopResize);
+    document.removeEventListener('touchcancel', stopResize);
+    var rect = panel.getBoundingClientRect();
+    applyChatSize(rect.width, rect.height, true);
+    invalidateChatMaps();
+  }
+
+  function onResizeMouseMove(e) {
+    if (!resizeActive) return;
+    e.preventDefault();
+    onResizeMove(e.clientX, e.clientY);
+  }
+
+  function onResizeTouchMove(e) {
+    if (!resizeActive || !e.touches.length) return;
+    e.preventDefault();
+    onResizeMove(e.touches[0].clientX, e.touches[0].clientY);
+  }
+
+  function startResize(clientX, clientY) {
+    if (!resizeEnabled() || !resizeHandle) return;
+    var rect = panel.getBoundingClientRect();
+    resizeActive = true;
+    resizeStartX = clientX;
+    resizeStartY = clientY;
+    resizeStartW = rect.width;
+    resizeStartH = rect.height;
+    root.classList.add('mai-chat--custom-size');
+    document.body.classList.add('mai-chat-resizing');
+    document.addEventListener('mousemove', onResizeMouseMove);
+    document.addEventListener('mouseup', stopResize);
+    document.addEventListener('touchmove', onResizeTouchMove, { passive: false });
+    document.addEventListener('touchend', stopResize);
+    document.addEventListener('touchcancel', stopResize);
+  }
+
+  function initChatResize() {
+    if (!resizeHandle) return;
+    loadSavedChatSize();
+
+    resizeHandle.addEventListener('mousedown', function (e) {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      startResize(e.clientX, e.clientY);
+    });
+
+    resizeHandle.addEventListener('touchstart', function (e) {
+      if (!e.touches.length) return;
+      e.stopPropagation();
+      startResize(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+
+    resizeHandle.addEventListener('dblclick', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      resetChatSize();
+    });
+
+    window.addEventListener('resize', function () {
+      if (!root.classList.contains('mai-chat--custom-size')) return;
+      if (!resizeEnabled()) {
+        resetChatSize();
+        return;
+      }
+      var rect = panel.getBoundingClientRect();
+      applyChatSize(rect.width, rect.height, true);
+      invalidateChatMaps();
+    });
+  }
+
+  initChatResize();
 
   var suggestions = [];
   try {

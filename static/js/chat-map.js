@@ -81,7 +81,17 @@
     if (bounds.length > 1) {
       map.fitBounds(bounds, { padding: [12, 12], maxZoom: 14 });
     }
+    el._maiLeafletMap = map;
     setTimeout(function () { map.invalidateSize(); }, 120);
+  }
+
+  function invalidateIn(container) {
+    if (!container || !global.L) return;
+    container.querySelectorAll('.mai-chat__map-canvas[data-mai-map-ready]').forEach(function (el) {
+      if (el._maiLeafletMap && el._maiLeafletMap.invalidateSize) {
+        el._maiLeafletMap.invalidateSize();
+      }
+    });
   }
 
   function initIn(container) {
@@ -111,5 +121,6 @@
       return 'mai-map-' + mapSeq;
     },
     initIn: initIn,
+    invalidateIn: invalidateIn,
   };
 })(window);
