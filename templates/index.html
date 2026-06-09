@@ -5,6 +5,8 @@
 {% from "macros/seo.html" import json_ld_graph with context %}
 {% from "macros/reviews.html" import reviews_section with context %}
 
+{% set geo_faq = geo_faq_items() %}
+
 {% block meta_keywords %}
 <meta name="keywords" content="{{ meta_keywords or site.SITE_KEYWORDS }}">
 {% endblock %}
@@ -20,7 +22,6 @@
 {% endfor %}
 {% set list_dest = "Destinations Vietnam" if lang == 'fr' else "Vietnam destinations" %}
 {% set list_itin = "Itinéraires voyage Vietnam" if lang == 'fr' else "Vietnam travel itineraries" %}
-{% set geo_faq = geo_faq_items() %}
 {% set geo_faq_schema = seo_faq(geo_faq) %}
 {{ json_ld_graph([
   seo_organization(),
