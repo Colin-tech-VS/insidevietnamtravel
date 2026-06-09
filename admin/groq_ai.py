@@ -82,7 +82,7 @@ def _seo_target(guide_type: str) -> dict:
 
 
 def _parse_response(raw: str) -> dict:
-    data = json.loads(raw)
+    data = ai_client.parse_json(raw)
     if "content" not in data or "title" not in data:
         raise ValueError("Réponse IA incomplète")
     return data

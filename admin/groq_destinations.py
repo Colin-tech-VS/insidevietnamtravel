@@ -121,7 +121,7 @@ La page doit convaincre un voyageur de visiter {city} et l'aider à planifier : 
         max_tokens=GEN_MAX_TOKENS,
     )
 
-    data = json.loads(response.choices[0].message.content)
+    data = ai_client.parse_json(response.choices[0].message.content)
     dest = _build_destination(data, city, slug)
 
     if _total_words(dest) < MIN_WORDS * EXPAND_TOLERANCE:
@@ -144,7 +144,7 @@ La page doit convaincre un voyageur de visiter {city} et l'aider à planifier : 
             max_tokens=GEN_MAX_TOKENS,
             pause_before=1.5,
         )
-        data = json.loads(expand.choices[0].message.content)
+        data = ai_client.parse_json(expand.choices[0].message.content)
         dest = _build_destination(data, city, slug)
 
     try:

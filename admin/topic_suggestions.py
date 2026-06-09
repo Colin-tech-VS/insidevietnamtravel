@@ -1,6 +1,5 @@
 """Suggestions de sujets d'articles — rafraîchies à chaque visite."""
 
-import json
 import random
 from datetime import date
 
@@ -104,7 +103,7 @@ def get_topic_suggestions(use_ai: bool = True) -> list[dict]:
                 temperature=0.85,
                 max_tokens=1200,
             )
-            data = json.loads(response.choices[0].message.content)
+            data = ai_client.parse_json(response.choices[0].message.content)
             suggestions = data.get("suggestions", [])[:8]
             # Valider les villes
             valid = []

@@ -28,8 +28,13 @@ API_URL = "https://api.mistral.ai/v1/chat/completions"
 DEFAULT_MODEL = "mistral-small-latest"
 FAST_MODEL = "open-mistral-nemo"
 
-# Plafond de sortie raisonnable — borne max_tokens pour éviter les requêtes démesurées.
-MAX_OUTPUT_TOKENS = 8000
+# Plafond de sortie (mistral-small a un grand contexte). Contrairement à Groq, Mistral
+# n'a pas de TPM riquiqui : on peut laisser de la marge pour que le JSON se termine.
+MAX_OUTPUT_TOKENS = 16000
+# Marge ajoutée au max_tokens demandé : les cibles SEO ont été dimensionnées au plus
+# juste pour le TPM de Groq ; sans marge, Mistral coupe parfois le JSON en plein milieu
+# (« Unterminated string »). On lui laisse de quoi refermer proprement la réponse.
+OUTPUT_HEADROOM = 4096
 REQUEST_TIMEOUT = 120  # secondes
 
 
@@ -119,7 +124,7 @@ def chat_completion(
         "model": model or main_model(),
         "messages": messages,
         "temperature": temperature,
-        "max_tokens": min(int(max_tokens), MAX_OUTPUT_TOKENS),
+        "max_tokens": min(int(max_tokens) + OUTPUT_HEADROOM, MAX_OUTPUT_TOKENS),
     }
     if json_mode:
         payload["response_format"] = {"type": "json_object"}

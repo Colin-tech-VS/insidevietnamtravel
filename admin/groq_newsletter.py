@@ -38,7 +38,7 @@ JSON uniquement :
 
 
 def _parse_response(raw: str) -> dict:
-    data = json.loads(raw)
+    data = ai_client.parse_json(raw)
     for key in ("subject", "body_html"):
         if key not in data or not str(data[key]).strip():
             raise ValueError("Réponse IA incomplète")
