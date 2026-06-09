@@ -13,6 +13,17 @@ from PIL import Image, ImageDraw
 BLOG_IMAGES_DIR = Path(__file__).parent.parent / "static" / "images" / "blog"
 DEST_IMAGES_DIR = Path(__file__).parent.parent / "static" / "images" / "destinations"
 
+# Génération d'image IA (Pollinations Flux) : l'endpoint ne renvoie l'image qu'une
+# fois calculée, donc le timeout de lecture = temps de génération. Flux est lent et
+# souvent en file d'attente : un timeout long (120 s) faisait monopoliser toute la
+# génération à cette seule étape (« ça charge sans fin »). On échoue donc VITE pour
+# basculer sur la photo Vietnam de secours (Unsplash, quasi instantanée) : une image
+# IA absente vaut mieux qu'un brouillon bloqué plusieurs minutes.
+REMOTE_IMAGE_CONNECT_TIMEOUT = 8   # secondes pour établir la connexion
+REMOTE_IMAGE_READ_TIMEOUT = 35     # secondes max pour que Flux renvoie l'image
+VIETNAM_PHOTO_CONNECT_TIMEOUT = 8
+VIETNAM_PHOTO_READ_TIMEOUT = 25
+
 # Photos Unsplash vérifiées — scènes Vietnam uniquement (id, description)
 VIETNAM_PHOTO_POOL: list[tuple[str, str]] = [
     ("1528127269322-539801943592", "Baie d'Halong / Hoi An, bateaux"),
@@ -152,7 +163,11 @@ def _fetch_remote_image(prompt: str, seed: int) -> bytes:
         f"https://image.pollinations.ai/prompt/{encoded}"
         f"?width=1200&height=675&nologo=true&seed={seed}&model=flux"
     )
-    resp = requests.get(url, timeout=120, headers={"User-Agent": "InsideVietnamTravel/1.0"})
+    resp = requests.get(
+        url,
+        timeout=(REMOTE_IMAGE_CONNECT_TIMEOUT, REMOTE_IMAGE_READ_TIMEOUT),
+        headers={"User-Agent": "InsideVietnamTravel/1.0"},
+    )
     resp.raise_for_status()
     if len(resp.content) < 8000:
         raise ValueError("Image IA invalide")
@@ -162,7 +177,7 @@ def _fetch_remote_image(prompt: str, seed: int) -> bytes:
 def _fetch_vietnam_photo(photo_id: str) -> bytes:
     resp = requests.get(
         _photo_url(photo_id),
-        timeout=60,
+        timeout=(VIETNAM_PHOTO_CONNECT_TIMEOUT, VIETNAM_PHOTO_READ_TIMEOUT),
         headers={"User-Agent": "InsideVietnamTravel/1.0"},
     )
     resp.raise_for_status()
@@ -241,9 +256,15 @@ def attach_image_to_article(
         try:
             raw = _fetch_vietnam_photo(photo_id)
         except Exception:
+            # On limite le nombre de replis : si Unsplash répond mal, mieux vaut le
+            # dégradé immédiat que d'enchaîner 19 essais (chacun avec son timeout).
+            tried = 0
             for alt_id in [p[0] for p in VIETNAM_PHOTO_POOL]:
                 if alt_id == photo_id:
                     continue
+                if tried >= 3:
+                    break
+                tried += 1
                 try:
                     raw = _fetch_vietnam_photo(alt_id)
                     photo_id = alt_id
@@ -358,7 +379,11 @@ def attach_image_to_destination(
         try:
             raw = _fetch_vietnam_photo(photo_id)
         except Exception:
+            tried = 0
             for alt_id in [p[0] for p in VIETNAM_PHOTO_POOL if p[0] != photo_id]:
+                if tried >= 3:
+                    break
+                tried += 1
                 try:
                     raw = _fetch_vietnam_photo(alt_id)
                     photo_id = alt_id
