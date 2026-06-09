@@ -57,9 +57,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // La génération tourne côté serveur en tâche de fond : on interroge le statut
   // jusqu'à done/error. Plus de "Failed to fetch" même si Groq impose des pauses.
-  async function pollDraft(statusUrl, maxMs = 360000) {
+  //
+  // On NE coupe PAS tant que le serveur signale une progression. Sur le palier
+  // gratuit, une génération (plusieurs appels IA enchaînés + pauses anti rate-limit)
+  // peut légitimement durer plusieurs minutes : la tâche de fond continue et finira
+  // par déposer le brouillon. On n'abandonne donc qu'en cas de perte de contact
+  // prolongée (idleMs) ou au-delà d'un plafond absolu de sécurité (thread figé /
+  // process redémarré). Un simple plafond de temps total coupait des générations
+  // pourtant encore en cours — c'était la cause du « ça coupe ».
+  async function pollDraft(statusUrl, { idleMs = 180000, hardCapMs = 1200000 } = {}) {
     const start = Date.now();
-    while (Date.now() - start < maxMs) {
+    let lastAlive = Date.now();
+    while (Date.now() - start < hardCapMs) {
       await sleep(2500);
       let st;
       try {
@@ -69,11 +78,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         st = await res.json();
       } catch (e) {
-        continue; // micro-coupure réseau : on retente
+        // micro-coupure réseau : on retente sans réinitialiser le minuteur d'inactivité
+        if (Date.now() - lastAlive > idleMs) {
+          throw new Error('Connexion au serveur perdue. Rafraîchissez la page dans un instant.');
+        }
+        continue;
       }
       if (st.status === 'done') return;
       if (st.status === 'error') throw new Error(st.error || 'Échec de la génération.');
       if (st.status === 'missing') throw new Error('Session expirée — relancez la génération.');
+      lastAlive = Date.now(); // job vivant (running) → on repousse l'échéance d'inactivité
       setPhase(st.phase); // affiche l'étape réelle en cours
     }
     throw new Error('Génération anormalement longue. Rafraîchissez la page dans un instant.');
