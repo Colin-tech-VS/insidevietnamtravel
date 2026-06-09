@@ -92,8 +92,12 @@ def _sample_url(id_key: str, value: str) -> str:
             f'+ data-vi-search-term="{loc["booking_city"]}"'
         )
     if id_key == "airalo_ref":
+        if value.lower().startswith("http"):
+            return value  # lien d'affiliation complet (Impact/pxf.io)
         return f"https://www.airalo.com/vietnam-esim?ref={value}"
     if id_key == "holafly_ref":
+        if value.lower().startswith("http"):
+            return value
         return f"https://esim.holafly.com/data-plans/vietnam/?ref={value}"
     if id_key == "worldnomads_affiliate":
         q = urlencode({"affiliate": value, "destination": "Vietnam"})
@@ -195,6 +199,18 @@ def verify_affiliate_id(id_key: str, raw_value: str) -> dict:
             "normalized": normalized,
             "sample_url": _sample_url(id_key, normalized),
             "param": "widget",
+            "param_found": True,
+        }
+
+    # Airalo / Holafly : un lien d'affiliation COMPLET (Impact, airalo.pxf.io…) est
+    # utilisé tel quel — pas de paramètre ref à extraire, le lien EST le tracking.
+    if id_key in ("airalo_ref", "holafly_ref") and normalized.lower().startswith("http"):
+        return {
+            "status": "ok",
+            "message": "Lien d'affiliation complet détecté (Impact/pxf.io) — utilisé tel quel.",
+            "normalized": normalized,
+            "sample_url": normalized,
+            "param": "",
             "param_found": True,
         }
 

@@ -158,11 +158,19 @@ def build_city_link(provider: str, location: dict) -> str:
 
 
 def esim_airalo() -> str:
-    return f"https://www.airalo.com/vietnam-esim?ref={_ids()['airalo_ref']}"
+    ref = str(_ids().get("airalo_ref", "")).strip()
+    # Lien d'affiliation complet (Impact / airalo.pxf.io) → utilisé tel quel. Sinon,
+    # rétrocompat : on insère la valeur comme paramètre ?ref= sur la page Vietnam.
+    if ref.lower().startswith("http"):
+        return ref
+    return f"https://www.airalo.com/vietnam-esim?ref={ref}"
 
 
 def esim_holafly() -> str:
-    return f"https://esim.holafly.com/data-plans/vietnam/?ref={_ids()['holafly_ref']}"
+    ref = str(_ids().get("holafly_ref", "")).strip()
+    if ref.lower().startswith("http"):
+        return ref
+    return f"https://esim.holafly.com/data-plans/vietnam/?ref={ref}"
 
 
 def travel_insurance() -> str:

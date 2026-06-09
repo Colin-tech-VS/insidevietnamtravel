@@ -87,8 +87,8 @@ BUILTIN_PARTNERS = [
         "avg_per_click": 2.0,
         "signup_url": "https://www.airalo.com/affiliate",
         "dashboard_url": "https://affiliates.airalo.com/",
-        "id_label": "Code ref",
-        "id_placeholder": "ex: votre-ref",
+        "id_label": "Lien d'affiliation ou code ref",
+        "id_placeholder": "ex: https://airalo.pxf.io/c/XXXX/XXXX/XXXX (lien complet) ou code ref",
     },
     {
         "id": "esim_holafly",
@@ -101,8 +101,8 @@ BUILTIN_PARTNERS = [
         "avg_per_click": 2.0,
         "signup_url": "https://esim.holafly.com/affiliates",
         "dashboard_url": "https://affiliates.holafly.com/",
-        "id_label": "Code ref",
-        "id_placeholder": "ex: votre-ref",
+        "id_label": "Lien d'affiliation ou code ref",
+        "id_placeholder": "ex: lien d'affiliation complet ou code ref",
     },
     {
         "id": "travel_insurance",
