@@ -1488,6 +1488,57 @@ select optgroup { font-weight: 700; color: var(--teal); }
   background: var(--rice);
 }
 
+/* Logo animé affiché quand la photo a dépassé l'échéance (image_placeholder) :
+   reprend le motif du loader de page (anneau + arc + voyageur). */
+.image-logo-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 280px;
+  background: var(--teal, #1b4d4a);
+  color: var(--gold, #c4a053);
+}
+.image-logo-loader__logo {
+  width: 84px;
+  height: 84px;
+}
+.image-logo-loader__ring {
+  transform-origin: 20px 20px;
+  animation: imgLogoBreathe 2.2s ease-in-out infinite;
+}
+.image-logo-loader__arc {
+  stroke-dasharray: 42;
+  stroke-dashoffset: 42;
+  animation: imgLogoArc 2.2s ease-in-out infinite;
+}
+.image-logo-loader__traveler {
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
+}
+.image-logo-loader__brand {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #faf7f2;
+}
+@keyframes imgLogoBreathe {
+  0%, 100% { opacity: 0.45; transform: scale(0.97); }
+  50% { opacity: 1; transform: scale(1); }
+}
+@keyframes imgLogoArc {
+  0% { stroke-dashoffset: 42; }
+  55%, 100% { stroke-dashoffset: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .image-logo-loader__ring,
+  .image-logo-loader__arc,
+  .image-logo-loader__traveler animateMotion { animation: none; }
+}
+
 /* ── Layout pages admin (pleine largeur) ─────────── */
 .admin-page-layout {
   display: grid;

@@ -20,16 +20,20 @@ DEST_IMAGES_DIR = Path(__file__).parent.parent / "static" / "images" / "destinat
 # génération à cette seule étape (« ça charge sans fin »). On échoue donc VITE pour
 # basculer sur la photo Vietnam de secours (Unsplash, quasi instantanée) : une image
 # IA absente vaut mieux qu'un brouillon bloqué plusieurs minutes.
-REMOTE_IMAGE_CONNECT_TIMEOUT = 8   # secondes pour établir la connexion
-REMOTE_IMAGE_READ_TIMEOUT = 35     # secondes max d'inactivité socket
-# Échéance MURALE absolue de l'étape image IA. Le timeout socket de requests ne se
-# déclenche qu'en l'absence totale d'octets ; Pollinations peut garder la connexion
-# ouverte (keepalive) et faire pendre l'appel plusieurs minutes. Ce plafond, imposé
-# par un thread, garantit qu'on abandonne et bascule sur la photo de secours quoi
-# qu'il arrive — l'étape image ne peut donc plus bloquer la génération.
-REMOTE_IMAGE_HARD_DEADLINE = 40    # secondes max, tout compris, pour l'image IA
-VIETNAM_PHOTO_CONNECT_TIMEOUT = 8
-VIETNAM_PHOTO_READ_TIMEOUT = 25
+REMOTE_IMAGE_CONNECT_TIMEOUT = 6   # secondes pour établir la connexion
+REMOTE_IMAGE_READ_TIMEOUT = 12     # secondes max d'inactivité socket
+VIETNAM_PHOTO_CONNECT_TIMEOUT = 5
+VIETNAM_PHOTO_READ_TIMEOUT = 10
+
+# Échéance MURALE absolue de TOUTE l'étape image (IA + photo Vietnam + reprises). Les
+# timeouts socket de requests ne se déclenchent qu'en l'absence totale d'octets, et
+# l'ancien chemin Unsplash enchaînait jusqu'à 4 essais (≈130 s) sans plafond global :
+# si le réseau sortant est lent/bloqué, l'étape image pendait des minutes et le
+# brouillon (pourtant déjà rédigé FR + EN) n'était jamais déposé — d'où le « ça bloque
+# et ne génère rien ». Ce plafond, imposé par un thread démon, garantit qu'au-delà de
+# 15 s on abandonne l'image, on dépose le logo de marque (image_placeholder) et la
+# génération du contenu se termine TOUJOURS. Le thread orphelin meurt seul ensuite.
+IMAGE_STEP_HARD_DEADLINE = 15      # secondes max, tout compris, pour l'étape image
 
 # Photos Unsplash vérifiées — scènes Vietnam uniquement (id, description)
 VIETNAM_PHOTO_POOL: list[tuple[str, str]] = [
@@ -195,30 +199,78 @@ def _fetch_remote_image(prompt: str, seed: int) -> bytes:
     return resp.content
 
 
-def _fetch_remote_image_bounded(prompt: str, seed: int) -> bytes:
-    """Comme `_fetch_remote_image` mais avec une échéance murale stricte.
+def _run_with_deadline(fn, deadline: float, *args, **kwargs):
+    """Exécute `fn` dans un thread démon avec une échéance murale stricte.
 
-    L'appel réseau tourne dans un thread démon : si l'image n'est pas prête dans
-    REMOTE_IMAGE_HARD_DEADLINE secondes, on lève une exception et l'appelant bascule
-    sur la photo de secours. Le thread orphelin finira par mourir seul (timeout socket),
-    sans bloquer la génération. Garantit que l'étape image ne pend jamais.
+    Si `fn` n'a pas rendu son résultat dans `deadline` secondes, on lève TimeoutError ;
+    le thread orphelin (réseau lent/bloqué) finira par mourir seul via son timeout
+    socket, sans jamais bloquer l'appelant. Garantit qu'une étape réseau ne pend pas.
     """
     result: dict = {}
 
     def _worker():
         try:
-            result["data"] = _fetch_remote_image(prompt, seed)
+            result["data"] = fn(*args, **kwargs)
         except Exception as exc:  # noqa: BLE001 — relayé via result
             result["error"] = exc
 
     thread = threading.Thread(target=_worker, daemon=True)
     thread.start()
-    thread.join(REMOTE_IMAGE_HARD_DEADLINE)
+    thread.join(deadline)
     if thread.is_alive():
-        raise TimeoutError("Image IA trop lente (échéance dépassée)")
+        raise TimeoutError("Étape image trop lente (échéance dépassée)")
     if "data" in result:
         return result["data"]
-    raise result.get("error", RuntimeError("Image IA indisponible"))
+    raise result.get("error", RuntimeError("Image indisponible"))
+
+
+def _logo_placeholder_webp(slug: str) -> bytes:
+    """Visuel de secours de marque : motif du logo (anneau + arc + voyageur) sur teal.
+
+    Affiché quand l'étape image dépasse l'échéance de 15 s — le contenu n'est jamais
+    bloqué. Le front (aperçu brouillon) anime ce même motif en SVG « en attendant ».
+    """
+    w, h = 1200, 675
+    teal = (27, 77, 74)
+    gold = (196, 160, 83)
+    rice = (250, 247, 242)
+    img = Image.new("RGB", (w, h), teal)
+    draw = ImageDraw.Draw(img)
+    cx, cy = w // 2, h // 2 - 24
+    r = 120
+
+    # Anneau
+    draw.ellipse([cx - r, cy - r, cx + r, cy + r], outline=gold, width=6)
+
+    # Arc « voyage » (courbe de Bézier quadratique → polyligne)
+    p0 = (cx - r * 0.62, cy + r * 0.42)
+    p1 = (cx, cy - r * 0.72)
+    p2 = (cx + r * 0.62, cy + r * 0.42)
+    pts = []
+    for i in range(41):
+        t = i / 40
+        x = (1 - t) ** 2 * p0[0] + 2 * (1 - t) * t * p1[0] + t * t * p2[0]
+        y = (1 - t) ** 2 * p0[1] + 2 * (1 - t) * t * p1[1] + t * t * p2[1]
+        pts.append((x, y))
+    draw.line(pts, fill=gold, width=6, joint="curve")
+
+    # Point « voyageur » au sommet de l'arc
+    tx, ty = pts[20]
+    draw.ellipse([tx - 16, ty - 16, tx + 16, ty + 16], fill=gold)
+
+    # Nom de marque
+    label = "Inside Vietnam Travel"
+    try:
+        from PIL import ImageFont
+        font = ImageFont.load_default()
+        tw = draw.textlength(label, font=font) if hasattr(draw, "textlength") else len(label) * 6
+        draw.text((cx - tw / 2, cy + r + 48), label, fill=rice, font=font)
+    except Exception:
+        pass
+
+    buf = io.BytesIO()
+    img.save(buf, "WEBP", quality=82, method=6)
+    return buf.getvalue()
 
 
 def _fetch_vietnam_photo(photo_id: str) -> bytes:
@@ -274,6 +326,34 @@ def ensure_responsive_variants() -> int:
     return created
 
 
+def _gather_article_photo(
+    article: dict, ai_prompt: str | None, prompt: str, seed: int, photo_id: str
+) -> tuple[bytes, str]:
+    """Récupère les octets de l'image (IA opt-in puis photo Vietnam + reprises).
+
+    Tourne sous `_run_with_deadline` : l'échéance murale de 15 s borne l'ensemble, donc
+    on garde ici les essais utiles sans plafond interne — le thread est abandonné net
+    si la 15ᵉ seconde arrive en plein appel réseau.
+    """
+    # 1) Génération IA (prompt unique → image unique) — uniquement si activée.
+    if (ai_prompt or article.get("ai_generated")) and _ai_images_enabled():
+        try:
+            return _fetch_remote_image(prompt, seed), photo_id
+        except Exception:
+            pass
+
+    # 2) Photo Vietnam réelle unique du pool (1 reprise — l'échéance globale fait foi).
+    try:
+        return _fetch_vietnam_photo(photo_id), photo_id
+    except Exception:
+        for alt_id in [p[0] for p in VIETNAM_PHOTO_POOL if p[0] != photo_id][:2]:
+            try:
+                return _fetch_vietnam_photo(alt_id), alt_id
+            except Exception:
+                continue
+    raise RuntimeError("Aucune image disponible")
+
+
 def attach_image_to_article(
     article: dict,
     ai_prompt: str | None = None,
@@ -281,7 +361,12 @@ def attach_image_to_article(
     force_regenerate: bool = False,
     image_nonce: int | None = None,
 ) -> dict:
-    """Une image Vietnam unique par article — WebP 1200×675."""
+    """Une image Vietnam unique par article — WebP 1200×675.
+
+    L'étape réseau est bornée à IMAGE_STEP_HARD_DEADLINE (15 s) : au-delà, on bascule
+    sur le logo de marque et on signale `image_placeholder` au front (logo animé en
+    attendant) — la génération du contenu FR + EN n'est jamais bloquée par l'image.
+    """
     slug = article["slug"]
     out_path = BLOG_IMAGES_DIR / f"{slug}.webp"
     nonce = image_nonce if image_nonce is not None else int(time.time())
@@ -290,37 +375,19 @@ def attach_image_to_article(
     seed = abs(hash(f"{slug}-{prompt}-{nonce}")) % 999_999
 
     raw: bytes | None = None
-
-    # 1) Génération IA (prompt unique → image unique) — uniquement si activée.
-    if (ai_prompt or article.get("ai_generated")) and _ai_images_enabled():
-        try:
-            raw = _fetch_remote_image_bounded(prompt, seed)
-        except Exception:
-            raw = None
-
-    # 2) Photo Vietnam réelle unique du pool
-    if raw is None:
-        try:
-            raw = _fetch_vietnam_photo(photo_id)
-        except Exception:
-            # On limite le nombre de replis : si Unsplash répond mal, mieux vaut le
-            # dégradé immédiat que d'enchaîner 19 essais (chacun avec son timeout).
-            tried = 0
-            for alt_id in [p[0] for p in VIETNAM_PHOTO_POOL]:
-                if alt_id == photo_id:
-                    continue
-                if tried >= 3:
-                    break
-                tried += 1
-                try:
-                    raw = _fetch_vietnam_photo(alt_id)
-                    photo_id = alt_id
-                    break
-                except Exception:
-                    continue
+    placeholder = False
+    try:
+        raw, photo_id = _run_with_deadline(
+            _gather_article_photo, IMAGE_STEP_HARD_DEADLINE,
+            article, ai_prompt, prompt, seed, photo_id,
+        )
+    except Exception:
+        raw = None
 
     if raw is None:
-        raw = _fallback_gradient_webp(slug)
+        # Échéance dépassée ou réseau indisponible : logo de marque, contenu jamais bloqué.
+        raw = _logo_placeholder_webp(slug)
+        placeholder = True
 
     if force_regenerate and out_path.exists():
         out_path.unlink()
@@ -336,6 +403,7 @@ def attach_image_to_article(
         "image": f"/static/images/blog/{slug}.webp",
         "image_alt": alt[:140],
         "image_photo_id": photo_id,
+        "image_placeholder": placeholder,
     }
 
 
@@ -415,31 +483,32 @@ def attach_image_to_destination(
     prompt = build_destination_image_prompt(dest, ai_prompt or dest.get("image_prompt"))
     seed = abs(hash(f"dest-{slug}-{prompt}-{nonce}")) % 999_999
 
-    raw: bytes | None = None
-    if (ai_prompt or dest.get("ai_generated") or dest.get("image_prompt")) and _ai_images_enabled():
+    def _gather() -> tuple[bytes, str]:
+        if (ai_prompt or dest.get("ai_generated") or dest.get("image_prompt")) and _ai_images_enabled():
+            try:
+                return _fetch_remote_image(prompt, seed), photo_id
+            except Exception:
+                pass
         try:
-            raw = _fetch_remote_image_bounded(prompt, seed)
+            return _fetch_vietnam_photo(photo_id), photo_id
         except Exception:
-            raw = None
-
-    if raw is None:
-        try:
-            raw = _fetch_vietnam_photo(photo_id)
-        except Exception:
-            tried = 0
-            for alt_id in [p[0] for p in VIETNAM_PHOTO_POOL if p[0] != photo_id]:
-                if tried >= 3:
-                    break
-                tried += 1
+            for alt_id in [p[0] for p in VIETNAM_PHOTO_POOL if p[0] != photo_id][:2]:
                 try:
-                    raw = _fetch_vietnam_photo(alt_id)
-                    photo_id = alt_id
-                    break
+                    return _fetch_vietnam_photo(alt_id), alt_id
                 except Exception:
                     continue
+        raise RuntimeError("Aucune image disponible")
+
+    raw: bytes | None = None
+    placeholder = False
+    try:
+        raw, photo_id = _run_with_deadline(_gather, IMAGE_STEP_HARD_DEADLINE)
+    except Exception:
+        raw = None
 
     if raw is None:
-        raw = _fallback_gradient_webp(slug)
+        raw = _logo_placeholder_webp(slug)
+        placeholder = True
 
     if force_regenerate and out_path.exists():
         out_path.unlink()
@@ -450,6 +519,7 @@ def attach_image_to_destination(
         "image": f"/static/images/destinations/{slug}.webp",
         "image_alt": f"Guide voyage {name}, Vietnam"[:140],
         "image_photo_id": photo_id,
+        "image_placeholder": placeholder,
     }
 
 
