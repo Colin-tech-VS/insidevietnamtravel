@@ -14,7 +14,9 @@ principal, et ce module résout le bon nom de modèle selon le fournisseur reten
 
 from __future__ import annotations
 
+import json
 import os
+import re
 
 from admin import groq_client
 from admin import mistral_client
@@ -24,6 +26,61 @@ PROVIDERS = {"groq": groq_client, "mistral": mistral_client}
 PROVIDER_LABELS = {"groq": "Groq", "mistral": "Mistral AI"}
 DEFAULT_PROVIDER = "groq"
 FALLBACK_PROVIDER = "groq"
+
+
+def parse_json(raw: str) -> dict:
+    """Parse la réponse IA en JSON, avec réparation si elle est tronquée.
+
+    Les modèles renvoient parfois un JSON coupé (chaîne non terminée) quand la sortie
+    bute sur le plafond de tokens — d'où l'erreur « Unterminated string starting at
+    line 12 ». Plutôt que de planter la génération, on referme proprement la chaîne et
+    les accolades/crochets ouverts pour récupérer un article exploitable (quitte à ce
+    qu'il soit un peu court, l'utilisateur peut ensuite « Améliorer »).
+    """
+    text = (raw or "").strip()
+    # Retire d'éventuelles clôtures markdown ```json ... ```
+    if text.startswith("```"):
+        text = re.sub(r"^```[a-zA-Z]*\n?", "", text)
+        text = re.sub(r"\n?```$", "", text).strip()
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return json.loads(_repair_truncated_json(text))
+
+
+def _repair_truncated_json(text: str) -> str:
+    start = text.find("{")
+    if start > 0:
+        text = text[start:]
+
+    stack: list[str] = []
+    in_str = False
+    escape = False
+    for ch in text:
+        if escape:
+            escape = False
+            continue
+        if in_str:
+            if ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_str = False
+            continue
+        if ch == '"':
+            in_str = True
+        elif ch in "{[":
+            stack.append(ch)
+        elif ch in "}]" and stack:
+            stack.pop()
+
+    if in_str:  # chaîne coupée en plein milieu → on la referme
+        text += '"'
+    text = text.rstrip()
+    if text.endswith(","):  # virgule pendante avant une accolade fermante
+        text = text[:-1]
+    for opener in reversed(stack):
+        text += "}" if opener == "{" else "]"
+    return text
 
 
 def provider() -> str:

@@ -39,7 +39,7 @@ def translate_article_block(fr_data: dict, *, pause_before: float = 0) -> dict:
         max_tokens=5120,
         pause_before=pause_before,
     )
-    return json.loads(response.choices[0].message.content)
+    return ai_client.parse_json(response.choices[0].message.content)
 
 
 def translate_destination_block(fr_data: dict, *, pause_before: float = 0) -> dict:
@@ -68,7 +68,7 @@ def translate_destination_block(fr_data: dict, *, pause_before: float = 0) -> di
         max_tokens=6144,
         pause_before=pause_before,
     )
-    data = json.loads(response.choices[0].message.content)
+    data = ai_client.parse_json(response.choices[0].message.content)
     for item in data.get("activities", []) or []:
         for orig in fr_data.get("activities", []):
             if item.get("name") == orig.get("name") or item.get("search") == orig.get("search"):
