@@ -24,7 +24,17 @@
 
     <p class="ai-loader__text" id="ai-loader-text">Analyse de la ville…</p>
 
-    <p class="ai-loader__hint">Contenu complet + hôtels, activités, image — 45 à 90 secondes.</p>
+    <div class="ai-loader__bar" role="progressbar" aria-label="Progression de la génération">
+      <span class="ai-loader__bar-fill" id="ai-loader-bar"></span>
+    </div>
+
+    <p class="ai-loader__timing">
+      <span id="ai-loader-elapsed">0:00</span>
+      <span class="ai-loader__timing-sep">·</span>
+      <span class="ai-loader__eta">durée estimée 45–90 s (jusqu'à 3 min)</span>
+    </p>
+
+    <p class="ai-loader__hint">Contenu complet + hôtels, activités, image. La génération continue côté serveur : ne fermez pas cette page.</p>
 
   </div>
 

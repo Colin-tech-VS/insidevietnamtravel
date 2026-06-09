@@ -2,6 +2,53 @@ document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('dest-form-ai');
   const overlay = document.getElementById('ai-loader');
   const loaderText = document.getElementById('ai-loader-text');
+  const loaderBar = document.getElementById('ai-loader-bar');
+  const loaderElapsed = document.getElementById('ai-loader-elapsed');
+
+  let elapsedTimer = null;
+  let loaderStart = 0;
+  let barPct = 0;
+  let barFloor = 0;
+
+  function fmtElapsed(ms) {
+    const total = Math.max(0, Math.floor(ms / 1000));
+    const m = Math.floor(total / 60);
+    const s = total % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
+  }
+
+  function progressForPhase(phase) {
+    const p = (phase || '').toLowerCase();
+    if (p.includes('connexion')) return 8;
+    if (p.includes('amélioration') || p.includes('analyse')) return 25;
+    if (p.includes('rédaction')) return 25;
+    if (p.includes('enrichissement')) return 48;
+    if (p.includes('traduction')) return 68;
+    if (p.includes('image')) return 85;
+    if (p.includes('finalisation')) return 95;
+    return null;
+  }
+
+  function renderBar() {
+    if (loaderBar) loaderBar.style.width = `${barPct}%`;
+  }
+
+  function setBarFloor(pct) {
+    if (pct == null) return;
+    barFloor = pct;
+    if (barPct < pct) {
+      barPct = pct;
+      renderBar();
+    }
+  }
+
+  function creepBar() {
+    const ceiling = Math.min(94, barFloor + 12);
+    if (barPct < ceiling) {
+      barPct = Math.min(ceiling, barPct + 0.6);
+      renderBar();
+    }
+  }
 
   document.querySelectorAll('.content-tab').forEach((tab) => {
     tab.addEventListener('click', () => {
@@ -23,13 +70,31 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!overlay) return;
     overlay.hidden = false;
     if (loaderText) loaderText.textContent = initialText || 'Préparation…';
+    barPct = 5;
+    barFloor = 5;
+    renderBar();
+    loaderStart = Date.now();
+    if (loaderElapsed) loaderElapsed.textContent = '0:00';
+    if (elapsedTimer) clearInterval(elapsedTimer);
+    elapsedTimer = setInterval(() => {
+      if (loaderElapsed) loaderElapsed.textContent = fmtElapsed(Date.now() - loaderStart);
+      creepBar();
+    }, 1000);
   }
 
   function setPhase(phase) {
     if (phase && loaderText) loaderText.textContent = phase;
+    setBarFloor(progressForPhase(phase));
   }
 
   function stopLoader() {
+    if (elapsedTimer) {
+      clearInterval(elapsedTimer);
+      elapsedTimer = null;
+    }
+    barPct = 100;
+    barFloor = 100;
+    renderBar();
     if (overlay) overlay.hidden = true;
   }
 

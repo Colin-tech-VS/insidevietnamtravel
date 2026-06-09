@@ -22,7 +22,17 @@
 
     <p class="ai-loader__text" id="ai-loader-text">Analyse du sujet…</p>
 
-    <p class="ai-loader__hint">{{ ai_provider_label }} rédige l'article SEO + image WebP — comptez 30 à 90 secondes.</p>
+    <div class="ai-loader__bar" role="progressbar" aria-label="Progression de la génération">
+      <span class="ai-loader__bar-fill" id="ai-loader-bar"></span>
+    </div>
+
+    <p class="ai-loader__timing">
+      <span id="ai-loader-elapsed">0:00</span>
+      <span class="ai-loader__timing-sep">·</span>
+      <span class="ai-loader__eta">durée estimée 30–90 s (jusqu'à 3 min pour un guide long)</span>
+    </p>
+
+    <p class="ai-loader__hint">{{ ai_provider_label }} rédige l'article SEO + image WebP. La rédaction continue côté serveur : ne fermez pas cette page.</p>
 
   </div>
 

@@ -1429,6 +1429,40 @@ select optgroup { font-weight: 700; color: var(--teal); }
   min-height: 1.5em;
   margin-bottom: 0.75rem;
 }
+.ai-loader__bar {
+  position: relative;
+  height: 8px;
+  width: 100%;
+  margin: 0 0 0.75rem;
+  background: var(--rice-dark);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.ai-loader__bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0%;
+  background: linear-gradient(90deg, var(--teal), var(--gold, #c89b3c));
+  border-radius: 999px;
+  transition: width 0.6s ease;
+}
+.ai-loader__timing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  color: var(--ink);
+  margin-bottom: 0.85rem;
+}
+.ai-loader__timing #ai-loader-elapsed {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--teal);
+}
+.ai-loader__timing-sep { color: var(--ink-muted); }
+.ai-loader__eta { color: var(--ink-muted); }
 .ai-loader__hint {
   font-size: 0.78rem;
   color: var(--ink-muted);
