@@ -159,12 +159,14 @@
     </div>
     {% if social.total %}
     <p class="social-traffic__total"><strong>{{ social.total }}</strong> visites issues des réseaux sociaux (suivi UTM)</p>
-    <table class="admin-table">
-      <thead><tr><th>Campagne</th><th>Visites</th></tr></thead>
-      <tbody>
-        {% for row in social.by_campaign %}<tr><td>{{ row.c }}</td><td>{{ row.n }}</td></tr>{% endfor %}
-      </tbody>
-    </table>
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead><tr><th>Campagne</th><th>Visites</th></tr></thead>
+        <tbody>
+          {% for row in social.by_campaign %}<tr><td>{{ row.c }}</td><td>{{ row.n }}</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
     {% else %}
     <p class="social-hint">Aucune visite trackée pour l'instant. Les liens publiés ici incluent le suivi UTM ; les visites apparaîtront ici et dans Analytics.</p>
     {% endif %}
