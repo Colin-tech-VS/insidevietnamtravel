@@ -29,6 +29,10 @@ def get_settings() -> dict:
         "groq_model": "llama-3.3-70b-versatile",
         "mistral_model": "mistral-small-latest",
         "mistral_fast_model": "open-mistral-nemo",
+        # Image IA (Pollinations Flux) OPT-IN : par défaut on utilise des photos
+        # Vietnam réelles (immédiates et fiables). Flux est lent et faisait pendre
+        # la génération. Passer à true pour réactiver la génération d'image par IA.
+        "ai_image_enabled": False,
         "commission_estimates": {
             "booking": 8.0,
             "agoda": 6.0,

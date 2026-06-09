@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import threading
 
 from admin import groq_client
 from admin import mistral_client
@@ -26,6 +27,38 @@ PROVIDERS = {"groq": groq_client, "mistral": mistral_client}
 PROVIDER_LABELS = {"groq": "Groq", "mistral": "Mistral AI"}
 DEFAULT_PROVIDER = "groq"
 FALLBACK_PROVIDER = "groq"
+
+# Échéance MURALE absolue d'un appel IA (toutes tentatives/repli compris). Les timeouts
+# socket et les retries internes des fournisseurs ne suffisent pas : un palier gratuit
+# saturé peut enchaîner files d'attente et keepalive et faire « pendre » un appel
+# plusieurs minutes — c'est ce qui donnait l'impression que « ça ne génère pas, ça
+# bloque ». Ce plafond, imposé par un thread, garantit qu'on abandonne et qu'on remonte
+# une erreur (ou qu'on bascule en repli) au lieu d'attendre indéfiniment.
+DEFAULT_DEADLINE = 200  # secondes
+
+
+def _run_with_deadline(fn, seconds: float | None):
+    if not seconds:
+        return fn()
+    result: dict = {}
+
+    def _worker():
+        try:
+            result["value"] = fn()
+        except Exception as exc:  # noqa: BLE001 — relayé via result
+            result["error"] = exc
+
+    thread = threading.Thread(target=_worker, daemon=True)
+    thread.start()
+    thread.join(seconds)
+    if thread.is_alive():
+        raise TimeoutError(
+            f"L'IA n'a pas répondu dans le délai imparti ({int(seconds)} s). "
+            "Réessayez : le palier gratuit est peut-être saturé."
+        )
+    if "value" in result:
+        return result["value"]
+    raise result.get("error", RuntimeError("Appel IA échoué"))
 
 
 def parse_json(raw: str) -> dict:
@@ -157,40 +190,47 @@ def chat_completion(
     fast: bool = False,
     max_retries: int = 5,
     pause_before: float = 0,
+    deadline: float | None = DEFAULT_DEADLINE,
 ):
     """Route l'appel vers le fournisseur actif, avec repli Groq automatique.
 
     `fast=True` sélectionne le modèle rapide du fournisseur (quota séparé, plus véloce) —
-    utilisé pour la traduction, l'enrichissement et les suggestions.
+    utilisé pour la traduction, l'enrichissement et les suggestions. `deadline` borne le
+    temps total de l'appel (voir DEFAULT_DEADLINE) : passé ce délai, on abandonne plutôt
+    que de laisser la génération pendre indéfiniment.
     """
-    last_error: Exception | None = None
-    attempted = False
 
-    for idx, name in enumerate(_provider_order()):
-        if not _has_key(name):
-            continue
-        impl = _impl(name)
-        chosen_model = model or (impl.fast_model() if fast else impl.main_model())
-        attempted = True
-        try:
-            return impl.chat_completion(
-                model=chosen_model,
-                messages=messages,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                json_mode=json_mode,
-                max_retries=max_retries,
-                # On ne paie la pause anti rate-limit que sur la 1re tentative.
-                pause_before=pause_before if idx == 0 else 0,
+    def _dispatch():
+        last_error: Exception | None = None
+        attempted = False
+
+        for idx, name in enumerate(_provider_order()):
+            if not _has_key(name):
+                continue
+            impl = _impl(name)
+            chosen_model = model or (impl.fast_model() if fast else impl.main_model())
+            attempted = True
+            try:
+                return impl.chat_completion(
+                    model=chosen_model,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    json_mode=json_mode,
+                    max_retries=max_retries,
+                    # On ne paie la pause anti rate-limit que sur la 1re tentative.
+                    pause_before=pause_before if idx == 0 else 0,
+                )
+            except Exception as exc:  # noqa: BLE001 — on tente le fournisseur de repli
+                last_error = exc
+                continue
+
+        if last_error:
+            raise last_error
+        if not attempted:
+            raise ValueError(
+                "Aucune clé IA configurée — ajoutez GROQ_API_KEY ou MISTRAL_API_KEY dans .env"
             )
-        except Exception as exc:  # noqa: BLE001 — on tente le fournisseur de repli
-            last_error = exc
-            continue
+        raise RuntimeError("Appel IA échoué")
 
-    if last_error:
-        raise last_error
-    if not attempted:
-        raise ValueError(
-            "Aucune clé IA configurée — ajoutez GROQ_API_KEY ou MISTRAL_API_KEY dans .env"
-        )
-    raise RuntimeError("Appel IA échoué")
+    return _run_with_deadline(_dispatch, deadline)

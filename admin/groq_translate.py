@@ -18,7 +18,7 @@ Rules:
 """
 
 
-def translate_article_block(fr_data: dict, *, pause_before: float = 0) -> dict:
+def translate_article_block(fr_data: dict, *, pause_before: float = 0, deadline: float | None = 120) -> dict:
     fields = {k: fr_data.get(k, "") for k in ARTICLE_I18N_FIELDS if fr_data.get(k)}
     if not fields:
         return {}
@@ -38,6 +38,9 @@ def translate_article_block(fr_data: dict, *, pause_before: float = 0) -> dict:
         temperature=0.3,
         max_tokens=5120,
         pause_before=pause_before,
+        # La traduction EN est secondaire : si elle traîne, on abandonne vite pour
+        # livrer quand même le brouillon FR (l'appelant retombe sur du FR seul).
+        deadline=deadline,
     )
     return ai_client.parse_json(response.choices[0].message.content)
 

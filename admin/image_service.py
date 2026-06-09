@@ -95,6 +95,20 @@ LEGACY_PROMPTS: dict[str, str] = {
 }
 
 
+def _ai_images_enabled() -> bool:
+    """L'image IA (Pollinations Flux) est OPT-IN.
+
+    Par défaut on utilise le pool de vraies photos Vietnam (immédiat et fiable) : Flux
+    est lent/instable et faisait pendre la génération. Pour réactiver l'image IA,
+    mettre `ai_image_enabled: true` dans les réglages.
+    """
+    try:
+        from admin.store import get_settings
+        return bool(get_settings().get("ai_image_enabled", False))
+    except Exception:
+        return False
+
+
 def _photo_url(photo_id: str) -> str:
     return (
         f"https://images.unsplash.com/photo-{photo_id}"
@@ -277,8 +291,8 @@ def attach_image_to_article(
 
     raw: bytes | None = None
 
-    # 1) Génération IA (prompt unique → image unique)
-    if ai_prompt or article.get("ai_generated"):
+    # 1) Génération IA (prompt unique → image unique) — uniquement si activée.
+    if (ai_prompt or article.get("ai_generated")) and _ai_images_enabled():
         try:
             raw = _fetch_remote_image_bounded(prompt, seed)
         except Exception:
@@ -402,7 +416,7 @@ def attach_image_to_destination(
     seed = abs(hash(f"dest-{slug}-{prompt}-{nonce}")) % 999_999
 
     raw: bytes | None = None
-    if ai_prompt or dest.get("ai_generated") or dest.get("image_prompt"):
+    if (ai_prompt or dest.get("ai_generated") or dest.get("image_prompt")) and _ai_images_enabled():
         try:
             raw = _fetch_remote_image_bounded(prompt, seed)
         except Exception:
