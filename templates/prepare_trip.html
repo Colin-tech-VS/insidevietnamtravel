@@ -55,6 +55,10 @@
           <span class="prepare-progress__num" aria-hidden="true">3</span>
           <span class="prepare-progress__label">{{ t('prepare.step3') }}</span>
         </div>
+        <div class="prepare-progress__step" data-step="4">
+          <span class="prepare-progress__num" aria-hidden="true">4</span>
+          <span class="prepare-progress__label">{{ t('prepare.step4') }}</span>
+        </div>
       </nav>
 
       <div class="prepare-step is-active" data-step="1">
@@ -79,6 +83,14 @@
           <p class="prepare-step__hint">{{ t('prepare.step_hint') }}</p>
         </header>
         <div class="prepare-options prepare-options--trio" role="group" aria-label="{{ t('prepare.step3') }}"></div>
+      </div>
+
+      <div class="prepare-step" data-step="4" hidden>
+        <header class="prepare-step__head">
+          <h2>{{ t('prepare.step4') }}</h2>
+          <p class="prepare-step__hint">{{ t('prepare.step4_hint') }}</p>
+        </header>
+        <div class="prepare-options prepare-options--grid prepare-options--multi" role="group" aria-label="{{ t('prepare.step4') }}"></div>
       </div>
 
       <div class="prepare-wizard__nav">

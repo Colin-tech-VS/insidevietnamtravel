@@ -489,6 +489,7 @@ def prepare_trip():
         categories=_categories(lang),
         lang_url_fn=lang_url,
         t_fn=ui_t,
+        track_url_fn=tracked_affiliate_url,
     )
     return render_template(
         "prepare_trip.html",
