@@ -19,48 +19,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  const GENERATE_PHRASES = [
-    'Analyse du sujet et de la destination…',
-    'Recherche des mots-clés SEO Vietnam…',
-    'Ciblage voyageurs français en préparation…',
-    'Rédaction de l\'introduction optimisée…',
-    'Structuration H2 / H3 pour Google…',
-    'Rédaction des conseils pratiques…',
-    'Ajout du budget et fourchettes de prix…',
-    'Création de la section FAQ…',
-    'Optimisation meta description…',
-    'Vérification longueur et sémantique…',
-    'Génération de l\'image Vietnam…',
-    'Conversion WebP pour chargement rapide…',
-    'Finalisation de l\'article…',
-  ];
-
-  const IMPROVE_PHRASES = [
-    'Analyse du brouillon existant…',
-    'Renforcement des mots-clés SEO…',
-    'Enrichissement des sections pratiques…',
-    'Amélioration de la FAQ…',
-    'Mise à jour de l\'image si nécessaire…',
-    'Polissage final du contenu…',
-  ];
-
-  let phraseTimer = null;
-  let phraseIndex = 0;
-
-  function startLoader(phrases) {
+  // Le texte du modal reflète l'étape RÉELLE renvoyée par le serveur (phase du job)
+  // plutôt qu'une liste de phrases qui défilent au hasard sur un minuteur.
+  function startLoader(initialText) {
     if (!overlay) return;
-    phraseIndex = 0;
     overlay.hidden = false;
     overlay.setAttribute('aria-busy', 'true');
-    if (loaderText) loaderText.textContent = phrases[0];
-    phraseTimer = setInterval(() => {
-      phraseIndex = (phraseIndex + 1) % phrases.length;
-      if (loaderText) loaderText.textContent = phrases[phraseIndex];
-    }, 2800);
+    if (loaderText) loaderText.textContent = initialText || 'Préparation…';
+  }
+
+  function setPhase(phase) {
+    if (phase && loaderText) loaderText.textContent = phase;
   }
 
   function stopLoader() {
-    if (phraseTimer) clearInterval(phraseTimer);
     if (overlay) {
       overlay.hidden = true;
       overlay.removeAttribute('aria-busy');
@@ -102,6 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (st.status === 'done') return;
       if (st.status === 'error') throw new Error(st.error || 'Échec de la génération.');
       if (st.status === 'missing') throw new Error('Session expirée — relancez la génération.');
+      setPhase(st.phase); // affiche l'étape réelle en cours
     }
     throw new Error('Génération anormalement longue. Rafraîchissez la page dans un instant.');
   }
@@ -120,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const btn = form.querySelector('.btn-generate');
       if (btn) btn.disabled = true;
-      startLoader(GENERATE_PHRASES);
+      startLoader('Connexion au moteur IA…');
 
       try {
         await postJson('/admin/api/guides/generate', {
@@ -170,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
           || 'Améliore le SEO pour voyageurs préparant un voyage au Vietnam.';
         const btn = improveForm.querySelector('button[type="submit"]');
         if (btn) btn.disabled = true;
-        startLoader(IMPROVE_PHRASES);
+        startLoader('Connexion au moteur IA…');
 
         try {
           await postJson('/admin/api/guides/improve', { instructions });

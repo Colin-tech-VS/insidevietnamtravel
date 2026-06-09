@@ -74,32 +74,36 @@ def _clear_draft(kind: str) -> None:
     draft_store.clear(session.pop(_draft_token_key(kind), None))
 
 
-def _start_draft_job(kind: str, fn) -> None:
+def _start_draft_job(kind: str, fn, initial_phase: str = "Connexion au moteur IA…") -> None:
     token = draft_store.new_token()
     session[_draft_token_key(kind)] = token
-    draft_store.start_job(token, fn, ai_client.friendly_error)
+    draft_store.start_job(token, fn, ai_client.friendly_error, initial_phase=initial_phase)
 
 
 def _draft_status(kind: str) -> dict:
     return draft_store.status(session.get(_draft_token_key(kind)))
 
 
-def _generate_draft(topic: str, guide_type: str, city: str) -> dict:
+def _generate_draft(report, topic: str, guide_type: str, city: str) -> dict:
     import time
-    article = groq_ai.generate_guide(topic=topic, guide_type=guide_type, city=city)
+    article = groq_ai.generate_guide(topic=topic, guide_type=guide_type, city=city, progress=report)
     article["city"] = city
+    report("Génération de l'image Vietnam (WebP)…")
     article.update(attach_image_to_article(
         article,
         article.get("image_prompt"),
         image_nonce=int(time.time() * 1000) % 1_000_000,
     ))
+    report("Finalisation de l'article…")
     return article
 
 
-def _improve_draft(article: dict, instructions: str) -> dict:
-    article = groq_ai.improve_guide(article, instructions)
+def _improve_draft(report, article: dict, instructions: str) -> dict:
+    article = groq_ai.improve_guide(article, instructions, progress=report)
     if article.get("image_prompt"):
+        report("Mise à jour de l'image…")
         article.update(attach_image_to_article(article, article.get("image_prompt")))
+    report("Finalisation de l'article…")
     return article
 
 
@@ -274,7 +278,7 @@ def api_generate_guide():
     # Génération en tâche de fond : la requête répond aussitôt, le client interroge
     # /api/guides/draft-status. Évite le timeout du routeur et rend les pauses
     # anti rate-limit de Groq sans effet sur la requête HTTP.
-    _start_draft_job("article", lambda: _generate_draft(topic, guide_type, city))
+    _start_draft_job("article", lambda report: _generate_draft(report, topic, guide_type, city))
     return jsonify({"ok": True, "started": True})
 
 
@@ -288,7 +292,7 @@ def api_improve_guide():
         return jsonify({"ok": False, "error": "Brouillon manuel — utilisez l'onglet Manuel pour modifier."}), 400
     data = request.get_json(silent=True) or {}
     instructions = data.get("instructions") or "Améliore le SEO pour voyageurs français préparant un trip Vietnam."
-    _start_draft_job("article", lambda: _improve_draft(draft, instructions))
+    _start_draft_job("article", lambda report: _improve_draft(report, draft, instructions))
     return jsonify({"ok": True, "started": True})
 
 
@@ -298,14 +302,16 @@ def api_guide_draft_status():
     return jsonify(_draft_status("article"))
 
 
-def _generate_destination_draft(city: str, notes: str = "") -> dict:
+def _generate_destination_draft(report, city: str, notes: str = "") -> dict:
     import time
-    dest = groq_destinations.generate_destination(city, notes)
+    dest = groq_destinations.generate_destination(city, notes, progress=report)
+    report("Génération de l'image de la destination (WebP)…")
     dest.update(attach_image_to_destination(
         dest,
         dest.get("image_prompt"),
         image_nonce=int(time.time() * 1000) % 1_000_000,
     ))
+    report("Finalisation de la page…")
     return dest
 
 
@@ -371,7 +377,7 @@ def api_generate_destination():
     if not city or city not in ALL_CITY_VALUES or city == "Tout le Vietnam":
         return jsonify({"ok": False, "error": "Ville obligatoire"}), 400
 
-    _start_draft_job("destination", lambda: _generate_destination_draft(city, notes))
+    _start_draft_job("destination", lambda report: _generate_destination_draft(report, city, notes))
     return jsonify({"ok": True, "started": True})
 
 
@@ -590,7 +596,7 @@ def api_generate_newsletter():
 
     _start_draft_job(
         "newsletter",
-        lambda: groq_newsletter.generate_newsletter_email(topic, email_type, notes),
+        lambda report: groq_newsletter.generate_newsletter_email(topic, email_type, notes, progress=report),
     )
     return jsonify({"ok": True, "started": True})
 

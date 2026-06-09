@@ -96,10 +96,12 @@ def _build_destination(data: dict, city: str, slug: str) -> dict:
     }
 
 
-def generate_destination(city: str, notes: str = "") -> dict:
+def generate_destination(city: str, notes: str = "", progress=None) -> dict:
     ai_client.require_api_key()
+    report = progress or (lambda *_: None)
     year = date.today().year
     slug = slugify(city)
+    report("Rédaction de la page destination (hôtels, activités, conseils)…")
 
     user_prompt = f"""Crée une page destination complète pour : {city}
 
@@ -123,6 +125,7 @@ La page doit convaincre un voyageur de visiter {city} et l'aider à planifier : 
     dest = _build_destination(data, city, slug)
 
     if _total_words(dest) < MIN_WORDS * EXPAND_TOLERANCE:
+        report("Enrichissement de la description…")
         # Enrichissement sur le modèle rapide : bucket TPM distinct + plus véloce.
         expand = ai_client.chat_completion(
             fast=True,
@@ -145,6 +148,7 @@ La page doit convaincre un voyageur de visiter {city} et l'aider à planifier : 
         dest = _build_destination(data, city, slug)
 
     try:
+        report("Traduction de la version anglaise…")
         en_data = translate_destination_block(dest, pause_before=1.5)
         shared = {
             k: v for k, v in dest.items()

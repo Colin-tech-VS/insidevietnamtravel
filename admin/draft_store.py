@@ -45,7 +45,21 @@ def set_draft(token: str, draft: dict) -> None:
     """Stocke un brouillon prêt (création manuelle ou résultat synchrone)."""
     with _LOCK:
         _prune_locked()
-        _STORE[token] = {"status": "done", "draft": draft, "error": "", "ts": time.time()}
+        _STORE[token] = {"status": "done", "draft": draft, "error": "", "phase": "", "ts": time.time()}
+
+
+def set_phase(token: str | None, phase: str) -> None:
+    """Met à jour l'étape EN COURS d'un job (affichée en direct dans le modal IA).
+
+    Permet au front d'afficher ce que l'IA fait réellement (rédaction → enrichissement
+    → traduction → image) au lieu de phrases qui défilent au hasard sur un minuteur.
+    """
+    if not token:
+        return
+    with _LOCK:
+        entry = _STORE.get(token)
+        if entry and entry.get("status") == "running":
+            entry["phase"] = phase
 
 
 def get_draft(token: str | None) -> dict | None:
@@ -66,29 +80,47 @@ def clear(token: str | None) -> None:
 
 
 def status(token: str | None) -> dict:
-    """Renvoie {status, error}. status ∈ running|done|error|missing."""
+    """Renvoie {status, error, phase}. status ∈ running|done|error|missing."""
     if not token:
-        return {"status": "missing", "error": ""}
+        return {"status": "missing", "error": "", "phase": ""}
     with _LOCK:
         entry = _STORE.get(token)
         if not entry:
-            return {"status": "missing", "error": ""}
-        return {"status": entry.get("status", "missing"), "error": entry.get("error", "")}
+            return {"status": "missing", "error": "", "phase": ""}
+        return {
+            "status": entry.get("status", "missing"),
+            "error": entry.get("error", ""),
+            "phase": entry.get("phase", ""),
+        }
 
 
 def start_job(
     token: str,
-    fn: Callable[[], dict],
+    fn: Callable[..., dict],
     friendly_error: Callable[[Exception], str] | None = None,
+    initial_phase: str = "",
 ) -> None:
-    """Exécute fn() dans un thread démon ; stocke le brouillon ou l'erreur."""
+    """Exécute fn(report) dans un thread démon ; stocke le brouillon ou l'erreur.
+
+    `fn` reçoit un callback `report(phase: str)` pour signaler son étape en cours,
+    relayée telle quelle au front via status().
+    """
     with _LOCK:
         _prune_locked()
-        _STORE[token] = {"status": "running", "draft": None, "error": "", "ts": time.time()}
+        _STORE[token] = {
+            "status": "running",
+            "draft": None,
+            "error": "",
+            "phase": initial_phase,
+            "ts": time.time(),
+        }
+
+    def report(phase: str) -> None:
+        set_phase(token, phase)
 
     def _run() -> None:
         try:
-            draft = fn()
+            draft = fn(report)
             with _LOCK:
                 _STORE[token] = {
                     "status": "done",

@@ -57,8 +57,11 @@ def generate_newsletter_email(
     topic: str,
     email_type: str = "actualite",
     notes: str = "",
+    progress=None,
 ) -> dict:
     ai_client.require_api_key()
+    report = progress or (lambda *_: None)
+    report("Rédaction de l'email (objet, accroche, corps)…")
 
     type_label = next((t["label"] for t in EMAIL_TYPES if t["value"] == email_type), email_type)
     user_msg = (
