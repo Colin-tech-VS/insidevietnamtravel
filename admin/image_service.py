@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import threading
 import time
 import urllib.parse
 from pathlib import Path
@@ -20,7 +21,13 @@ DEST_IMAGES_DIR = Path(__file__).parent.parent / "static" / "images" / "destinat
 # basculer sur la photo Vietnam de secours (Unsplash, quasi instantanée) : une image
 # IA absente vaut mieux qu'un brouillon bloqué plusieurs minutes.
 REMOTE_IMAGE_CONNECT_TIMEOUT = 8   # secondes pour établir la connexion
-REMOTE_IMAGE_READ_TIMEOUT = 35     # secondes max pour que Flux renvoie l'image
+REMOTE_IMAGE_READ_TIMEOUT = 35     # secondes max d'inactivité socket
+# Échéance MURALE absolue de l'étape image IA. Le timeout socket de requests ne se
+# déclenche qu'en l'absence totale d'octets ; Pollinations peut garder la connexion
+# ouverte (keepalive) et faire pendre l'appel plusieurs minutes. Ce plafond, imposé
+# par un thread, garantit qu'on abandonne et bascule sur la photo de secours quoi
+# qu'il arrive — l'étape image ne peut donc plus bloquer la génération.
+REMOTE_IMAGE_HARD_DEADLINE = 40    # secondes max, tout compris, pour l'image IA
 VIETNAM_PHOTO_CONNECT_TIMEOUT = 8
 VIETNAM_PHOTO_READ_TIMEOUT = 25
 
@@ -174,6 +181,32 @@ def _fetch_remote_image(prompt: str, seed: int) -> bytes:
     return resp.content
 
 
+def _fetch_remote_image_bounded(prompt: str, seed: int) -> bytes:
+    """Comme `_fetch_remote_image` mais avec une échéance murale stricte.
+
+    L'appel réseau tourne dans un thread démon : si l'image n'est pas prête dans
+    REMOTE_IMAGE_HARD_DEADLINE secondes, on lève une exception et l'appelant bascule
+    sur la photo de secours. Le thread orphelin finira par mourir seul (timeout socket),
+    sans bloquer la génération. Garantit que l'étape image ne pend jamais.
+    """
+    result: dict = {}
+
+    def _worker():
+        try:
+            result["data"] = _fetch_remote_image(prompt, seed)
+        except Exception as exc:  # noqa: BLE001 — relayé via result
+            result["error"] = exc
+
+    thread = threading.Thread(target=_worker, daemon=True)
+    thread.start()
+    thread.join(REMOTE_IMAGE_HARD_DEADLINE)
+    if thread.is_alive():
+        raise TimeoutError("Image IA trop lente (échéance dépassée)")
+    if "data" in result:
+        return result["data"]
+    raise result.get("error", RuntimeError("Image IA indisponible"))
+
+
 def _fetch_vietnam_photo(photo_id: str) -> bytes:
     resp = requests.get(
         _photo_url(photo_id),
@@ -247,7 +280,7 @@ def attach_image_to_article(
     # 1) Génération IA (prompt unique → image unique)
     if ai_prompt or article.get("ai_generated"):
         try:
-            raw = _fetch_remote_image(prompt, seed)
+            raw = _fetch_remote_image_bounded(prompt, seed)
         except Exception:
             raw = None
 
@@ -371,7 +404,7 @@ def attach_image_to_destination(
     raw: bytes | None = None
     if ai_prompt or dest.get("ai_generated") or dest.get("image_prompt"):
         try:
-            raw = _fetch_remote_image(prompt, seed)
+            raw = _fetch_remote_image_bounded(prompt, seed)
         except Exception:
             raw = None
 
