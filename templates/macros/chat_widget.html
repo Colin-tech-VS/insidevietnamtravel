@@ -12,6 +12,10 @@
      data-typing="{{ t('chat.typing') }}"
      data-error="{{ t('chat.error') }}"
      data-affiliate-badge="{{ t('chat.affiliate_badge') }}"
+     data-map-subtitle="{{ t('chat.map_subtitle') }}"
+     data-map-cta="{{ t('chat.map_cta') }}"
+     data-map-on="{{ t('chat.map_on') }}"
+     data-map-error="{{ t('chat.map_error') }}"
      data-suggestions='{{ [t("chat.suggest1"), t("chat.suggest2"), t("chat.suggest3")] | tojson }}'>
   <button type="button" class="mai-chat__fab" id="mai-chat-fab" aria-expanded="false" aria-controls="mai-chat-panel" aria-label="{{ t('chat.open') }}">
     <span class="mai-chat__fab-ring" aria-hidden="true"></span>
@@ -55,6 +59,7 @@
     <p class="mai-chat__disclaimer">{{ t('chat.disclaimer') }}</p>
   </div>
 </div>
+<script src="{{ url_for('static', filename='js/chat-map.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/chat.js') }}" defer></script>
 {% endif %}
 {% endmacro %}

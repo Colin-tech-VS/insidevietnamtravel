@@ -24,6 +24,10 @@
     error: root.dataset.error || 'Error',
     affiliate: root.dataset.affiliateBadge || 'Partner',
     greeting: root.dataset.greeting || '',
+    mapSubtitle: root.dataset.mapSubtitle || 'Interactive map',
+    mapCta: root.dataset.mapCta || 'View full map',
+    mapOn: root.dataset.mapOn || 'On the map',
+    mapError: root.dataset.mapError || 'Map unavailable',
   };
 
   var suggestions = [];
@@ -79,22 +83,83 @@
     return wrap;
   }
 
-  function renderLinks(siteLinks, affiliateLinks) {
-    if ((!siteLinks || !siteLinks.length) && (!affiliateLinks || !affiliateLinks.length)) return '';
+  function renderMapCard(card) {
+    var mapId = (window.maiChatMaps && window.maiChatMaps.nextId)
+      ? window.maiChatMaps.nextId()
+      : ('mai-map-' + Math.random().toString(36).slice(2, 8));
+    var pointsJson = escapeHtml(JSON.stringify(card.points || []));
+    var html = '<article class="mai-chat__map-card">';
+    html += '<header class="mai-chat__map-head">';
+    html += '<span class="mai-chat__map-icon" aria-hidden="true">🗺️</span>';
+    html += '<div class="mai-chat__map-head-text">';
+    html += '<strong class="mai-chat__map-title">' + escapeHtml(card.name || card.slug) + '</strong>';
+    html += '<span class="mai-chat__map-sub">' + escapeHtml(i18n.mapSubtitle) + '</span>';
+    html += '</div></header>';
+    html += '<div class="mai-chat__map-canvas" id="' + mapId + '" data-points="' + pointsJson + '" data-error="' + escapeHtml(i18n.mapError) + '" role="img" aria-label="' + escapeHtml(card.name || '') + '"></div>';
+
+    if (card.points && card.points.length) {
+      html += '<p class="mai-chat__map-pins-label">' + escapeHtml(i18n.mapOn) + '</p>';
+      html += '<ul class="mai-chat__map-pins">';
+      card.points.forEach(function (p) {
+        var kindClass = 'mai-chat__pin-kind--' + escapeHtml(p.kind || 'poi');
+        html += '<li class="mai-chat__map-pin' + (p.highlight ? ' mai-chat__map-pin--highlight' : '') + '">';
+        html += '<span class="mai-chat__pin-kind ' + kindClass + '" aria-hidden="true"></span>';
+        html += '<div class="mai-chat__pin-body">';
+        html += '<strong>' + escapeHtml(p.title) + '</strong>';
+        if (p.kind_label) html += '<span class="mai-chat__pin-meta">' + escapeHtml(p.kind_label) + '</span>';
+        if (p.price_hint) html += '<span class="mai-chat__pin-price">' + escapeHtml(p.price_hint) + '</span>';
+        if (p.affiliate_url) {
+          html += '<a class="mai-chat__pin-cta" href="' + escapeHtml(p.affiliate_url) + '" target="_blank" rel="noopener sponsored">'
+            + escapeHtml(p.affiliate_cta || (lang === 'en' ? 'Book' : 'Réserver')) + ' ↗</a>';
+        }
+        html += '</div></li>';
+      });
+      html += '</ul>';
+    }
+
+    if (card.map_url) {
+      html += '<a class="mai-chat__map-cta" href="' + escapeHtml(card.map_url) + '" target="_blank" rel="noopener">'
+        + escapeHtml(i18n.mapCta) + ' →</a>';
+    }
+    html += '</article>';
+    return html;
+  }
+
+  function renderLinks(siteLinks, affiliateLinks, mapCards) {
+    if ((!siteLinks || !siteLinks.length) && (!affiliateLinks || !affiliateLinks.length)
+        && (!mapCards || !mapCards.length)) return '';
     var html = '<div class="mai-chat__links">';
+
+    (mapCards || []).forEach(function (card) {
+      html += renderMapCard(card);
+    });
+
     (siteLinks || []).forEach(function (l) {
-      html += '<a class="mai-chat__link mai-chat__link--site" href="' + escapeHtml(l.url) + '" target="_blank" rel="noopener">'
-        + '🔗 ' + escapeHtml(l.title) + '</a>';
+      html += '<a class="mai-chat__link-card mai-chat__link-card--site" href="' + escapeHtml(l.url) + '" target="_blank" rel="noopener">'
+        + '<span class="mai-chat__link-card-icon" aria-hidden="true">📖</span>'
+        + '<span class="mai-chat__link-card-body"><strong>' + escapeHtml(l.title) + '</strong></span>'
+        + '<span class="mai-chat__link-card-arrow" aria-hidden="true">→</span></a>';
     });
+
     (affiliateLinks || []).forEach(function (l) {
-      html += '<a class="mai-chat__link mai-chat__link--aff" href="' + escapeHtml(l.url) + '" target="_blank" rel="noopener sponsored">'
+      html += '<a class="mai-chat__link-card mai-chat__link-card--aff" href="' + escapeHtml(l.url) + '" target="_blank" rel="noopener sponsored">'
+        + '<span class="mai-chat__link-card-icon" aria-hidden="true">✦</span>'
+        + '<span class="mai-chat__link-card-body">'
         + '<span class="mai-chat__link-badge">' + escapeHtml(i18n.affiliate) + '</span> '
-        + escapeHtml(l.label)
+        + '<strong>' + escapeHtml(l.label) + '</strong>'
         + (l.teaser ? '<small>' + escapeHtml(l.teaser) + '</small>' : '')
-        + '</a>';
+        + '</span>'
+        + '<span class="mai-chat__link-card-arrow" aria-hidden="true">↗</span></a>';
     });
+
     html += '</div>';
     return html;
+  }
+
+  function initMapsInLinks(linksEl) {
+    if (window.maiChatMaps && linksEl) {
+      window.maiChatMaps.initIn(linksEl);
+    }
   }
 
   function showTyping() {
@@ -197,6 +262,7 @@
         if (!linksEl) return;
         linksEl.classList.add('mai-chat__links--reveal');
         bubble.appendChild(linksEl);
+        initMapsInLinks(linksEl);
         scrollBottom();
       }
 
@@ -359,7 +425,7 @@
           throw new Error((res.data && res.data.error) || i18n.error);
         }
         var msg = res.data.message || '';
-        var linksHtml = renderLinks(res.data.site_links, res.data.affiliate_links);
+        var linksHtml = renderLinks(res.data.site_links, res.data.affiliate_links, res.data.map_cards);
         return streamAssistantMessage(msg, linksHtml).then(function () {
           history.push({ role: 'assistant', content: msg });
         });

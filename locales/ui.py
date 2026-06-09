@@ -647,6 +647,10 @@ UI: dict[str, dict[str, str]] = {
         "en": "Sorry, I couldn't reply. Please try again in a moment.",
     },
     "chat.affiliate_badge": {"fr": "Partenaire", "en": "Partner"},
+    "chat.map_subtitle": {"fr": "Carte interactive", "en": "Interactive map"},
+    "chat.map_cta": {"fr": "Voir la carte complète", "en": "View full map"},
+    "chat.map_on": {"fr": "Sur la carte", "en": "On the map"},
+    "chat.map_error": {"fr": "Carte indisponible", "en": "Map unavailable"},
     "chat.disclaimer": {
         "fr": "Conseils IA à titre informatif — vérifiez visa & santé auprès des sources officielles.",
         "en": "AI tips for guidance only — check visa & health with official sources.",
@@ -738,27 +742,53 @@ UI: dict[str, dict[str, str]] = {
     "budget.eyebrow": {"fr": "Budget voyage", "en": "Trip budget"},
     "budget.title": {"fr": "Calculateur de budget Vietnam", "en": "Vietnam budget calculator"},
     "budget.lead": {
-        "fr": "Estimez le coût de votre voyage en quelques secondes. Hors vol "
-              "international, ajustable selon votre style.",
-        "en": "Estimate your trip cost in seconds. Excluding international flights, "
-              "adjustable to your style.",
+        "fr": "Estimez un budget détaillé : style, régions, repas, transports, activités "
+              "et change EUR → dong en temps réel. Hors vol international.",
+        "en": "Estimate a detailed budget: style, regions, meals, transport, activities "
+              "and live EUR → dong exchange. Excluding international flights.",
     },
     "budget.style": {"fr": "Style de voyage", "en": "Travel style"},
+    "budget.trip_params": {"fr": "Votre voyage", "en": "Your trip"},
     "budget.travellers": {"fr": "Voyageurs", "en": "Travellers"},
     "budget.days": {"fr": "Durée (jours)", "en": "Duration (days)"},
+    "budget.cities": {"fr": "Villes visitées", "en": "Cities visited"},
+    "budget.internal_flights": {"fr": "Vols intérieurs", "en": "Domestic flights"},
+    "budget.scooter_days": {"fr": "Jours scooter", "en": "Scooter days"},
+    "budget.guide_days": {"fr": "Jours guide privé", "en": "Private guide days"},
+    "budget.refine": {"fr": "Affiner l'estimation", "en": "Fine-tune estimate"},
+    "budget.region": {"fr": "Région principale", "en": "Main region"},
+    "budget.meals": {"fr": "Niveau repas", "en": "Meal level"},
+    "budget.transport_mode": {"fr": "Déplacements", "en": "Getting around"},
+    "budget.activity_level": {"fr": "Niveau activités", "en": "Activity level"},
+    "budget.currency": {"fr": "Affichage", "en": "Display"},
+    "budget.currency_both": {"fr": "EUR + dong (₫)", "en": "EUR + dong (₫)"},
+    "budget.fx_label": {"fr": "Taux de change", "en": "Exchange rate"},
+    "budget.fx_loading": {"fr": "Chargement des taux…", "en": "Loading rates…"},
+    "budget.fx_updated": {"fr": "Taux du jour (source open.er-api.com)", "en": "Today's rate (open.er-api.com)"},
+    "budget.vnd": {"fr": "dong vietnamien", "en": "Vietnamese dong"},
+    "budget.intercity": {"fr": "Inter-villes / pers.", "en": "Inter-city / person"},
+    "budget.oneoff_selected": {"fr": "Frais ponctuels sélectionnés", "en": "Selected one-off costs"},
+    "budget.internal_flight_line": {"fr": "Vols intérieurs", "en": "Domestic flights"},
+    "budget.scooter_line": {"fr": "Location scooter", "en": "Scooter rental"},
+    "budget.guide_line": {"fr": "Guide privé", "en": "Private guide"},
+    "budget.flight_note": {
+        "fr": "Vol international Europe ↔ Vietnam non inclus (souvent 500–900 € A/R).",
+        "en": "International flights Europe ↔ Vietnam not included (often €500–900 return).",
+    },
     "budget.perday": {"fr": "par jour / pers.", "en": "per day / person"},
-    "budget.breakdown": {"fr": "Détail par poste", "en": "Cost breakdown"},
+    "budget.breakdown": {"fr": "Détail par poste (jour)", "en": "Daily cost breakdown"},
     "budget.daily_total": {"fr": "Sous-total journalier", "en": "Daily subtotal"},
-    "budget.oneoff": {"fr": "Frais ponctuels", "en": "One-off costs"},
+    "budget.oneoff": {"fr": "Options ponctuelles", "en": "One-off options"},
     "budget.total": {"fr": "Budget total estimé", "en": "Estimated total budget"},
     "budget.per_person": {"fr": "par personne", "en": "per person"},
     "budget.note": {
-        "fr": "Estimation indicative en euros, hors vol international depuis l'Europe "
-              "(≈ 500–800 €). Les prix réels varient selon la saison et les options.",
-        "en": "Indicative estimate in euros, excluding international flights from Europe "
-              "(≈ €500–800). Real prices vary with season and options.",
+        "fr": "Estimation indicative en euros avec conversion dong (taux actualisé ~1 h). "
+              "Les prix varient selon la saison, les réservations et le change.",
+        "en": "Indicative estimate in euros with dong conversion (rates refreshed ~hourly). "
+              "Prices vary by season, bookings and exchange rates.",
     },
     "budget.cta_book": {"fr": "Voir les hôtels recommandés", "en": "See recommended hotels"},
+    "budget.cta_prepare": {"fr": "Affiner avec le planificateur", "en": "Refine with trip planner"},
 
     # ── Visa ─────────────────────────────────────────────────────────
     "visa.eyebrow": {"fr": "Formalités", "en": "Formalities"},

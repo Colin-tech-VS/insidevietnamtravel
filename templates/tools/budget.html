@@ -42,7 +42,8 @@
 
 <section class="section">
   <div class="container">
-    <div class="budget-tool" id="budget-tool">
+    <div class="budget-tool budget-tool--advanced" id="budget-tool"
+         data-fx-url="{{ url_for('api_fx_rates') }}">
 
       <div class="budget-controls">
         <fieldset class="budget-field">
@@ -62,27 +63,140 @@
           </div>
         </fieldset>
 
-        <div class="budget-field budget-field--row">
-          <div class="budget-stepper">
-            <label for="budget-travellers">{{ t('budget.travellers') }}</label>
-            <div class="budget-stepper__row">
-              <button type="button" class="budget-stepper__btn" data-step="travellers" data-dir="-1" aria-label="−">−</button>
-              <input type="number" id="budget-travellers" min="1" max="12" value="2" inputmode="numeric">
-              <button type="button" class="budget-stepper__btn" data-step="travellers" data-dir="1" aria-label="+">+</button>
+        <fieldset class="budget-field">
+          <legend>{{ t('budget.trip_params') }}</legend>
+          <div class="budget-field--row budget-field--row-3">
+            <div class="budget-stepper">
+              <label for="budget-travellers">{{ t('budget.travellers') }}</label>
+              <div class="budget-stepper__row">
+                <button type="button" class="budget-stepper__btn" data-step="travellers" data-dir="-1" aria-label="−">−</button>
+                <input type="number" id="budget-travellers" min="1" max="12" value="2" inputmode="numeric">
+                <button type="button" class="budget-stepper__btn" data-step="travellers" data-dir="1" aria-label="+">+</button>
+              </div>
+            </div>
+            <div class="budget-stepper">
+              <label for="budget-days">{{ t('budget.days') }}</label>
+              <div class="budget-stepper__row">
+                <button type="button" class="budget-stepper__btn" data-step="days" data-dir="-1" aria-label="−">−</button>
+                <input type="number" id="budget-days" min="1" max="60" value="14" inputmode="numeric">
+                <button type="button" class="budget-stepper__btn" data-step="days" data-dir="1" aria-label="+">+</button>
+              </div>
+            </div>
+            <div class="budget-stepper">
+              <label for="budget-cities">{{ t('budget.cities') }}</label>
+              <div class="budget-stepper__row">
+                <button type="button" class="budget-stepper__btn" data-step="cities" data-dir="-1" aria-label="−">−</button>
+                <input type="number" id="budget-cities" min="1" max="8" value="3" inputmode="numeric">
+                <button type="button" class="budget-stepper__btn" data-step="cities" data-dir="1" aria-label="+">+</button>
+              </div>
             </div>
           </div>
-          <div class="budget-stepper">
-            <label for="budget-days">{{ t('budget.days') }}</label>
-            <div class="budget-stepper__row">
-              <button type="button" class="budget-stepper__btn" data-step="days" data-dir="-1" aria-label="−">−</button>
-              <input type="number" id="budget-days" min="1" max="60" value="14" inputmode="numeric">
-              <button type="button" class="budget-stepper__btn" data-step="days" data-dir="1" aria-label="+">+</button>
+          <div class="budget-field--row budget-field--row-3">
+            <div class="budget-stepper">
+              <label for="budget-flights">{{ t('budget.internal_flights') }}</label>
+              <div class="budget-stepper__row">
+                <button type="button" class="budget-stepper__btn" data-step="flights" data-dir="-1" aria-label="−">−</button>
+                <input type="number" id="budget-flights" min="0" max="6" value="1" inputmode="numeric">
+                <button type="button" class="budget-stepper__btn" data-step="flights" data-dir="1" aria-label="+">+</button>
+              </div>
+            </div>
+            <div class="budget-stepper">
+              <label for="budget-scooter">{{ t('budget.scooter_days') }}</label>
+              <div class="budget-stepper__row">
+                <button type="button" class="budget-stepper__btn" data-step="scooter" data-dir="-1" aria-label="−">−</button>
+                <input type="number" id="budget-scooter" min="0" max="21" value="0" inputmode="numeric">
+                <button type="button" class="budget-stepper__btn" data-step="scooter" data-dir="1" aria-label="+">+</button>
+              </div>
+            </div>
+            <div class="budget-stepper">
+              <label for="budget-guide">{{ t('budget.guide_days') }}</label>
+              <div class="budget-stepper__row">
+                <button type="button" class="budget-stepper__btn" data-step="guide" data-dir="-1" aria-label="−">−</button>
+                <input type="number" id="budget-guide" min="0" max="14" value="0" inputmode="numeric">
+                <button type="button" class="budget-stepper__btn" data-step="guide" data-dir="1" aria-label="+">+</button>
+              </div>
             </div>
           </div>
-        </div>
+        </fieldset>
+
+        <fieldset class="budget-field">
+          <legend>{{ t('budget.refine') }}</legend>
+          <div class="budget-select-grid">
+            <div class="budget-select">
+              <label for="budget-region">{{ t('budget.region') }}</label>
+              <select id="budget-region">
+                {% for r in budget.regions %}
+                <option value="{{ r.key }}" data-mult='{{ r.mult | tojson }}'>{{ r.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="budget-select">
+              <label for="budget-meals">{{ t('budget.meals') }}</label>
+              <select id="budget-meals">
+                {% for m in budget.meals %}
+                <option value="{{ m.key }}" data-food-mult="{{ m.food_mult }}">{{ m.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="budget-select">
+              <label for="budget-transport">{{ t('budget.transport_mode') }}</label>
+              <select id="budget-transport">
+                {% for tmode in budget.transport_modes %}
+                <option value="{{ tmode.key }}"
+                        data-transport-mult="{{ tmode.transport_mult }}"
+                        data-intercity-mult="{{ tmode.intercity_mult }}">{{ tmode.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="budget-select">
+              <label for="budget-activities">{{ t('budget.activity_level') }}</label>
+              <select id="budget-activities">
+                {% for a in budget.activities %}
+                <option value="{{ a.key }}" data-activities-mult="{{ a.activities_mult }}">{{ a.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="budget-field">
+          <legend>{{ t('budget.oneoff') }}</legend>
+          <div class="budget-oneoff-toggles">
+            {% for o in budget.oneoff %}
+            <label class="budget-oneoff-toggle">
+              <input type="checkbox" name="budget-oneoff" value="{{ o.key }}"
+                     data-amount="{{ o.amount }}" {% if o.default %}checked{% endif %}>
+              <span class="budget-oneoff-toggle__inner">
+                <strong>{{ o.label }}</strong>
+                <small>{{ o.hint }} · {{ o.amount }} €</small>
+              </span>
+            </label>
+            {% endfor %}
+          </div>
+        </fieldset>
+
+        <fieldset class="budget-field">
+          <legend>{{ t('budget.currency') }}</legend>
+          <div class="budget-currency-row">
+            <label class="budget-currency-opt">
+              <input type="radio" name="budget-display" value="eur" checked>
+              <span>EUR €</span>
+            </label>
+            <label class="budget-currency-opt">
+              <input type="radio" name="budget-display" value="both">
+              <span>{{ t('budget.currency_both') }}</span>
+            </label>
+          </div>
+        </fieldset>
       </div>
 
       <div class="budget-output" aria-live="polite">
+        <div class="budget-fx" id="budget-fx" hidden>
+          <span class="budget-fx__label">{{ t('budget.fx_label') }}</span>
+          <span class="budget-fx__rates" id="budget-fx-rates">—</span>
+          <span class="budget-fx__updated" id="budget-fx-updated"></span>
+        </div>
+
         <h2 class="budget-output__heading">{{ t('budget.breakdown') }}</h2>
         <ul class="budget-bars" id="budget-bars">
           {% for c in budget.categories %}
@@ -92,32 +206,32 @@
             <span class="budget-bar__value" data-out="{{ c.key }}">—</span>
           </li>
           {% endfor %}
+          <li class="budget-bar budget-bar--extra" data-cat="intercity">
+            <span class="budget-bar__label"><span aria-hidden="true">🚌</span> {{ t('budget.intercity') }}</span>
+            <span class="budget-bar__track"><span class="budget-bar__fill"></span></span>
+            <span class="budget-bar__value" data-out="intercity">—</span>
+          </li>
         </ul>
 
         <p class="budget-subtotal">
           <span>{{ t('budget.daily_total') }}</span>
-          <strong><span data-out="perday">—</span> € <small>{{ t('budget.perday') }}</small></strong>
+          <strong><span data-out="perday">—</span> <span class="budget-currency-unit">€</span> <small>{{ t('budget.perday') }}</small></strong>
         </p>
 
-        <div class="budget-oneoff">
-          <span class="budget-oneoff__title">{{ t('budget.oneoff') }}</span>
-          <ul>
-            {% for o in budget.oneoff %}
-            <li data-oneoff="{{ o.amount }}">
-              <span>{{ o.label }} <small>{{ o.hint }}</small></span>
-              <strong>{{ o.amount }} €</strong>
-            </li>
-            {% endfor %}
-          </ul>
+        <div class="budget-oneoff budget-oneoff--summary">
+          <span class="budget-oneoff__title">{{ t('budget.oneoff_selected') }}</span>
+          <ul id="budget-oneoff-summary"></ul>
         </div>
 
         <div class="budget-total">
           <span class="budget-total__label">{{ t('budget.total') }}</span>
-          <span class="budget-total__value"><span data-out="total">—</span> €</span>
+          <span class="budget-total__value"><span data-out="total">—</span> <span class="budget-currency-unit">€</span></span>
+          <span class="budget-total__vnd" id="budget-total-vnd" hidden></span>
           <span class="budget-total__per"><span data-out="per_person">—</span> € · {{ t('budget.per_person') }}</span>
         </div>
 
-        <a class="btn btn-primary btn-lg budget-cta" href="{{ lang_url('index') }}#destinations">{{ t('budget.cta_book') }}</a>
+        <p class="budget-flight-note">{{ t('budget.flight_note') }}</p>
+        <a class="btn btn-primary btn-lg budget-cta" href="{{ lang_url('prepare_trip') }}">{{ t('budget.cta_prepare') }}</a>
       </div>
     </div>
 
@@ -133,9 +247,15 @@
 
 <script>
   window.budgetCatalog = {{ budget | tojson }};
-  window.budgetLabels = {
-    cta_hotels: {{ t('budget.cta_book') | tojson }}
-  };
+  window.budgetLabels = {{ {
+    'intercity': t('budget.intercity'),
+    'internal_flight': t('budget.internal_flight_line'),
+    'scooter': t('budget.scooter_line'),
+    'guide': t('budget.guide_line'),
+    'fx_loading': t('budget.fx_loading'),
+    'fx_updated': t('budget.fx_updated'),
+    'vnd': t('budget.vnd'),
+  } | tojson }};
 </script>
 {% endblock %}
 

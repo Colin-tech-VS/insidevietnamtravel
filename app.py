@@ -569,6 +569,16 @@ def best_season():
     )
 
 
+@app.route("/api/fx-rates")
+@app.route("/en/api/fx-rates")
+def api_fx_rates():
+    from flask import jsonify
+    from data.fx_rates import get_fx_rates
+
+    rates = get_fx_rates()
+    return jsonify({"ok": True, **rates})
+
+
 @app.route("/calculateur-budget-vietnam")
 @app.route("/en/vietnam-budget-calculator")
 def budget_tool():

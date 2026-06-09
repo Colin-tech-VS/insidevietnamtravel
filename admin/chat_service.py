@@ -415,6 +415,72 @@ def _detect_destination_slug(text: str, lang: str) -> str | None:
     return None
 
 
+def _slug_from_map_url(url: str) -> str | None:
+    """Extrait le slug destination depuis une URL page carte (#dest-map)."""
+    if not url:
+        return None
+    from urllib.parse import urlparse
+
+    path = urlparse(url).path.strip("/")
+    if not path:
+        return None
+    parts = [p for p in path.split("/") if p]
+    if parts and parts[0] == "en":
+        parts = parts[1:]
+    if not parts:
+        return None
+    slug = parts[-1]
+    try:
+        from admin.store import get_destinations_dict
+        if slug in get_destinations_dict():
+            return slug
+    except Exception:
+        pass
+    return None
+
+
+def _build_map_cards_for_response(
+    site_links: list[dict],
+    affiliate_links: list[dict],
+    slug: str | None,
+    lang: str,
+    track_url_fn,
+) -> tuple[list[dict], list[dict], list[dict]]:
+    """Construit cartes carte pour Mai et retire les liens redondants."""
+    from admin.map_service import build_chat_map_card
+
+    slugs: set[str] = set()
+    if slug:
+        slugs.add(slug)
+    for link in site_links:
+        s = _slug_from_map_url(link.get("url", ""))
+        if s:
+            slugs.add(s)
+
+    aff_urls = {l.get("url") for l in affiliate_links if l.get("url")}
+    cards: list[dict] = []
+    for s in sorted(slugs):
+        card = build_chat_map_card(s, lang, track_url_fn, highlight_urls=aff_urls)
+        if card:
+            cards.append(card)
+
+    card_slugs = {c["slug"] for c in cards}
+    filtered_site = [
+        l for l in site_links
+        if not (_slug_from_map_url(l.get("url", "")) in card_slugs)
+    ]
+
+    card_aff_urls: set[str] = set()
+    for card in cards:
+        for pt in card.get("points") or []:
+            u = pt.get("affiliate_url")
+            if u:
+                card_aff_urls.add(u)
+    filtered_aff = [l for l in affiliate_links if l.get("url") not in card_aff_urls]
+
+    return cards, filtered_site, filtered_aff
+
+
 def _auto_enrich_links(
     message: str,
     chunks: list[dict],
@@ -649,6 +715,13 @@ def chat_reply(
         site_links=site_links,
         affiliate_links=affiliate_links,
     )
+    map_cards, site_links, affiliate_links = _build_map_cards_for_response(
+        site_links,
+        affiliate_links,
+        slug,
+        lang,
+        track_url_fn,
+    )
     if _message_incomplete(message):
         message = _repair_message(
             message,
@@ -662,4 +735,5 @@ def chat_reply(
         "message": message,
         "site_links": site_links[:4],
         "affiliate_links": affiliate_links[:3],
+        "map_cards": map_cards[:2],
     }

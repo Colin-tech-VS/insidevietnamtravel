@@ -205,19 +205,90 @@ _BUDGET_CATEGORIES = [
     {"key": "misc", "icon": "🛍️", "label": {"fr": "Extras", "en": "Extras"}},
 ]
 
-# Coûts ponctuels (par personne, sur tout le séjour)
+# Coûts ponctuels configurables (par personne sauf mention)
 _BUDGET_ONEOFF = [
     {"key": "visa", "label": {"fr": "e-visa", "en": "e-visa"}, "amount": 23,
-     "hint": {"fr": "≈ 25 $ — gratuit si exempté", "en": "≈ $25 — free if exempt"}},
+     "hint": {"fr": "≈ 25 $ — gratuit si exempté", "en": "≈ $25 — free if exempt"},
+     "default": True},
     {"key": "esim", "label": {"fr": "eSIM / data", "en": "eSIM / data"}, "amount": 12,
-     "hint": {"fr": "data illimitée 2 semaines", "en": "unlimited data for 2 weeks"}},
+     "hint": {"fr": "data 10–15 jours", "en": "10–15 days data"},
+     "default": True},
     {"key": "insurance", "label": {"fr": "Assurance voyage", "en": "Travel insurance"}, "amount": 35,
-     "hint": {"fr": "≈ 2 semaines", "en": "≈ 2 weeks"}},
+     "hint": {"fr": "≈ 2 semaines", "en": "≈ 2 weeks"},
+     "default": True},
+    {"key": "halong", "label": {"fr": "Croisière Halong (1 nuit)", "en": "Halong cruise (1 night)"},
+     "amount": 120,
+     "hint": {"fr": "Budget confort — variable", "en": "Mid-range — varies"},
+     "default": False},
+    {"key": "sapa_trek", "label": {"fr": "Trek Sapa (2 j)", "en": "Sapa trek (2 days)"},
+     "amount": 55,
+     "hint": {"fr": "Guide + nuit homestay", "en": "Guide + homestay"},
+     "default": False},
 ]
+
+_BUDGET_REGIONS = [
+    {
+        "key": "north",
+        "name": {"fr": "Nord (Hanoï, Halong, Sapa)", "en": "North (Hanoi, Halong, Sapa)"},
+        "mult": {"stay": 0.95, "food": 1.0, "transport": 1.0, "activities": 1.0, "misc": 1.0},
+    },
+    {
+        "key": "central",
+        "name": {"fr": "Centre (Huế, Đà Nẵng, Hội An)", "en": "Central (Hue, Da Nang, Hoi An)"},
+        "mult": {"stay": 1.0, "food": 1.0, "transport": 1.0, "activities": 1.05, "misc": 1.0},
+    },
+    {
+        "key": "south",
+        "name": {"fr": "Sud (Saigon, Mékong, Phú Quốc)", "en": "South (HCMC, Mekong, Phu Quoc)"},
+        "mult": {"stay": 1.02, "food": 0.98, "transport": 1.0, "activities": 1.0, "misc": 1.0},
+    },
+    {
+        "key": "mixed",
+        "name": {"fr": "Grand tour (Nord + Centre + Sud)", "en": "Grand tour (North + Central + South)"},
+        "mult": {"stay": 1.0, "food": 1.0, "transport": 1.18, "activities": 1.08, "misc": 1.05},
+    },
+]
+
+_BUDGET_MEALS = [
+    {"key": "street", "name": {"fr": "Street food & marchés", "en": "Street food & markets"},
+     "food_mult": 0.82},
+    {"key": "mixed", "name": {"fr": "Mixte (street + restos)", "en": "Mixed (street + restaurants)"},
+     "food_mult": 1.0},
+    {"key": "restaurant", "name": {"fr": "Restaurants sit-down", "en": "Sit-down restaurants"},
+     "food_mult": 1.35},
+    {"key": "gourmet", "name": {"fr": "Gastronomie & rooftops", "en": "Gourmet & rooftops"},
+     "food_mult": 1.65},
+]
+
+_BUDGET_TRANSPORT = [
+    {"key": "local", "name": {"fr": "Bus, train, Grab", "en": "Bus, train, Grab"},
+     "transport_mult": 1.0, "intercity_mult": 1.0},
+    {"key": "mixed", "name": {"fr": "Mixte train + vols intérieurs", "en": "Mix of trains + domestic flights"},
+     "transport_mult": 1.22, "intercity_mult": 1.35},
+    {"key": "flights", "name": {"fr": "Volonté de vols intérieurs", "en": "Prefer domestic flights"},
+     "transport_mult": 1.45, "intercity_mult": 1.8},
+]
+
+_BUDGET_ACTIVITIES = [
+    {"key": "light", "name": {"fr": "Léger (balades, temples)", "en": "Light (walks, temples)"},
+     "activities_mult": 0.78},
+    {"key": "standard", "name": {"fr": "Standard (tours, musées)", "en": "Standard (tours, museums)"},
+     "activities_mult": 1.0},
+    {"key": "intensive", "name": {"fr": "Intensif (croisières, sports)", "en": "Intensive (cruises, sports)"},
+     "activities_mult": 1.38},
+]
+
+_BUDGET_EXTRAS = {
+    "intercity_per_leg": 18,
+    "internal_flight": 48,
+    "scooter_day": 9,
+    "guide_day": 28,
+}
 
 
 def build_budget(lang: str) -> dict:
-    """Catalogue budget : styles, catégories, coûts ponctuels (localisé)."""
+    """Catalogue budget enrichi : styles, modificateurs, frais ponctuels."""
+    lang = "en" if lang == "en" else "fr"
     styles = []
     for s in _BUDGET_STYLES:
         styles.append({
@@ -233,11 +304,46 @@ def build_budget(lang: str) -> dict:
         for c in _BUDGET_CATEGORIES
     ]
     oneoff = [
-        {"key": o["key"], "label": o["label"][lang], "amount": o["amount"],
-         "hint": o["hint"][lang]}
+        {
+            "key": o["key"],
+            "label": o["label"][lang],
+            "amount": o["amount"],
+            "hint": o["hint"][lang],
+            "default": o.get("default", False),
+        }
         for o in _BUDGET_ONEOFF
     ]
-    return {"styles": styles, "categories": categories, "oneoff": oneoff}
+    regions = [
+        {"key": r["key"], "name": r["name"][lang], "mult": r["mult"]}
+        for r in _BUDGET_REGIONS
+    ]
+    meals = [
+        {"key": m["key"], "name": m["name"][lang], "food_mult": m["food_mult"]}
+        for m in _BUDGET_MEALS
+    ]
+    transport_modes = [
+        {
+            "key": t["key"],
+            "name": t["name"][lang],
+            "transport_mult": t["transport_mult"],
+            "intercity_mult": t["intercity_mult"],
+        }
+        for t in _BUDGET_TRANSPORT
+    ]
+    activities = [
+        {"key": a["key"], "name": a["name"][lang], "activities_mult": a["activities_mult"]}
+        for a in _BUDGET_ACTIVITIES
+    ]
+    return {
+        "styles": styles,
+        "categories": categories,
+        "oneoff": oneoff,
+        "regions": regions,
+        "meals": meals,
+        "transport_modes": transport_modes,
+        "activities": activities,
+        "extras": _BUDGET_EXTRAS,
+    }
 
 
 # ── Visa : assistant simplifié ────────────────────────────────────────

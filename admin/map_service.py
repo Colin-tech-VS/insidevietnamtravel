@@ -657,6 +657,37 @@ def map_page_url(slug: str, lang: str) -> str:
     return f"{base}#dest-map"
 
 
+def build_chat_map_card(
+    destination_slug: str,
+    lang: str,
+    track_url_fn: Callable[[str, str], str],
+    *,
+    highlight_urls: set[str] | None = None,
+    max_points: int = 6,
+) -> dict | None:
+    """Carte compacte pour le widget Mai — points + URLs pour mini-carte Leaflet."""
+    ensure_map_for_destination(destination_slug)
+    points = get_public_map_points(destination_slug, lang, track_url_fn)
+    if not points:
+        return None
+
+    dests = get_destinations_dict_safe()
+    name = dests.get(destination_slug, {}).get("name", destination_slug)
+    highlights = highlight_urls or set()
+    serialized = []
+    for p in points[:max_points]:
+        row = dict(p)
+        row["highlight"] = bool(p.get("affiliate_url") and p["affiliate_url"] in highlights)
+        serialized.append(row)
+
+    return {
+        "slug": destination_slug,
+        "name": name,
+        "map_url": map_page_url(destination_slug, lang),
+        "points": serialized,
+    }
+
+
 def build_chat_map_chunks(lang: str, track_url_fn: Callable[[str, str], str]) -> list[dict]:
     """Chunks carte pour Mai — pages carte + pins affiliés."""
     from i18n_utils import lang_url

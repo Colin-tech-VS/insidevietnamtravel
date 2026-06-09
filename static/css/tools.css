@@ -164,10 +164,147 @@
 /* ── Budget ─────────────────────────────────────────────────────────── */
 .budget-tool {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
   gap: 2rem;
   align-items: start;
 }
+.budget-tool--advanced .budget-controls { max-height: none; }
+
+.budget-field--row-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.85rem;
+  margin-top: 0.75rem;
+}
+.budget-select-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+.budget-select label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  margin-bottom: 0.35rem;
+}
+.budget-select select {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--rice-dark);
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-size: 0.85rem;
+  background: var(--white);
+  color: var(--ink);
+}
+.budget-oneoff-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.budget-oneoff-toggle { cursor: pointer; }
+.budget-oneoff-toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.budget-oneoff-toggle__inner {
+  display: block;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--rice-dark);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  transition: border-color var(--transition), background var(--transition);
+}
+.budget-oneoff-toggle input:checked + .budget-oneoff-toggle__inner {
+  border-color: var(--teal);
+  background: rgba(42, 107, 94, 0.06);
+}
+.budget-oneoff-toggle__inner strong {
+  display: block;
+  font-size: 0.85rem;
+}
+.budget-oneoff-toggle__inner small {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--ink-muted);
+  margin-top: 0.15rem;
+}
+.budget-currency-row {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+.budget-currency-opt {
+  cursor: pointer;
+}
+.budget-currency-opt input { margin-right: 0.35rem; }
+.budget-currency-opt span {
+  display: inline-block;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--rice-dark);
+  border-radius: 100px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.budget-currency-opt input:checked + span {
+  border-color: var(--teal);
+  background: rgba(42, 107, 94, 0.08);
+  color: var(--teal-deep);
+}
+
+.budget-fx {
+  padding: 0.65rem 0.85rem;
+  margin-bottom: 1rem;
+  background: rgba(196, 160, 83, 0.12);
+  border: 1px solid rgba(196, 160, 83, 0.28);
+  border-radius: var(--radius-md);
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+.budget-fx__label {
+  display: block;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.65rem;
+  color: var(--ink-muted);
+  margin-bottom: 0.25rem;
+}
+.budget-fx__rates { font-weight: 600; color: var(--teal-deep); }
+.budget-fx__updated {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.68rem;
+  color: var(--ink-muted);
+}
+.budget-total__vnd {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-top: 0.35rem;
+  opacity: 0.92;
+}
+.budget-oneoff--summary { margin: 0.5rem 0 1rem; }
+.budget-oneoff--summary li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px dashed var(--rice-dark);
+  font-size: 0.82rem;
+}
+.budget-flight-note {
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+  margin: 0.75rem 0 1rem;
+  line-height: 1.45;
+}
+.budget-bar--extra .budget-bar__label { font-style: italic; }
+
 .budget-controls,
 .budget-output {
   background: var(--white);
@@ -456,9 +593,12 @@
 /* ── Responsive ─────────────────────────────────────────────────────── */
 @media (max-width: 860px) {
   .budget-tool { grid-template-columns: 1fr; }
+  .budget-field--row-3 { grid-template-columns: 1fr 1fr; }
+  .budget-select-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 560px) {
   .budget-field--row { grid-template-columns: 1fr; }
+  .budget-field--row-3 { grid-template-columns: 1fr; }
   .visa-form__row { grid-template-columns: 1fr; }
   .budget-bar { grid-template-columns: 7rem 1fr 3rem; }
   .budget-total__value { font-size: 2.1rem; }
