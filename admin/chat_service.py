@@ -214,6 +214,9 @@ def invalidate_cache() -> None:
 
 def retrieve(query: str, lang: str, track_url_fn, top_n: int = 8) -> list[dict]:
     q_tokens = _tokenize(query, lang)
+    hay = query.lower()
+    if any(w in hay for w in ("hotel", "hôtel", "dormir", "heberg", "héberg", "stay", "carte", "map")):
+        top_n = max(top_n, 12)
     chunks = get_chunks(lang, track_url_fn)
     if not q_tokens:
         return chunks[:top_n]
@@ -263,6 +266,170 @@ def _check_rate(ip: str) -> str | None:
     return None
 
 
+def _normalize_chat_url(url: str) -> str:
+    url = (url or "").strip()
+    if not url:
+        return ""
+    if url.startswith("/"):
+        return config.SITE_URL.rstrip("/") + url
+    return url
+
+
+def _url_is_allowed(url: str, allowed_urls: set[str]) -> bool:
+    url = _normalize_chat_url(url)
+    if not url:
+        return False
+    if url in allowed_urls:
+        return True
+    base = url.split("#", 1)[0].rstrip("/")
+    for allowed in allowed_urls:
+        if not allowed:
+            continue
+        norm = _normalize_chat_url(allowed).rstrip("/")
+        if url == norm or base == norm.split("#", 1)[0].rstrip("/"):
+            return True
+    return False
+
+
+def _resolve_url(url: str, allowed_urls: set[str]) -> str:
+    """Retourne l'URL canonique du contexte si elle correspond."""
+    url = _normalize_chat_url(url)
+    if url in allowed_urls:
+        return url
+    base = url.split("#", 1)[0].rstrip("/")
+    fragment = url.split("#", 1)[1] if "#" in url else ""
+    for allowed in allowed_urls:
+        norm = _normalize_chat_url(allowed)
+        if norm == url:
+            return norm
+        allowed_base = norm.split("#", 1)[0].rstrip("/")
+        if base == allowed_base:
+            return norm if not fragment else f"{allowed_base}#{fragment}"
+    return url
+
+
+def _message_incomplete(message: str) -> bool:
+    msg = (message or "").strip()
+    if not msg:
+        return True
+    if msg.endswith((":", "—", "-", "•", "…")):
+        return True
+    if re.search(r":\s*$", msg):
+        return True
+    if re.search(r"\n\s*[-•]\s*$", msg):
+        return True
+    return False
+
+
+def _repair_message(message: str, lang: str, *, has_links: bool, city: str = "") -> str:
+    msg = (message or "").strip()
+    if not _message_incomplete(msg):
+        return msg
+    msg = re.sub(r"[\s:—\-•…]+$", "", msg).strip()
+    place = city or ("Hanoï" if lang != "en" else "Hanoi")
+    if lang == "en":
+        suffix = (
+            " See the links below for our picks and the interactive map."
+            if has_links
+            else f" Browse our {place} destination guide for hotel ideas."
+        )
+    else:
+        suffix = (
+            " Retrouvez nos sélections et la carte interactive juste en dessous."
+            if has_links
+            else f" Consultez notre guide {place} pour des idées d'hébergement."
+        )
+    return msg + suffix
+
+
+def _detect_destination_slug(text: str, lang: str) -> str | None:
+    from admin.store import get_destinations_dict
+
+    hay = unicodedata.normalize("NFKD", (text or "").lower())
+    hay = "".join(c for c in hay if not unicodedata.combining(c))
+    for slug, dest in get_destinations_dict(lang).items():
+        name = dest.get("name", "")
+        name_norm = unicodedata.normalize("NFKD", name.lower())
+        name_norm = "".join(c for c in name_norm if not unicodedata.combining(c))
+        if name_norm and name_norm in hay:
+            return slug
+        if slug.replace("-", " ") in hay:
+            return slug
+    aliases = {
+        "hanoi": ("hanoi", "hanoï"),
+        "ho-chi-minh-city": ("saigon", "ho chi minh"),
+        "hoi-an": ("hoi an", "hoian"),
+        "da-nang": ("da nang", "danang"),
+        "phu-quoc": ("phu quoc", "phuquoc"),
+        "delta-du-mekong": ("mekong", "delta du mekong"),
+        "halong": ("ha long", "halong"),
+        "sapa": ("sapa",),
+        "hue": ("hue", "huế"),
+    }
+    for slug, keys in aliases.items():
+        if any(k in hay for k in keys):
+            return slug
+    return None
+
+
+def _auto_enrich_links(
+    message: str,
+    chunks: list[dict],
+    *,
+    lang: str,
+    site_links: list[dict],
+    affiliate_links: list[dict],
+) -> tuple[list[dict], list[dict]]:
+    """Complète site_links / affiliate_links si l'IA oublie ou si les URLs ne matchent pas."""
+    hay = message.lower()
+    hotel_q = any(w in hay for w in ("hotel", "hôtel", "dormir", "heberg", "héberg", "stay", "lodging"))
+    activity_q = any(w in hay for w in ("activit", "faire", "visit", "tour", "excursion"))
+    slug = _detect_destination_slug(message, lang)
+
+    existing_site = {l["url"] for l in site_links}
+    existing_aff = {l["url"] for l in affiliate_links}
+
+    def add_site(chunk: dict) -> None:
+        url = chunk.get("url", "")
+        if not url or url in existing_site:
+            return
+        site_links.append({"title": (chunk.get("title") or url)[:120], "url": url})
+        existing_site.add(url)
+
+    def add_aff(chunk: dict, label: str | None = None) -> None:
+        url = chunk.get("url", "")
+        if not url or url in existing_aff:
+            return
+        affiliate_links.append({
+            "label": (label or chunk.get("title") or url)[:100],
+            "url": url,
+            "teaser": (chunk.get("text") or "")[:160],
+        })
+        existing_aff.add(url)
+
+    if not slug and not (hotel_q or activity_q):
+        return site_links[:4], affiliate_links[:3]
+
+    for chunk in chunks:
+        cid = chunk.get("id", "")
+        if slug and cid == f"map:page:{slug}":
+            add_site(chunk)
+        elif slug and cid == f"dest-rich:{slug}":
+            add_site(chunk)
+        elif slug and hotel_q and cid == f"aff:hotel:{slug}":
+            add_aff(chunk)
+        elif slug and activity_q and cid == f"aff:activity:{slug}":
+            add_aff(chunk)
+        elif slug and hotel_q and cid.startswith("map:pin:") and chunk.get("affiliate"):
+            from admin.store import get_destinations_dict
+            dest_name = get_destinations_dict(lang).get(slug, {}).get("name", "")
+            title = chunk.get("title", "")
+            if dest_name and dest_name.lower() in title.lower():
+                add_aff(chunk, label=title.split("—")[0].strip() or title)
+
+    return site_links[:4], affiliate_links[:3]
+
+
 def _format_context(chunks: list[dict]) -> str:
     lines = []
     for i, c in enumerate(chunks, 1):
@@ -287,6 +454,8 @@ def _system_prompt(lang: str) -> str:
             "the user asks where to stay, what to do, or wants a visual plan. "
             "Tone: warm, enthusiastic, expert, with a few well-placed emojis — never cheesy. "
             "Highlight 2–5 key terms per answer with **double asterisks** (destinations, seasons, durations, practical tips). "
+            "Write a COMPLETE message (never end with a colon or an unfinished list). "
+            "Name 2–3 concrete picks in the message; put Booking/map links in affiliate_links and site_links using EXACT URLs from CONTEXT. "
             "Always answer in ENGLISH. Be honest about limits; never invent prices or visas rules. "
             "ONLY use URLs from CONTEXT for site_links and affiliate_links. "
             'Reply in JSON: {"message":"...","site_links":[{"title","url"}],"affiliate_links":[{"label","url","teaser"}]}'
@@ -302,6 +471,8 @@ def _system_prompt(lang: str) -> str:
         "l'utilisateur demande où dormir, quoi faire ou un plan visuel. "
         "Ton : chaleureux, enthousiaste, expert, quelques emojis bien placés — jamais lourd. "
         "Mets en valeur 2 à 5 mots-clés par réponse avec **double astérisques** (destinations, saisons, durées, conseils pratiques). "
+        "Rédige un message COMPLET (ne termine jamais par « : » ni une liste inachevée). "
+        "Cite 2–3 hébergements ou activités concrètes dans le message ; mets les liens Booking/carte dans affiliate_links et site_links avec les URL EXACTES du CONTEXTE. "
         "Réponds TOUJOURS en FRANÇAIS. Reste honnête ; n'invente pas de prix ni de règles visa. "
         "Utilise UNIQUEMENT les URL du CONTEXTE pour site_links et affiliate_links. "
         'Réponds en JSON : {"message":"...","site_links":[{"title","url"}],"affiliate_links":[{"label","url","teaser"}]}'
@@ -356,7 +527,7 @@ def chat_reply(
     try:
         resp = mistral_client.chat_completion(
             messages=messages,
-            max_tokens=1100,
+            max_tokens=1600,
             temperature=0.72,
             json_mode=True,
             fast=True,
@@ -366,7 +537,7 @@ def chat_reply(
         if _ai._has_key("groq"):
             resp = _ai.chat_completion(
                 messages=messages,
-                max_tokens=1100,
+                max_tokens=1600,
                 temperature=0.72,
                 json_mode=True,
                 fast=True,
@@ -381,23 +552,50 @@ def chat_reply(
     allowed_urls = {c.get("url") for c in chunks if c.get("url")}
     site_links = []
     for link in data.get("site_links") or []:
-        url = (link.get("url") or "").strip()
-        if url in allowed_urls and not any(c.get("url") == url and c.get("affiliate") for c in chunks):
+        url = _resolve_url((link.get("url") or "").strip(), allowed_urls)
+        if _url_is_allowed(url, allowed_urls) and not any(
+            c.get("url") == url and c.get("affiliate") for c in chunks
+        ):
             site_links.append({"title": (link.get("title") or url)[:120], "url": url})
 
     affiliate_links = []
     for link in data.get("affiliate_links") or []:
-        url = (link.get("url") or "").strip()
-        if url in allowed_urls:
+        url = _resolve_url((link.get("url") or "").strip(), allowed_urls)
+        if _url_is_allowed(url, allowed_urls):
             affiliate_links.append({
                 "label": (link.get("label") or link.get("title") or "")[:100],
                 "url": url,
                 "teaser": (link.get("teaser") or "")[:160],
             })
 
+    message = (data.get("message") or "").strip()
+    enrich_text = message + "\n" + message + "\n" + "\n".join(
+        (turn.get("content") or "") for turn in (history or [])[-4:]
+    )
+    slug = _detect_destination_slug(enrich_text, lang)
+    city_name = ""
+    if slug:
+        from admin.store import get_destinations_dict
+        city_name = get_destinations_dict(lang).get(slug, {}).get("name", "")
+
+    site_links, affiliate_links = _auto_enrich_links(
+        enrich_text,
+        chunks,
+        lang=lang,
+        site_links=site_links,
+        affiliate_links=affiliate_links,
+    )
+    if _message_incomplete(message):
+        message = _repair_message(
+            message,
+            lang,
+            has_links=bool(site_links or affiliate_links),
+            city=city_name,
+        )
+
     return {
         "ok": True,
-        "message": (data.get("message") or "").strip(),
+        "message": message,
         "site_links": site_links[:4],
         "affiliate_links": affiliate_links[:3],
     }

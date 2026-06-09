@@ -108,6 +108,22 @@
     return wrap;
   }
 
+  var supportsUnicodeProps = (function () {
+    try {
+      return /\p{Extended_Pictographic}/u.test('🌸');
+    } catch (e) {
+      return false;
+    }
+  }());
+
+  function isEmojiChar(ch) {
+    if (supportsUnicodeProps) {
+      return /\p{Extended_Pictographic}/u.test(ch);
+    }
+    var code = ch.codePointAt(0) || 0;
+    return code > 0xFFFF;
+  }
+
   function buildStreamUnits(text) {
     var chars = Array.from(String(text || ''));
     var units = [];
@@ -119,13 +135,13 @@
         i += 1;
         continue;
       }
-      if (/\p{Extended_Pictographic}/u.test(ch) || /[.!?,;:…]/.test(ch)) {
+      if (isEmojiChar(ch) || /[.!?,;:…]/.test(ch)) {
         units.push(ch);
         i += 1;
         continue;
       }
       var size = 1;
-      if (i + 1 < chars.length && !/\s/.test(chars[i + 1]) && !/\p{Extended_Pictographic}/u.test(chars[i + 1])) {
+      if (i + 1 < chars.length && !/\s/.test(chars[i + 1]) && !isEmojiChar(chars[i + 1])) {
         size = 2;
       }
       units.push(chars.slice(i, i + size).join(''));
@@ -138,7 +154,7 @@
     if (/^\s+$/.test(unit)) return 10;
     if (/[.!?…]/.test(unit)) return 52;
     if (/[,;:]/.test(unit)) return 32;
-    if (/\p{Extended_Pictographic}/u.test(unit)) return 28;
+    if (isEmojiChar(unit)) return 28;
     var ms = 16;
     if (progress > 0.45) ms *= 0.78;
     if (progress > 0.72) ms *= 0.68;
@@ -207,25 +223,29 @@
 
       function tick(ts) {
         if (done) return;
-        if (!lastTs) lastTs = ts;
-        carryMs += ts - lastTs;
-        lastTs = ts;
+        try {
+          if (!lastTs) lastTs = ts;
+          carryMs += ts - lastTs;
+          lastTs = ts;
 
-        while (unitIndex < units.length) {
-          var pause = unitPause(units[unitIndex], unitIndex / Math.max(units.length, 1));
-          if (carryMs < pause) break;
-          carryMs -= pause;
-          acc += units[unitIndex];
-          unitIndex += 1;
-          textEl.innerHTML = formatMessage(acc, true);
-        }
-        scrollBottom();
+          while (unitIndex < units.length) {
+            var pause = unitPause(units[unitIndex], unitIndex / Math.max(units.length, 1));
+            if (carryMs < pause) break;
+            carryMs -= pause;
+            acc += units[unitIndex];
+            unitIndex += 1;
+            textEl.innerHTML = formatMessage(acc, true);
+          }
+          scrollBottom();
 
-        if (unitIndex >= units.length) {
+          if (unitIndex >= units.length) {
+            finishInstant();
+            return;
+          }
+          rafId = window.requestAnimationFrame(tick);
+        } catch (err) {
           finishInstant();
-          return;
         }
-        rafId = window.requestAnimationFrame(tick);
       }
 
       wrap.addEventListener('click', onSkip);
