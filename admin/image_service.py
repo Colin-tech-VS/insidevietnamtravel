@@ -14,6 +14,11 @@ from PIL import Image, ImageDraw
 
 BLOG_IMAGES_DIR = Path(__file__).parent.parent / "static" / "images" / "blog"
 DEST_IMAGES_DIR = Path(__file__).parent.parent / "static" / "images" / "destinations"
+# Pool de vraies photos Vietnam EMBARQUÉES dans le repo (static/images/pool/<id>.webp).
+# C'est la source par défaut : aucun appel réseau au moment de générer → l'étape image
+# est INSTANTANÉE et ne peut plus « bloquer » (le réseau sortant de l'hébergeur, lent ou
+# filtré vers Unsplash, était la cause des blocages à 15 s puis du logo de secours).
+POOL_IMAGES_DIR = Path(__file__).parent.parent / "static" / "images" / "pool"
 
 # Génération d'image IA (Pollinations Flux) : l'endpoint ne renvoie l'image qu'une
 # fois calculée, donc le timeout de lecture = temps de génération. Flux est lent et
@@ -383,7 +388,20 @@ def _logo_placeholder_webp(slug: str) -> bytes:
     return buf.getvalue()
 
 
+def _local_pool_path(photo_id: str) -> Path:
+    return POOL_IMAGES_DIR / f"{photo_id}.webp"
+
+
 def _fetch_vietnam_photo(photo_id: str) -> bytes:
+    """Octets d'une vraie photo Vietnam : fichier LOCAL embarqué d'abord (instantané,
+    jamais de blocage), repli réseau Unsplash seulement si l'image manque du pool local.
+    """
+    local = _local_pool_path(photo_id)
+    if local.exists():
+        data = local.read_bytes()
+        if len(data) > 5000:  # WebP local : seuil bas (certaines tiennent en ~25 Ko)
+            return data
+
     resp = requests.get(
         _photo_url(photo_id),
         timeout=(VIETNAM_PHOTO_CONNECT_TIMEOUT, VIETNAM_PHOTO_READ_TIMEOUT),
