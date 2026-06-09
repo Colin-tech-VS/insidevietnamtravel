@@ -5,7 +5,6 @@ from __future__ import annotations
 import io
 import os
 import re
-import shutil
 import threading
 import time
 import urllib.parse
@@ -410,43 +409,15 @@ def _local_pool_path(photo_id: str) -> Path:
     return POOL_IMAGES_DIR / f"{photo_id}.webp"
 
 
-def _copy_pool_image(photo_id: str, out_path: Path) -> bool:
-    """Copie une photo du pool (déjà WebP 1200×675) + ses variantes -640/-960 vers
-    `out_path`, SANS ré-encodage. C'est le cœur du correctif : sur le conteneur Scalingo
-    bridé en CPU, ré-encoder un WebP déjà au bon format/taille prenait >10 s (timeout) ;
-    une simple copie est instantanée. Renvoie False si le fichier pool est absent.
-    """
-    src = _local_pool_path(photo_id)
-    if not src.exists() or src.stat().st_size <= 5000:
-        return False
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(src, out_path)
-
-    missing = False
-    for suffix in ("-640", "-960"):
-        vsrc = src.parent / f"{src.stem}{suffix}.webp"
-        vdst = out_path.parent / f"{out_path.stem}{suffix}.webp"
-        if vsrc.exists():
-            shutil.copyfile(vsrc, vdst)
-        else:
-            missing = True
-    if missing:
-        # Variante pool absente (cas rare) : on la dérive une fois depuis la source.
-        try:
-            _create_responsive_variants(Image.open(src).convert("RGB"), out_path)
-        except Exception:
-            pass
-    return True
-
-
-def _article_image_meta(article: dict, slug: str, photo_id: str, placeholder: bool) -> dict:
+def _article_image_meta(article: dict, slug: str, photo_id: str, placeholder: bool,
+                        image_url: str | None = None) -> dict:
     city = article.get("city", "")
     title = article.get("title", "Guide voyage Vietnam")
     alt = f"{title} — voyage Vietnam"
     if city and city != "Tout le Vietnam":
         alt = f"{title} — {city}, Vietnam"
     return {
-        "image": f"/static/images/blog/{slug}.webp",
+        "image": image_url or f"/static/images/blog/{slug}.webp",
         "image_alt": alt[:140],
         "image_photo_id": photo_id,
         "image_placeholder": placeholder,
@@ -642,14 +613,18 @@ def attach_image_to_article(
         out_path.unlink()
 
     # ── Chemin RAPIDE (cas par défaut, image IA désactivée) ───────────────────
-    # La photo du pool est déjà un WebP 1200×675 : on la COPIE telle quelle (+ variantes),
-    # sans aucun ré-encodage. Sur le conteneur bridé, ré-encoder prenait >10 s ; la copie
-    # est instantanée. On essaie l'id choisi puis les alternatives jusqu'à en copier une.
+    # On RÉFÉRENCE directement la photo du pool (déjà WebP 1200×675, COMMITÉE dans le
+    # repo) au lieu d'écrire une copie. Double bénéfice :
+    #  • zéro ré-encodage (le conteneur bridé mettait >10 s) ET zéro écriture disque ;
+    #  • surtout, l'image est PERSISTANTE : le FS de Scalingo est éphémère, donc une
+    #    copie écrite au runtime disparaissait au déploiement suivant (« l'image de
+    #    l'article généré disparaît après un push »). Le pool, lui, est dans git.
     if not want_ai:
         for pid in [photo_id] + [p[0] for p in VIETNAM_PHOTO_POOL if p[0] != photo_id]:
-            if _copy_pool_image(pid, out_path):
-                log(f"IMAGE done  slug={slug} en {time.time() - t0:.1f}s copie_pool photo_id={pid}")
-                return _article_image_meta(article, slug, pid, placeholder=False)
+            if _local_pool_path(pid).exists():
+                log(f"IMAGE done  slug={slug} en {time.time() - t0:.1f}s pool_ref photo_id={pid}")
+                return _article_image_meta(article, slug, pid, placeholder=False,
+                                           image_url=f"/static/images/pool/{pid}.webp")
         # Aucun fichier pool disponible (anormal) → on bascule sur le chemin réseau/encodage.
 
     # ── Chemin IA / Pixabay (opt-in) ou pool absent : gather + encodage bornés ──
@@ -758,9 +733,9 @@ def attach_image_to_destination(
     seed = abs(hash(f"dest-{slug}-{prompt}-{nonce}")) % 999_999
     name = dest.get("name", "Vietnam")
 
-    def _meta(pid: str, placeholder: bool) -> dict:
+    def _meta(pid: str, placeholder: bool, image_url: str | None = None) -> dict:
         return {
-            "image": f"/static/images/destinations/{slug}.webp",
+            "image": image_url or f"/static/images/destinations/{slug}.webp",
             "image_alt": f"Guide voyage {name}, Vietnam"[:140],
             "image_photo_id": pid,
             "image_placeholder": placeholder,
@@ -772,12 +747,13 @@ def attach_image_to_destination(
     if force_regenerate and out_path.exists():
         out_path.unlink()
 
-    # Chemin rapide : copie directe d'une photo du pool (déjà WebP 1200×675), zéro encodage.
+    # Chemin rapide : RÉFÉRENCE directe d'une photo du pool (commitée → persistante au
+    # redéploiement, contrairement à une copie sur le FS éphémère de Scalingo).
     if not want_ai:
         for pid in [photo_id] + [p[0] for p in VIETNAM_PHOTO_POOL if p[0] != photo_id]:
-            if _copy_pool_image(pid, out_path):
-                log(f"IMAGE dest done slug={slug} en {time.time() - t0:.1f}s copie_pool photo_id={pid}")
-                return _meta(pid, placeholder=False)
+            if _local_pool_path(pid).exists():
+                log(f"IMAGE dest done slug={slug} en {time.time() - t0:.1f}s pool_ref photo_id={pid}")
+                return _meta(pid, placeholder=False, image_url=f"/static/images/pool/{pid}.webp")
 
     def _gather() -> tuple[bytes, str]:
         if want_ai:

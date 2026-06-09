@@ -646,6 +646,9 @@ body.is-nav-open { overflow: hidden; }
   position: absolute;
   inset: 0;
   z-index: 0;
+  /* Fond de secours : si l'image ne charge pas, le hero reste sombre donc le texte
+     blanc demeure lisible (évite le « blanc sur blanc »). */
+  background: var(--teal-deep);
 }
 
 .article-hero__media::after {
@@ -672,9 +675,16 @@ body.is-nav-open { overflow: hidden; }
 
 .article-hero--with-image .breadcrumb a,
 .article-hero--with-image .article-excerpt,
-.article-hero--with-image .article-meta,
-.article-hero--with-image .tag {
+.article-hero--with-image .article-meta {
   color: rgba(255, 255, 255, 0.88);
+}
+
+/* Hashtags sur hero image : .tag a un fond blanc par défaut → texte blanc dessus
+   était invisible (blanc sur blanc). On passe en chip translucide lisible. */
+.article-hero--with-image .tag {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--white);
+  border: 1px solid rgba(255, 255, 255, 0.28);
 }
 
 .article-hero--with-image h1 {
