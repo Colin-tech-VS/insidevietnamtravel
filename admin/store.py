@@ -208,6 +208,11 @@ def add_or_update_destination(dest: dict):
     data = _raw_destinations()
     data[dest["slug"]] = wrap_destination_i18n(dest)
     save_destinations(data)
+    try:
+        from admin.map_service import defer_sync_destination
+        defer_sync_destination(dest["slug"])
+    except Exception:
+        pass
 
 
 def delete_destination(slug: str):

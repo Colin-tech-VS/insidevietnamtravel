@@ -6,7 +6,7 @@
 
   var apiUrl = root.dataset.apiUrl;
   var lang = root.dataset.lang || 'fr';
-  var colors = { hotel: '#1B4D4A', activity: '#C4A053', food: '#C4654A', poi: '#3D6B5E' };
+  var colors = { hotel: '#1B4D4A', activity: '#C4A053', food: '#C4654A', poi: '#3D6B5E', service: '#5B6B8C' };
   var emptyMsg = lang === 'en'
     ? 'Map loading…'
     : 'Chargement de la carte…';

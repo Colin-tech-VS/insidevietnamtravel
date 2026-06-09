@@ -187,6 +187,13 @@ def build_knowledge_chunks(lang: str, track_url_fn) -> list[dict]:
     for aff in _affiliate_chunks(lang, track_url_fn):
         add(aff)
 
+    try:
+        from admin import map_service
+        for mchunk in map_service.build_chat_map_chunks(lang, track_url_fn):
+            add(mchunk)
+    except Exception:
+        pass
+
     return chunks
 
 
@@ -217,6 +224,10 @@ def retrieve(query: str, lang: str, track_url_fn, top_n: int = 8) -> list[dict]:
         c_tokens = _tokenize(hay, lang)
         score = len(q_tokens & c_tokens)
         if chunk.get("affiliate") and any(t in hay.lower() for t in ("esim", "sim", "assurance", "insurance", "hotel", "hôtel")):
+            score += 1
+        if chunk.get("group") == "Carte" and any(t in q_tokens for t in _tokenize("carte map plan localisation où dormir activités", lang)):
+            score += 2
+        if chunk.get("group") == "Carte affiliée":
             score += 1
         if score > 0:
             scored.append((score, chunk))
@@ -272,6 +283,8 @@ def _system_prompt(lang: str) -> str:
             "Your mission: inspire people to travel to Vietnam, give concrete practical advice, "
             "and recommend relevant pages from the site CONTEXT plus affiliate partner links "
             "when they genuinely help (eSIM, insurance, hotels, activities). "
+            "Each destination page has an interactive map (#dest-map) with affiliate pins — recommend it when "
+            "the user asks where to stay, what to do, or wants a visual plan. "
             "Tone: warm, enthusiastic, expert, with a few well-placed emojis — never cheesy. "
             "Highlight 2–5 key terms per answer with **double asterisks** (destinations, seasons, durations, practical tips). "
             "Always answer in ENGLISH. Be honest about limits; never invent prices or visas rules. "
@@ -285,6 +298,8 @@ def _system_prompt(lang: str) -> str:
         "quand y aller, comment s'organiser, et orienter vers les pages du site (CONTEXTE) "
         "ainsi que les liens affiliés pertinents (eSIM, assurance, hôtels, activités) quand "
         "cela aide vraiment le voyageur. "
+        "Chaque page destination a une carte interactive (#dest-map) avec pins affiliés — recommandez-la quand "
+        "l'utilisateur demande où dormir, quoi faire ou un plan visuel. "
         "Ton : chaleureux, enthousiaste, expert, quelques emojis bien placés — jamais lourd. "
         "Mets en valeur 2 à 5 mots-clés par réponse avec **double astérisques** (destinations, saisons, durées, conseils pratiques). "
         "Réponds TOUJOURS en FRANÇAIS. Reste honnête ; n'invente pas de prix ni de règles visa. "

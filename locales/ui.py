@@ -10,6 +10,7 @@ UI: dict[str, dict[str, str]] = {
     # Navigation
     "nav.home": {"fr": "Accueil", "en": "Home"},
     "nav.destinations": {"fr": "Destinations", "en": "Destinations"},
+    "nav.destinations_all": {"fr": "Toutes les destinations", "en": "All destinations"},
     "nav.itineraries": {"fr": "Itinéraires", "en": "Itineraries"},
     "nav.guides": {"fr": "Guides", "en": "Guides"},
     "nav.blog": {"fr": "Blog", "en": "Blog"},

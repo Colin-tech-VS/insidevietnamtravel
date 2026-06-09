@@ -79,7 +79,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     nav.querySelectorAll('a').forEach((link) => {
       link.addEventListener('click', () => {
-        if (MOBILE_NAV_MQ.matches) setNavOpen(false);
+        if (MOBILE_NAV_MQ.matches) {
+          setNavOpen(false);
+        } else {
+          closeDropdowns();
+        }
       });
     });
 

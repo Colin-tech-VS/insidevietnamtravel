@@ -22,6 +22,49 @@ PLANNER_CITIES: list[dict] = [
 
 CITY_REGION = {c["slug"]: c["region"] for c in PLANNER_CITIES}
 
+REGION_ORDER = ("north", "central", "south")
+
+
+def destinations_by_region(
+    destinations: dict,
+    lang: str = "fr",
+    t_fn: Callable[[str, str], str] | None = None,
+) -> list[dict]:
+    """Regroupe les destinations publiées par région (Nord → Centre → Sud)."""
+    if t_fn is None:
+        from locales.ui import t as t_fn
+
+    slug_order = {c["slug"]: i for i, c in enumerate(PLANNER_CITIES)}
+    buckets: dict[str, list[dict]] = {k: [] for k in REGION_ORDER}
+
+    for slug, dest in destinations.items():
+        region = CITY_REGION.get(slug, "central")
+        if region not in buckets:
+            region = "central"
+        buckets[region].append({
+            "slug": slug,
+            "name": dest.get("name", slug),
+            "tagline": dest.get("tagline", ""),
+            "_order": slug_order.get(slug, 999),
+        })
+
+    grouped: list[dict] = []
+    for key in REGION_ORDER:
+        items = buckets[key]
+        if not items:
+            continue
+        items.sort(key=lambda x: (x["_order"], x["name"].lower()))
+        grouped.append({
+            "key": key,
+            "label": t_fn(f"prepare.region.{key}", lang),
+            "destinations": [
+                {k: v for k, v in item.items() if k != "_order"}
+                for item in items
+            ],
+        })
+    return grouped
+
+
 # ── Estimation budget ─────────────────────────────────────────────────
 # Palier de budget par style de voyage (clé des paliers de data.travel_tools).
 STYLE_BUDGET_TIER = {

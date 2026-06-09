@@ -5,7 +5,7 @@
 
 {% block content %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-<p class="page-sub">Ajoutez des adresses — géolocalisation gratuite (OpenStreetMap) — liens affiliés sur la carte publique de chaque ville.</p>
+<p class="page-sub">Les liens affiliés (hôtels, activités, Booking, Agoda, GYG, Viator, eSIM, assurance, partenaires) se synchronisent automatiquement sur la carte à chaque publication de destination. Ajoutez aussi des adresses manuelles — géolocalisation OpenStreetMap.</p>
 
 <div class="admin-page-layout admin-page-layout--wide">
   <div class="admin-page-main">
@@ -82,8 +82,9 @@
       <div class="panel__head-row">
         <h2>Points publiés ({{ points|length }})</h2>
         <form method="post" class="inline-form" data-no-loader>
+          <input type="hidden" name="action" value="sync">
           <label class="checkbox"><input type="checkbox" name="replace"> Remplacer les imports auto</label>
-          <button type="submit" class="btn btn-secondary btn-sm">Importer hôtels & activités</button>
+          <button type="submit" class="btn btn-secondary btn-sm">Resynchroniser tous les affiliés</button>
         </form>
       </div>
       {% if points %}
@@ -112,7 +113,7 @@
         </table>
       </div>
       {% else %}
-      <p class="muted">Aucun point — ajoutez-en manuellement ou cliquez « Importer hôtels & activités ».</p>
+      <p class="muted">Aucun point — publiez une destination ou cliquez « Resynchroniser tous les affiliés ».</p>
       {% endif %}
     </section>
 

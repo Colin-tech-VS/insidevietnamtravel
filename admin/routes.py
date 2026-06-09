@@ -650,6 +650,11 @@ def affiliates():
                     "icon": "🔗",
                 })
                 flash(f"Partenaire « {name} » ajouté.", "success")
+                try:
+                    from admin.map_service import defer_sync_all
+                    defer_sync_all()
+                except Exception:
+                    pass
 
         elif action == "update_custom":
             pid = request.form.get("partner_id", "")
@@ -660,6 +665,11 @@ def affiliates():
                     p["avg_per_click"] = float(request.form.get("avg_per_click") or 3)
             save_custom_partners(partners)
             flash("Partenaire mis à jour.", "success")
+            try:
+                from admin.map_service import defer_sync_all
+                defer_sync_all()
+            except Exception:
+                pass
 
         elif action == "delete_custom":
             delete_custom_partner(request.form.get("partner_id", ""))
@@ -888,7 +898,7 @@ def map_admin():
                     flash("Point publié sur la carte.", "success")
             elif action == "sync":
                 result = map_service.sync_from_destinations(replace=request.form.get("replace") == "1")
-                msg = f"{result['added']} point(s) importé(s) depuis les destinations."
+                msg = f"{result['added']} point(s) affilié(s) synchronisé(s) sur la carte."
                 if result.get("error_count"):
                     msg += f" {result['error_count']} adresse(s) non géolocalisée(s)."
                 flash(msg, "success" if result["added"] else "warn")

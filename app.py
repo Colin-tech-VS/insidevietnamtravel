@@ -41,7 +41,7 @@ from seo_utils import (
 from admin import admin_bp
 from admin import db as analytics_db
 from admin.image_service import persistent_image_url
-from admin.store import get_articles, get_article_by_slug, get_categories, get_settings, get_destinations_dict
+from data.trip_planner import destinations_by_region
 from data.affiliate_urls import (
     LOCATION_META,
     build_activity_link,
@@ -239,12 +239,14 @@ def add_performance_headers(response):
 def inject_globals():
     settings = get_settings()
     lang = get_lang()
+    dests = _destinations(lang)
     return {
         "site": app.config,
         "lang": lang,
         "categories": _categories(lang),
         "current_year": datetime.now().year,
-        "destinations": _destinations(lang),
+        "destinations": dests,
+        "destinations_by_region": destinations_by_region(dests, lang, t),
         "itineraries": _itineraries(lang),
         "pillars": pillars.thematic_list(lang, lang_url),
         "pdf": {"PDF_GUIDE": _localized_block(PDF_GUIDE, lang)},
@@ -1160,6 +1162,12 @@ def not_found(e):
 def _startup_tasks():
     from admin.image_service import ensure_responsive_variants
     ensure_responsive_variants()
+    try:
+        from admin import map_service
+        if not map_service.get_map_store().get("points"):
+            map_service.defer_sync_all()
+    except Exception:
+        pass
 
 
 threading.Thread(target=_startup_tasks, daemon=True).start()
