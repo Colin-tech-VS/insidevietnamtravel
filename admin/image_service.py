@@ -5,6 +5,7 @@ from __future__ import annotations
 import io
 import os
 import re
+import shutil
 import threading
 import time
 import urllib.parse
@@ -409,6 +410,49 @@ def _local_pool_path(photo_id: str) -> Path:
     return POOL_IMAGES_DIR / f"{photo_id}.webp"
 
 
+def _copy_pool_image(photo_id: str, out_path: Path) -> bool:
+    """Copie une photo du pool (déjà WebP 1200×675) + ses variantes -640/-960 vers
+    `out_path`, SANS ré-encodage. C'est le cœur du correctif : sur le conteneur Scalingo
+    bridé en CPU, ré-encoder un WebP déjà au bon format/taille prenait >10 s (timeout) ;
+    une simple copie est instantanée. Renvoie False si le fichier pool est absent.
+    """
+    src = _local_pool_path(photo_id)
+    if not src.exists() or src.stat().st_size <= 5000:
+        return False
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(src, out_path)
+
+    missing = False
+    for suffix in ("-640", "-960"):
+        vsrc = src.parent / f"{src.stem}{suffix}.webp"
+        vdst = out_path.parent / f"{out_path.stem}{suffix}.webp"
+        if vsrc.exists():
+            shutil.copyfile(vsrc, vdst)
+        else:
+            missing = True
+    if missing:
+        # Variante pool absente (cas rare) : on la dérive une fois depuis la source.
+        try:
+            _create_responsive_variants(Image.open(src).convert("RGB"), out_path)
+        except Exception:
+            pass
+    return True
+
+
+def _article_image_meta(article: dict, slug: str, photo_id: str, placeholder: bool) -> dict:
+    city = article.get("city", "")
+    title = article.get("title", "Guide voyage Vietnam")
+    alt = f"{title} — voyage Vietnam"
+    if city and city != "Tout le Vietnam":
+        alt = f"{title} — {city}, Vietnam"
+    return {
+        "image": f"/static/images/blog/{slug}.webp",
+        "image_alt": alt[:140],
+        "image_photo_id": photo_id,
+        "image_placeholder": placeholder,
+    }
+
+
 def _fetch_vietnam_photo(photo_id: str) -> bytes:
     """Octets d'une vraie photo Vietnam depuis le pool LOCAL embarqué (instantané).
 
@@ -590,10 +634,27 @@ def attach_image_to_article(
     prompt = build_image_prompt(article, ai_prompt)
     seed = abs(hash(f"{slug}-{prompt}-{nonce}")) % 999_999
 
+    t0 = time.time()
+    want_ai = bool(ai_prompt or article.get("ai_generated")) and _ai_images_enabled()
+    log(f"IMAGE start slug={slug} ai_enabled={_ai_images_enabled()} want_ai={want_ai}")
+
+    if force_regenerate and out_path.exists():
+        out_path.unlink()
+
+    # ── Chemin RAPIDE (cas par défaut, image IA désactivée) ───────────────────
+    # La photo du pool est déjà un WebP 1200×675 : on la COPIE telle quelle (+ variantes),
+    # sans aucun ré-encodage. Sur le conteneur bridé, ré-encoder prenait >10 s ; la copie
+    # est instantanée. On essaie l'id choisi puis les alternatives jusqu'à en copier une.
+    if not want_ai:
+        for pid in [photo_id] + [p[0] for p in VIETNAM_PHOTO_POOL if p[0] != photo_id]:
+            if _copy_pool_image(pid, out_path):
+                log(f"IMAGE done  slug={slug} en {time.time() - t0:.1f}s copie_pool photo_id={pid}")
+                return _article_image_meta(article, slug, pid, placeholder=False)
+        # Aucun fichier pool disponible (anormal) → on bascule sur le chemin réseau/encodage.
+
+    # ── Chemin IA / Pixabay (opt-in) ou pool absent : gather + encodage bornés ──
     raw: bytes | None = None
     placeholder = False
-    t0 = time.time()
-    log(f"IMAGE start slug={slug} ai_enabled={_ai_images_enabled()}")
     try:
         raw, photo_id = _run_with_deadline(
             _gather_article_photo, IMAGE_STEP_HARD_DEADLINE,
@@ -608,10 +669,7 @@ def attach_image_to_article(
         raw = _logo_placeholder_webp(slug)
         placeholder = True
 
-    if force_regenerate and out_path.exists():
-        out_path.unlink()
-    # Encodage borné + tracé : c'était le dernier maillon HORS échéance, sans aucun log,
-    # donc le coupable invisible quand « ça bloque ». Au-delà de l'échéance, repli rapide.
+    # Encodage borné + tracé : seul maillon nécessitant un vrai encodage (format étranger).
     log(f"IMAGE encode start slug={slug} bytes={len(raw)}")
     try:
         _run_with_deadline(_to_webp, IMAGE_ENCODE_DEADLINE, raw, out_path)
@@ -620,18 +678,7 @@ def attach_image_to_article(
         _write_webp_fast(raw, out_path)
     log(f"IMAGE done  slug={slug} en {time.time() - t0:.1f}s placeholder={placeholder} photo_id={photo_id}")
 
-    city = article.get("city", "")
-    title = article.get("title", "Guide voyage Vietnam")
-    alt = f"{title} — voyage Vietnam"
-    if city and city != "Tout le Vietnam":
-        alt = f"{title} — {city}, Vietnam"
-
-    return {
-        "image": f"/static/images/blog/{slug}.webp",
-        "image_alt": alt[:140],
-        "image_photo_id": photo_id,
-        "image_placeholder": placeholder,
-    }
+    return _article_image_meta(article, slug, photo_id, placeholder)
 
 
 def regenerate_all_article_images() -> int:
@@ -709,9 +756,31 @@ def attach_image_to_destination(
     photo_id = _pick_destination_photo_id(slug, nonce)
     prompt = build_destination_image_prompt(dest, ai_prompt or dest.get("image_prompt"))
     seed = abs(hash(f"dest-{slug}-{prompt}-{nonce}")) % 999_999
+    name = dest.get("name", "Vietnam")
+
+    def _meta(pid: str, placeholder: bool) -> dict:
+        return {
+            "image": f"/static/images/destinations/{slug}.webp",
+            "image_alt": f"Guide voyage {name}, Vietnam"[:140],
+            "image_photo_id": pid,
+            "image_placeholder": placeholder,
+        }
+
+    t0 = time.time()
+    want_ai = bool(ai_prompt or dest.get("ai_generated") or dest.get("image_prompt")) and _ai_images_enabled()
+
+    if force_regenerate and out_path.exists():
+        out_path.unlink()
+
+    # Chemin rapide : copie directe d'une photo du pool (déjà WebP 1200×675), zéro encodage.
+    if not want_ai:
+        for pid in [photo_id] + [p[0] for p in VIETNAM_PHOTO_POOL if p[0] != photo_id]:
+            if _copy_pool_image(pid, out_path):
+                log(f"IMAGE dest done slug={slug} en {time.time() - t0:.1f}s copie_pool photo_id={pid}")
+                return _meta(pid, placeholder=False)
 
     def _gather() -> tuple[bytes, str]:
-        if (ai_prompt or dest.get("ai_generated") or dest.get("image_prompt")) and _ai_images_enabled():
+        if want_ai:
             try:
                 return _fetch_remote_image(prompt, seed), photo_id
             except Exception:
@@ -743,17 +812,12 @@ def attach_image_to_destination(
         raw = _logo_placeholder_webp(slug)
         placeholder = True
 
-    if force_regenerate and out_path.exists():
-        out_path.unlink()
-    _to_webp(raw, out_path)
+    try:
+        _run_with_deadline(_to_webp, IMAGE_ENCODE_DEADLINE, raw, out_path)
+    except Exception:
+        _write_webp_fast(raw, out_path)
 
-    name = dest.get("name", "Vietnam")
-    return {
-        "image": f"/static/images/destinations/{slug}.webp",
-        "image_alt": f"Guide voyage {name}, Vietnam"[:140],
-        "image_photo_id": photo_id,
-        "image_placeholder": placeholder,
-    }
+    return _meta(photo_id, placeholder)
 
 
 def ensure_all_destination_images() -> int:
