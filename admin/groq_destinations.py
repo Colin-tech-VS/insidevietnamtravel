@@ -6,8 +6,6 @@ from datetime import date
 
 from admin import ai_client
 from admin.store import slugify
-from admin.groq_translate import translate_destination_block
-from i18n_utils import merge_bilingual_destination
 
 MIN_WORDS = 1200
 TARGET_WORDS = 1500
@@ -112,7 +110,9 @@ Notes éditoriales : {notes or "Guide complet pour voyageurs français"}
 Minimum {MIN_WORDS} mots (cible {TARGET_WORDS}).
 La page doit convaincre un voyageur de visiter {city} et l'aider à planifier : durée idéale, budget, meilleure période."""
 
+    # Modèle rapide (8B, 30 000 TPM) : plus de file 429 qui faisait pendre la génération.
     response = ai_client.chat_completion(
+        fast=True,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},
@@ -147,16 +147,6 @@ La page doit convaincre un voyageur de visiter {city} et l'aider à planifier : 
         data = ai_client.parse_json(expand.choices[0].message.content)
         dest = _build_destination(data, city, slug)
 
-    try:
-        report("Traduction de la version anglaise…")
-        en_data = translate_destination_block(dest, pause_before=1.5)
-        shared = {
-            k: v for k, v in dest.items()
-            if k not in (
-                "name", "meta_title", "meta_description", "tagline", "overview",
-                "things_to_do", "tips", "hotels", "activities", "image_alt",
-            )
-        }
-        return merge_bilingual_destination(dest, en_data, shared)
-    except Exception:
-        return dest
+    # EN générée à la publication (store.save_destinations → _auto_translate_destination) :
+    # on ne bloque pas l'aperçu avec un appel IA supplémentaire + sa pause anti rate-limit.
+    return dest
