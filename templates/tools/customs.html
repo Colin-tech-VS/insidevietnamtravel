@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "macros/images.html" import responsive_img with context %}
 {% from "macros/seo.html" import json_ld_graph with context %}
-{% from "macros/travel_guide.html" import guide_faq, guide_related_links %}
+{% from "macros/travel_guide.html" import guide_faq, guide_related_links with context %}
 
 {% set hero_img = '/static/images/pool/1557750255-c76072a7aad1.webp' %}
 
@@ -58,7 +58,7 @@
       <p>{{ sec.intro }}</p>
     </header>
     <div class="travel-guide__grid">
-      {% for item in sec.items %}
+      {% for item in sec['items'] %}
       <article class="travel-guide__card">
         <span class="travel-guide__icon" aria-hidden="true">{{ item.icon }}</span>
         <h3>{{ item.title }}</h3>

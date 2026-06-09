@@ -7,7 +7,7 @@
       <p>{{ sec.intro }}</p>
     </header>
     <div class="travel-guide__grid">
-      {% for item in sec.items %}
+      {% for item in sec['items'] %}
       <article class="travel-guide__card">
         <span class="travel-guide__icon" aria-hidden="true">{{ item.icon }}</span>
         <h3>{{ item.title }}</h3>

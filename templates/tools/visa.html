@@ -111,7 +111,7 @@
       <h3>{{ sec.title }}</h3>
       <p>{{ sec.intro }}</p>
       <div class="travel-guide__grid">
-        {% for item in sec.items %}
+        {% for item in sec['items'] %}
         <article class="travel-guide__card">
           <span class="travel-guide__icon" aria-hidden="true">{{ item.icon }}</span>
           <h4>{{ item.title }}</h4>
