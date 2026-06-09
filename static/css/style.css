@@ -3560,12 +3560,12 @@ a.pillar-card:hover .pillar-card__arrow { opacity: 1; transform: translateX(0); 
     transparent 100%
   );
   background-size: 220% 100%;
-  animation: mai-stream-shimmer 2.8s ease-in-out infinite;
+  animation: mai-stream-shimmer 3.2s ease-in-out infinite;
 }
 @keyframes mai-stream-shimmer {
-  0% { background-position: 120% 0; opacity: 0.4; }
-  50% { opacity: 0.85; }
-  100% { background-position: -120% 0; opacity: 0.4; }
+  0% { background-position: 130% 0; opacity: 0.25; }
+  50% { opacity: 0.55; }
+  100% { background-position: -130% 0; opacity: 0.25; }
 }
 
 .mai-chat__stream { display: inline; }
@@ -3578,11 +3578,22 @@ a.pillar-card:hover .pillar-card__arrow { opacity: 1; transform: translateX(0); 
   vertical-align: text-bottom;
   border-radius: 1px;
   background: linear-gradient(180deg, var(--teal-light), var(--gold));
-  animation: mai-cursor-blink 0.95s step-end infinite;
+  animation: mai-cursor-blink 0.85s ease-in-out infinite;
+  box-shadow: 0 0 6px rgba(196, 160, 83, 0.35);
 }
 @keyframes mai-cursor-blink {
-  0%, 45% { opacity: 1; }
-  46%, 100% { opacity: 0; }
+  0%, 100% { opacity: 1; transform: scaleY(1); }
+  50% { opacity: 0.25; transform: scaleY(0.85); }
+}
+
+.mai-chat__bubble--assistant .mai-chat__emph {
+  font-weight: 700;
+  color: var(--teal-deep);
+  background: linear-gradient(to top, rgba(196, 160, 83, 0.38) 0%, rgba(196, 160, 83, 0.38) 42%, transparent 42%);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding: 0 0.08em;
+  border-radius: 2px;
 }
 
 .mai-chat__typing {

@@ -41,14 +41,30 @@
       .replace(/"/g, '&quot;');
   }
 
-  function formatMessage(text) {
-    return escapeHtml(text)
-      .replace(/\n/g, '<br>')
-      .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+  function applyEmphasis(html, streaming) {
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="mai-chat__emph">$1</strong>');
+    if (streaming) {
+      html = html.replace(/\*\*([^*]*)$/, '$1');
+    }
+    return html;
   }
 
+  function formatMessage(text, streaming) {
+    var escaped = escapeHtml(String(text || ''));
+    escaped = applyEmphasis(escaped, !!streaming);
+    escaped = escaped
+      .replace(/\n/g, '<br>')
+      .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+    return escaped;
+  }
+
+  var scrollRaf = 0;
   function scrollBottom() {
-    messagesEl.scrollTop = messagesEl.scrollHeight;
+    if (scrollRaf) return;
+    scrollRaf = window.requestAnimationFrame(function () {
+      scrollRaf = 0;
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    });
   }
 
   function appendBubble(role, html, extraClass) {
@@ -92,20 +108,41 @@
     return wrap;
   }
 
-  function tokenizeStream(text) {
-    return String(text || '').match(/[^\s]+|\s+/g) || [];
+  function buildStreamUnits(text) {
+    var chars = Array.from(String(text || ''));
+    var units = [];
+    var i = 0;
+    while (i < chars.length) {
+      var ch = chars[i];
+      if (/\s/.test(ch)) {
+        units.push(ch);
+        i += 1;
+        continue;
+      }
+      if (/\p{Extended_Pictographic}/u.test(ch) || /[.!?,;:…]/.test(ch)) {
+        units.push(ch);
+        i += 1;
+        continue;
+      }
+      var size = 1;
+      if (i + 1 < chars.length && !/\s/.test(chars[i + 1]) && !/\p{Extended_Pictographic}/u.test(chars[i + 1])) {
+        size = 2;
+      }
+      units.push(chars.slice(i, i + size).join(''));
+      i += size;
+    }
+    return units;
   }
 
-  function streamDelay(token, index, total) {
-    var delay = 22;
-    if (/^\s+$/.test(token)) return 6;
-    if (/[.!?…]$/.test(token.trim())) return delay + 140;
-    if (/[,;:]$/.test(token.trim())) return delay + 70;
-    if (/\p{Extended_Pictographic}/u.test(token)) return delay + 35;
-    var ratio = index / Math.max(total, 1);
-    if (ratio > 0.55) delay *= 0.72;
-    if (ratio > 0.8) delay *= 0.58;
-    return delay + (index % 3) * 4;
+  function unitPause(unit, progress) {
+    if (/^\s+$/.test(unit)) return 10;
+    if (/[.!?…]/.test(unit)) return 52;
+    if (/[,;:]/.test(unit)) return 32;
+    if (/\p{Extended_Pictographic}/u.test(unit)) return 28;
+    var ms = 16;
+    if (progress > 0.45) ms *= 0.78;
+    if (progress > 0.72) ms *= 0.68;
+    return ms;
   }
 
   function streamAssistantMessage(text, linksHtml) {
@@ -128,11 +165,13 @@
       scrollBottom();
 
       var textEl = bubble.querySelector('.mai-chat__stream-text');
-      var tokens = tokenizeStream(text);
-      var idx = 0;
+      var units = buildStreamUnits(text);
+      var unitIndex = 0;
       var acc = '';
       var done = false;
-      var timer = null;
+      var rafId = 0;
+      var carryMs = 0;
+      var lastTs = 0;
 
       function revealLinks() {
         if (!linksHtml) return;
@@ -148,8 +187,8 @@
       function finishInstant() {
         if (done) return;
         done = true;
-        if (timer) clearTimeout(timer);
-        textEl.innerHTML = formatMessage(text);
+        if (rafId) window.cancelAnimationFrame(rafId);
+        textEl.innerHTML = formatMessage(text, false);
         var cursor = bubble.querySelector('.mai-chat__cursor');
         if (cursor) cursor.remove();
         bubble.classList.remove('mai-chat__bubble--streaming');
@@ -166,21 +205,31 @@
         finishInstant();
       }
 
-      function step() {
+      function tick(ts) {
         if (done) return;
-        if (idx >= tokens.length) {
+        if (!lastTs) lastTs = ts;
+        carryMs += ts - lastTs;
+        lastTs = ts;
+
+        while (unitIndex < units.length) {
+          var pause = unitPause(units[unitIndex], unitIndex / Math.max(units.length, 1));
+          if (carryMs < pause) break;
+          carryMs -= pause;
+          acc += units[unitIndex];
+          unitIndex += 1;
+          textEl.innerHTML = formatMessage(acc, true);
+        }
+        scrollBottom();
+
+        if (unitIndex >= units.length) {
           finishInstant();
           return;
         }
-        acc += tokens[idx];
-        idx += 1;
-        textEl.innerHTML = formatMessage(acc);
-        scrollBottom();
-        timer = window.setTimeout(step, streamDelay(tokens[idx - 1], idx, tokens.length));
+        rafId = window.requestAnimationFrame(tick);
       }
 
       wrap.addEventListener('click', onSkip);
-      step();
+      rafId = window.requestAnimationFrame(tick);
     });
   }
 

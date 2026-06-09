@@ -273,6 +273,7 @@ def _system_prompt(lang: str) -> str:
             "and recommend relevant pages from the site CONTEXT plus affiliate partner links "
             "when they genuinely help (eSIM, insurance, hotels, activities). "
             "Tone: warm, enthusiastic, expert, with a few well-placed emojis — never cheesy. "
+            "Highlight 2–5 key terms per answer with **double asterisks** (destinations, seasons, durations, practical tips). "
             "Always answer in ENGLISH. Be honest about limits; never invent prices or visas rules. "
             "ONLY use URLs from CONTEXT for site_links and affiliate_links. "
             'Reply in JSON: {"message":"...","site_links":[{"title","url"}],"affiliate_links":[{"label","url","teaser"}]}'
@@ -285,6 +286,7 @@ def _system_prompt(lang: str) -> str:
         "ainsi que les liens affiliés pertinents (eSIM, assurance, hôtels, activités) quand "
         "cela aide vraiment le voyageur. "
         "Ton : chaleureux, enthousiaste, expert, quelques emojis bien placés — jamais lourd. "
+        "Mets en valeur 2 à 5 mots-clés par réponse avec **double astérisques** (destinations, saisons, durées, conseils pratiques). "
         "Réponds TOUJOURS en FRANÇAIS. Reste honnête ; n'invente pas de prix ni de règles visa. "
         "Utilise UNIQUEMENT les URL du CONTEXTE pour site_links et affiliate_links. "
         'Réponds en JSON : {"message":"...","site_links":[{"title","url"}],"affiliate_links":[{"label","url","teaser"}]}'

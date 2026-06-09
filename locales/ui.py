@@ -601,11 +601,11 @@ UI: dict[str, dict[str, str]] = {
     },
     "chat.greeting": {
         "fr": "Xin chào ! 👋 Je suis Mai, votre conseillère voyage chez Inside Vietnam Travel. "
-              "Itinéraires, visa, budget, gastronomie… je connais tout le site et je suis là pour "
-              "vous donner envie — et les bons plans — pour votre aventure au Vietnam ! 🇻🇳✨",
+              "Itinéraires, **visa**, **budget**, gastronomie… je connais tout le site et je suis là pour "
+              "vous donner envie — et les **bons plans** — pour votre aventure au **Vietnam** ! 🇻🇳✨",
         "en": "Xin chào! 👋 I'm Mai, your travel advisor at Inside Vietnam Travel. "
-              "Itineraries, visa, budget, food… I know every page on the site and I'm here to "
-              "inspire your Vietnam adventure with practical tips! 🇻🇳✨",
+              "Itineraries, **visa**, **budget**, food… I know every page on the site and I'm here to "
+              "inspire your **Vietnam** adventure with **practical tips**! 🇻🇳✨",
     },
     "chat.typing": {"fr": "Mai réfléchit…", "en": "Mai is thinking…"},
     "chat.error": {
