@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import os
 import re
 import threading
 import time
@@ -28,8 +29,13 @@ POOL_IMAGES_DIR = Path(__file__).parent.parent / "static" / "images" / "pool"
 # IA absente vaut mieux qu'un brouillon bloqué plusieurs minutes.
 REMOTE_IMAGE_CONNECT_TIMEOUT = 6   # secondes pour établir la connexion
 REMOTE_IMAGE_READ_TIMEOUT = 12     # secondes max d'inactivité socket
-VIETNAM_PHOTO_CONNECT_TIMEOUT = 5
-VIETNAM_PHOTO_READ_TIMEOUT = 10
+
+# Repli réseau quand le pool local manque : Pixabay (au lieu d'Unsplash, dont le réseau
+# sortant de l'hébergeur était lent/filtré et faisait pendre l'étape image). Pixabay
+# nécessite une clé gratuite (PIXABAY_API_KEY) ; sans clé, on saute direct au logo.
+PIXABAY_API_URL = "https://pixabay.com/api/"
+PIXABAY_CONNECT_TIMEOUT = 5
+PIXABAY_READ_TIMEOUT = 10
 
 # Échéance MURALE absolue de TOUTE l'étape image (IA + photo Vietnam + reprises). Les
 # timeouts socket de requests ne se déclenchent qu'en l'absence totale d'octets, et
@@ -178,11 +184,8 @@ def _ai_images_enabled() -> bool:
         return False
 
 
-def _photo_url(photo_id: str) -> str:
-    return (
-        f"https://images.unsplash.com/photo-{photo_id}"
-        f"?w=1200&h=675&fit=crop&q=80&auto=format"
-    )
+def _pixabay_api_key() -> str:
+    return os.environ.get("PIXABAY_API_KEY", "").strip()
 
 
 def _used_photo_ids(exclude_slug: str | None = None) -> set[str]:
@@ -393,24 +396,80 @@ def _local_pool_path(photo_id: str) -> Path:
 
 
 def _fetch_vietnam_photo(photo_id: str) -> bytes:
-    """Octets d'une vraie photo Vietnam : fichier LOCAL embarqué d'abord (instantané,
-    jamais de blocage), repli réseau Unsplash seulement si l'image manque du pool local.
+    """Octets d'une vraie photo Vietnam depuis le pool LOCAL embarqué (instantané).
+
+    Plus aucun appel réseau ici : le réseau sortant vers Unsplash, lent/filtré chez
+    l'hébergeur, était la cause des blocages. Si le fichier local manque, on lève une
+    erreur et l'appelant tente le repli Pixabay puis le logo de marque.
     """
     local = _local_pool_path(photo_id)
     if local.exists():
         data = local.read_bytes()
         if len(data) > 5000:  # WebP local : seuil bas (certaines tiennent en ~25 Ko)
             return data
+    raise FileNotFoundError(f"Photo locale absente du pool : {photo_id}")
+
+
+def _pixabay_query(article: dict) -> str:
+    """Construit une requête Pixabay pertinente : Vietnam + ville + thème de l'article."""
+    parts = ["Vietnam"]
+    city = (article.get("city") or "").strip()
+    if city and city != "Tout le Vietnam":
+        parts.append(city)
+    theme_words = {
+        "food": "street food", "market": "market", "beach": "beach",
+        "trekking": "mountains", "nature": "landscape", "mountain": "mountains",
+        "temple": "temple", "transport": "city", "city": "city", "cruise": "bay",
+    }
+    for tok in _article_keywords(article):
+        if tok in theme_words:
+            parts.append(theme_words[tok])
+            break
+    return " ".join(parts)
+
+
+def _fetch_pixabay_photo(query: str, seed: int) -> bytes:
+    """Repli réseau : cherche une photo Vietnam sur Pixabay et renvoie ses octets.
+
+    Nécessite PIXABAY_API_KEY (clé gratuite). Sans clé, lève une erreur → logo de marque.
+    """
+    key = _pixabay_api_key()
+    if not key:
+        raise ValueError("PIXABAY_API_KEY absente")
 
     resp = requests.get(
-        _photo_url(photo_id),
-        timeout=(VIETNAM_PHOTO_CONNECT_TIMEOUT, VIETNAM_PHOTO_READ_TIMEOUT),
+        PIXABAY_API_URL,
+        params={
+            "key": key,
+            "q": query,
+            "image_type": "photo",
+            "orientation": "horizontal",
+            "safesearch": "true",
+            "per_page": 16,
+            "lang": "en",
+        },
+        timeout=(PIXABAY_CONNECT_TIMEOUT, PIXABAY_READ_TIMEOUT),
         headers={"User-Agent": "InsideVietnamTravel/1.0"},
     )
     resp.raise_for_status()
-    if len(resp.content) < 30000:
-        raise ValueError("Photo Vietnam trop petite")
-    return resp.content
+    hits = resp.json().get("hits", [])
+    if not hits:
+        raise ValueError("Aucune image Pixabay pour cette requête")
+
+    hit = hits[seed % len(hits)]
+    img_url = hit.get("largeImageURL") or hit.get("webformatURL")
+    if not img_url:
+        raise ValueError("URL d'image Pixabay manquante")
+
+    img = requests.get(
+        img_url,
+        timeout=(PIXABAY_CONNECT_TIMEOUT, PIXABAY_READ_TIMEOUT),
+        headers={"User-Agent": "InsideVietnamTravel/1.0"},
+    )
+    img.raise_for_status()
+    if len(img.content) < 8000:
+        raise ValueError("Image Pixabay trop petite")
+    return img.content
 
 
 def _to_webp(raw: bytes, out_path: Path) -> None:
@@ -470,7 +529,7 @@ def _gather_article_photo(
         except Exception:
             pass
 
-    # 2) Photo Vietnam réelle unique du pool (1 reprise — l'échéance globale fait foi).
+    # 2) Photo Vietnam réelle unique du pool LOCAL (instantané, jamais de blocage).
     try:
         return _fetch_vietnam_photo(photo_id), photo_id
     except Exception:
@@ -479,6 +538,13 @@ def _gather_article_photo(
                 return _fetch_vietnam_photo(alt_id), alt_id
             except Exception:
                 continue
+
+    # 3) Pool local absent : repli réseau Pixabay (au lieu d'Unsplash).
+    try:
+        return _fetch_pixabay_photo(_pixabay_query(article), seed), photo_id
+    except Exception:
+        pass
+
     raise RuntimeError("Aucune image disponible")
 
 
@@ -625,6 +691,12 @@ def attach_image_to_destination(
                     return _fetch_vietnam_photo(alt_id), alt_id
                 except Exception:
                     continue
+        # Pool local absent : repli réseau Pixabay (au lieu d'Unsplash).
+        try:
+            query = " ".join(["Vietnam", dest.get("name", dest.get("city", ""))]).strip()
+            return _fetch_pixabay_photo(query or "Vietnam", seed), photo_id
+        except Exception:
+            pass
         raise RuntimeError("Aucune image disponible")
 
     raw: bytes | None = None
