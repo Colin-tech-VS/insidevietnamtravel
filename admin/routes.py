@@ -785,7 +785,7 @@ def social_test():
         flash(f"Connexion OK — page « {info.get('name', '?')} » "
               f"({info.get('fan_count', 0)} abonnés).", "success")
     except Exception as exc:  # noqa: BLE001
-        flash(f"Échec de la connexion Facebook : {exc}", "error")
+        flash(f"Échec de la connexion Facebook : {fb.friendly_error(exc)}", "error")
     return redirect(url_for("admin.social"))
 
 
@@ -858,7 +858,7 @@ def social_publish():
             result = fb.publish_photo(caption, image_url)
         flash(f"Publié sur Facebook ✅ {fb.post_permalink(result)}".strip(), "success")
     except Exception as exc:  # noqa: BLE001
-        flash(f"Échec de la publication : {exc}", "error")
+        flash(f"Échec de la publication : {fb.friendly_error(exc)}", "error")
     return redirect(url_for("admin.social"))
 
 
