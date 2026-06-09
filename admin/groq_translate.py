@@ -1,10 +1,10 @@
-"""Traduction FR→EN du contenu via Groq (modèle rapide, quota séparé)."""
+"""Traduction FR→EN du contenu via l'IA (modèle rapide, quota séparé)."""
 
 from __future__ import annotations
 
 import json
 
-from admin import groq_client
+from admin import ai_client
 from i18n_utils import ARTICLE_I18N_FIELDS, DESTINATION_I18N_FIELDS
 
 TRANSLATE_SYSTEM = """You translate Vietnam travel website content from French to English.
@@ -23,8 +23,8 @@ def translate_article_block(fr_data: dict, *, pause_before: float = 0) -> dict:
     if not fields:
         return {}
 
-    response = groq_client.chat_completion(
-        model=groq_client.fast_model(),
+    response = ai_client.chat_completion(
+        fast=True,
         messages=[
             {"role": "system", "content": TRANSLATE_SYSTEM},
             {
@@ -51,8 +51,8 @@ def translate_destination_block(fr_data: dict, *, pause_before: float = 0) -> di
     if not payload:
         return {}
 
-    response = groq_client.chat_completion(
-        model=groq_client.fast_model(),
+    response = ai_client.chat_completion(
+        fast=True,
         messages=[
             {"role": "system", "content": TRANSLATE_SYSTEM + "\nFor activities, keep 'search' and 'provider' fields in English unchanged if present."},
             {

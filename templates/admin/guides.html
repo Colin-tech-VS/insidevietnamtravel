@@ -22,7 +22,7 @@
 
     <p class="ai-loader__text" id="ai-loader-text">Analyse du sujet…</p>
 
-    <p class="ai-loader__hint">Groq rédige l'article SEO + image WebP — comptez 30 à 90 secondes.</p>
+    <p class="ai-loader__hint">{{ ai_provider_label }} rédige l'article SEO + image WebP — comptez 30 à 90 secondes.</p>
 
   </div>
 
@@ -32,7 +32,7 @@
 
 {% if not groq_ok %}
 
-<div class="alert alert--warn">Ajoutez <code>GROQ_API_KEY</code> dans <code>.env</code> pour activer la génération IA. L'onglet <strong>Manuellement</strong> reste disponible sans clé API.</div>
+<div class="alert alert--warn">Ajoutez <code>GROQ_API_KEY</code> ou <code>MISTRAL_API_KEY</code> dans <code>.env</code> pour activer la génération IA. L'onglet <strong>Manuellement</strong> reste disponible sans clé API.</div>
 
 {% endif %}
 
@@ -134,7 +134,7 @@
 
           <button type="submit" class="btn btn-primary btn-generate" {% if not groq_ok %}disabled{% endif %}>
 
-            Générer avec Groq AI
+            Générer avec {{ ai_provider_label }}
 
           </button>
 
@@ -402,11 +402,11 @@
 
         <h2>💡 Idées d'articles</h2>
 
-        <button type="button" class="btn btn-secondary btn-sm" id="refresh-suggestions" {% if not groq_ok %}disabled{% endif %} title="Consomme 1 requête Groq">Idées IA</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="refresh-suggestions" {% if not groq_ok %}disabled{% endif %} title="Consomme 1 requête IA">Idées IA</button>
 
       </div>
 
-      <p class="muted suggestions-intro">8 idées locales — cliquez pour pré-remplir. « Idées IA » utilise Groq (évite le rate limit au chargement).</p>
+      <p class="muted suggestions-intro">8 idées locales — cliquez pour pré-remplir. « Idées IA » utilise {{ ai_provider_label }} (évite le rate limit au chargement).</p>
 
 
 

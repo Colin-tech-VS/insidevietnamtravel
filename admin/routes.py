@@ -10,8 +10,8 @@ from flask import (
 
 from admin.auth import check_password, do_login, do_logout, login_required
 from admin import db
+from admin import ai_client
 from admin import groq_ai
-from admin import groq_client
 from admin import groq_destinations
 from admin import groq_newsletter
 from admin import draft_store
@@ -77,7 +77,7 @@ def _clear_draft(kind: str) -> None:
 def _start_draft_job(kind: str, fn) -> None:
     token = draft_store.new_token()
     session[_draft_token_key(kind)] = token
-    draft_store.start_job(token, fn, groq_client.friendly_error)
+    draft_store.start_job(token, fn, ai_client.friendly_error)
 
 
 def _draft_status(kind: str) -> dict:
@@ -143,9 +143,13 @@ def dashboard():
         affiliates_configured=configured,
         affiliates_total=len(affiliates),
         est_commission=est_commission,
-        groq_ok=bool(os.environ.get("GROQ_API_KEY")),
+        groq_ok=ai_client.is_configured(),
+        ai_provider=ai_client.provider(),
+        ai_provider_label=ai_client.provider_label(),
+        ai_status=ai_client.provider_status(),
+        ai_provider_labels=ai_client.PROVIDER_LABELS,
         recommendations=get_dashboard_recommendations(
-            groq_ok=bool(os.environ.get("GROQ_API_KEY")),
+            groq_ok=ai_client.is_configured(),
             affiliates_configured=configured,
             affiliates_total=len(affiliates),
             articles_count=len(get_articles()),
@@ -153,6 +157,17 @@ def dashboard():
             est_commission=est_commission,
         ),
     )
+
+
+@admin_bp.route("/settings/ai", methods=["POST"])
+@login_required
+def settings_ai():
+    provider = (request.form.get("ai_provider") or "groq").strip().lower()
+    if provider not in ai_client.PROVIDERS:
+        provider = "groq"
+    save_settings({"ai_provider": provider})
+    flash(f"Moteur IA : {ai_client.provider_label(provider)} sélectionné.", "success")
+    return redirect(url_for("admin.dashboard"))
 
 
 @admin_bp.route("/guides", methods=["GET", "POST"])
@@ -210,7 +225,7 @@ def guides():
         except ValueError as e:
             flash(str(e), "error")
         except Exception as e:
-            flash(groq_client.friendly_error(e), "error")
+            flash(ai_client.friendly_error(e), "error")
 
     suggestions = get_topic_suggestions(use_ai=False)
 
@@ -219,7 +234,8 @@ def guides():
         "admin/guides.html",
         draft=draft,
         articles=get_articles()[:20],
-        groq_ok=bool(os.environ.get("GROQ_API_KEY")),
+        groq_ok=ai_client.is_configured(),
+        ai_provider_label=ai_client.provider_label(),
         suggestions=suggestions,
         vietnam_cities=VIETNAM_CITIES,
         guide_types=GUIDE_TYPES,
@@ -231,13 +247,13 @@ def guides():
 @admin_bp.route("/api/guides/suggestions", methods=["POST"])
 @login_required
 def api_guide_suggestions():
-    if not os.environ.get("GROQ_API_KEY"):
-        return jsonify({"ok": False, "error": "GROQ_API_KEY manquante"}), 400
+    if not ai_client.is_configured():
+        return jsonify({"ok": False, "error": "Aucune clé IA configurée (GROQ_API_KEY ou MISTRAL_API_KEY)"}), 400
     try:
         suggestions = get_topic_suggestions(use_ai=True)
         return jsonify({"ok": True, "suggestions": suggestions})
     except Exception as e:
-        return jsonify({"ok": False, "error": groq_client.friendly_error(e)}), 500
+        return jsonify({"ok": False, "error": ai_client.friendly_error(e)}), 500
 
 
 @admin_bp.route("/api/guides/generate", methods=["POST"])
@@ -248,8 +264,8 @@ def api_generate_guide():
     topic = (data.get("topic") or "").strip()
     guide_type = data.get("guide_type") or "article blog"
 
-    if not os.environ.get("GROQ_API_KEY"):
-        return jsonify({"ok": False, "error": "GROQ_API_KEY manquante"}), 400
+    if not ai_client.is_configured():
+        return jsonify({"ok": False, "error": "Aucune clé IA configurée (GROQ_API_KEY ou MISTRAL_API_KEY)"}), 400
     if not city or city not in ALL_CITY_VALUES:
         return jsonify({"ok": False, "error": "Ville obligatoire"}), 400
     if not topic:
@@ -337,7 +353,8 @@ def destinations_admin():
         draft=draft,
         destinations=dest_list,
         city_options=city_options,
-        groq_ok=bool(os.environ.get("GROQ_API_KEY")),
+        groq_ok=ai_client.is_configured(),
+        ai_provider_label=ai_client.provider_label(),
         draft_is_manual=bool((draft or {}).get("manual")),
     )
 
@@ -349,8 +366,8 @@ def api_generate_destination():
     city = (data.get("city") or "").strip()
     notes = (data.get("notes") or "").strip()
 
-    if not os.environ.get("GROQ_API_KEY"):
-        return jsonify({"ok": False, "error": "GROQ_API_KEY manquante"}), 400
+    if not ai_client.is_configured():
+        return jsonify({"ok": False, "error": "Aucune clé IA configurée (GROQ_API_KEY ou MISTRAL_API_KEY)"}), 400
     if not city or city not in ALL_CITY_VALUES or city == "Tout le Vietnam":
         return jsonify({"ok": False, "error": "Ville obligatoire"}), 400
 
@@ -448,7 +465,8 @@ def newsletter_admin():
         subscribers=subscribers,
         draft=draft,
         preview_html=preview_html,
-        groq_ok=bool(os.environ.get("GROQ_API_KEY")),
+        groq_ok=ai_client.is_configured(),
+        ai_provider_label=ai_client.provider_label(),
         smtp_ok=is_smtp_configured(),
         email_types=groq_newsletter.EMAIL_TYPES,
         draft_is_manual=bool(draft and draft.get("manual")),
@@ -565,8 +583,8 @@ def api_generate_newsletter():
     email_type = data.get("email_type") or "actualite"
     notes = (data.get("notes") or "").strip()
 
-    if not os.environ.get("GROQ_API_KEY"):
-        return jsonify({"ok": False, "error": "GROQ_API_KEY manquante"}), 400
+    if not ai_client.is_configured():
+        return jsonify({"ok": False, "error": "Aucune clé IA configurée (GROQ_API_KEY ou MISTRAL_API_KEY)"}), 400
     if not topic:
         return jsonify({"ok": False, "error": "Sujet obligatoire"}), 400
 

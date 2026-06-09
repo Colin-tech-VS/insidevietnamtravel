@@ -4,7 +4,7 @@ import json
 import re
 from datetime import date
 
-from admin import groq_client
+from admin import ai_client
 from admin.store import slugify
 from admin.groq_translate import translate_destination_block
 from i18n_utils import merge_bilingual_destination
@@ -97,9 +97,7 @@ def _build_destination(data: dict, city: str, slug: str) -> dict:
 
 
 def generate_destination(city: str, notes: str = "") -> dict:
-    groq_client.require_api_key()
-    client = groq_client.get_client()
-    model = groq_client.main_model()
+    ai_client.require_api_key()
     year = date.today().year
     slug = slugify(city)
 
@@ -112,9 +110,7 @@ Notes éditoriales : {notes or "Guide complet pour voyageurs français"}
 Minimum {MIN_WORDS} mots (cible {TARGET_WORDS}).
 La page doit convaincre un voyageur de visiter {city} et l'aider à planifier : durée idéale, budget, meilleure période."""
 
-    response = groq_client.chat_completion(
-        client=client,
-        model=model,
+    response = ai_client.chat_completion(
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},
@@ -128,9 +124,8 @@ La page doit convaincre un voyageur de visiter {city} et l'aider à planifier : 
 
     if _total_words(dest) < MIN_WORDS * EXPAND_TOLERANCE:
         # Enrichissement sur le modèle rapide : bucket TPM distinct + plus véloce.
-        expand = groq_client.chat_completion(
-            client=client,
-            model=groq_client.fast_model(),
+        expand = ai_client.chat_completion(
+            fast=True,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {

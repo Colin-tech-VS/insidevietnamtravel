@@ -158,13 +158,35 @@
 
         <ul class="status-list">
 
-          <li class="{% if groq_ok %}ok{% else %}warn{% endif %}">Groq AI {% if groq_ok %}connecté{% else %}— clé manquante{% endif %}</li>
+          <li class="{% if groq_ok %}ok{% else %}warn{% endif %}">Moteur IA : <strong>{{ ai_provider_label }}</strong> {% if groq_ok %}actif{% else %}— aucune clé configurée{% endif %}</li>
+
+          {% for key, label in ai_provider_labels.items() %}
+          <li class="{% if ai_status[key] %}ok{% else %}warn{% endif %}">{{ label }} {% if ai_status[key] %}— clé OK{% else %}— clé manquante{% endif %}</li>
+          {% endfor %}
 
           <li class="{% if affiliates_configured > 0 %}ok{% else %}warn{% endif %}">Affiliation : {{ affiliates_configured }}/{{ affiliates_total }} configurés</li>
 
           <li class="ok">Analytics internes actifs</li>
 
         </ul>
+
+        <form method="post" action="{{ url_for('admin.settings_ai') }}" class="ai-engine-form" style="margin-top:1rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+
+          <label for="ai_provider" style="font-weight:600;">Moteur de rédaction :</label>
+
+          <select id="ai_provider" name="ai_provider">
+
+            {% for key, label in ai_provider_labels.items() %}
+            <option value="{{ key }}" {% if ai_provider == key %}selected{% endif %}>{{ label }}{% if not ai_status[key] %} (clé manquante){% endif %}</option>
+            {% endfor %}
+
+          </select>
+
+          <button type="submit" class="btn btn-secondary btn-sm">Enregistrer</button>
+
+        </form>
+
+        <p class="muted" style="margin-top:.4rem;font-size:.85rem;">Le fournisseur sélectionné rédige guides, destinations et newsletters. En cas d'échec (limite atteinte), Groq prend le relais automatiquement si sa clé est présente.</p>
 
       </section>
 
