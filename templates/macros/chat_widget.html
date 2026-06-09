@@ -13,7 +13,7 @@
      data-error="{{ t('chat.error') }}"
      data-affiliate-badge="{{ t('chat.affiliate_badge') }}"
      data-suggestions='{{ [t("chat.suggest1"), t("chat.suggest2"), t("chat.suggest3")] | tojson }}'>
-  <button type="button" class="mai-chat__fab" id="mai-chat-fab" aria-expanded="false" aria-controls="mai-chat-panel">
+  <button type="button" class="mai-chat__fab" id="mai-chat-fab" aria-expanded="false" aria-controls="mai-chat-panel" aria-label="{{ t('chat.open') }}">
     <span class="mai-chat__fab-ring" aria-hidden="true"></span>
     <span class="mai-chat__avatar" aria-hidden="true">
       <svg viewBox="0 0 48 48" class="mai-chat__avatar-svg">
@@ -21,8 +21,10 @@
         <text x="24" y="30" text-anchor="middle" font-size="22">🌸</text>
       </svg>
     </span>
-    <span class="mai-chat__fab-label">{{ t('chat.open') }}</span>
+    <span class="mai-chat__fab-label" id="mai-chat-fab-label">{{ t('chat.open') }}</span>
   </button>
+
+  <button type="button" class="mai-chat__backdrop" id="mai-chat-backdrop" hidden aria-hidden="true" tabindex="-1"></button>
 
   <div class="mai-chat__panel" id="mai-chat-panel" hidden role="dialog" aria-modal="true" aria-labelledby="mai-chat-title">
     <header class="mai-chat__head">

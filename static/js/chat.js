@@ -5,7 +5,9 @@
   if (!root) return;
 
   var fab = document.getElementById('mai-chat-fab');
+  var fabLabel = document.getElementById('mai-chat-fab-label');
   var panel = document.getElementById('mai-chat-panel');
+  var backdrop = document.getElementById('mai-chat-backdrop');
   var closeBtn = document.getElementById('mai-chat-close');
   var messagesEl = document.getElementById('mai-chat-messages');
   var suggestionsEl = document.getElementById('mai-chat-suggestions');
@@ -110,9 +112,22 @@
     if (suggestionsEl) suggestionsEl.innerHTML = '';
   }
 
+  var openLabel = root.dataset.open || 'Chat';
+  var closeLabel = root.dataset.close || 'Close';
+
+  function isOpen() {
+    return !panel.hidden;
+  }
+
   function openPanel() {
     panel.hidden = false;
+    if (backdrop) {
+      backdrop.hidden = false;
+      backdrop.setAttribute('aria-hidden', 'false');
+    }
     fab.setAttribute('aria-expanded', 'true');
+    fab.setAttribute('aria-label', closeLabel);
+    if (fabLabel) fabLabel.textContent = closeLabel;
     document.body.classList.add('mai-chat-open');
     if (!opened) {
       opened = true;
@@ -124,7 +139,13 @@
 
   function closePanel() {
     panel.hidden = true;
+    if (backdrop) {
+      backdrop.hidden = true;
+      backdrop.setAttribute('aria-hidden', 'true');
+    }
     fab.setAttribute('aria-expanded', 'false');
+    fab.setAttribute('aria-label', openLabel);
+    if (fabLabel) fabLabel.textContent = openLabel;
     document.body.classList.remove('mai-chat-open');
   }
 
@@ -166,13 +187,28 @@
   }
 
   fab.addEventListener('click', function () {
-    if (panel.hidden) openPanel();
-    else closePanel();
+    if (isOpen()) closePanel();
+    else openPanel();
   });
-  closeBtn.addEventListener('click', closePanel);
+  if (closeBtn) {
+    closeBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      closePanel();
+    });
+  }
+  if (backdrop) {
+    backdrop.addEventListener('click', function (e) {
+      e.preventDefault();
+      closePanel();
+    });
+  }
+  panel.addEventListener('click', function (e) {
+    e.stopPropagation();
+  });
 
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && !panel.hidden) closePanel();
+    if (e.key === 'Escape' && isOpen()) closePanel();
   });
 
   form.addEventListener('submit', function (e) {
