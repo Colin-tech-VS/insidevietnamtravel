@@ -13,6 +13,8 @@ from pathlib import Path
 import requests
 from PIL import Image, ImageDraw
 
+from admin.genlog import log
+
 BLOG_IMAGES_DIR = Path(__file__).parent.parent / "static" / "images" / "blog"
 DEST_IMAGES_DIR = Path(__file__).parent.parent / "static" / "images" / "destinations"
 # Pool de vraies photos Vietnam EMBARQUÉES dans le repo (static/images/pool/<id>.webp).
@@ -570,12 +572,15 @@ def attach_image_to_article(
 
     raw: bytes | None = None
     placeholder = False
+    t0 = time.time()
+    log(f"IMAGE start slug={slug} ai_enabled={_ai_images_enabled()}")
     try:
         raw, photo_id = _run_with_deadline(
             _gather_article_photo, IMAGE_STEP_HARD_DEADLINE,
             article, ai_prompt, prompt, seed, photo_id,
         )
-    except Exception:
+    except Exception as exc:  # noqa: BLE001
+        log(f"IMAGE gather KO apres {time.time() - t0:.1f}s -- {type(exc).__name__}: {str(exc)[:120]}")
         raw = None
 
     if raw is None:
@@ -586,6 +591,7 @@ def attach_image_to_article(
     if force_regenerate and out_path.exists():
         out_path.unlink()
     _to_webp(raw, out_path)
+    log(f"IMAGE done  slug={slug} en {time.time() - t0:.1f}s placeholder={placeholder} photo_id={photo_id}")
 
     city = article.get("city", "")
     title = article.get("title", "Guide voyage Vietnam")

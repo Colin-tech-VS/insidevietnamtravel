@@ -18,9 +18,11 @@ import json
 import os
 import re
 import threading
+import time
 
 from admin import groq_client
 from admin import mistral_client
+from admin.genlog import log
 from admin.store import get_settings
 
 PROVIDERS = {"groq": groq_client, "mistral": mistral_client}
@@ -34,7 +36,7 @@ FALLBACK_PROVIDER = "groq"
 # plusieurs minutes — c'est ce qui donnait l'impression que « ça ne génère pas, ça
 # bloque ». Ce plafond, imposé par un thread, garantit qu'on abandonne et qu'on remonte
 # une erreur (ou qu'on bascule en repli) au lieu d'attendre indéfiniment.
-DEFAULT_DEADLINE = 200  # secondes
+DEFAULT_DEADLINE = 120  # secondes (modèles rapides : 10-40 s ; coupe vite un appel figé)
 
 
 def _run_with_deadline(fn, seconds: float | None):
@@ -210,8 +212,10 @@ def chat_completion(
             impl = _impl(name)
             chosen_model = model or (impl.fast_model() if fast else impl.main_model())
             attempted = True
+            t0 = time.time()
+            log(f"AI call provider={name} model={chosen_model} fast={fast} max_tokens={max_tokens} deadline={deadline}")
             try:
-                return impl.chat_completion(
+                resp = impl.chat_completion(
                     model=chosen_model,
                     messages=messages,
                     max_tokens=max_tokens,
@@ -221,8 +225,14 @@ def chat_completion(
                     # On ne paie la pause anti rate-limit que sur la 1re tentative.
                     pause_before=pause_before if idx == 0 else 0,
                 )
+                log(f"AI OK   provider={name} model={chosen_model} en {time.time() - t0:.1f}s")
+                return resp
             except Exception as exc:  # noqa: BLE001 — on tente le fournisseur de repli
                 last_error = exc
+                log(
+                    f"AI FAIL provider={name} model={chosen_model} apres "
+                    f"{time.time() - t0:.1f}s -- {type(exc).__name__}: {str(exc)[:160]}"
+                )
                 continue
 
         if last_error:
@@ -233,4 +243,8 @@ def chat_completion(
             )
         raise RuntimeError("Appel IA échoué")
 
-    return _run_with_deadline(_dispatch, deadline)
+    try:
+        return _run_with_deadline(_dispatch, deadline)
+    except TimeoutError as exc:
+        log(f"AI TIMEOUT global deadline={deadline}s -- {exc}")
+        raise

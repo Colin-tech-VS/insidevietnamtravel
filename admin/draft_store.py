@@ -25,6 +25,8 @@ import threading
 import time
 from typing import Callable
 
+from admin.genlog import log
+
 _LOCK = threading.Lock()
 _STORE: dict[str, dict] = {}
 _TTL_SECONDS = 3600  # un brouillon expire au bout d'1 h
@@ -56,6 +58,7 @@ def set_phase(token: str | None, phase: str) -> None:
     """
     if not token:
         return
+    log(f"PHASE [{token[:6]}] {phase}")
     with _LOCK:
         entry = _STORE.get(token)
         if entry and entry.get("status") == "running":
@@ -119,6 +122,8 @@ def start_job(
         set_phase(token, phase)
 
     def _run() -> None:
+        t0 = time.time()
+        log(f"JOB  [{token[:6]}] START")
         try:
             draft = fn(report)
             with _LOCK:
@@ -128,8 +133,13 @@ def start_job(
                     "error": "",
                     "ts": time.time(),
                 }
+            log(f"JOB  [{token[:6]}] DONE en {time.time() - t0:.1f}s")
         except Exception as exc:  # noqa: BLE001 — on remonte le message à l'UI
             message = friendly_error(exc) if friendly_error else str(exc)
+            log(
+                f"JOB  [{token[:6]}] ERROR apres {time.time() - t0:.1f}s -- "
+                f"{type(exc).__name__}: {str(exc)[:200]}"
+            )
             with _LOCK:
                 _STORE[token] = {
                     "status": "error",
