@@ -90,6 +90,26 @@ Compress(app)
 app.register_blueprint(admin_bp)
 
 
+# Heure de démarrage du process : un nouveau déploiement redémarre le serveur, donc
+# si /healthz affiche une heure ancienne, c'est que le code en ligne n'a PAS été
+# redéployé (cause n°1 des « ça bloque encore » alors que le correctif est sur main).
+APP_BOOT_TIME = datetime.utcnow()
+
+
+@app.route("/healthz")
+def healthz():
+    """Sonde de santé + repère de déploiement (heure de boot, version)."""
+    return {
+        "status": "ok",
+        "boot_time_utc": APP_BOOT_TIME.isoformat() + "Z",
+        "version": (
+            os.environ.get("CONTAINER_VERSION")
+            or os.environ.get("SOURCE_VERSION")
+            or "unknown"
+        ),
+    }
+
+
 
 def _articles(lang=None):
     return get_articles(lang or get_lang())
