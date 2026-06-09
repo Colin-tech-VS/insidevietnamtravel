@@ -722,8 +722,144 @@ def analytics():
         "admin/analytics.html",
         stats=stats,
         days=days,
+        social=db.get_social_traffic(days),
         recommendations=get_analytics_recommendations(stats, days),
     )
+
+
+# ── Réseaux sociaux (Facebook) ────────────────────────────────────────
+@admin_bp.route("/social")
+@login_required
+def social():
+    from admin import facebook_service as fb
+    from admin.social_ai import page_inventory
+
+    inventory = page_inventory("fr")
+    groups: dict[str, list] = {}
+    for item in inventory:
+        groups.setdefault(item["group"], []).append(item)
+
+    return render_template(
+        "admin/social.html",
+        fb_configured=fb.is_configured(),
+        fb_page_id=fb.get_page_id(),
+        fb_token_masked=fb.masked_token(),
+        page_groups=groups,
+        pool_images=_social_pool_images(),
+        social=db.get_social_traffic(30),
+        ai_ready=ai_client.is_configured(),
+    )
+
+
+def _social_pool_images() -> list[dict]:
+    """Vignettes du pool (images persistantes, URL publique) pour le contenu nouveau."""
+    from admin.image_service import VIETNAM_PHOTO_POOL
+    import config
+    base = config.SITE_URL.rstrip("/")
+    return [
+        {"id": pid, "label": desc,
+         "thumb": f"/static/images/pool/{pid}-640.webp",
+         "url": f"{base}/static/images/pool/{pid}.webp"}
+        for pid, desc in VIETNAM_PHOTO_POOL
+    ]
+
+
+@admin_bp.route("/social/settings", methods=["POST"])
+@login_required
+def social_settings():
+    from admin import facebook_service as fb
+
+    fb.save_config(request.form.get("facebook_page_id", ""),
+                   request.form.get("facebook_page_token", ""))
+    flash("Configuration Facebook enregistrée.", "success")
+    return redirect(url_for("admin.social"))
+
+
+@admin_bp.route("/social/test", methods=["POST"])
+@login_required
+def social_test():
+    from admin import facebook_service as fb
+
+    try:
+        info = fb.test_connection()
+        flash(f"Connexion OK — page « {info.get('name', '?')} » "
+              f"({info.get('fan_count', 0)} abonnés).", "success")
+    except Exception as exc:  # noqa: BLE001
+        flash(f"Échec de la connexion Facebook : {exc}", "error")
+    return redirect(url_for("admin.social"))
+
+
+@admin_bp.route("/api/social/generate", methods=["POST"])
+@login_required
+def api_social_generate():
+    from admin import facebook_service as fb
+    from admin.social_ai import find_page, generate_post, default_campaign
+
+    payload = request.get_json(silent=True) or {}
+    mode = payload.get("mode", "page")
+    lang = "en" if payload.get("lang") == "en" else "fr"
+    page = find_page(payload.get("page_id", ""), lang) if mode == "page" else None
+    brief = (payload.get("brief") or "").strip()
+
+    if mode == "page" and not page:
+        return jsonify({"ok": False, "error": "Sélectionnez une page du site."}), 400
+    if mode == "new" and not brief:
+        return jsonify({"ok": False, "error": "Expliquez le sujet du contenu nouveau."}), 400
+
+    try:
+        message = generate_post(page=page, brief=brief, lang=lang)
+    except Exception as exc:  # noqa: BLE001
+        return jsonify({"ok": False, "error": ai_client.friendly_error(exc)}), 502
+
+    campaign = default_campaign(page, brief)
+    return jsonify({
+        "ok": True,
+        "message": message,
+        "campaign": campaign,
+        "link": fb.add_utm(page["url"], campaign) if page else "",
+        "image": page["image"] if page else "",
+    })
+
+
+@admin_bp.route("/social/publish", methods=["POST"])
+@login_required
+def social_publish():
+    from admin import facebook_service as fb
+    from admin.social_ai import find_page
+
+    if not fb.is_configured():
+        flash("Configurez d'abord la connexion Facebook (ID de page + token).", "error")
+        return redirect(url_for("admin.social"))
+
+    mode = request.form.get("mode", "page")
+    message = (request.form.get("message") or "").strip()
+    campaign = fb.sanitize_campaign(request.form.get("campaign", "") or "fb-post")
+    if not message:
+        flash("Le texte du post est vide.", "error")
+        return redirect(url_for("admin.social"))
+
+    try:
+        if mode == "page":
+            page = find_page(request.form.get("page_id", ""), "fr")
+            if not page:
+                flash("Page introuvable.", "error")
+                return redirect(url_for("admin.social"))
+            link = fb.add_utm(page["url"], campaign)
+            result = fb.publish_link(message, link)
+        else:
+            image_url = (request.form.get("image_url") or "").strip()
+            if not image_url:
+                flash("Une image est obligatoire pour un contenu nouveau.", "error")
+                return redirect(url_for("admin.social"))
+            link = (request.form.get("link") or "").strip()
+            caption = message
+            if link:
+                caption = f"{message}\n\n👉 {fb.add_utm(link, campaign)}"
+            result = fb.publish_photo(caption, image_url)
+        flash(f"Publié sur Facebook ✅ {fb.post_permalink(result)}".strip(), "success")
+    except Exception as exc:  # noqa: BLE001
+        flash(f"Échec de la publication : {exc}", "error")
+    return redirect(url_for("admin.social"))
 
 
 @admin_bp.route("/api/affiliate-verify", methods=["POST"])

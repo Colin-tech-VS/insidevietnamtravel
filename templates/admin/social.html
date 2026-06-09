@@ -1,0 +1,159 @@
+{% extends "admin/layout.html" %}
+{% block title %}Réseaux sociaux{% endblock %}
+{% block page_title %}Réseaux sociaux{% endblock %}
+
+{% block content %}
+<div class="social-page">
+
+  <!-- Connexion Facebook -->
+  <section class="admin-card">
+    <div class="admin-card__head">
+      <h2>Connexion Facebook
+        {% if fb_configured %}<span class="social-status social-status--ok">Connecté</span>
+        {% else %}<span class="social-status social-status--off">Non configuré</span>{% endif %}
+      </h2>
+    </div>
+    <form method="post" action="{{ url_for('admin.social_settings') }}" class="social-config">
+      <div class="form-row">
+        <label>ID de la page Facebook
+          <input type="text" name="facebook_page_id" value="{{ fb_page_id }}" placeholder="ex. 1234567890">
+        </label>
+        <label>Token d'accès de page (longue durée)
+          <input type="password" name="facebook_page_token" autocomplete="off"
+                 placeholder="{{ fb_token_masked or 'Collez le Page Access Token' }}">
+          <small>Laissez vide pour conserver le token existant.</small>
+        </label>
+      </div>
+      <div class="social-config__actions">
+        <button type="submit" class="btn-admin btn-admin--primary">Enregistrer</button>
+        <button type="submit" formaction="{{ url_for('admin.social_test') }}" class="btn-admin">Tester la connexion</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Composer -->
+  <section class="admin-card">
+    <div class="admin-card__head"><h2>Composer un post</h2></div>
+
+    {% if not ai_ready %}
+    <p class="social-hint social-hint--warn">⚠ Aucune clé IA configurée — la rédaction IA est indisponible (vous pouvez écrire à la main).</p>
+    {% endif %}
+
+    <div class="social-mode" role="tablist" aria-label="Type de publication">
+      <label class="social-mode__opt">
+        <input type="radio" name="mode_choice" value="page" checked> Page du site
+      </label>
+      <label class="social-mode__opt">
+        <input type="radio" name="mode_choice" value="new"> Contenu nouveau
+      </label>
+    </div>
+
+    <form id="social-form" method="post" action="{{ url_for('admin.social_publish') }}">
+      <input type="hidden" name="mode" id="f-mode" value="page">
+      <input type="hidden" name="image_url" id="f-image-url" value="">
+      <input type="hidden" name="message" id="f-message">
+
+      <!-- Mode PAGE -->
+      <div class="social-block" data-block="page">
+        <label class="form-label" for="page-select">Quelle page publier ?</label>
+        <select id="page-select" name="page_id" class="social-select">
+          {% for group, items in page_groups.items() %}
+          <optgroup label="{{ group }}">
+            {% for it in items %}
+            <option value="{{ it.id }}"
+                    data-url="{{ it.url }}" data-image="{{ it.image }}"
+                    data-title="{{ it.title }}" data-summary="{{ it.summary }}">{{ it.label }}</option>
+            {% endfor %}
+          </optgroup>
+          {% endfor %}
+        </select>
+        <p class="social-hint">L'IA rédigera un post sur cette page. Le lien publié inclura automatiquement le suivi UTM, et Facebook affichera l'aperçu (image + titre) de la page.</p>
+      </div>
+
+      <!-- Mode NOUVEAU -->
+      <div class="social-block" data-block="new" hidden>
+        <label class="form-label" for="brief">Sujet du contenu nouveau</label>
+        <textarea id="brief" rows="3" class="social-textarea"
+                  placeholder="Expliquez le sujet : ex. « 5 erreurs à éviter à la douane de Hanoï »"></textarea>
+
+        <label class="form-label">Image (obligatoire)</label>
+        <div class="social-imgpicker" id="img-picker">
+          {% for img in pool_images %}
+          <button type="button" class="social-imgpicker__item" data-url="{{ img.url }}"
+                  title="{{ img.label }}">
+            <img src="{{ img.thumb }}" alt="{{ img.label }}" loading="lazy" width="120" height="68">
+          </button>
+          {% endfor %}
+        </div>
+        <label class="form-label" for="custom-image">…ou une URL d'image publique</label>
+        <input type="url" id="custom-image" class="social-input" placeholder="https://…/image.jpg">
+
+        <label class="form-label" for="custom-link">Lien à promouvoir (optionnel, UTM ajouté auto)</label>
+        <input type="url" id="custom-link" name="link" class="social-input" placeholder="https://www.insidevietnamtravel.fr/…">
+      </div>
+
+      <!-- Campagne UTM -->
+      <div class="social-utm">
+        <span class="social-utm__fixed">utm_source=<b>facebook</b> · utm_medium=<b>social</b> · utm_campaign=</span>
+        <input type="text" name="campaign" id="f-campaign" class="social-input social-input--inline" value="">
+      </div>
+
+      <!-- Rédaction -->
+      <div class="social-compose">
+        <div class="social-compose__bar">
+          <button type="button" id="btn-generate" class="btn-admin btn-admin--primary"{% if not ai_ready %} disabled{% endif %}>✦ Rédiger avec l'IA</button>
+          <span id="gen-status" class="social-genstatus" aria-live="polite"></span>
+          <span class="social-counter"><span id="char-count">0</span> car.</span>
+        </div>
+        <div id="composer" class="social-composer" contenteditable="true" role="textbox" aria-multiline="true"
+             data-placeholder="Écrivez votre post ici, ou cliquez sur « Rédiger avec l'IA »…"></div>
+      </div>
+
+      <!-- Aperçu -->
+      <div class="social-preview" id="preview" hidden>
+        <p class="social-preview__label">Aperçu</p>
+        <div class="social-preview__card">
+          <img id="preview-img" src="" alt="" hidden>
+          <div class="social-preview__body">
+            <p id="preview-text"></p>
+            <a id="preview-link" href="#" class="social-preview__link" target="_blank" rel="noopener" hidden></a>
+          </div>
+        </div>
+      </div>
+
+      <div class="social-actions">
+        <button type="submit" class="btn-admin btn-admin--primary btn-admin--lg"{% if not fb_configured %} disabled{% endif %}>
+          Publier sur Facebook
+        </button>
+        {% if not fb_configured %}<span class="social-hint">Configurez la connexion ci-dessus pour publier.</span>{% endif %}
+      </div>
+    </form>
+  </section>
+
+  <!-- Trafic social (UTM) -->
+  <section class="admin-card">
+    <div class="admin-card__head"><h2>Trafic réseaux sociaux (30 j)</h2></div>
+    {% if social.total %}
+    <p class="social-traffic__total">{{ social.total }} visites issues des réseaux sociaux (suivi UTM).</p>
+    <table class="admin-table">
+      <thead><tr><th>Campagne</th><th>Visites</th></tr></thead>
+      <tbody>
+        {% for row in social.by_campaign %}
+        <tr><td>{{ row.c }}</td><td>{{ row.n }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="social-hint">Aucune visite trackée pour l'instant. Les liens publiés ici incluent le suivi UTM ; les visites apparaîtront ici et dans Analytics.</p>
+    {% endif %}
+  </section>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.SOCIAL_GENERATE_URL = "{{ url_for('admin.api_social_generate') }}";
+</script>
+<script src="{{ url_for('static', filename='admin/social.js') }}" defer></script>
+{% endblock %}

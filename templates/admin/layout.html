@@ -86,6 +86,9 @@
         <a href="{{ url_for('admin.newsletter_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.newsletter_admin' %}is-active{% endif %}">
           <span class="admin-nav__icon" aria-hidden="true">✉</span> Newsletter
         </a>
+        <a href="{{ url_for('admin.social') }}" class="admin-nav__link {% if request.endpoint == 'admin.social' %}is-active{% endif %}">
+          <span class="admin-nav__icon" aria-hidden="true">📣</span> Réseaux sociaux
+        </a>
         <a href="{{ url_for('admin.contact_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.contact_admin' %}is-active{% endif %}">
           <span class="admin-nav__icon" aria-hidden="true">✉</span> Contact{% if contact_unread %} <span class="admin-nav__badge">{{ contact_unread }}</span>{% endif %}
         </a>

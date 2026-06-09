@@ -38,7 +38,26 @@
         <span class="kpi-card__value" id="rt-clicks">{{ stats.clicks_30m }}</span>
         <span class="kpi-card__hint">30 dernières minutes · <a href="{{ url_for('admin.affiliates') }}">détail</a></span>
       </div>
+      <div class="kpi-card">
+        <span class="kpi-card__label">Trafic réseaux sociaux</span>
+        <span class="kpi-card__value">{{ social.total if social else 0 }}</span>
+        <span class="kpi-card__hint">via UTM · {{ days }} j · <a href="{{ url_for('admin.social') }}">publier</a></span>
+      </div>
     </div>
+
+    {% if social and social.by_campaign %}
+    <section class="chart-panel">
+      <h2>Réseaux sociaux — campagnes UTM ({{ days }} j)</h2>
+      <table class="admin-table">
+        <thead><tr><th>Campagne</th><th>Visites</th></tr></thead>
+        <tbody>
+          {% for row in social.by_campaign %}
+          <tr><td>{{ row.c }}</td><td>{{ row.n }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+    {% endif %}
 
     <div class="chart-grid">
       <section class="chart-panel chart-panel--wide">

@@ -147,12 +147,18 @@ def _migrate_page_views_columns(conn, *, postgres: bool) -> None:
         with conn.cursor() as cur:
             cur.execute("ALTER TABLE page_views ADD COLUMN IF NOT EXISTS country_code TEXT")
             cur.execute("ALTER TABLE page_views ADD COLUMN IF NOT EXISTS country_name TEXT")
+            cur.execute("ALTER TABLE page_views ADD COLUMN IF NOT EXISTS utm_source TEXT")
+            cur.execute("ALTER TABLE page_views ADD COLUMN IF NOT EXISTS utm_campaign TEXT")
     else:
         cols = {row[1] for row in conn.execute("PRAGMA table_info(page_views)")}
         if "country_code" not in cols:
             conn.execute("ALTER TABLE page_views ADD COLUMN country_code TEXT")
         if "country_name" not in cols:
             conn.execute("ALTER TABLE page_views ADD COLUMN country_name TEXT")
+        if "utm_source" not in cols:
+            conn.execute("ALTER TABLE page_views ADD COLUMN utm_source TEXT")
+        if "utm_campaign" not in cols:
+            conn.execute("ALTER TABLE page_views ADD COLUMN utm_campaign TEXT")
 
 
 def _migrate_affiliate_clicks_columns(conn, *, postgres: bool) -> None:

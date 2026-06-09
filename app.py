@@ -147,7 +147,8 @@ def _localized_block(block: dict, lang: str) -> dict:
     return result
 
 
-def _log_page_view_async(path: str, referrer: str, user_agent: str, ip_hash: str, client_ip: str):
+def _log_page_view_async(path: str, referrer: str, user_agent: str, ip_hash: str,
+                         client_ip: str, utm_source: str = "", utm_campaign: str = ""):
     try:
         from admin.geoip import resolve_country
 
@@ -159,6 +160,8 @@ def _log_page_view_async(path: str, referrer: str, user_agent: str, ip_hash: str
             ip_hash=ip_hash,
             country_code=country_code,
             country_name=country_name,
+            utm_source=utm_source,
+            utm_campaign=utm_campaign,
         )
     except Exception:
         pass
@@ -183,6 +186,8 @@ def track_page_view():
     if not should_track_page_view(path=path, user_agent=user_agent, client_ip=client_ip):
         return
     ip_hash = analytics_ip_hash(client_ip)
+    utm_source = (request.args.get("utm_source") or "")[:60]
+    utm_campaign = (request.args.get("utm_campaign") or "")[:120]
     threading.Thread(
         target=_log_page_view_async,
         args=(
@@ -191,6 +196,8 @@ def track_page_view():
             user_agent,
             ip_hash,
             client_ip,
+            utm_source,
+            utm_campaign,
         ),
         daemon=True,
     ).start()

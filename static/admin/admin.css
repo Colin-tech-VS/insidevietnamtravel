@@ -2110,3 +2110,69 @@ body.is-admin-nav-open { overflow: hidden; }
   .page-loader__ring { animation: none; opacity: 1; transform: none; }
   .page-loader__hint { animation: none; opacity: 0.85; }
 }
+
+/* ── Réseaux sociaux ─────────────────────────────────────────────────── */
+.social-page { display: flex; flex-direction: column; gap: 1.5rem; }
+.social-status {
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 0.2rem 0.6rem; border-radius: 999px; margin-left: 0.6rem; vertical-align: middle;
+}
+.social-status--ok { background: rgba(42,107,94,0.15); color: var(--success); }
+.social-status--off { background: rgba(196,101,74,0.15); color: var(--warn); }
+
+.social-config .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.social-config label { display: flex; flex-direction: column; gap: 0.35rem; font-weight: 600; font-size: 0.9rem; }
+.social-config input { padding: 0.6rem 0.8rem; border: 1px solid var(--rice-dark); border-radius: 8px; font: inherit; }
+.social-config small { font-weight: 400; color: var(--ink-muted); }
+.social-config__actions { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
+
+.social-mode { display: inline-flex; gap: 0.25rem; background: var(--rice); padding: 0.3rem; border-radius: 10px; margin-bottom: 1.25rem; }
+.social-mode__opt { padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+.social-mode__opt:has(input:checked) { background: var(--white); box-shadow: 0 1px 4px rgba(0,0,0,0.08); color: var(--teal); }
+.social-mode__opt input { margin-right: 0.4rem; }
+
+.form-label { display: block; font-weight: 600; font-size: 0.9rem; margin: 1rem 0 0.4rem; }
+.social-select, .social-input, .social-textarea {
+  width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--rice-dark);
+  border-radius: 8px; font: inherit; background: var(--white);
+}
+.social-input--inline { width: auto; display: inline-block; min-width: 220px; padding: 0.3rem 0.6rem; }
+
+.social-imgpicker { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.5rem; margin-bottom: 0.5rem; }
+.social-imgpicker__item { padding: 0; border: 2px solid transparent; border-radius: 8px; overflow: hidden; cursor: pointer; background: none; line-height: 0; }
+.social-imgpicker__item img { width: 100%; height: auto; display: block; }
+.social-imgpicker__item.is-selected { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(27,77,74,0.25); }
+
+.social-utm {
+  margin: 1.25rem 0; padding: 0.7rem 0.9rem; background: var(--rice); border-radius: 8px;
+  font-size: 0.85rem; color: var(--ink-soft); display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+}
+.social-utm__fixed b { color: var(--teal); }
+
+.social-compose__bar { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+.social-counter { margin-left: auto; font-size: 0.8rem; color: var(--ink-muted); }
+.social-genstatus { font-size: 0.85rem; color: var(--ink-muted); }
+.social-composer {
+  min-height: 160px; padding: 1.1rem 1.25rem; border: 1px solid var(--rice-dark); border-radius: 12px;
+  background: var(--white); line-height: 1.6; white-space: pre-wrap; box-shadow: inset 0 1px 3px rgba(0,0,0,0.03);
+}
+.social-composer:focus { outline: 2px solid var(--teal-light); outline-offset: 1px; }
+.social-composer:empty::before { content: attr(data-placeholder); color: var(--ink-muted); }
+
+.social-preview { margin-top: 1.25rem; }
+.social-preview__label { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 0.4rem; }
+.social-preview__card { border: 1px solid var(--rice-dark); border-radius: 12px; overflow: hidden; max-width: 500px; background: var(--white); }
+.social-preview__card img { width: 100%; height: auto; display: block; }
+.social-preview__body { padding: 0.9rem 1.1rem; }
+.social-preview__body p { white-space: pre-wrap; margin: 0 0 0.5rem; }
+.social-preview__link { font-size: 0.85rem; color: var(--teal); word-break: break-all; }
+
+.social-actions { margin-top: 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.btn-admin--lg { padding: 0.8rem 1.75rem; font-size: 1rem; }
+.social-hint { font-size: 0.85rem; color: var(--ink-muted); margin-top: 0.5rem; }
+.social-hint--warn { color: var(--warn); }
+.social-traffic__total { font-weight: 600; margin-bottom: 0.75rem; }
+
+@media (max-width: 720px) {
+  .social-config .form-row { grid-template-columns: 1fr; }
+}

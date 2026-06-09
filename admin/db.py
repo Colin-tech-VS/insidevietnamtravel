@@ -65,18 +65,55 @@ def log_page_view(
     ip_hash: str,
     country_code: str = "",
     country_name: str = "",
+    utm_source: str = "",
+    utm_campaign: str = "",
 ):
     with get_connection() as conn:
         _execute(
             conn,
             """INSERT INTO page_views
-               (path, referrer, user_agent, ip_hash, country_code, country_name, created_at)
-               VALUES (%s,%s,%s,%s,%s,%s,%s)""",
+               (path, referrer, user_agent, ip_hash, country_code, country_name, utm_source, utm_campaign, created_at)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
             """INSERT INTO page_views
-               (path, referrer, user_agent, ip_hash, country_code, country_name, created_at)
-               VALUES (?,?,?,?,?,?,?)""",
-            (path, referrer, user_agent, ip_hash, country_code, country_name, _now_iso()),
+               (path, referrer, user_agent, ip_hash, country_code, country_name, utm_source, utm_campaign, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?)""",
+            (path, referrer, user_agent, ip_hash, country_code, country_name,
+             utm_source, utm_campaign, _now_iso()),
         )
+
+
+def get_social_traffic(days: int = 30):
+    """Vues issues des réseaux sociaux (UTM), agrégées par source et campagne."""
+    since = _since_days(days)
+    bot = _human_traffic_sql()
+    out = {"total": 0, "by_source": [], "by_campaign": []}
+    with get_connection() as conn:
+        cur = _execute(
+            conn,
+            f"SELECT COALESCE(utm_source,'') AS s, COUNT(*) AS n FROM page_views "
+            f"WHERE created_at >= %s AND COALESCE(utm_source,'') <> '' {bot} "
+            f"GROUP BY s ORDER BY n DESC",
+            f"SELECT COALESCE(utm_source,'') AS s, COUNT(*) AS n FROM page_views "
+            f"WHERE created_at >= ? AND COALESCE(utm_source,'') <> '' {bot} "
+            f"GROUP BY s ORDER BY n DESC",
+            (since,),
+        )
+        rows = [_row_dict(r) for r in cur.fetchall()]
+        out["by_source"] = rows
+        out["total"] = sum(r.get("n", 0) for r in rows)
+
+        cur = _execute(
+            conn,
+            f"SELECT COALESCE(utm_campaign,'') AS c, COUNT(*) AS n FROM page_views "
+            f"WHERE created_at >= %s AND COALESCE(utm_campaign,'') <> '' {bot} "
+            f"GROUP BY c ORDER BY n DESC LIMIT 20",
+            f"SELECT COALESCE(utm_campaign,'') AS c, COUNT(*) AS n FROM page_views "
+            f"WHERE created_at >= ? AND COALESCE(utm_campaign,'') <> '' {bot} "
+            f"GROUP BY c ORDER BY n DESC LIMIT 20",
+            (since,),
+        )
+        out["by_campaign"] = [_row_dict(r) for r in cur.fetchall()]
+    return out
 
 
 def log_affiliate_click(
