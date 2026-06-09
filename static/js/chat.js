@@ -82,9 +82,106 @@
   }
 
   function showTyping() {
-    var wrap = appendBubble('assistant', '<span class="mai-chat__typing"><span></span><span></span><span></span> ' + escapeHtml(i18n.typing) + '</span>', 'mai-chat__bubble-wrap--typing');
+    var html = '<span class="mai-chat__typing">'
+      + '<span class="mai-chat__typing-avatar" aria-hidden="true">🌸</span>'
+      + '<span class="mai-chat__typing-dots" aria-hidden="true"><span></span><span></span><span></span></span>'
+      + '<span class="mai-chat__typing-label">' + escapeHtml(i18n.typing) + '</span>'
+      + '</span>';
+    var wrap = appendBubble('assistant', html, 'mai-chat__bubble-wrap--typing');
     wrap.dataset.typing = '1';
     return wrap;
+  }
+
+  function tokenizeStream(text) {
+    return String(text || '').match(/[^\s]+|\s+/g) || [];
+  }
+
+  function streamDelay(token, index, total) {
+    var delay = 22;
+    if (/^\s+$/.test(token)) return 6;
+    if (/[.!?…]$/.test(token.trim())) return delay + 140;
+    if (/[,;:]$/.test(token.trim())) return delay + 70;
+    if (/\p{Extended_Pictographic}/u.test(token)) return delay + 35;
+    var ratio = index / Math.max(total, 1);
+    if (ratio > 0.55) delay *= 0.72;
+    if (ratio > 0.8) delay *= 0.58;
+    return delay + (index % 3) * 4;
+  }
+
+  function streamAssistantMessage(text, linksHtml) {
+    return new Promise(function (resolve) {
+      removeTyping();
+
+      var wrap = document.createElement('div');
+      wrap.className = 'mai-chat__bubble-wrap mai-chat__bubble-wrap--assistant mai-chat__bubble-wrap--streaming';
+      wrap.title = lang === 'en' ? 'Click to show full message' : 'Cliquer pour afficher tout';
+
+      var bubble = document.createElement('div');
+      bubble.className = 'mai-chat__bubble mai-chat__bubble--assistant mai-chat__bubble--streaming';
+      bubble.innerHTML = '<div class="mai-chat__stream">'
+        + '<span class="mai-chat__stream-text"></span>'
+        + '<span class="mai-chat__cursor" aria-hidden="true"></span>'
+        + '</div>';
+
+      wrap.appendChild(bubble);
+      messagesEl.appendChild(wrap);
+      scrollBottom();
+
+      var textEl = bubble.querySelector('.mai-chat__stream-text');
+      var tokens = tokenizeStream(text);
+      var idx = 0;
+      var acc = '';
+      var done = false;
+      var timer = null;
+
+      function revealLinks() {
+        if (!linksHtml) return;
+        var holder = document.createElement('div');
+        holder.innerHTML = linksHtml.trim();
+        var linksEl = holder.firstElementChild;
+        if (!linksEl) return;
+        linksEl.classList.add('mai-chat__links--reveal');
+        bubble.appendChild(linksEl);
+        scrollBottom();
+      }
+
+      function finishInstant() {
+        if (done) return;
+        done = true;
+        if (timer) clearTimeout(timer);
+        textEl.innerHTML = formatMessage(text);
+        var cursor = bubble.querySelector('.mai-chat__cursor');
+        if (cursor) cursor.remove();
+        bubble.classList.remove('mai-chat__bubble--streaming');
+        wrap.classList.remove('mai-chat__bubble-wrap--streaming');
+        wrap.removeAttribute('title');
+        revealLinks();
+        scrollBottom();
+        wrap.removeEventListener('click', onSkip);
+        resolve();
+      }
+
+      function onSkip(e) {
+        if (e.target.closest('a')) return;
+        finishInstant();
+      }
+
+      function step() {
+        if (done) return;
+        if (idx >= tokens.length) {
+          finishInstant();
+          return;
+        }
+        acc += tokens[idx];
+        idx += 1;
+        textEl.innerHTML = formatMessage(acc);
+        scrollBottom();
+        timer = window.setTimeout(step, streamDelay(tokens[idx - 1], idx, tokens.length));
+      }
+
+      wrap.addEventListener('click', onSkip);
+      step();
+    });
   }
 
   function removeTyping() {
@@ -131,8 +228,7 @@
     document.body.classList.add('mai-chat-open');
     if (!opened) {
       opened = true;
-      appendBubble('assistant', formatMessage(i18n.greeting));
-      renderSuggestions();
+      streamAssistantMessage(i18n.greeting, '').then(renderSuggestions);
     }
     input.focus();
   }
@@ -159,7 +255,7 @@
     input.value = '';
     input.style.height = 'auto';
 
-    var typing = showTyping();
+    showTyping();
 
     fetch(apiUrl, {
       method: 'POST',
@@ -168,14 +264,15 @@
     })
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
       .then(function (res) {
-        removeTyping();
         if (!res.ok || !res.data.ok) {
+          removeTyping();
           throw new Error((res.data && res.data.error) || i18n.error);
         }
         var msg = res.data.message || '';
         var linksHtml = renderLinks(res.data.site_links, res.data.affiliate_links);
-        appendBubble('assistant', formatMessage(msg) + linksHtml);
-        history.push({ role: 'assistant', content: msg });
+        return streamAssistantMessage(msg, linksHtml).then(function () {
+          history.push({ role: 'assistant', content: msg });
+        });
       })
       .catch(function (err) {
         removeTyping();
