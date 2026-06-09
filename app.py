@@ -640,6 +640,53 @@ def useful_apps():
     )
 
 
+# ── Guides pratiques (sécurité, coutumes, phrases) ───────────────────
+
+@app.route("/securite-voyage-vietnam")
+@app.route("/en/vietnam-travel-safety")
+def safety_guide():
+    from data.travel_guides import build_safety_guide
+
+    lang = get_lang()
+    return render_template(
+        "tools/safety.html",
+        guide=build_safety_guide(lang),
+        meta_title=t("meta.safety.title", lang),
+        meta_description=t("meta.safety.desc", lang),
+        meta_keywords=t("meta.safety.kw", lang),
+    )
+
+
+@app.route("/coutumes-vietnam")
+@app.route("/en/vietnam-customs-etiquette")
+def customs_guide():
+    from data.travel_guides import build_customs_guide
+
+    lang = get_lang()
+    return render_template(
+        "tools/customs.html",
+        guide=build_customs_guide(lang),
+        meta_title=t("meta.customs.title", lang),
+        meta_description=t("meta.customs.desc", lang),
+        meta_keywords=t("meta.customs.kw", lang),
+    )
+
+
+@app.route("/phrases-utiles-vietnamien")
+@app.route("/en/useful-vietnamese-phrases")
+def phrases_guide():
+    from data.travel_guides import build_phrases_guide
+
+    lang = get_lang()
+    return render_template(
+        "tools/phrases.html",
+        guide=build_phrases_guide(lang),
+        meta_title=t("meta.phrases.title", lang),
+        meta_description=t("meta.phrases.desc", lang),
+        meta_keywords=t("meta.phrases.kw", lang),
+    )
+
+
 # ── Blog ──────────────────────────────────────────────────────────────
 
 @app.route("/blog")
@@ -1063,6 +1110,10 @@ def search_index():
         ("budget_tool", "tools.budget"),
         ("visa_tool", "tools.visa"),
         ("essentials_tool", "tools.essentials"),
+        ("useful_apps", "tools.apps"),
+        ("safety_guide", "safety.nav"),
+        ("customs_guide", "customs.nav"),
+        ("phrases_guide", "phrases.nav"),
         ("prepare_trip", "nav.prepare"),
     ):
         items.append({

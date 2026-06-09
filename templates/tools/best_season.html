@@ -37,6 +37,50 @@
   </div>
 </header>
 
+<section class="section section--alt" id="season-planner">
+  <div class="container">
+    <div class="section-header">
+      <h2>{{ t('season.planner_title') }}</h2>
+      <p>{{ t('season.planner_sub') }}</p>
+    </div>
+
+    <div class="season-planner" id="season-planner-root"
+         data-lang="{{ lang }}"
+         data-msg-pick="{{ t('season.planner_pick') }}"
+         data-msg-ideal="{{ t('season.planner_ideal') }}"
+         data-msg-good="{{ t('season.planner_good') }}"
+         data-msg-fair="{{ t('season.planner_fair') }}"
+         data-msg-avoid="{{ t('season.planner_avoid') }}">
+      <div class="season-planner__controls">
+        <div class="form-field">
+          <label for="sp-month">{{ t('season.planner_month') }}</label>
+          <select id="sp-month">
+            {% for i in range(12) %}
+            <option value="{{ i }}">{{ seasons.month_labels_full[i] if seasons.month_labels_full else seasons.month_labels[i] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <fieldset class="season-planner__dests">
+          <legend>{{ t('season.planner_dest') }}</legend>
+          <div class="season-planner__chips">
+            {% for dest in seasons.destinations %}
+            <label class="season-planner__chip">
+              <input type="checkbox" name="dest" value="{{ dest.slug }}" checked>
+              <span>{{ dest.name }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </fieldset>
+      </div>
+      <output class="season-planner__result" id="sp-result" aria-live="polite"></output>
+      <div class="season-planner__calendar" id="sp-calendar" aria-hidden="true"></div>
+    </div>
+  </div>
+</section>
+
+<script type="application/json" id="season-planner-data">{{ seasons.planner | tojson }}</script>
+<script src="{{ url_for('static', filename='js/season-planner.js') }}" defer></script>
+
 <section class="section">
   <div class="container">
     <div class="section-header">
@@ -103,6 +147,32 @@
       </article>
       {% endfor %}
     </div>
+
+    {% if seasons.destinations %}
+    <div class="section-header" style="margin-top:2.5rem">
+      <h2>{{ t('season.destinations_title') }}</h2>
+    </div>
+    <div class="season-grid">
+      {% for dest in seasons.destinations %}
+      <article class="season-card season-card--compact">
+        <header class="season-card__head">
+          <h3>{{ dest.name }}</h3>
+          <p class="season-card__cities">{{ dest.region_name }}</p>
+        </header>
+        <p class="season-card__best">
+          <span class="season-card__best-label">{{ t('season.best') }}</span>
+          <strong>{{ dest.best }}</strong>
+        </p>
+        <div class="season-strip" aria-hidden="true">
+          {% for i in range(12) %}
+          {% set rating = dest.months[i] %}
+          <span class="season-strip__cell season-cell--{{ rating }}" title="{{ seasons.month_labels[i] }}"></span>
+          {% endfor %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% endif %}
 
     <aside class="tool-callout">
       <span class="tool-callout__icon" aria-hidden="true">🧭</span>

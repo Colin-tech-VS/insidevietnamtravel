@@ -101,6 +101,46 @@
     </div>
 
     <p class="tool-note tool-note--warn">⚠️ {{ t('visa.disclaimer') }}</p>
+
+    {% if visa.sections %}
+    <div class="section-header" style="margin-top:3rem">
+      <h2>{{ t('visa.guide_title') }}</h2>
+    </div>
+    {% for sec in visa.sections %}
+    <div class="travel-guide__section-inline" id="{{ sec.key }}">
+      <h3>{{ sec.title }}</h3>
+      <p>{{ sec.intro }}</p>
+      <div class="travel-guide__grid">
+        {% for item in sec.items %}
+        <article class="travel-guide__card">
+          <span class="travel-guide__icon" aria-hidden="true">{{ item.icon }}</span>
+          <h4>{{ item.title }}</h4>
+          <p>{{ item.body }}</p>
+          {% if item.tips %}
+          <ul class="travel-guide__tips">
+            {% for tip in item.tips %}<li>{{ tip }}</li>{% endfor %}
+          </ul>
+          {% endif %}
+        </article>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if visa.faq %}
+    <div class="section-header" style="margin-top:2.5rem">
+      <h2>{{ t('visa.faq_title') }}</h2>
+    </div>
+    <div class="pillar-faq">
+      {% for item in visa.faq %}
+      <details class="pillar-faq__item">
+        <summary>{{ item.question }}</summary>
+        <p>{{ item.answer }}</p>
+      </details>
+      {% endfor %}
+    </div>
+    {% endif %}
   </div>
 </section>
 

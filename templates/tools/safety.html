@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% from "macros/images.html" import responsive_img with context %}
+{% from "macros/seo.html" import json_ld_graph with context %}
+{% from "macros/affiliates.html" import sim_banner, insurance_banner with context %}
+{% from "macros/travel_guide.html" import guide_faq, guide_related_links %}
+
+{% set hero_img = '/static/images/pool/1528127269322-539801943592.webp' %}
+
+{% block head_preload %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tools.css') }}">
+<link rel="preload" as="image" href="{{ hero_img }}" fetchpriority="high">
+{% endblock %}
+
+{% block structured_data %}
+{% set graph = [
+  {"@type": "WebPage", "name": meta_title, "description": meta_description,
+   "url": canonical_url, "inLanguage": "en-GB" if lang == 'en' else "fr-FR"},
+  seo_breadcrumb([
+    (t('nav.home'), site.SITE_URL ~ lang_url('index')),
+    (t('safety.nav'), None),
+  ]),
+] %}
+{% if guide.faq %}{% set _ = graph.append(seo_faq(guide.faq)) %}{% endif %}
+{{ json_ld_graph(graph) }}
+{% endblock %}
+
+{% block content %}
+<header class="pillar-hero">
+  <div class="pillar-hero__media" aria-hidden="true">
+    {{ responsive_img(hero_img, alt='', width=1600, height=900, loading='eager',
+       fetchpriority='high', class='pillar-hero__img', sizes='100vw') }}
+  </div>
+  <div class="container pillar-hero__inner">
+    <nav class="breadcrumb breadcrumb--light" aria-label="{{ t('breadcrumb.aria') }}">
+      <ol>
+        <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+        <li aria-current="page">{{ t('safety.nav') }}</li>
+      </ol>
+    </nav>
+    <span class="pillar-hero__eyebrow">{{ t('safety.eyebrow') }}</span>
+    <h1 class="pillar-hero__title">{{ t('safety.title') }}</h1>
+    <p class="pillar-hero__lede">{{ t('safety.lead') }}</p>
+  </div>
+</header>
+
+{% set silo_pillars = pillar_backlinks('safety_guide') %}
+{% if silo_pillars %}
+<div class="container"><nav class="pillar-backlink" aria-label="{{ t('pillar.part_of') }}">
+  <span class="pillar-backlink__label">{{ t('pillar.part_of') }}</span>
+  {% for p in silo_pillars %}<a class="pillar-chip" href="{{ p.url }}">{{ p.title }}</a>{% endfor %}
+</nav></div>
+{% endif %}
+
+<p class="container apps-disclosure">{{ t('apps.disclosure') }}</p>
+
+{% for sec in guide.sections %}
+<section class="travel-guide__section{% if loop.index is odd %} section--alt{% endif %}" id="{{ sec.key }}">
+  <div class="container">
+    <header class="section-header section-header--compact">
+      <h2>{{ sec.title }}</h2>
+      <p>{{ sec.intro }}</p>
+    </header>
+    <div class="travel-guide__grid">
+      {% for item in sec.items %}
+      <article class="travel-guide__card">
+        <span class="travel-guide__icon" aria-hidden="true">{{ item.icon }}</span>
+        <h3>{{ item.title }}</h3>
+        <p>{{ item.body }}</p>
+        {% if item.tips %}
+        <ul class="travel-guide__tips">
+          {% for tip in item.tips %}<li>{{ tip }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+    {% if sec.affiliate == 'insurance' %}
+    <div class="travel-guide__affiliate">{{ insurance_banner() }}</div>
+    {% elif sec.affiliate == 'sim' %}
+    <div class="travel-guide__affiliate">{{ sim_banner() }}</div>
+    {% endif %}
+  </div>
+</section>
+{% endfor %}
+
+{{ guide_faq(guide.faq, t('apps.faq')) }}
+
+<section class="section">
+  <div class="container">
+    <div class="pillar-cta">
+      <div>
+        <h2 class="pillar-cta__title">{{ t('safety.cta_title') }}</h2>
+        <p class="pillar-cta__text">{{ t('safety.cta_text') }}</p>
+      </div>
+      <a class="btn btn-primary btn-lg" href="{{ lang_url('useful_apps') }}">{{ t('tools.apps') }}</a>
+    </div>
+    {{ guide_related_links([
+      {'url': lang_url('customs_guide'), 'title': t('customs.nav')},
+      {'url': lang_url('phrases_guide'), 'title': t('phrases.nav')},
+      {'url': lang_url('essentials_tool'), 'title': t('tools.essentials')},
+      {'url': lang_url('visa_tool'), 'title': t('tools.visa')},
+    ]) }}
+  </div>
+</section>
+{% endblock %}

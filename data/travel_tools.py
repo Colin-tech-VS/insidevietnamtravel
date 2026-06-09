@@ -99,7 +99,18 @@ _REGIONS = [
 
 
 def build_seasons(lang: str) -> dict:
-    """Matrice saison + résumés par région, localisée."""
+    """Matrice saison + résumés par région + destinations pour le planificateur."""
+    from data.trip_planner import PLANNER_CITIES, CITY_REGION
+
+    lang = "en" if lang == "en" else "fr"
+    region_by_key = {r["key"]: r for r in _REGIONS}
+
+    try:
+        from admin.store import get_destinations_dict
+        dest_names = get_destinations_dict(lang)
+    except Exception:
+        dest_names = {}
+
     regions = []
     for r in _REGIONS:
         regions.append({
@@ -114,13 +125,47 @@ def build_seasons(lang: str) -> dict:
                 for i, rating in enumerate(r["months"])
             ],
         })
+
+    destinations = []
+    for city in PLANNER_CITIES:
+        slug = city["slug"]
+        region_key = CITY_REGION.get(slug, city["region"])
+        region = region_by_key.get(region_key, _REGIONS[0])
+        name = dest_names.get(slug, {}).get("name", slug.replace("-", " ").title())
+        destinations.append({
+            "slug": slug,
+            "name": name,
+            "region": region_key,
+            "region_name": region["name"][lang],
+            "best": region["best"][lang],
+            "hint": region["summary"][lang][:220],
+            "months": region["months"],
+        })
+
+    planner_destinations = {
+        d["slug"]: {
+            "slug": d["slug"],
+            "name": d["name"],
+            "region": d["region"],
+            "months": d["months"],
+        }
+        for d in destinations
+    }
+
     return {
         "regions": regions,
+        "destinations": destinations,
         "month_labels": MONTHS[lang],
+        "month_labels_full": MONTHS_FULL[lang],
         "legend": [
             {"rating": k, "label": RATING_LABELS[k][lang]}
             for k in ("ideal", "good", "fair", "avoid")
         ],
+        "planner": {
+            "destinations": planner_destinations,
+            "month_labels": MONTHS[lang],
+            "ratings": {k: RATING_LABELS[k][lang] for k in RATING_LABELS},
+        },
     }
 
 
@@ -215,6 +260,7 @@ _VISA_COUNTRIES = [
     {"code": "GB", "fr": "Royaume-Uni", "en": "United Kingdom"},
     {"code": "US", "fr": "États-Unis", "en": "United States"},
     {"code": "AU", "fr": "Australie", "en": "Australia"},
+    {"code": "NL", "fr": "Pays-Bas", "en": "Netherlands"},
     {"code": "OTHER", "fr": "Autre pays", "en": "Other country"},
 ]
 
@@ -226,15 +272,193 @@ def visa_exempt_days(code: str) -> int:
     return 0
 
 
+def _visa_section(key, title_fr, title_en, intro_fr, intro_en, items):
+    return {
+        "key": key,
+        "title": {"fr": title_fr, "en": title_en},
+        "intro": {"fr": intro_fr, "en": intro_en},
+        "items": items,
+    }
+
+
+def _visa_item(icon, title_fr, title_en, body_fr, body_en, *, tips=None):
+    row = {
+        "icon": icon,
+        "title": {"fr": title_fr, "en": title_en},
+        "body": {"fr": body_fr, "en": body_en},
+    }
+    if tips:
+        row["tips"] = [{"fr": a, "en": b} for a, b in tips]
+    return row
+
+
+def _visa_faq(items):
+    return [{"q": {"fr": qf, "en": qe}, "a": {"fr": af, "en": ae}} for qf, qe, af, ae in items]
+
+
+_VISA_SECTIONS = [
+    _visa_section(
+        "passport",
+        "Passeport & validité",
+        "Passport & validity",
+        "Votre passeport doit être valide au moins 6 mois après la date d'entrée prévue "
+        "et comporter au moins 2 pages vierges.",
+        "Your passport must be valid at least 6 months after your planned entry date "
+        "and have at least 2 blank pages.",
+        [
+            _visa_item(
+                "📘", "Validité 6 mois", "6-month validity",
+                "Règle standard pour l'e-visa et l'entrée aux frontières aériennes, "
+                "terrestres et maritimes.",
+                "Standard rule for e-visa and entry at air, land and sea borders.",
+            ),
+            _visa_item(
+                "👶", "Mineurs", "Minors",
+                "Chaque enfant doit avoir son propre passeport (ou être inscrit sur "
+                "un passeport parent selon les règles de votre pays).",
+                "Each child needs their own passport (or be listed on a parent's "
+                "passport per your country's rules).",
+            ),
+        ],
+    ),
+    _visa_section(
+        "evisa",
+        "E-visa officiel (evisa.gov.vn)",
+        "Official e-visa (evisa.gov.vn)",
+        "Depuis 2023, le Vietnam propose un e-visa unique valable 90 jours, entrées "
+        "simples ou multiples, pour la plupart des nationalités non exemptées.",
+        "Since 2023 Vietnam offers a single e-visa valid 90 days, single or multiple "
+        "entry, for most non-exempt nationalities.",
+        [
+            _visa_item(
+                "💵", "Frais & délai", "Fee & processing",
+                "Environ 25 USD, paiement carte en ligne. Traitement souvent 3 à 5 "
+                "jours ouvrés — demandez 7 à 10 jours avant le départ.",
+                "About USD 25, card payment online. Processing often 3–5 business "
+                "days — apply 7–10 days before departure.",
+            ),
+            _visa_item(
+                "🖨️", "À l'arrivée", "On arrival",
+                "Imprimez l'e-visa (ou gardez-le offline sur le téléphone) et présentez "
+                "le même passeport que lors de la demande.",
+                "Print the e-visa (or keep it offline on your phone) and present the "
+                "same passport used in the application.",
+            ),
+        ],
+    ),
+    _visa_section(
+        "exempt",
+        "Exemptions sans visa (45 jours)",
+        "Visa-free exemption (45 days)",
+        "Depuis août 2023, de nombreuses nationalités (dont la France) bénéficient "
+        "d'une exemption de 45 jours pour le tourisme — sans frais ni demande en ligne.",
+        "Since August 2023 many nationalities (including France) get 45 days "
+        "visa-free for tourism — no fee or online application.",
+        [
+            _visa_item(
+                "🇫🇷", "Français & UE proches", "French & similar EU",
+                "France, Allemagne, Italie, Espagne, Royaume-Uni, etc. : 45 jours "
+                "maximum par entrée. Au-delà → e-visa obligatoire.",
+                "France, Germany, Italy, Spain, UK, etc.: 45 days max per entry. "
+                "Beyond that → e-visa required.",
+            ),
+            _visa_item(
+                "🔄", "Re-entrées", "Re-entry",
+                "L'exemption s'applique à chaque entrée ; un séjour de 46 jours "
+                "nécessite un e-visa avant le départ.",
+                "Exemption applies per entry; a 46-day stay requires an e-visa before "
+                "you travel.",
+            ),
+        ],
+    ),
+    _visa_section(
+        "tips",
+        "Conseils pratiques",
+        "Practical tips",
+        "Évitez les sites « e-visa » non officiels qui surfacturent. Seul evisa.gov.vn "
+        "est le portail gouvernemental.",
+        "Avoid unofficial « e-visa » sites that overcharge. Only evisa.gov.vn is the "
+        "government portal.",
+        [
+            _visa_item(
+                "⚠️", "Arnaques en ligne", "Online scams",
+                "Méfiez-vous des agences qui promettent un « visa express » hors "
+                "du site officiel — arnaque fréquente.",
+                "Beware agencies promising « express visa » outside the official "
+                "site — a common scam.",
+            ),
+            _visa_item(
+                "✈️", "Vol aller-retour", "Return ticket",
+                "Les compagnies aériennes peuvent exiger un billet de sortie du "
+                "Vietnam ; ayez une preuve de date de départ.",
+                "Airlines may require proof of exit from Vietnam; have a return "
+                "or onward ticket.",
+            ),
+        ],
+    ),
+]
+
+_VISA_FAQ = _visa_faq([
+    (
+        "Les Français ont-ils besoin d'un visa pour 2 semaines ?",
+        "Do French citizens need a visa for 2 weeks?",
+        "Non pour un séjour touristique de 15 jours : exemption 45 jours. "
+        "Au-delà de 45 jours, demandez un e-visa avant le départ.",
+        "No for a 15-day tourist trip: 45-day exemption. Beyond 45 days, apply "
+        "for an e-visa before you travel.",
+    ),
+    (
+        "Combien coûte l'e-visa Vietnam ?",
+        "How much does the Vietnam e-visa cost?",
+        "Environ 25 USD sur evisa.gov.vn. Les sites tiers facturent souvent plus.",
+        "About USD 25 on evisa.gov.vn. Third-party sites often charge more.",
+    ),
+    (
+        "Peut-on prolonger un e-visa sur place ?",
+        "Can you extend an e-visa in Vietnam?",
+        "Les extensions sont limitées et soumises à l'administration locale — "
+        "mieux vaut demander la bonne durée dès le départ (90 j max en e-visa).",
+        "Extensions are limited and subject to local administration — better to "
+        "apply for the right duration upfront (90 days max on e-visa).",
+    ),
+])
+
+
+def _localize_visa_sections(sections, lang):
+    out = []
+    for sec in sections:
+        items = []
+        for it in sec["items"]:
+            row = {
+                "icon": it["icon"],
+                "title": it["title"][lang],
+                "body": it["body"][lang],
+            }
+            if it.get("tips"):
+                row["tips"] = [t[lang] for t in it["tips"]]
+            items.append(row)
+        out.append({
+            "key": sec["key"],
+            "title": sec["title"][lang],
+            "intro": sec["intro"][lang],
+            "items": items,
+        })
+    return out
+
+
 def build_visa(lang: str) -> dict:
+    lang = "en" if lang == "en" else "fr"
     countries = [
         {"code": c["code"], "name": c[lang], "exempt_days": visa_exempt_days(c["code"])}
         for c in _VISA_COUNTRIES
     ]
+    faq = [{"question": f["q"][lang], "answer": f["a"][lang]} for f in _VISA_FAQ]
     return {
         "countries": countries,
         "evisa_url": "https://evisa.gov.vn/",
         "evisa_max_days": 90,
+        "sections": _localize_visa_sections(_VISA_SECTIONS, lang),
+        "faq": faq,
     }
 
 

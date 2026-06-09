@@ -97,16 +97,25 @@ def page_inventory(lang: str = "fr") -> list[dict]:
             "image": _img(persistent_image_url(a.get("image"), a.get("image_photo_id"))),
         })
 
-    # Outils
-    for endpoint, label in (("best_season", t("tools.season", lang)),
-                            ("budget_tool", t("tools.budget", lang)),
-                            ("visa_tool", t("tools.visa", lang)),
-                            ("essentials_tool", t("tools.essentials", lang)),
-                            ("prepare_trip", t("nav.prepare", lang))):
+    # Outils & guides pratiques
+    tool_pages = (
+        ("best_season", "season.title", "season.lead"),
+        ("budget_tool", "tools.budget", "budget.lead"),
+        ("visa_tool", "visa.title", "visa.lead"),
+        ("essentials_tool", "compare.title", "compare.lead"),
+        ("useful_apps", "apps.title", "apps.lead"),
+        ("safety_guide", "safety.title", "safety.lead"),
+        ("customs_guide", "customs.title", "customs.lead"),
+        ("phrases_guide", "phrases.title", "phrases.lead"),
+        ("prepare_trip", "nav.prepare", "prepare.sub"),
+    )
+    for endpoint, title_key, lead_key in tool_pages:
+        title = t(title_key, lang)
+        summary = t(lead_key, lang)
         items.append({
             "id": f"tool:{endpoint}", "group": "Outils",
-            "label": label, "url": _abs(lang_url(endpoint, lang)),
-            "title": label, "summary": "",
+            "label": title, "url": _abs(lang_url(endpoint, lang)),
+            "title": title, "summary": summary,
             "image": _img(DEFAULT_OG),
         })
 

@@ -463,4 +463,161 @@
   .budget-bar { grid-template-columns: 7rem 1fr 3rem; }
   .budget-total__value { font-size: 2.1rem; }
   .tool-callout { flex-direction: column; }
+  .season-planner__controls { grid-template-columns: 1fr; }
+  .travel-guide__grid { grid-template-columns: 1fr; }
+}
+
+/* ── Guides pratiques (sécurité, coutumes, visa sections) ─────────── */
+.travel-guide__section { padding: 3rem 0; }
+.travel-guide__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+.travel-guide__card {
+  padding: 1.35rem 1.5rem;
+  background: var(--white);
+  border: 1px solid var(--rice-dark);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.travel-guide__icon { font-size: 1.6rem; display: block; margin-bottom: 0.5rem; }
+.travel-guide__card h3,
+.travel-guide__card h4 { font-family: var(--font-display); font-size: 1.15rem; margin-bottom: 0.4rem; }
+.travel-guide__card p { color: var(--ink-soft); font-size: 0.92rem; line-height: 1.55; }
+.travel-guide__tips {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.travel-guide__tips li {
+  position: relative;
+  padding-left: 1.25rem;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+.travel-guide__tips li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: var(--teal);
+  font-weight: 700;
+}
+.travel-guide__affiliate { margin-top: 1.5rem; }
+.travel-guide__section-inline { margin-bottom: 2.5rem; }
+
+/* ── Table phrases vietnamiennes ──────────────────────────────────── */
+.phrases-cat { margin-bottom: 2.5rem; }
+.phrases-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 640px;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.phrases-table th,
+.phrases-table td {
+  padding: 0.85rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--rice-dark);
+  vertical-align: top;
+}
+.phrases-table thead th {
+  background: var(--rice);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-muted);
+}
+.phrases-table tbody th { font-weight: 600; width: 34%; }
+.phrases-table__pron { color: var(--ink-muted); font-size: 0.9rem; }
+
+/* ── Planificateur météo ──────────────────────────────────────────── */
+.season-planner {
+  background: var(--white);
+  border: 1px solid var(--rice-dark);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+.season-planner__controls {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+.season-planner__dests { border: none; margin: 0; padding: 0; }
+.season-planner__dests legend {
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+.season-planner__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.season-planner__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  background: var(--rice);
+  border: 1px solid var(--rice-dark);
+  border-radius: 100px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color var(--transition);
+}
+.season-planner__chip:has(input:checked) {
+  border-color: var(--teal);
+  background: rgba(42, 107, 94, 0.08);
+}
+.season-planner__chip input { accent-color: var(--teal); }
+.season-planner__result {
+  display: block;
+  margin-top: 1.25rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+}
+.season-planner__result--ideal { background: rgba(42, 107, 94, 0.12); color: var(--jade); }
+.season-planner__result--good { background: rgba(127, 176, 105, 0.18); color: #3d6b35; }
+.season-planner__result--fair { background: rgba(232, 196, 104, 0.22); color: #7a5f1a; }
+.season-planner__result--avoid { background: rgba(196, 101, 74, 0.12); color: var(--terracotta); }
+.season-planner__result--empty { background: var(--rice); color: var(--ink-muted); font-weight: 500; }
+.season-planner__calendar { margin-top: 1.25rem; overflow-x: auto; }
+.season-planner__matrix { border-collapse: collapse; min-width: 520px; width: 100%; }
+.season-planner__matrix th,
+.season-planner__matrix td {
+  padding: 0.35rem;
+  text-align: center;
+  font-size: 0.72rem;
+}
+.season-planner__matrix th[scope="row"] {
+  text-align: left;
+  font-weight: 600;
+  white-space: nowrap;
+  padding-right: 0.75rem;
+}
+.season-planner__matrix .season-cell {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 3px;
+  display: inline-block;
+}
+.season-card--compact .season-card__head h3 { font-size: 1.1rem; }
+.season-card__cities { font-size: 0.85rem; color: var(--ink-muted); margin-top: 0.15rem; }
+.season-strip {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 3px;
+  margin-top: 0.75rem;
+}
+.season-strip__cell {
+  height: 0.55rem;
+  border-radius: 2px;
 }

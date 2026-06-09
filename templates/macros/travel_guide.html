@@ -1,0 +1,63 @@
+{% macro render_guide_sections(sections) %}
+{% for sec in sections %}
+<section class="travel-guide__section" id="{{ sec.key }}" aria-labelledby="guide-{{ sec.key }}">
+  <div class="container">
+    <header class="section-header section-header--compact">
+      <h2 id="guide-{{ sec.key }}">{{ sec.title }}</h2>
+      <p>{{ sec.intro }}</p>
+    </header>
+    <div class="travel-guide__grid">
+      {% for item in sec.items %}
+      <article class="travel-guide__card">
+        <span class="travel-guide__icon" aria-hidden="true">{{ item.icon }}</span>
+        <h3>{{ item.title }}</h3>
+        <p>{{ item.body }}</p>
+        {% if item.tips %}
+        <ul class="travel-guide__tips">
+          {% for tip in item.tips %}
+          <li>{{ tip }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+    {% if sec.affiliate == 'sim' %}
+    <div class="travel-guide__affiliate">{{ caller('sim') if caller else '' }}</div>
+    {% elif sec.affiliate == 'insurance' %}
+    <div class="travel-guide__affiliate">{{ caller('insurance') if caller else '' }}</div>
+    {% endif %}
+  </div>
+</section>
+{% if sec.affiliate %}<div class="travel-guide__affiliate-wrap">{% endif %}
+{% endfor %}
+{% endmacro %}
+
+{% macro guide_faq(faq_items, title) %}
+{% if faq_items %}
+<section class="section section--alt">
+  <div class="container container--narrow">
+    <h2 class="pillar-section-title">{{ title }}</h2>
+    <div class="pillar-faq">
+      {% for item in faq_items %}
+      <details class="pillar-faq__item">
+        <summary>{{ item.question }}</summary>
+        <p>{{ item.answer }}</p>
+      </details>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endmacro %}
+
+{% macro guide_related_links(links) %}
+{% if links %}
+<nav class="pillar-related" aria-label="{{ t('pillar.related') }}">
+  <span class="pillar-related__label">{{ t('pillar.related') }}</span>
+  {% for link in links %}
+  <a href="{{ link.url }}">{{ link.title }}</a>
+  {% endfor %}
+</nav>
+{% endif %}
+{% endmacro %}

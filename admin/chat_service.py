@@ -194,6 +194,17 @@ def build_knowledge_chunks(lang: str, track_url_fn) -> list[dict]:
     except Exception:
         pass
 
+    try:
+        from data.travel_guides import build_mai_knowledge_chunks
+
+        def _page_url(endpoint: str, page_lang: str) -> str:
+            return _abs(lang_url(endpoint, page_lang))
+
+        for chunk in build_mai_knowledge_chunks(lang, _page_url):
+            add(chunk)
+    except Exception:
+        pass
+
     return chunks
 
 
@@ -217,6 +228,14 @@ def retrieve(query: str, lang: str, track_url_fn, top_n: int = 8) -> list[dict]:
     hay = query.lower()
     if any(w in hay for w in ("hotel", "hôtel", "dormir", "heberg", "héberg", "stay", "carte", "map")):
         top_n = max(top_n, 12)
+    if any(w in hay for w in (
+        "visa", "e-visa", "evisa", "passeport", "formalit",
+        "meteo", "météo", "saison", "pluie", "climat", "weather", "when", "partir", "visit",
+        "secur", "sécur", "arnaque", "scam", "sant", "vaccin", "assurance", "urgence",
+        "coutume", "etiquette", "respect", "temple", "politesse",
+        "phrase", "vietnamien", "vietnamese", "xin chao", "cam on",
+    )):
+        top_n = max(top_n, 14)
     chunks = get_chunks(lang, track_url_fn)
     if not q_tokens:
         return chunks[:top_n]
@@ -232,6 +251,15 @@ def retrieve(query: str, lang: str, track_url_fn, top_n: int = 8) -> list[dict]:
             score += 2
         if chunk.get("group") == "Carte affiliée":
             score += 1
+        if chunk.get("group") in (
+            "Sécurité Vietnam", "Coutumes Vietnam", "Phrases vietnamiennes",
+            "Visa Vietnam", "Météo Vietnam", "Guides pratiques",
+        ):
+            score += 1
+        if chunk.get("id", "").startswith("guide-") and any(
+            t in q_tokens for t in _tokenize("visa meteo securite coutume phrase arnaque vaccin", lang)
+        ):
+            score += 2
         if score > 0:
             scored.append((score, chunk))
 
@@ -452,6 +480,9 @@ def _system_prompt(lang: str) -> str:
             "when they genuinely help (eSIM, insurance, hotels, activities). "
             "Each destination page has an interactive map (#dest-map) with affiliate pins — recommend it when "
             "the user asks where to stay, what to do, or wants a visual plan. "
+            "The site has dedicated guides: travel safety & scams, customs & etiquette, useful Vietnamese phrases, "
+            "visa checker (evisa.gov.vn), weather planner by region/destination, useful apps (Grab), eSIM & insurance — "
+            "recommend the matching page from CONTEXT when relevant. "
             "Tone: warm, enthusiastic, expert, with a few well-placed emojis — never cheesy. "
             "Highlight 2–5 key terms per answer with **double asterisks** (destinations, seasons, durations, practical tips). "
             "Write a COMPLETE message (never end with a colon or an unfinished list). "
@@ -469,6 +500,9 @@ def _system_prompt(lang: str) -> str:
         "cela aide vraiment le voyageur. "
         "Chaque page destination a une carte interactive (#dest-map) avec pins affiliés — recommandez-la quand "
         "l'utilisateur demande où dormir, quoi faire ou un plan visuel. "
+        "Le site propose des guides dédiés : sécurité & arnaques, coutumes & étiquette, phrases utiles en vietnamien, "
+        "test visa (evisa.gov.vn), météo par région/ville avec planificateur, apps utiles (Grab), eSIM & assurance — "
+        "orientez vers la page correspondante du CONTEXTE quand c'est pertinent. "
         "Ton : chaleureux, enthousiaste, expert, quelques emojis bien placés — jamais lourd. "
         "Mets en valeur 2 à 5 mots-clés par réponse avec **double astérisques** (destinations, saisons, durées, conseils pratiques). "
         "Rédige un message COMPLET (ne termine jamais par « : » ni une liste inachevée). "

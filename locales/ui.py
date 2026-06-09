@@ -532,6 +532,9 @@ UI: dict[str, dict[str, str]] = {
     "tools.visa": {"fr": "Visa Vietnam", "en": "Vietnam visa"},
     "tools.essentials": {"fr": "eSIM & assurance", "en": "eSIM & insurance"},
     "tools.apps": {"fr": "Applications utiles", "en": "Useful apps"},
+    "tools.safety": {"fr": "Sécurité & arnaques", "en": "Safety & scams"},
+    "tools.customs": {"fr": "Coutumes", "en": "Customs"},
+    "tools.phrases": {"fr": "Phrases vietnamiennes", "en": "Vietnamese phrases"},
     "footer.tools": {"fr": "Outils voyage", "en": "Travel tools"},
 
     # ── Page Applications utiles ─────────────────────────────────────────
@@ -663,6 +666,43 @@ UI: dict[str, dict[str, str]] = {
         "en": "A single trip often crosses several climates. Follow the dry season "
               "from north to south (Oct–Apr) to maximise good weather.",
     },
+    "season.planner_title": {
+        "fr": "Planificateur météo personnalisé",
+        "en": "Personal weather planner",
+    },
+    "season.planner_sub": {
+        "fr": "Sélectionnez vos destinations et un mois de voyage pour voir si c'est "
+              "une bonne période (idéal, correct ou à éviter).",
+        "en": "Pick your destinations and travel month to see if it's a good time "
+              "(ideal, fair or avoid).",
+    },
+    "season.planner_month": {"fr": "Mois de voyage", "en": "Travel month"},
+    "season.planner_dest": {"fr": "Destinations", "en": "Destinations"},
+    "season.planner_result": {"fr": "Verdict pour votre trip", "en": "Verdict for your trip"},
+    "season.planner_pick": {
+        "fr": "Choisissez au moins une destination et un mois.",
+        "en": "Choose at least one destination and a month.",
+    },
+    "season.planner_ideal": {
+        "fr": "Excellente période pour votre sélection !",
+        "en": "Excellent timing for your selection!",
+    },
+    "season.planner_good": {
+        "fr": "Bonne période — météo généralement favorable.",
+        "en": "Good period — weather usually favourable.",
+    },
+    "season.planner_fair": {
+        "fr": "Période correcte — prévoyez pluie ou chaleur selon la région.",
+        "en": "Fair period — expect rain or heat depending on the region.",
+    },
+    "season.planner_avoid": {
+        "fr": "Période difficile pour au moins une destination — envisagez de décaler.",
+        "en": "Tricky period for at least one destination — consider shifting dates.",
+    },
+    "season.destinations_title": {
+        "fr": "Météo ville par ville",
+        "en": "Weather city by city",
+    },
 
     # ── Calculateur de budget ────────────────────────────────────────
     "budget.eyebrow": {"fr": "Budget voyage", "en": "Trip budget"},
@@ -732,6 +772,64 @@ UI: dict[str, dict[str, str]] = {
         "en": "Indicative information — visa rules change. Always check the official "
               "evisa.gov.vn portal before booking.",
     },
+    "visa.faq_title": {"fr": "Questions fréquentes visa", "en": "Visa FAQ"},
+    "visa.guide_title": {"fr": "Tout savoir sur le visa Vietnam", "en": "Vietnam visa essentials"},
+
+    # ── Sécurité voyage ──────────────────────────────────────────────
+    "safety.nav": {"fr": "Sécurité & conseils", "en": "Safety & tips"},
+    "safety.eyebrow": {"fr": "Voyage serein", "en": "Travel safely"},
+    "safety.title": {
+        "fr": "Sécurité au Vietnam : arnaques, santé & numéros utiles",
+        "en": "Safety in Vietnam: scams, health & emergency numbers",
+    },
+    "safety.lead": {
+        "fr": "Le Vietnam est globalement sûr pour les touristes. Voici les arnaques "
+              "courantes à connaître, les réflexes santé/vaccins, l'assurance, l'eSIM "
+              "et qui contacter en cas de problème.",
+        "en": "Vietnam is generally safe for tourists. Common scams, health & vaccine "
+              "tips, insurance, eSIM and who to contact if something goes wrong.",
+    },
+    "safety.cta_title": {"fr": "Évitez les arnaques au quotidien", "en": "Avoid everyday scams"},
+    "safety.cta_text": {
+        "fr": "Grab, Maps, conversion de devises : notre guide apps pour voyager sans mauvaise surprise.",
+        "en": "Grab, Maps, currency conversion: our apps guide to travel without nasty surprises.",
+    },
+
+    # ── Coutumes ─────────────────────────────────────────────────────
+    "customs.nav": {"fr": "Coutumes & étiquette", "en": "Customs & etiquette"},
+    "customs.eyebrow": {"fr": "Respect & culture", "en": "Respect & culture"},
+    "customs.title": {
+        "fr": "Coutumes au Vietnam : ce qu'il faut savoir",
+        "en": "Vietnamese customs: what you should know",
+    },
+    "customs.lead": {
+        "fr": "Salutations, temples, table, négociation : les bons gestes pour voyager "
+              "respectueusement et être bien accueilli.",
+        "en": "Greetings, temples, dining, bargaining: the right gestures to travel "
+              "respectfully and be welcomed.",
+    },
+    "customs.cta_title": {"fr": "Parlez quelques mots de vietnamien", "en": "Speak a few words of Vietnamese"},
+    "customs.cta_text": {
+        "fr": "Xin chào, cảm ơn, bao nhiêu ? — notre guide de phrases FR→vietnamien et EN→vietnamien.",
+        "en": "Xin chào, cảm ơn, bao nhiêu? — our FR→Vietnamese and EN→Vietnamese phrase guide.",
+    },
+
+    # ── Phrases vietnamiennes ────────────────────────────────────────
+    "phrases.nav": {"fr": "Phrases utiles", "en": "Useful phrases"},
+    "phrases.eyebrow": {"fr": "Survival vietnamien", "en": "Vietnamese survival kit"},
+    "phrases.title": {
+        "fr": "Phrases utiles en vietnamien (FR & EN → vietnamien)",
+        "en": "Useful Vietnamese phrases (FR & EN → Vietnamese)",
+    },
+    "phrases.lead": {
+        "fr": "Salutations, transport, restaurant, urgences : l'essentiel à prononcer "
+              "avec translittération pour vous débrouiller sur place.",
+        "en": "Greetings, transport, dining, emergencies: essentials with "
+              "pronunciation to get by on the ground.",
+    },
+    "phrases.col_source": {"fr": "Français / English", "en": "French / English"},
+    "phrases.col_vi": {"fr": "Vietnamien", "en": "Vietnamese"},
+    "phrases.col_pron": {"fr": "Prononciation", "en": "Pronunciation"},
 
     # ── Comparateurs ─────────────────────────────────────────────────
     "compare.eyebrow": {"fr": "Avant de partir", "en": "Before you go"},
@@ -811,6 +909,48 @@ UI: dict[str, dict[str, str]] = {
               "arnaquer : Grab, Google Maps, XE, Google Translate, eSIM et plus.",
         "en": "The essential apps to travel Vietnam without getting scammed: Grab, "
               "Google Maps, XE, Google Translate, eSIM and more.",
+    },
+    "meta.safety.title": {
+        "fr": "Sécurité Vietnam 2026 — arnaques, santé, assurance, numéros d'urgence",
+        "en": "Vietnam safety 2026 — scams, health, insurance, emergency numbers",
+    },
+    "meta.safety.desc": {
+        "fr": "Guide sécurité Vietnam : arnaques taxi et change, vaccins, assurance "
+              "voyage, eSIM, numéros d'urgence et consulats. Conseils pratiques 2026.",
+        "en": "Vietnam safety guide: taxi & exchange scams, vaccines, travel insurance, "
+              "eSIM, emergency numbers and consulates. Practical 2026 tips.",
+    },
+    "meta.safety.kw": {
+        "fr": "sécurité Vietnam, arnaques Vietnam, santé voyage Vietnam, vaccins Vietnam",
+        "en": "Vietnam safety, Vietnam scams, Vietnam travel health, Vietnam vaccines",
+    },
+    "meta.customs.title": {
+        "fr": "Coutumes Vietnam — étiquette, temples, repas & tabous",
+        "en": "Vietnam customs — etiquette, temples, dining & taboos",
+    },
+    "meta.customs.desc": {
+        "fr": "Coutumes et étiquette au Vietnam : salutations, tenue dans les temples, "
+              "baguettes, pourboires, négociation et gestes à éviter.",
+        "en": "Customs and etiquette in Vietnam: greetings, temple dress, chopsticks, "
+              "tipping, bargaining and gestures to avoid.",
+    },
+    "meta.customs.kw": {
+        "fr": "coutumes Vietnam, étiquette Vietnam, respect Vietnam voyage",
+        "en": "Vietnam customs, Vietnam etiquette, Vietnam travel respect",
+    },
+    "meta.phrases.title": {
+        "fr": "Phrases utiles vietnamien — guide prononciation FR & EN",
+        "en": "Useful Vietnamese phrases — FR & EN pronunciation guide",
+    },
+    "meta.phrases.desc": {
+        "fr": "Lexique voyage vietnamien : bonjour, merci, transport, restaurant, "
+              "urgences avec translittération pour francophones et anglophones.",
+        "en": "Vietnamese travel phrasebook: hello, thanks, transport, dining, "
+              "emergencies with pronunciation for French and English speakers.",
+    },
+    "meta.phrases.kw": {
+        "fr": "phrases vietnamien, parler vietnamien voyage, vocabulaire Vietnam",
+        "en": "Vietnamese phrases, learn Vietnamese travel, Vietnam vocabulary",
     },
 }
 
