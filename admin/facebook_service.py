@@ -133,18 +133,31 @@ def _handle(resp: requests.Response) -> dict:
 
 
 def test_connection() -> dict:
-    """Vérifie le token/page : renvoie le nom de la page et le nb d'abonnés."""
+    """Vérifie le token/page : renvoie le nom de la page (+ abonnés si permission).
+
+    On tente d'abord avec `fan_count` (nécessite pages_read_engagement) ; si Facebook
+    refuse faute de cette permission, on retombe sur `name,link` seuls — la connexion
+    et la PUBLICATION (pages_manage_posts) restent valides sans pages_read_engagement.
+    """
     token, page_id = get_token(), get_page_id()
     if not (token and page_id):
         raise FacebookError("Renseignez l'ID de page et le token d'accès.")
-    try:
-        resp = requests.get(
-            f"{GRAPH}/{page_id}",
-            params={"fields": "name,fan_count,link", "access_token": token},
-            timeout=TIMEOUT,
-        )
-    except requests.RequestException as exc:
-        raise FacebookError(f"Connexion à Facebook impossible : {exc}") from exc
+
+    def _fetch(fields: str) -> requests.Response:
+        try:
+            return requests.get(
+                f"{GRAPH}/{page_id}",
+                params={"fields": fields, "access_token": token},
+                timeout=TIMEOUT,
+            )
+        except requests.RequestException as exc:
+            raise FacebookError(f"Connexion à Facebook impossible : {exc}") from exc
+
+    resp = _fetch("name,fan_count,link")
+    payload = resp.json() if resp.content else {}
+    if resp.status_code >= 400 or "error" in payload:
+        # Probable manque de pages_read_engagement → on réessaie sans fan_count.
+        resp = _fetch("name,link")
     return _handle(resp)
 
 
