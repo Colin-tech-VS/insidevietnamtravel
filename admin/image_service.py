@@ -409,6 +409,27 @@ def _local_pool_path(photo_id: str) -> Path:
     return POOL_IMAGES_DIR / f"{photo_id}.webp"
 
 
+_STATIC_ROOT = Path(__file__).parent.parent / "static"
+
+
+def persistent_image_url(image_url: str | None, photo_id: str | None) -> str | None:
+    """Garantit une URL d'image présente au rendu.
+
+    Les images écrites au runtime (static/images/blog|destinations/) vivent sur le FS
+    éphémère de Scalingo : après un redéploiement elles disparaissent, alors que l'article
+    (en base Supabase) garde son URL → image cassée. Si le fichier pointé n'existe pas, on
+    bascule sur la photo du POOL (commitée dans git, donc toujours là) via image_photo_id.
+    Corrige donc d'un coup tous les articles générés AVANT le passage en référence pool.
+    """
+    if image_url and image_url.startswith("/static/"):
+        rel = image_url.removeprefix("/static/")
+        if (_STATIC_ROOT / rel).is_file():
+            return image_url
+    if photo_id and _local_pool_path(photo_id).exists():
+        return f"/static/images/pool/{photo_id}.webp"
+    return image_url
+
+
 def _article_image_meta(article: dict, slug: str, photo_id: str, placeholder: bool,
                         image_url: str | None = None) -> dict:
     city = article.get("city", "")

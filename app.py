@@ -40,6 +40,7 @@ from seo_utils import (
 )
 from admin import admin_bp
 from admin import db as analytics_db
+from admin.image_service import persistent_image_url
 from admin.store import get_articles, get_article_by_slug, get_categories, get_settings, get_destinations_dict
 from data.affiliate_urls import (
     LOCATION_META,
@@ -113,7 +114,10 @@ def healthz():
 
 
 def _articles(lang=None):
-    return get_articles(lang or get_lang())
+    articles = get_articles(lang or get_lang())
+    for a in articles:
+        a["image"] = persistent_image_url(a.get("image"), a.get("image_photo_id"))
+    return articles
 
 
 def _categories(lang=None):
@@ -121,7 +125,10 @@ def _categories(lang=None):
 
 
 def _destinations(lang=None):
-    return get_destinations_dict(lang or get_lang())
+    dests = get_destinations_dict(lang or get_lang())
+    for d in dests.values():
+        d["image"] = persistent_image_url(d.get("image"), d.get("image_photo_id"))
+    return dests
 
 
 def _itineraries(lang=None):
@@ -600,6 +607,9 @@ def article(slug):
     post = get_article_by_slug(slug, lang)
     if not post:
         abort(404)
+    # Repli image : si le fichier (FS éphémère) a disparu après un redéploiement, on
+    # bascule sur la photo du pool (commitée) — corrige les articles générés avant le fix.
+    post["image"] = persistent_image_url(post.get("image"), post.get("image_photo_id"))
     articles = _articles(lang)
     related = [a for a in articles if a["category"] == post["category"] and a["slug"] != slug][:3]
     return render_template(
@@ -924,6 +934,7 @@ def destination_page(slug):
     dest = _destinations(lang).get(slug)
     if not dest:
         abort(404)
+    dest = {**dest, "image": persistent_image_url(dest.get("image"), dest.get("image_photo_id"))}
     return render_template(
         "destination.html",
         dest=dest,
