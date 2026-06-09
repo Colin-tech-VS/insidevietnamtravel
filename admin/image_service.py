@@ -49,6 +49,18 @@ PIXABAY_READ_TIMEOUT = 10
 # génération du contenu se termine TOUJOURS. Le thread orphelin meurt seul ensuite.
 IMAGE_STEP_HARD_DEADLINE = 15      # secondes max, tout compris, pour l'étape image
 
+# Échéance dure de l'ENCODAGE WebP (décodage + redimension + 3 écritures method=4).
+# L'encodage était jusqu'ici HORS de tout plafond : sur un conteneur bridé en CPU,
+# `method=6` ×3 pouvait pendre longtemps SANS aucun log entre « IMAGE start » et
+# « IMAGE done » — d'où le « ça bloque et rien n'indique pourquoi ». On le borne donc
+# comme le reste ; au-delà, on dépose une version rapide (method=0) et on continue.
+IMAGE_ENCODE_DEADLINE = 10         # secondes max pour l'encodage WebP + variantes
+
+# Effort de compression WebP (0 rapide … 6 exhaustif). `method=6` est très lent pour un
+# gain de taille marginal vs `method=4` (défaut libwebp) ; sur l'hébergeur bridé il était
+# une cause directe de lenteur de l'étape image. On reste à 4 : bon compromis vitesse/poids.
+WEBP_METHOD = 4
+
 # Photos Unsplash vérifiées — scènes Vietnam uniquement (id, description)
 VIETNAM_PHOTO_POOL: list[tuple[str, str]] = [
     ("1528127269322-539801943592", "Baie d'Halong / Hoi An, bateaux"),
@@ -478,8 +490,16 @@ def _to_webp(raw: bytes, out_path: Path) -> None:
     img = Image.open(io.BytesIO(raw)).convert("RGB")
     img = img.resize((1200, 675), Image.Resampling.LANCZOS)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    img.save(out_path, "WEBP", quality=82, method=6)
+    img.save(out_path, "WEBP", quality=82, method=WEBP_METHOD)
     _create_responsive_variants(img, out_path)
+
+
+def _write_webp_fast(raw: bytes, out_path: Path) -> None:
+    """Écriture WebP minimale (method=0, sans variantes) — repli si l'encodage soigné
+    dépasse son échéance. Garantit qu'un fichier image valide existe toujours."""
+    img = Image.open(io.BytesIO(raw)).convert("RGB").resize((1200, 675), Image.Resampling.LANCZOS)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    img.save(out_path, "WEBP", quality=80, method=0)
 
 
 def _create_responsive_variants(img: Image.Image, full_path: Path) -> None:
@@ -491,7 +511,7 @@ def _create_responsive_variants(img: Image.Image, full_path: Path) -> None:
             continue
         nh = max(1, int(h * target_w / w))
         resized = img.resize((target_w, nh), Image.Resampling.LANCZOS)
-        resized.save(out, "WEBP", quality=quality, method=6)
+        resized.save(out, "WEBP", quality=quality, method=WEBP_METHOD)
 
 
 def ensure_responsive_variants() -> int:
@@ -590,7 +610,14 @@ def attach_image_to_article(
 
     if force_regenerate and out_path.exists():
         out_path.unlink()
-    _to_webp(raw, out_path)
+    # Encodage borné + tracé : c'était le dernier maillon HORS échéance, sans aucun log,
+    # donc le coupable invisible quand « ça bloque ». Au-delà de l'échéance, repli rapide.
+    log(f"IMAGE encode start slug={slug} bytes={len(raw)}")
+    try:
+        _run_with_deadline(_to_webp, IMAGE_ENCODE_DEADLINE, raw, out_path)
+    except Exception as exc:  # noqa: BLE001
+        log(f"IMAGE encode KO apres {time.time() - t0:.1f}s -- {type(exc).__name__}: {str(exc)[:120]}")
+        _write_webp_fast(raw, out_path)
     log(f"IMAGE done  slug={slug} en {time.time() - t0:.1f}s placeholder={placeholder} photo_id={photo_id}")
 
     city = article.get("city", "")
