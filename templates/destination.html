@@ -2,6 +2,7 @@
 
 {% from "macros/affiliates.html" import hotel_card, activity_card, gyg_activities_widget, viator_activities_widget, sim_banner, insurance_banner, affiliate_disclosure with context %}
 {% from "macros/images.html" import responsive_img with context %}
+{% from "macros/map.html" import destination_map with context %}
 {% from "macros/seo.html" import json_ld_graph, og_image_tags with context %}
 
 {% block og_type %}article{% endblock %}
@@ -96,6 +97,8 @@
         {% endfor %}
       </ul>
     </section>
+
+    {{ destination_map(dest.slug) }}
 
     <section class="content-block">
       <h2>{{ t('dest.hotels') }}</h2>

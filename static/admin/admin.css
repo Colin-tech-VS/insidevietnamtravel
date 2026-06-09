@@ -2545,3 +2545,30 @@ body.is-admin-nav-open { overflow: hidden; }
   .social-mode__opt { flex: none; }
   .social-compose__bar .social-counter { margin-left: 0; width: 100%; }
 }
+
+/* Carte admin */
+.admin-map-preview {
+  width: 100%;
+  height: 360px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--rice-dark);
+  overflow: hidden;
+}
+.panel--warn { border-left: 3px solid var(--warn, #c4a053); }
+.panel__head-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.panel__head-row h2 { margin: 0; }
+.inline-form {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.map-pending-form select { max-width: 180px; }
+.flash--warn { background: #fef9ec; border-color: #e8d5a8; color: #7a5c1e; }

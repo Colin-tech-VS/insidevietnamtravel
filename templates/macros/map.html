@@ -1,0 +1,24 @@
+{% macro destination_map(destination_slug) %}
+<section class="content-block dest-map-section" aria-labelledby="dest-map-title">
+  <header class="section-header section-header--compact">
+    <h2 id="dest-map-title">{% if lang == 'en' %}Map — hotels & activities{% else %}Carte — hôtels & activités{% endif %}</h2>
+    <p>{% if lang == 'en' %}Affiliate picks on the map — tap a pin to book.{% else %}Nos recommandations sur la carte — cliquez un pin pour réserver (liens affiliés).{% endif %}</p>
+  </header>
+  <div class="dest-map-wrap">
+    <div id="dest-map" class="dest-map"
+         data-api-url="{{ url_for('api_map_points', slug=destination_slug) }}"
+         data-lang="{{ lang }}"
+         role="region"
+         aria-label="{% if lang == 'en' %}Interactive map{% else %}Carte interactive{% endif %}"></div>
+    <div class="dest-map-legend" aria-hidden="true">
+      <span class="dest-map-legend__item dest-map-legend__item--hotel">{% if lang == 'en' %}Hotels{% else %}Hôtels{% endif %}</span>
+      <span class="dest-map-legend__item dest-map-legend__item--activity">{% if lang == 'en' %}Activities{% else %}Activités{% endif %}</span>
+      <span class="dest-map-legend__item dest-map-legend__item--food">{% if lang == 'en' %}Food{% else %}Gastro{% endif %}</span>
+    </div>
+  </div>
+  <p class="dest-map-note">{% if lang == 'en' %}Free map · OpenStreetMap · partner links{% else %}Carte gratuite · OpenStreetMap · liens partenaires{% endif %}</p>
+</section>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
+<script src="{{ url_for('static', filename='js/destination-map.js') }}" defer></script>
+{% endmacro %}

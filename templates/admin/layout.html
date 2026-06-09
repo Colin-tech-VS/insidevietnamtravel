@@ -81,6 +81,9 @@
         <a href="{{ url_for('admin.destinations_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.destinations_admin' %}is-active{% endif %}">
           <span class="admin-nav__icon" aria-hidden="true">🏙</span> Destinations
         </a>
+        <a href="{{ url_for('admin.map_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.map_admin' %}is-active{% endif %}">
+          <span class="admin-nav__icon" aria-hidden="true">🗺</span> Carte
+        </a>
         <a href="{{ url_for('admin.newsletter_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.newsletter_admin' %}is-active{% endif %}">
           <span class="admin-nav__icon" aria-hidden="true">✉</span> Newsletter
         </a>

@@ -487,6 +487,21 @@ def affiliate_redirect(provider):
     return redirect(target)
 
 
+# ── Carte interactive (points affiliés) ───────────────────────────────
+
+@app.route("/api/map/<slug>.json")
+def api_map_points(slug):
+    from flask import jsonify
+    from admin import map_service
+
+    lang = get_lang()
+    dest = _destinations(lang).get(slug)
+    if not dest:
+        return jsonify({"ok": False, "error": "Not found"}), 404
+    points = map_service.get_public_map_points(slug, lang, tracked_affiliate_url)
+    return jsonify({"ok": True, "destination": slug, "name": dest.get("name", slug), "points": points})
+
+
 # ── Homepage ──────────────────────────────────────────────────────────
 
 @app.route("/")

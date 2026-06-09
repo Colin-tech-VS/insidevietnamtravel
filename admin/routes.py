@@ -862,6 +862,70 @@ def social_publish():
     return redirect(url_for("admin.social"))
 
 
+@admin_bp.route("/map", methods=["GET", "POST"])
+@login_required
+def map_admin():
+    from admin import map_service
+
+    if request.method == "POST":
+        action = request.form.get("action")
+        try:
+            if action == "add":
+                result = map_service.add_map_point(request.form)
+                if result["status"] == "published":
+                    flash(f"Point ajouté sur la carte de {result['slug']}.", "success")
+                else:
+                    flash(result["message"], "warn")
+            elif action == "delete":
+                pid = request.form.get("point_id", "")
+                pending = request.form.get("pending") == "1"
+                if pid and map_service.delete_map_point(pid, pending=pending):
+                    flash("Point supprimé.", "success")
+            elif action == "publish_pending":
+                pid = request.form.get("point_id", "")
+                slug = request.form.get("destination_slug", "")
+                if pid and map_service.publish_pending_point(pid, slug):
+                    flash("Point publié sur la carte.", "success")
+            elif action == "sync":
+                result = map_service.sync_from_destinations(replace=request.form.get("replace") == "1")
+                msg = f"{result['added']} point(s) importé(s) depuis les destinations."
+                if result.get("error_count"):
+                    msg += f" {result['error_count']} adresse(s) non géolocalisée(s)."
+                flash(msg, "success" if result["added"] else "warn")
+        except ValueError as exc:
+            flash(str(exc), "error")
+        except Exception as exc:  # noqa: BLE001
+            flash(f"Erreur : {exc}", "error")
+        return redirect(url_for("admin.map_admin"))
+
+    store = map_service.get_map_store()
+    return render_template(
+        "admin/map.html",
+        points=store.get("points", []),
+        pending=store.get("pending", []),
+        dest_options=map_service.destination_options(),
+        city_options=[c for c in ALL_CITY_VALUES if c != "Tout le Vietnam"],
+        kind_options=list(map_service.KIND_LABELS.keys()),
+        provider_options=list(map_service.PROVIDER_LABELS.keys()),
+    )
+
+
+@admin_bp.route("/api/map/geocode", methods=["POST"])
+@login_required
+def api_map_geocode():
+    from admin import map_service
+
+    payload = request.get_json(silent=True) or {}
+    address = (payload.get("address") or "").strip()
+    try:
+        geo = map_service.geocode_address(address)
+        return jsonify({"ok": True, **geo})
+    except ValueError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    except Exception as exc:  # noqa: BLE001
+        return jsonify({"ok": False, "error": str(exc)}), 502
+
+
 @admin_bp.route("/api/affiliate-verify", methods=["POST"])
 @login_required
 def api_affiliate_verify():
