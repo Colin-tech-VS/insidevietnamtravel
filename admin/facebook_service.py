@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import os
 import re
+import time
 import unicodedata
 from urllib.parse import urlencode, urlparse, urlunparse, parse_qsl
 
@@ -24,6 +25,10 @@ import requests
 GRAPH_VERSION = "v21.0"
 GRAPH = f"https://graph.facebook.com/{GRAPH_VERSION}"
 TIMEOUT = (8, 25)  # (connexion, lecture)
+
+# Délai minimum entre deux publications (anti double-clic / anti-spam Facebook).
+PUBLISH_COOLDOWN_S = 60
+_last_publish_ts = 0.0
 
 # Nomenclature UTM FIXE pour TOUT lien publié sur Facebook (cohérence analytics).
 UTM_SOURCE = "facebook"
@@ -104,7 +109,50 @@ def add_utm(url: str, campaign: str, content: str | None = None) -> str:
 # ── Graph API ─────────────────────────────────────────────────────────────
 
 class FacebookError(RuntimeError):
-    pass
+    """Erreur Graph API, avec code/sous-code Facebook pour un diagnostic actionnable."""
+
+    def __init__(self, message: str, code: int | None = None, subcode: int | None = None):
+        super().__init__(message)
+        self.code = code
+        self.subcode = subcode
+
+
+# Codes d'erreur Graph connus → explication + marche à suivre (en français).
+# Réf. https://developers.facebook.com/docs/graph-api/guide/error-handling
+_ERROR_HELP: dict[int, str] = {
+    368: (
+        "Facebook a déclenché son blocage anti-spam TEMPORAIRE sur la page ou le compte "
+        "(erreur 368). Ce n'est pas lié au nombre de posts envoyés depuis le site : ce blocage "
+        "touche souvent la toute première publication via API quand l'app Meta, la page ou le "
+        "token sont récents. Que faire : 1) attendez quelques heures (jusqu'à 24 h) avant de "
+        "réessayer ; 2) vérifiez « Statut du compte » dans Meta Business Suite "
+        "(business.facebook.com) pour lever une éventuelle restriction ; 3) publiez d'abord un "
+        "post manuellement depuis Facebook pour « réchauffer » la page ; 4) si votre app Meta "
+        "est en mode Développement, vérifiez qu'elle est bien la vôtre et que le token vient "
+        "d'un admin de la page."
+    ),
+    4: "Limite d'appels API de l'application atteinte (erreur 4). Réessayez dans une heure.",
+    17: "Limite d'appels API de l'utilisateur atteinte (erreur 17). Réessayez dans une heure.",
+    32: "Limite d'appels API de la page atteinte (erreur 32). Réessayez dans une heure.",
+    613: "Limite de débit API atteinte (erreur 613). Réessayez dans une heure.",
+    190: (
+        "Token d'accès invalide ou expiré (erreur 190). Regénérez un Page Access Token "
+        "longue durée et enregistrez-le dans la configuration ci-dessus."
+    ),
+    200: (
+        "Permission manquante (erreur 200) : le token doit avoir la permission "
+        "pages_manage_posts et provenir d'un admin de la page."
+    ),
+    100: "Paramètre invalide (erreur 100) : vérifiez l'ID de page et le lien/l'image du post.",
+    506: "Publication en double détectée par Facebook (erreur 506) : modifiez le texte avant de republier.",
+}
+
+
+def friendly_error(exc: Exception) -> str:
+    """Message clair pour l'UI : explication connue si code identifié, sinon message brut."""
+    if isinstance(exc, FacebookError) and exc.code in _ERROR_HELP:
+        return _ERROR_HELP[exc.code]
+    return str(exc)
 
 
 def _post(path: str, data: dict) -> dict:
@@ -128,8 +176,21 @@ def _handle(resp: requests.Response) -> dict:
     if resp.status_code >= 400 or "error" in payload:
         err = payload.get("error", {})
         msg = err.get("message") or f"Erreur Facebook (HTTP {resp.status_code})"
-        raise FacebookError(msg)
+        raise FacebookError(msg, code=err.get("code"), subcode=err.get("error_subcode"))
     return payload
+
+
+def _check_cooldown() -> None:
+    """Empêche deux publications rapprochées (double-clic, rafale) qui nourrissent
+    le détecteur de spam de Facebook. Garde-fou local au processus, best-effort."""
+    global _last_publish_ts
+    elapsed = time.monotonic() - _last_publish_ts
+    if _last_publish_ts and elapsed < PUBLISH_COOLDOWN_S:
+        wait = int(PUBLISH_COOLDOWN_S - elapsed) + 1
+        raise FacebookError(
+            f"Publication trop rapprochée de la précédente : patientez {wait} s "
+            "(protection contre les doublons et le blocage anti-spam Facebook)."
+        )
 
 
 def test_connection() -> dict:
@@ -163,12 +224,20 @@ def test_connection() -> dict:
 
 def publish_link(message: str, link: str) -> dict:
     """Publie un post avec lien (Facebook génère l'aperçu OG de la page)."""
-    return _post("feed", {"message": message, "link": link})
+    global _last_publish_ts
+    _check_cooldown()
+    result = _post("feed", {"message": message, "link": link})
+    _last_publish_ts = time.monotonic()
+    return result
 
 
 def publish_photo(caption: str, image_url: str) -> dict:
     """Publie une photo (grande image) avec légende. image_url doit être public."""
-    return _post("photos", {"caption": caption, "url": image_url, "published": "true"})
+    global _last_publish_ts
+    _check_cooldown()
+    result = _post("photos", {"caption": caption, "url": image_url, "published": "true"})
+    _last_publish_ts = time.monotonic()
+    return result
 
 
 def post_permalink(result: dict) -> str:

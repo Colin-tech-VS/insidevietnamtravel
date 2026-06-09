@@ -160,6 +160,7 @@
   });
 
   // ── Soumission ──
+  var publishBtn = form.querySelector(".social-publish");
   form.addEventListener("submit", function (e) {
     syncMessage();
     fCampaign.value = sanitizeCampaign(fCampaign.value || defaultCampaign());
@@ -167,6 +168,13 @@
     if (currentMode() === "new" && !fImage.value) {
       e.preventDefault();
       alert("Une image est obligatoire pour un contenu nouveau.");
+      return;
+    }
+    // Anti double-clic : un second envoi rapproché ferait deux posts et
+    // nourrirait le détecteur de spam de Facebook.
+    if (publishBtn) {
+      publishBtn.disabled = true;
+      publishBtn.innerHTML = "⏳ Publication en cours…";
     }
   });
 
