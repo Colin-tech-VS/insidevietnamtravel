@@ -283,6 +283,12 @@ def seo_website():
 
 
 @app.template_global()
+def pillar_backlinks(endpoint: str, slug: str | None = None) -> list[dict]:
+    """Maillage retour : pilier(s) de silo référençant cette page (contenu → pilier)."""
+    return pillars.find_pillars_for(endpoint, slug, get_lang(), lang_url)
+
+
+@app.template_global()
 def geo_faq_items():
     from geo_utils import geo_faq_for_lang
     return geo_faq_for_lang(get_lang())

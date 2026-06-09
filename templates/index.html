@@ -45,6 +45,24 @@
   </div>
 </section>
 
+<section class="section section--alt" aria-labelledby="pillars-title">
+  <div class="container">
+    <header class="section-header">
+      <h2 id="pillars-title">{{ t('home.pillars.title') }}</h2>
+      <p>{{ t('home.pillars.sub') }}</p>
+    </header>
+    <div class="pillars-grid">
+      {% for p in pillars %}
+      <a class="pillar-tile" href="{{ p.url }}">
+        <span class="pillar-tile__title">{{ p.title }}</span>
+        <span class="pillar-tile__lede">{{ p.lede }}</span>
+        <span class="pillar-tile__arrow" aria-hidden="true">→</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
 <section id="destinations" class="section" aria-labelledby="dest-title">
   <div class="container">
     <header class="section-header">

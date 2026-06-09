@@ -48,6 +48,11 @@ UI: dict[str, dict[str, str]] = {
     },
     "home.hero.cta_dest": {"fr": "Explorer les destinations", "en": "Explore destinations"},
     "home.hero.cta_pdf": {"fr": "Télécharger le guide PDF", "en": "Download the PDF guide"},
+    "home.pillars.title": {"fr": "Par où commencer", "en": "Where to start"},
+    "home.pillars.sub": {
+        "fr": "Nos guides piliers pour préparer chaque facette de votre voyage au Vietnam",
+        "en": "Our pillar guides to plan every part of your trip to Vietnam",
+    },
     "home.dest.title": {"fr": "Destinations au Vietnam", "en": "Destinations in Vietnam"},
     "home.dest.sub": {
         "fr": "Guides complets par ville : que faire, où dormir, activités incontournables",
@@ -149,6 +154,7 @@ UI: dict[str, dict[str, str]] = {
 
     # Piliers SEO (hubs thématiques)
     "pillar.soon": {"fr": "Bientôt", "en": "Coming soon"},
+    "pillar.part_of": {"fr": "Ce guide fait partie de", "en": "Part of the guide"},
     "pillar.related_destinations": {"fr": "Destinations associées", "en": "Related destinations"},
     "pillar.faq": {"fr": "Questions fréquentes", "en": "Frequently asked questions"},
     "pillar.related": {"fr": "Guides liés", "en": "Related guides"},
@@ -213,6 +219,8 @@ UI: dict[str, dict[str, str]] = {
 
     # Article
     "article.read_time": {"fr": "min de lecture", "en": "min read"},
+    "article.by": {"fr": "Par", "en": "By"},
+    "article.updated": {"fr": "Mis à jour le", "en": "Updated on"},
     "article.new": {"fr": "Nouveau", "en": "New"},
     "article.related": {"fr": "Articles similaires", "en": "Related articles"},
     "article.updated": {"fr": "Mis à jour le", "en": "Updated on"},

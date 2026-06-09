@@ -485,6 +485,25 @@ def localize_hub(key: str, raw: dict, lang: str, lang_url: Callable[..., str]) -
     }
 
 
+def find_pillars_for(ep: str, slug: str | None,
+                     lang: str, lang_url: Callable[..., str]) -> list[dict]:
+    """Piliers-hub qui référencent ce contenu (maillage RETOUR : contenu → pilier).
+
+    Inverse les clusters : permet à une page article/destination/outil d'afficher un
+    lien remontant vers le(s) pilier(s) de son silo, ce qui « ferme » le silo SEO.
+    """
+    out: list[dict] = []
+    for raw in PILLARS.values():
+        if raw.get("kind") != "hub":
+            continue
+        for cluster in raw.get("clusters", []):
+            if any(l.get("ep") == ep and l.get("slug") == slug for l in cluster["links"]):
+                out.append({"title": _pick(raw["title"], lang),
+                            "url": pillar_url(raw, lang, lang_url)})
+                break
+    return out
+
+
 def thematic_list(lang: str, lang_url: Callable[..., str]) -> list[dict]:
     """Liste légère des piliers thématiques (nav / homepage / maillage)."""
     items = []

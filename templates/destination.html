@@ -77,6 +77,14 @@
       <div class="prose">{{ dest.overview | safe }}</div>
     </section>
 
+    {% set silo_pillars = pillar_backlinks('destination_page', dest.slug) %}
+    {% if silo_pillars %}
+    <nav class="pillar-backlink" aria-label="{{ t('pillar.part_of') }}">
+      <span class="pillar-backlink__label">{{ t('pillar.part_of') }}</span>
+      {% for p in silo_pillars %}<a class="pillar-chip" href="{{ p.url }}">{{ p.title }}</a>{% endfor %}
+    </nav>
+    {% endif %}
+
     <section class="content-block">
       <h2>{% if lang == 'en' %}Top things to do in {{ dest.name }}{% else %}Top choses à faire à {{ dest.name }}{% endif %}</h2>
       <ul class="things-list">

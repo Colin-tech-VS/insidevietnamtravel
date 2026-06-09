@@ -27,8 +27,8 @@
   "headline": article.title,
   "description": meta_description,
   "datePublished": article.date,
-  "dateModified": article.date,
-  "author": {"@type": "Organization", "name": site.SITE_AUTHOR},
+  "dateModified": article.updated_at or article.date,
+  "author": {"@type": "Organization", "name": site.SITE_AUTHOR, "url": site.SITE_URL ~ lang_url('about')},
   "publisher": {"@type": "Organization", "name": site.SITE_NAME, "url": site.SITE_URL},
   "mainEntityOfPage": {"@type": "WebPage", "@id": canonical_url},
   "articleSection": article.category_label,
@@ -85,7 +85,12 @@
       <h1>{{ article.title }}</h1>
       <p class="article-excerpt">{{ article.excerpt }}</p>
       <div class="article-meta">
+        <span class="article-byline">{{ t('article.by') }} <a href="{{ lang_url('about') }}">{{ site.SITE_AUTHOR }}</a></span>
+        {% if article.updated_at and article.updated_at != article.date %}
+        <span>{{ t('article.updated') }} <time datetime="{{ article.updated_at }}">{{ article.updated_at }}</time></span>
+        {% else %}
         <time datetime="{{ article.date }}">{{ article.date }}</time>
+        {% endif %}
         <span>{{ article.read_time }} {{ t('article.read_time') }}</span>
       </div>
       <div class="article-tags">
@@ -107,6 +112,17 @@
       {{ insurance_banner() }}
       {% else %}
       {{ pdf_banner() }}
+      {% endif %}
+      {% set silo_pillars = pillar_backlinks('article', article.slug) %}
+      {% if silo_pillars %}
+      <div class="sidebar-card sidebar-card--pillar">
+        <h3>{{ t('pillar.part_of') }}</h3>
+        <ul>
+          {% for p in silo_pillars %}
+          <li><a href="{{ p.url }}">{{ p.title }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
       {% endif %}
       <div class="sidebar-card">
         <h3>{{ t('article.related') }}</h3>

@@ -44,6 +44,14 @@
   </div>
 </header>
 
+{% set silo_pillars = pillar_backlinks('visa_tool') %}
+{% if silo_pillars %}
+<div class="container"><nav class="pillar-backlink" aria-label="{{ t('pillar.part_of') }}">
+  <span class="pillar-backlink__label">{{ t('pillar.part_of') }}</span>
+  {% for p in silo_pillars %}<a class="pillar-chip" href="{{ p.url }}">{{ p.title }}</a>{% endfor %}
+</nav></div>
+{% endif %}
+
 <section class="section">
   <div class="container">
     <div class="visa-tool">

@@ -691,6 +691,11 @@ body.is-nav-open { overflow: hidden; }
   color: var(--white);
 }
 
+.article-hero--with-image .article-meta a {
+  color: var(--white);
+  text-decoration: underline;
+}
+
 .article-hero__labels {
   display: flex;
   flex-wrap: wrap;
@@ -3197,3 +3202,62 @@ a.pillar-card:hover .pillar-card__arrow { opacity: 1; transform: translateX(0); 
   .pillar-cluster__grid { grid-template-columns: 1fr; }
   .pillar-cta { flex-direction: column; align-items: flex-start; }
 }
+
+/* Maillage retour : lien remontant contenu → pilier */
+.pillar-backlink {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.85rem;
+  margin: 0 0 1.5rem;
+}
+.pillar-backlink__label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-muted);
+}
+.sidebar-card--pillar { border-left: 3px solid var(--gold); }
+.sidebar-card--pillar a { font-weight: 600; }
+
+/* Grille des piliers sur la homepage (hub principal → silos) */
+.pillars-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+.pillar-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1.5rem 2.25rem 1.5rem 1.5rem;
+  background: var(--white);
+  border: 1px solid var(--rice-dark);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
+  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+}
+.pillar-tile:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--teal-light);
+}
+.pillar-tile__title {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--teal);
+}
+.pillar-tile__lede { font-size: 0.9rem; line-height: 1.5; color: var(--ink-muted); }
+.pillar-tile__arrow {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.25rem;
+  color: var(--gold);
+  font-size: 1.1rem;
+  transition: transform var(--transition);
+}
+.pillar-tile:hover .pillar-tile__arrow { transform: translateX(4px); }
