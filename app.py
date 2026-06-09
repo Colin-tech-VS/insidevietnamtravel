@@ -167,6 +167,28 @@ def track_page_view():
     ).start()
 
 
+@app.url_defaults
+def add_static_version(endpoint, values):
+    """Cache-busting des assets statiques : ajoute ?v=<mtime> à chaque URL static.
+
+    Les statiques sont servis en `immutable` pendant 1 an (perf), donc sans ce
+    paramètre le navigateur garde l'ANCIEN CSS/JS en cache et ne revoit jamais une
+    correction (ex. le responsive) — sauf en navigation privée, qui part sans cache.
+    Le mtime change à chaque modif du fichier → nouvelle URL → le navigateur la
+    recharge ; les fichiers inchangés gardent leur cache long.
+    """
+    if endpoint != "static" or "v" in values:
+        return
+    filename = values.get("filename")
+    if not filename:
+        return
+    try:
+        mtime = os.stat(os.path.join(app.static_folder, filename)).st_mtime
+        values["v"] = int(mtime)
+    except OSError:
+        pass
+
+
 @app.after_request
 def add_performance_headers(response):
     if request.path.startswith("/static/"):
