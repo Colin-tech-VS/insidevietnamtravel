@@ -336,7 +336,26 @@
 
 
 
-      {% if draft.image %}
+      {% if draft.image_placeholder %}
+
+      <figure class="draft-cover draft-cover--placeholder">
+
+        <div class="image-logo-loader" role="img" aria-label="Image indisponible — logo Inside Vietnam Travel en attendant">
+          <svg class="image-logo-loader__logo" viewBox="0 0 40 40" aria-hidden="true">
+            <circle class="image-logo-loader__ring" cx="20" cy="20" r="18" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <path class="image-logo-loader__arc" d="M8 26 Q20 8 32 26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <circle class="image-logo-loader__traveler" r="3.5" fill="currentColor">
+              <animateMotion dur="2.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" path="M8 26 Q20 8 32 26"/>
+            </circle>
+          </svg>
+          <span class="image-logo-loader__brand">Inside Vietnam Travel</span>
+        </div>
+
+        <figcaption class="muted">Photo indisponible pour le moment (réseau trop lent) — logo affiché en attendant. Le contenu FR + EN est bien généré. Cliquez « Améliorer avec IA » pour réessayer l'image, ou publiez tel quel.</figcaption>
+
+      </figure>
+
+      {% elif draft.image %}
 
       <figure class="draft-cover">
 
