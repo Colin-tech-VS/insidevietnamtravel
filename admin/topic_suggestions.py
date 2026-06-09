@@ -1,11 +1,10 @@
 """Suggestions de sujets d'articles — rafraîchies à chaque visite."""
 
 import json
-import os
 import random
 from datetime import date
 
-from admin import groq_client
+from admin import ai_client
 from admin.store import get_articles
 from data.vietnam_cities import ALL_CITY_VALUES
 
@@ -82,12 +81,12 @@ def _fallback_pool(year: int, month: int) -> list[dict]:
 
 
 def get_topic_suggestions(use_ai: bool = True) -> list[dict]:
-    """Retourne 8 suggestions — Groq si dispo, sinon pool local rotatif."""
+    """Retourne 8 suggestions — IA si une clé est dispo, sinon pool local rotatif."""
     today = date.today()
     existing = get_articles()
     existing_lines = "\n".join(f"- {a['title']}" for a in existing[:15]) or "(aucun)"
 
-    if use_ai and os.environ.get("GROQ_API_KEY"):
+    if use_ai and ai_client.is_configured():
         try:
             cities_str = ", ".join(ALL_CITY_VALUES[:20]) + ", ..."
             prompt = SUGGEST_PROMPT.format(
@@ -96,8 +95,8 @@ def get_topic_suggestions(use_ai: bool = True) -> list[dict]:
                 existing=existing_lines,
                 cities=cities_str,
             )
-            response = groq_client.chat_completion(
-                model=groq_client.fast_model(),
+            response = ai_client.chat_completion(
+                fast=True,
                 messages=[
                     {"role": "system", "content": "Tu réponds uniquement en JSON valide."},
                     {"role": "user", "content": prompt},

@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 
-from admin import groq_client
+from admin import ai_client
 
 EMAIL_TYPES = [
     {"value": "actualite", "label": "Actualité voyage", "icon": "📰"},
@@ -57,9 +57,11 @@ def generate_newsletter_email(
     topic: str,
     email_type: str = "actualite",
     notes: str = "",
+    progress=None,
 ) -> dict:
-    groq_client.require_api_key()
-    model = groq_client.main_model()
+    ai_client.require_api_key()
+    report = progress or (lambda *_: None)
+    report("Rédaction de l'email (objet, accroche, corps)…")
 
     type_label = next((t["label"] for t in EMAIL_TYPES if t["value"] == email_type), email_type)
     user_msg = (
@@ -71,8 +73,7 @@ def generate_newsletter_email(
         user_msg += f"Notes éditoriales : {notes}\n"
     user_msg += "Réponds en JSON strict."
 
-    response = groq_client.chat_completion(
-        model=model,
+    response = ai_client.chat_completion(
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_msg},

@@ -22,7 +22,7 @@
 
     <p class="ai-loader__text" id="ai-loader-text">Analyse du sujet…</p>
 
-    <p class="ai-loader__hint">Groq rédige l'email — comptez 15 à 45 secondes.</p>
+    <p class="ai-loader__hint">{{ ai_provider_label }} rédige l'email — comptez 15 à 45 secondes.</p>
 
   </div>
 
@@ -32,7 +32,7 @@
 
 {% if not groq_ok %}
 
-<div class="alert alert--warn">Ajoutez <code>GROQ_API_KEY</code> dans <code>.env</code> pour l'IA. L'onglet <strong>Manuellement</strong> reste disponible.</div>
+<div class="alert alert--warn">Ajoutez <code>GROQ_API_KEY</code> ou <code>MISTRAL_API_KEY</code> dans <code>.env</code> pour l'IA. L'onglet <strong>Manuellement</strong> reste disponible.</div>
 
 {% endif %}
 
@@ -70,7 +70,7 @@
 
       <div id="tab-ai" class="content-panel" role="tabpanel" {% if draft_is_manual %}hidden{% endif %}>
 
-        <h2>✦ Rédiger avec Groq</h2>
+        <h2>✦ Rédiger avec {{ ai_provider_label }}</h2>
 
         <form id="newsletter-form-ai" class="guide-form" data-no-loader>
 

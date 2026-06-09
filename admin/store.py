@@ -23,7 +23,12 @@ from i18n_utils import (
 def get_settings() -> dict:
     defaults = {
         "ga4_measurement_id": "",
+        # Moteur IA : "groq" (défaut) ou "mistral", choisi depuis l'admin. Volontairement
+        # ABSENT des défauts pour que, tant qu'aucun choix n'est enregistré, ai_client
+        # puisse retomber sur la variable d'env AI_PROVIDER puis sur "groq".
         "groq_model": "llama-3.3-70b-versatile",
+        "mistral_model": "mistral-small-latest",
+        "mistral_fast_model": "open-mistral-nemo",
         "commission_estimates": {
             "booking": 8.0,
             "agoda": 6.0,

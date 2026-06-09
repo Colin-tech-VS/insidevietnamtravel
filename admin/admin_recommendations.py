@@ -33,8 +33,8 @@ def get_dashboard_recommendations(
 
     if not groq_ok:
         recos.append(_reco(
-            "Activer Groq AI",
-            "Ajoutez GROQ_API_KEY dans .env pour générer des guides SEO automatiquement.",
+            "Activer la génération IA",
+            "Ajoutez GROQ_API_KEY ou MISTRAL_API_KEY dans .env pour générer des guides SEO automatiquement.",
             priority="haute",
             action_label="Ouvrir Guides IA",
             action_url="/admin/guides",

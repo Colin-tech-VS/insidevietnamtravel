@@ -42,8 +42,17 @@ Optionnel :
 scalingo --app insidevietnamtravel env-set \
   SITE_URL="https://votre-domaine.fr" \
   GA4_MEASUREMENT_ID="G-XXXXXXXX" \
+  MISTRAL_API_KEY="..." \
+  AI_PROVIDER="groq" \
   DATABASE_URL="postgresql://postgres.[REF]:[MDP]@aws-0-eu-west-3.pooler.supabase.com:6543/postgres"
 ```
+
+**Moteur IA :** la rédaction (guides, destinations, newsletters) accepte **Groq** ou
+**Mistral AI** — au moins une clé suffit. Mistral offre des limites par minute bien plus
+larges que le palier gratuit Groq (utile pour les longs guides). Choisissez le moteur
+actif dans l'admin (*Dashboard › Moteur de rédaction*) ; `AI_PROVIDER` ne fixe que le
+défaut initial. Si le moteur actif échoue (limite atteinte), Groq prend le relais
+automatiquement quand sa clé est présente.
 
 **Important Supabase + Scalingo :** n'utilisez pas l'URL directe `db.xxx.supabase.co:5432` (IPv6, crash au boot). Préférez le **pooler** port **6543**, ou laissez l'app convertir automatiquement l'URL directe.
 
@@ -94,8 +103,8 @@ scalingo --app insidevietnamtravel env-set DATABASE_URL="postgresql://..."
 
 | Section | Fonction |
 |---------|----------|
-| **Dashboard** | Stats temps réel, revenus, statut Groq |
-| **Guides IA** | Génération d'articles via Groq AI → publication blog |
+| **Dashboard** | Stats temps réel, revenus, statut + choix du moteur IA |
+| **Guides IA** | Génération d'articles via IA (Groq ou Mistral) → publication blog |
 | **Destinations** | Guides ville (IA ou manuel) |
 | **Newsletter** | Abonnés + envoi email |
 | **Affiliation** | IDs Booking, Agoda, GYG… + GA4 |

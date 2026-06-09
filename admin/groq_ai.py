@@ -4,7 +4,7 @@ import json
 import re
 from datetime import date
 
-from admin import groq_client
+from admin import ai_client
 from admin.store import slugify
 from admin.groq_translate import translate_article_block
 from i18n_utils import merge_bilingual_article
@@ -120,18 +120,17 @@ def _build_article(data: dict, topic: str, city: str, guide_type: str) -> dict:
     }
 
 
-def _call_groq(client, model: str, messages: list, max_tokens: int, *, pause_before: float = 0) -> dict:
-    response = groq_client.chat_completion(
-        client=client,
-        model=model,
+def _call_ai(messages: list, max_tokens: int, *, fast: bool = False, pause_before: float = 0) -> dict:
+    response = ai_client.chat_completion(
         messages=messages,
         max_tokens=max_tokens,
+        fast=fast,
         pause_before=pause_before,
     )
     return _parse_response(response.choices[0].message.content)
 
 
-def _expand_if_short(article: dict, guide_type: str, client, model: str = "") -> dict:
+def _expand_if_short(article: dict, guide_type: str, progress=None) -> dict:
     target = _seo_target(guide_type)
     min_words = target["min"]
     current = _count_words(article["content"])
@@ -141,6 +140,9 @@ def _expand_if_short(article: dict, guide_type: str, client, model: str = "") ->
         article["word_count"] = current
         article["read_time"] = _read_time_from_words(current)
         return article
+
+    if progress:
+        progress("Enrichissement du contenu pour atteindre la longueur SEO…")
 
     expand_prompt = f"""L'article ci-dessous fait seulement {current} mots. Il DOIT atteindre au minimum {min_words} mots (cible {target['target']} mots).
 Type : {guide_type}. Ville : {article.get('city', 'Vietnam')}.
@@ -155,14 +157,13 @@ Article :
 
     # Enrichissement sur le modèle rapide : bucket tokens/minute distinct du
     # modèle principal (ne grignote pas son quota) et nettement plus véloce.
-    data = _call_groq(
-        client,
-        groq_client.fast_model(),
+    data = _call_ai(
         [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": expand_prompt},
         ],
         target["max_tokens"],
+        fast=True,
         pause_before=1.5,
     )
 
@@ -182,12 +183,12 @@ Article :
     return article
 
 
-def generate_guide(topic: str, guide_type: str, city: str) -> dict:
-    groq_client.require_api_key()
-    client = groq_client.get_client()
-    model = groq_client.main_model()
+def generate_guide(topic: str, guide_type: str, city: str, progress=None) -> dict:
+    ai_client.require_api_key()
+    report = progress or (lambda *_: None)
     year = date.today().year
     seo = _seo_target(guide_type)
+    report("Rédaction de l'article SEO (titres, sections, FAQ)…")
 
     user_prompt = f"""Rédige un guide COMPLET ultra-optimisé SEO.
 
@@ -207,9 +208,7 @@ Exigences :
 - Erreurs à éviter pour débutants
 - image_prompt : scène Vietnam UNIQUE et spécifique à CE sujet (pas générique)"""
 
-    data = _call_groq(
-        client,
-        model,
+    data = _call_ai(
         [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},
@@ -218,8 +217,9 @@ Exigences :
     )
 
     article = _build_article(data, topic, city, guide_type)
-    article = _expand_if_short(article, guide_type, client)
+    article = _expand_if_short(article, guide_type, progress=report)
     try:
+        report("Traduction de la version anglaise…")
         en_data = translate_article_block(article, pause_before=1.5)
         shared = {
             k: v for k, v in article.items()
@@ -239,16 +239,14 @@ Exigences :
         })
 
 
-def improve_guide(article: dict, instructions: str) -> dict:
-    groq_client.require_api_key()
-    client = groq_client.get_client()
-    model = groq_client.main_model()
+def improve_guide(article: dict, instructions: str, progress=None) -> dict:
+    ai_client.require_api_key()
+    report = progress or (lambda *_: None)
     guide_type = article.get("guide_type", "Guide pratique")
     seo = _seo_target(guide_type)
+    report("Analyse et amélioration du brouillon…")
 
-    data = _call_groq(
-        client,
-        model,
+    data = _call_ai(
         [
             {"role": "system", "content": SYSTEM_PROMPT},
             {
@@ -278,8 +276,9 @@ def improve_guide(article: dict, instructions: str) -> dict:
     wc = _count_words(article["content"])
     article["word_count"] = wc
     article["read_time"] = _read_time_from_words(wc)
-    article = _expand_if_short(article, guide_type, client)
+    article = _expand_if_short(article, guide_type, progress=report)
     try:
+        report("Traduction de la version anglaise…")
         en_data = translate_article_block(article, pause_before=1.5)
         shared = {
             k: v for k, v in article.items()

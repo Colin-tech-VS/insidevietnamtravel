@@ -4,7 +4,7 @@ import json
 import re
 from datetime import date
 
-from admin import groq_client
+from admin import ai_client
 from admin.store import slugify
 from admin.groq_translate import translate_destination_block
 from i18n_utils import merge_bilingual_destination
@@ -96,12 +96,12 @@ def _build_destination(data: dict, city: str, slug: str) -> dict:
     }
 
 
-def generate_destination(city: str, notes: str = "") -> dict:
-    groq_client.require_api_key()
-    client = groq_client.get_client()
-    model = groq_client.main_model()
+def generate_destination(city: str, notes: str = "", progress=None) -> dict:
+    ai_client.require_api_key()
+    report = progress or (lambda *_: None)
     year = date.today().year
     slug = slugify(city)
+    report("Rédaction de la page destination (hôtels, activités, conseils)…")
 
     user_prompt = f"""Crée une page destination complète pour : {city}
 
@@ -112,9 +112,7 @@ Notes éditoriales : {notes or "Guide complet pour voyageurs français"}
 Minimum {MIN_WORDS} mots (cible {TARGET_WORDS}).
 La page doit convaincre un voyageur de visiter {city} et l'aider à planifier : durée idéale, budget, meilleure période."""
 
-    response = groq_client.chat_completion(
-        client=client,
-        model=model,
+    response = ai_client.chat_completion(
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},
@@ -127,10 +125,10 @@ La page doit convaincre un voyageur de visiter {city} et l'aider à planifier : 
     dest = _build_destination(data, city, slug)
 
     if _total_words(dest) < MIN_WORDS * EXPAND_TOLERANCE:
+        report("Enrichissement de la description…")
         # Enrichissement sur le modèle rapide : bucket TPM distinct + plus véloce.
-        expand = groq_client.chat_completion(
-            client=client,
-            model=groq_client.fast_model(),
+        expand = ai_client.chat_completion(
+            fast=True,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {
@@ -150,6 +148,7 @@ La page doit convaincre un voyageur de visiter {city} et l'aider à planifier : 
         dest = _build_destination(data, city, slug)
 
     try:
+        report("Traduction de la version anglaise…")
         en_data = translate_destination_block(dest, pause_before=1.5)
         shared = {
             k: v for k, v in dest.items()

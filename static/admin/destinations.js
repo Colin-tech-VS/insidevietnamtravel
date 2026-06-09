@@ -17,35 +17,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  const PHRASES = [
-    'Analyse de la destination Vietnam…',
-    'Rédaction vue d\'ensemble SEO…',
-    'Sélection des incontournables…',
-    'Recherche hôtels et budgets…',
-    'Activités et tours affiliés…',
-    'Conseils pratiques locaux…',
-    'Optimisation meta title / description…',
-    'Génération image Vietnam unique…',
-    'Export WebP optimisé…',
-    'Finalisation de la page…',
-  ];
-
-  let phraseTimer = null;
-  let idx = 0;
-
-  function startLoader() {
+  // Le texte du modal reflète l'étape RÉELLE renvoyée par le serveur (phase du job),
+  // pas une liste de phrases qui défilent au hasard sur un minuteur.
+  function startLoader(initialText) {
     if (!overlay) return;
-    idx = 0;
     overlay.hidden = false;
-    if (loaderText) loaderText.textContent = PHRASES[0];
-    phraseTimer = setInterval(() => {
-      idx = (idx + 1) % PHRASES.length;
-      if (loaderText) loaderText.textContent = PHRASES[idx];
-    }, 2800);
+    if (loaderText) loaderText.textContent = initialText || 'Préparation…';
+  }
+
+  function setPhase(phase) {
+    if (phase && loaderText) loaderText.textContent = phase;
   }
 
   function stopLoader() {
-    if (phraseTimer) clearInterval(phraseTimer);
     if (overlay) overlay.hidden = true;
   }
 
@@ -69,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (st.status === 'done') return;
       if (st.status === 'error') throw new Error(st.error || 'Échec de la génération.');
       if (st.status === 'missing') throw new Error('Session expirée — relancez la génération.');
+      setPhase(st.phase); // affiche l'étape réelle en cours
     }
     throw new Error('Génération anormalement longue. Rafraîchissez la page dans un instant.');
   }
@@ -105,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const btn = form.querySelector('.btn-generate');
       if (btn) btn.disabled = true;
-      startLoader();
+      startLoader('Connexion au moteur IA…');
 
       try {
         const res = await fetch('/admin/api/destinations/generate', {
