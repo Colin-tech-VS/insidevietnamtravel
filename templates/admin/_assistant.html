@@ -5,6 +5,7 @@
      data-search-url="{{ url_for('admin.api_assistant_search') }}"
      data-insights-url="{{ url_for('admin.api_assistant_insights') }}"
      data-job-url="{{ url_for('admin.api_assistant_job', kind='KIND') }}"
+     data-action-job-url="{{ url_for('admin.api_assistant_action_job', token='TOKEN') }}"
      data-confirm-url="{{ url_for('admin.api_assistant_confirm') }}">
   <button type="button" class="linh-chat__fab" id="linh-chat-fab" aria-expanded="false"
           aria-controls="linh-chat-panel" aria-label="Ouvrir Linh, copilote IA du site">

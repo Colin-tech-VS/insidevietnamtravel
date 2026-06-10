@@ -1054,6 +1054,14 @@ def api_assistant_job(kind):
     return jsonify(assistant_service.job_status(kind))
 
 
+@admin_bp.route("/api/assistant/action-job/<token>")
+@login_required
+def api_assistant_action_job(token):
+    from admin import assistant_service
+
+    return jsonify(assistant_service.action_job_status(token))
+
+
 @admin_bp.route("/api/assistant/confirm", methods=["POST"])
 @login_required
 def api_assistant_confirm():

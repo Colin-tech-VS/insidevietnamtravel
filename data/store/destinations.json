@@ -1087,9 +1087,12 @@
             "price_hint": "dès 35 €",
             "provider": "getyourguide"
           }
-        ]
+        ],
+        "image_alt": "Mỹ Tho et delta du Mékong, Vietnam — sampan et marché fluvial"
       },
-      "en": {}
+      "en": {
+        "image_alt": "Mỹ Tho et delta du Mékong, Vietnam — sampan et marché fluvial"
+      }
     },
     "name": "Delta du Mékong",
     "meta_title": "Guide Delta du Mékong 2026 — Marchés flottants & Can Tho",
@@ -1171,8 +1174,10 @@
       }
     ],
     "image": "/static/images/destinations/delta-du-mekong.webp",
-    "image_alt": "Guide voyage Delta du Mékong, Vietnam",
-    "image_photo_id": "1772867342647-6e6d87a0b014"
+    "image_alt": "Mỹ Tho et delta du Mékong, Vietnam — sampan et marché fluvial",
+    "image_photo_id": "",
+    "image_source_url": "https://images.unsplash.com/photo-1528127269322-539801943592?w=1200&h=675&fit=crop&auto=format&q=80",
+    "image_placeholder": false
   },
   "hue": {
     "slug": "hue",

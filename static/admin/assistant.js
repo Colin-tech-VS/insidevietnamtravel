@@ -22,6 +22,7 @@
   var searchUrl = root.dataset.searchUrl;
   var insightsUrl = root.dataset.insightsUrl;
   var jobUrlTpl = root.dataset.jobUrl;
+  var actionJobUrlTpl = root.dataset.actionJobUrl;
   var confirmUrl = root.dataset.confirmUrl;
 
   var STORAGE_KEY = 'linhChatState';
@@ -345,6 +346,12 @@
       markConfirmDone(confirm.token);
       showTyping('Exécution en cours…');
       postConfirm(confirm.token, 'confirm').then(function (res) {
+        if (res.ok && res.data.async && res.data.job_token) {
+          showTyping(res.data.message || 'Mise à jour en cours…');
+          pollActionJob(res.data.job_token);
+          saveState();
+          return;
+        }
         removeTyping();
         if (res.ok) {
           history.push({ role: 'assistant', content: res.data.message || 'Action confirmée et effectuée.' });
@@ -353,9 +360,11 @@
           say('assistant', formatMessage('⚠️ ' + (res.data.error || 'Échec de l\'action.')), 'linh-chat__bubble-wrap--error');
         }
         saveState();
+        busy = false;
       }).catch(function () {
         removeTyping();
         say('assistant', formatMessage('⚠️ Erreur réseau pendant l\'exécution.'), 'linh-chat__bubble-wrap--error');
+        busy = false;
       });
     });
 
@@ -414,6 +423,50 @@
     }
 
     jobTimer = window.setTimeout(tick, 2500);
+  }
+
+  /* Job d'action lourde (ex. update_image) — hors requête HTTP pour éviter timeout Scalingo. */
+  function pollActionJob(jobToken) {
+    if (!actionJobUrlTpl || !jobToken) {
+      busy = false;
+      return;
+    }
+    if (jobTimer) window.clearTimeout(jobTimer);
+    var url = actionJobUrlTpl.replace('TOKEN', encodeURIComponent(jobToken));
+
+    function finish() {
+      busy = false;
+    }
+
+    function tick() {
+      fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+        .then(function (r) { return r.json(); })
+        .then(function (st) {
+          var typing = messagesEl.querySelector('[data-typing="1"] .linh-chat__typing-label');
+          if (st.status === 'running') {
+            if (typing && st.phase) typing.textContent = st.phase;
+            jobTimer = window.setTimeout(tick, 2000);
+            return;
+          }
+          removeTyping();
+          if (st.status === 'done') {
+            var extra = renderActions(st.url ? [{ label: 'Voir la page', url: st.url }] : []);
+            history.push({ role: 'assistant', content: st.message || '✅ Fait.' });
+            streamSay(st.message || '✅ Fait.', extra);
+          } else if (st.status === 'error') {
+            say('assistant', formatMessage('⚠️ ' + (st.error || 'Échec de l\'action.')), 'linh-chat__bubble-wrap--error');
+          } else {
+            say('assistant', formatMessage('⚠️ Action introuvable (session expirée ?) — relancez la demande.'), 'linh-chat__bubble-wrap--error');
+          }
+          saveState();
+          finish();
+        })
+        .catch(function () {
+          jobTimer = window.setTimeout(tick, 3000);
+        });
+    }
+
+    jobTimer = window.setTimeout(tick, 1500);
   }
 
   function renderSuggestions() {
@@ -484,6 +537,9 @@
       } else if (d.job && d.job.kind) {
         showTyping('Génération en cours…');
         pollJob(d.job.kind); // busy reste true jusqu'à la fin du job
+      } else if (d.action_job && d.action_job.token) {
+        showTyping(d.message || 'Action en cours…');
+        pollActionJob(d.action_job.token);
       } else {
         busy = false;
       }

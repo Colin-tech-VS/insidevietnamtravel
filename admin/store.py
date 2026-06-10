@@ -204,6 +204,51 @@ def get_destination_by_slug(slug: str, lang: str | None = None) -> dict | None:
     return localize_destination(dest, lang) if lang else dest
 
 
+# Alias courants (erreurs de slug par Linh ou libellés ville ≠ slug publié).
+_DESTINATION_SLUG_ALIASES: dict[str, str] = {
+    "m-tho-delta-mekong": "delta-du-mekong",
+    "my-tho-delta-mekong": "delta-du-mekong",
+    "my-tho": "delta-du-mekong",
+    "mekong-delta": "delta-du-mekong",
+    "delta-mekong": "delta-du-mekong",
+}
+
+
+def find_destination_slug(hint: str) -> str | None:
+    """Résout un slug, alias ou libellé vers le slug destination publié."""
+    hint = (hint or "").strip().strip("/")
+    if not hint:
+        return None
+    data = _raw_destinations()
+    if hint in data:
+        return hint
+    slug_hint = slugify(hint)
+    if slug_hint in data:
+        return slug_hint
+    if slug_hint in _DESTINATION_SLUG_ALIASES:
+        return _DESTINATION_SLUG_ALIASES[slug_hint]
+    hint_tokens = {t for t in slug_hint.split("-") if t and t not in ("du", "de", "the", "and", "le", "la")}
+    best_slug: str | None = None
+    best_score = 0
+    for slug, raw in data.items():
+        dest = wrap_destination_i18n(raw)
+        names = {dest.get("name", "")}
+        for lang in ("fr", "en"):
+            loc = localize_destination(dest, lang)
+            names.add(loc.get("name", ""))
+        for name in names:
+            if slugify(name) == slug_hint:
+                return slug
+        slug_tokens = set(slug.split("-"))
+        score = len(hint_tokens & slug_tokens)
+        if score > best_score:
+            best_score = score
+            best_slug = slug
+    if best_score >= 2 and best_slug:
+        return best_slug
+    return None
+
+
 def add_or_update_destination(dest: dict):
     data = _raw_destinations()
     data[dest["slug"]] = wrap_destination_i18n(dest)

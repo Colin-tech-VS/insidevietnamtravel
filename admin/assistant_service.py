@@ -32,6 +32,12 @@ _PENDING_LOCK = threading.Lock()
 _PENDING: dict[str, dict] = {}
 _PENDING_TTL = 900  # 15 min pour confirmer, sinon l'action expire
 
+# Jobs d'actions lourdes (ex. update_image) — hors requête HTTP pour éviter le timeout
+# du routeur Scalingo (~60 s) quand téléchargement + Pixabay + WebP s'enchaînent.
+_ACTION_JOB_LOCK = threading.Lock()
+_ACTION_JOBS: dict[str, dict] = {}
+_ACTION_JOB_TTL = 3600
+
 # Tokens de confirmation mémorisés en session : un simple « oui » dans le chat
 # exécute la dernière action en attente, sans repasser par le modèle.
 _SESSION_PENDING_KEY = "linh_pending_tokens"
@@ -566,7 +572,7 @@ def _system_prompt() -> str:
         '- {"name":"generate_social_post","params":{"page_id":"…","brief":"…"}} — post Facebook (page_id du bloc PAGES PUBLIQUES, ou brief libre)\n'
         '- {"name":"set_destination_region","params":{"slug":"…","region":"north|central|south"}} — déplacer une destination publiée dans la colonne Nord/Centre/Sud du menu Destinations (confirmation auto)\n'
         '- {"name":"update_destination","params":{"slug":"…","tagline":"…","meta_title":"…","meta_description":"…","overview":"…","region":"…"}} — modifier une page destination publiée ; tous les champs sont optionnels, ne passe que ceux à changer (confirmation auto)\n'
-        '- {"name":"update_image","params":{"target":"article|destination","slug":"…","image_url":"https://…","query":"…","alt":"…"}} — mettre à jour l\'image d\'un article ou d\'une destination publié(e). Donne SOIT image_url (URL directe d\'une image trouvée sur internet, ex. via web_search), SOIT query (mots-clés → recherche d\'image). alt facultatif (texte alternatif SEO). L\'image est téléchargée et optimisée en WebP (confirmation auto)\n'
+        '- {"name":"update_image","params":{"target":"article|destination","slug":"…","image_url":"https://…","query":"…","alt":"…"}} — mettre à jour l\'image d\'un article ou d\'une destination publié(e). slug = slug EXACT du bloc ÉTAT DU SITE (ex. delta-du-mekong, pas un libellé ville). Donne SOIT image_url (URL directe, ex. via web_search), SOIT query (mots-clés Pixabay). alt facultatif. Téléchargement + WebP en arrière-plan après confirmation\n'
         '- {"name":"add_map_points","params":{"city":"slug ou nom de la ville","points":[{"title":"…","address":"adresse complète","kind":"food","desc":"…","price_hint":"…"}]}} — ajouter des points sur la carte interactive : restaurants, hôtels, activités, lieux. kind ∈ hotel|activity|food|poi|service ; address = adresse la plus précise possible (géocodée via OpenStreetMap), sinon « Nom, Ville » (confirmation auto)\n'
         '- {"name":"publish_draft","params":{"kind":"article"}} ou {"kind":"destination"} — publier le brouillon en attente (confirmation auto)\n'
         '- {"name":"publish_facebook","params":{}} — publier le dernier post généré (confirmation auto)\n'
@@ -607,6 +613,79 @@ def cancel_confirmation(token: str) -> bool:
         return _PENDING.pop(token, None) is not None
 
 
+def _prune_action_jobs() -> None:
+    now = time.time()
+    stale = [k for k, v in _ACTION_JOBS.items() if now - v.get("ts", now) > _ACTION_JOB_TTL]
+    for k in stale:
+        _ACTION_JOBS.pop(k, None)
+
+
+def start_action_job(fn, *, initial_phase: str = "") -> str:
+    """Lance une action admin lourde en arrière-plan ; renvoie un token de suivi."""
+    from admin import ai_client
+
+    job_token = secrets.token_urlsafe(16)
+    with _ACTION_JOB_LOCK:
+        _prune_action_jobs()
+        _ACTION_JOBS[job_token] = {
+            "status": "running",
+            "result": None,
+            "error": "",
+            "phase": initial_phase,
+            "ts": time.time(),
+        }
+
+    def _run() -> None:
+        t0 = time.time()
+
+        def report(phase: str) -> None:
+            with _ACTION_JOB_LOCK:
+                entry = _ACTION_JOBS.get(job_token)
+                if entry and entry.get("status") == "running":
+                    entry["phase"] = phase
+                    entry["ts"] = time.time()
+
+        try:
+            result = fn(report)
+            with _ACTION_JOB_LOCK:
+                _ACTION_JOBS[job_token] = {
+                    "status": "done",
+                    "result": result,
+                    "error": "",
+                    "phase": "",
+                    "ts": time.time(),
+                }
+        except Exception as exc:  # noqa: BLE001
+            message = ai_client.friendly_error(exc)
+            with _ACTION_JOB_LOCK:
+                _ACTION_JOBS[job_token] = {
+                    "status": "error",
+                    "result": None,
+                    "error": message or str(exc),
+                    "phase": "",
+                    "ts": time.time(),
+                }
+
+    threading.Thread(target=_run, daemon=True).start()
+    return job_token
+
+
+def action_job_status(job_token: str) -> dict:
+    """Statut d'un job d'action Linh (running|done|error|missing)."""
+    with _ACTION_JOB_LOCK:
+        entry = _ACTION_JOBS.get(job_token)
+        if not entry:
+            return {"status": "missing", "error": "", "phase": ""}
+        out = {
+            "status": entry.get("status", "missing"),
+            "error": entry.get("error", ""),
+            "phase": entry.get("phase", ""),
+        }
+        if entry.get("status") == "done" and entry.get("result"):
+            out.update(entry["result"])
+        return out
+
+
 def execute_confirmation(token: str) -> dict:
     """Exécute l'action confirmée. Lève ValueError avec message lisible sinon."""
     with _PENDING_LOCK:
@@ -631,7 +710,15 @@ def execute_confirmation(token: str) -> dict:
     if action == "update_destination":
         return _exec_update_destination(params)
     if action == "update_image":
-        return _exec_update_image(params)
+        job_token = start_action_job(
+            lambda report: _exec_update_image(params, report),
+            initial_phase="Préparation de l'image…",
+        )
+        return {
+            "async": True,
+            "job_token": job_token,
+            "message": "⏳ Mise à jour d'image en cours (téléchargement + optimisation WebP)…",
+        }
     if action == "add_map_points":
         return _exec_add_map_points(params)
     raise ValueError(f"Action inconnue : {action}")
@@ -789,26 +876,42 @@ def _exec_update_destination(params: dict) -> dict:
     }
 
 
-def _resolve_image_url(params: dict) -> str:
-    """URL d'image à utiliser : image_url directe, sinon recherche Pixabay via query."""
+def _resolve_image_url(params: dict, report=None) -> str:
+    """URL d'image : image_url directe, sinon recherche Pixabay bornée (échéance murale)."""
     image_url = (params.get("image_url") or "").strip()
     if image_url:
         return image_url
     query = (params.get("query") or "").strip()
     if not query:
         raise ValueError("Indique une URL d'image (image_url) ou des mots-clés (query).")
-    from admin.image_service import pixabay_image_url
-    return pixabay_image_url(query)
+    if report:
+        report(f"Recherche d'image « {query[:60]} »…")
+    from admin.image_service import IMAGE_STEP_HARD_DEADLINE, _run_with_deadline, pixabay_image_url
+    return _run_with_deadline(pixabay_image_url, IMAGE_STEP_HARD_DEADLINE, query)
 
 
-def _exec_update_image(params: dict) -> dict:
+def _resolve_destination_slug(slug: str) -> tuple[str, dict]:
+    """Slug canonique + destination, avec résolution d'alias (ex. m-tho-delta-mekong)."""
+    from admin.store import find_destination_slug, get_destination_by_slug
+
+    slug = (slug or "").strip().strip("/")
+    resolved = find_destination_slug(slug) or slug
+    dest = get_destination_by_slug(resolved)
+    if not dest:
+        raise ValueError(
+            f"Destination introuvable : « {slug} » — utilise le slug exact du bloc ÉTAT DU SITE "
+            f"(ex. delta-du-mekong, pas m-tho-delta-mekong)."
+        )
+    return resolved, dest
+
+
+def _exec_update_image(params: dict, report=None) -> dict:
     from admin.image_service import (
         set_remote_image_for_article,
         set_remote_image_for_destination,
     )
     from admin.store import (
         get_article_by_slug,
-        get_destination_by_slug,
         update_article_image,
         update_destination_image,
     )
@@ -819,22 +922,28 @@ def _exec_update_image(params: dict) -> dict:
     if not slug:
         raise ValueError("Slug manquant pour la mise à jour d'image.")
 
-    image_url = _resolve_image_url(params)
+    image_url = _resolve_image_url(params, report)
+    if report:
+        report("Téléchargement et optimisation WebP…")
 
     if target == "destination":
-        dest = get_destination_by_slug(slug)
-        if not dest:
-            raise ValueError(f"Destination introuvable : « {slug} ».")
+        resolved_slug, dest = _resolve_destination_slug(slug)
         meta = set_remote_image_for_destination(dest, image_url, alt)
-        update_destination_image(slug, meta)
-        return {"message": f"✅ Image mise à jour pour la destination « {dest.get('name', slug)} ».", "url": f"/{slug}"}
+        update_destination_image(resolved_slug, meta)
+        return {
+            "message": f"✅ Image mise à jour pour la destination « {dest.get('name', resolved_slug)} ».",
+            "url": f"/{resolved_slug}",
+        }
 
     article = get_article_by_slug(slug)
     if not article:
         raise ValueError(f"Article introuvable : « {slug} ».")
     meta = set_remote_image_for_article(article, image_url, alt)
     update_article_image(slug, meta)
-    return {"message": f"✅ Image mise à jour pour l'article « {article.get('title', slug)} ».", "url": f"/blog/{slug}"}
+    return {
+        "message": f"✅ Image mise à jour pour l'article « {article.get('title', slug)} ».",
+        "url": f"/blog/{slug}",
+    }
 
 
 def _exec_add_map_points(params: dict) -> dict:
@@ -1040,7 +1149,7 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
         )}
 
     if name == "update_image":
-        from admin.store import get_article_by_slug, get_destination_by_slug
+        from admin.store import get_article_by_slug
 
         target = (params.get("target") or "article").strip().lower()
         slug = (params.get("slug") or "").strip()
@@ -1053,12 +1162,11 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
         if not image_url and not query:
             raise ValueError("Donne une URL d'image (image_url) ou des mots-clés (query).")
 
+        resolved_slug = slug
         if target == "destination":
-            item = get_destination_by_slug(slug)
-            if not item:
-                raise ValueError(f"Destination introuvable : « {slug} » — vérifie le slug.")
-            label = item.get("name", slug)
-            where = f"la destination « {label} » (/{slug})"
+            resolved_slug, item = _resolve_destination_slug(slug)
+            label = item.get("name", resolved_slug)
+            where = f"la destination « {label} » (/{resolved_slug})"
         else:
             item = get_article_by_slug(slug)
             if not item:
@@ -1066,10 +1174,23 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
             label = item.get("title", slug)
             where = f"l'article « {label} » (/blog/{slug})"
 
+        # Pré-résolution Pixabay AVANT confirmation : l'exécution ne fait plus que
+        # télécharger + encoder (plus rapide, moins de risque de timeout routeur).
+        pending_query = query
+        if not image_url and query:
+            image_url = _resolve_image_url({"query": query})
+            pending_query = ""
+
         src = image_url if image_url else f"recherche d'image « {query} »"
         return {"confirm": create_confirmation(
             "update_image",
-            {"target": target, "slug": slug, "image_url": image_url, "query": query, "alt": params.get("alt", "")},
+            {
+                "target": target,
+                "slug": resolved_slug if target == "destination" else slug,
+                "image_url": image_url,
+                "query": pending_query,
+                "alt": params.get("alt", ""),
+            },
             f"Mettre à jour l'image de {where} ?",
             f"Nouvelle image : {src}\nElle sera téléchargée, optimisée en WebP puis appliquée.",
         )}
@@ -1312,6 +1433,13 @@ def chat_reply(message: str, history: list[dict]) -> dict:
                 result = execute_confirmation(token)
             except ValueError as exc:
                 return {"ok": True, "message": f"⚠️ {exc}", "actions": []}
+            if result.get("async") and result.get("job_token"):
+                return {
+                    "ok": True,
+                    "message": result.get("message") or "⏳ Action en cours…",
+                    "action_job": {"token": result["job_token"]},
+                    "actions": [],
+                }
             actions = []
             url = (result.get("url") or "").strip()
             if url.startswith("/") and not url.startswith("//"):
