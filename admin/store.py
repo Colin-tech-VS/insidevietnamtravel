@@ -232,13 +232,127 @@ def get_articles(lang: str | None = None) -> list:
     return articles
 
 
+_CATEGORY_SYNC_DONE = False
+
+
+def _stored_categories() -> dict:
+    """Catégories personnalisées (admin/Linh) — KV `categories`."""
+    try:
+        stored = get_json("categories", {}, file_name="categories.json")
+    except Exception:
+        logger.exception("Lecture catégories KV impossible — repli sur catégories embarquées")
+        return {}
+    return dict(stored) if stored else {}
+
+
+def save_custom_categories(categories: dict):
+    set_json("categories", categories, file_name="categories.json")
+
+
+def build_category(label_fr: str, label_en: str = "", description_fr: str = "", description_en: str = "") -> dict:
+    label_fr = (label_fr or "").strip()
+    label_en = (label_en or "").strip() or label_fr
+    description_fr = (description_fr or "").strip() or (
+        f"Articles « {label_fr} » — conseils et idées pour votre voyage au Vietnam."
+    )
+    description_en = (description_en or "").strip() or (
+        f"“{label_en}” articles — tips and ideas for your Vietnam trip."
+    )
+    return {
+        "label": label_fr,
+        "description": description_fr,
+        "i18n": {
+            "fr": {"label": label_fr, "description": description_fr},
+            "en": {"label": label_en, "description": description_en},
+        },
+    }
+
+
+def sync_categories_with_articles() -> int:
+    """Crée les catégories référencées par des articles mais encore inexistantes.
+
+    Répare p.ex. un article publié en « tendances » sans page /categorie/tendances :
+    la catégorie est créée depuis son category_label et apparaît aussitôt dans le
+    menu du blog, la page catégorie et le sitemap.
+    """
+    global _CATEGORY_SYNC_DONE
+    try:
+        known = {**DEFAULT_CATEGORIES, **_stored_categories()}
+        missing: dict = {}
+        for raw in _raw_articles():
+            article = wrap_article_i18n(raw)
+            key = (article.get("category") or "").strip()
+            if not key or key in known or key in missing:
+                continue
+            i18n = article.get("i18n") or {}
+            label_fr = (
+                (i18n.get("fr") or {}).get("category_label")
+                or article.get("category_label")
+                or key.replace("-", " ").title()
+            ).strip()
+            label_en = ((i18n.get("en") or {}).get("category_label") or "").strip()
+            missing[key] = build_category(label_fr, label_en)
+        if missing:
+            stored = _stored_categories()
+            stored.update(missing)
+            save_custom_categories(stored)
+        _CATEGORY_SYNC_DONE = True
+        return len(missing)
+    except Exception:
+        logger.exception("Échec synchronisation catégories ↔ articles")
+        _CATEGORY_SYNC_DONE = True
+        return 0
+
+
 def get_categories(lang: str | None = None) -> dict:
+    if not _CATEGORY_SYNC_DONE:
+        sync_categories_with_articles()
+    merged = {**DEFAULT_CATEGORIES, **_stored_categories()}
     if not lang:
-        return DEFAULT_CATEGORIES
+        return merged
     return {
         key: localize_category(cat, lang)
-        for key, cat in DEFAULT_CATEGORIES.items()
+        for key, cat in merged.items()
     }
+
+
+def add_category(label_fr: str, *, key: str = "", label_en: str = "",
+                 description_fr: str = "", description_en: str = "") -> tuple[str, dict]:
+    """Crée (ou met à jour) une catégorie de blog — clé slug auto depuis le nom FR."""
+    label_fr = (label_fr or "").strip()
+    if not label_fr:
+        raise ValueError("Le nom (FR) de la catégorie est obligatoire.")
+    key = slugify((key or "").strip() or label_fr)
+    if not key:
+        raise ValueError("Impossible de dériver une clé d'URL depuis ce nom.")
+    cat = build_category(label_fr, label_en, description_fr, description_en)
+    stored = _stored_categories()
+    stored[key] = cat
+    save_custom_categories(stored)
+    return key, cat
+
+
+def delete_category(key: str):
+    key = (key or "").strip()
+    if key in DEFAULT_CATEGORIES:
+        raise ValueError(f"« {key} » est une catégorie intégrée — impossible de la supprimer.")
+    used = sum(1 for a in _raw_articles() if (a.get("category") or "").strip() == key)
+    if used:
+        raise ValueError(f"{used} article(s) utilisent encore « {key} » — changez d'abord leur catégorie.")
+    stored = _stored_categories()
+    if key not in stored:
+        raise ValueError(f"Catégorie introuvable : {key}")
+    stored.pop(key)
+    save_custom_categories(stored)
+
+
+def category_usage_counts() -> dict:
+    counts: dict[str, int] = {}
+    for a in _raw_articles():
+        key = (a.get("category") or "").strip()
+        if key:
+            counts[key] = counts.get(key, 0) + 1
+    return counts
 
 
 def _auto_translate_article(article: dict) -> dict:
@@ -272,8 +386,12 @@ def _auto_translate_destination(dest: dict) -> dict:
 
 
 def save_articles(articles: list):
+    global _CATEGORY_SYNC_DONE
     normalized = [_auto_translate_article(wrap_article_i18n(a)) for a in articles]
     set_json("articles", normalized, file_name="articles.json")
+    # Un nouvel article peut référencer une catégorie inconnue : re-synchroniser
+    # à la prochaine lecture (page catégorie, menu blog et sitemap à jour).
+    _CATEGORY_SYNC_DONE = False
 
 
 def get_article_by_slug(slug: str, lang: str | None = None) -> dict | None:
@@ -543,6 +661,20 @@ def update_article_fields(slug: str, fields: dict) -> dict:
             article[key] = value
             article["i18n"]["fr"][key] = value
             changed_fr = True
+        category = (fields.get("category") or "").strip()
+        if category and category != article.get("category"):
+            cats = {**DEFAULT_CATEGORIES, **_stored_categories()}
+            if category not in cats:
+                raise ValueError(
+                    f"Catégorie inconnue : « {category} » — créez-la d'abord (admin ou Linh)."
+                )
+            article["category"] = category
+            label_fr = localize_category(cats[category], "fr").get("label", category)
+            label_en = localize_category(cats[category], "en").get("label", category)
+            article["category_label"] = label_fr
+            article["i18n"]["fr"]["category_label"] = label_fr
+            if article["i18n"].get("en"):
+                article["i18n"]["en"]["category_label"] = label_en
         if changed_fr:
             article["i18n"]["en"] = {}
             article["date"] = date.today().isoformat()

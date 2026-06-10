@@ -544,6 +544,106 @@
 
     </section>
 
+
+
+    <section class="panel categories-panel">
+
+      <h2>🏷️ Catégories du blog</h2>
+
+      <p class="muted">Chaque catégorie a sa page <code>/categorie/&lt;clé&gt;</code> (FR + EN), reprise dans le menu du blog et le sitemap. Une catégorie utilisée par un article publié est créée automatiquement si elle manque.</p>
+
+      <ul class="published-list">
+
+        {% for c in blog_categories %}
+
+        <li class="dest-admin-item">
+
+          <div class="dest-admin-item__head">
+
+            <div>
+
+              <a href="{{ url_for('category', category=c.key) }}" target="_blank" rel="noopener"><strong>{{ c.label }}</strong></a>
+
+              <span class="published-list__date">/categorie/{{ c.key }} · {{ c.count }} article(s){% if c.builtin %} · intégrée{% endif %}</span>
+
+            </div>
+
+          </div>
+
+          {% if not c.builtin and c.count == 0 %}
+
+          <div class="dest-admin-item__actions">
+
+            <form method="post" action="{{ url_for('admin.categories_delete', key=c.key) }}" onsubmit="return confirm('Supprimer la catégorie « {{ c.label }} » ?');">
+
+              <button type="submit" class="btn btn-secondary btn-sm">Supprimer</button>
+
+            </form>
+
+          </div>
+
+          {% endif %}
+
+        </li>
+
+        {% endfor %}
+
+      </ul>
+
+      <form method="post" action="{{ url_for('admin.categories_add') }}" class="category-add-form">
+
+        <h3>Nouvelle catégorie</h3>
+
+        <div class="form-row form-row--2">
+
+          <div class="form-field">
+
+            <label for="cat-label-fr">Nom (FR) <span class="required">*</span></label>
+
+            <input type="text" id="cat-label-fr" name="label_fr" required placeholder="Ex : Tendances">
+
+          </div>
+
+          <div class="form-field">
+
+            <label for="cat-label-en">Nom (EN)</label>
+
+            <input type="text" id="cat-label-en" name="label_en" placeholder="Ex : Trends">
+
+          </div>
+
+        </div>
+
+        <div class="form-field">
+
+          <label for="cat-desc-fr">Description (FR)</label>
+
+          <input type="text" id="cat-desc-fr" name="description_fr" placeholder="Meta description de la page catégorie (optionnel)">
+
+        </div>
+
+        <div class="form-field">
+
+          <label for="cat-desc-en">Description (EN)</label>
+
+          <input type="text" id="cat-desc-en" name="description_en" placeholder="Meta description EN (optionnel)">
+
+        </div>
+
+        <div class="form-field">
+
+          <label for="cat-key">Clé URL (optionnel)</label>
+
+          <input type="text" id="cat-key" name="key" placeholder="auto-générée depuis le nom FR">
+
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-sm">Créer la catégorie</button>
+
+      </form>
+
+    </section>
+
   </aside>
 
 </div>

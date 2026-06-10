@@ -23,6 +23,23 @@ CATEGORY_LABELS_EN = {
 }
 
 
+def category_labels(category: str) -> tuple[str, str]:
+    """Libellés FR/EN d'une catégorie — dynamiques (store), repli statique."""
+    try:
+        from admin.store import get_categories
+        from i18n_utils import localize_category
+
+        cat = get_categories().get(category)
+        if cat:
+            return (
+                localize_category(cat, "fr").get("label") or CATEGORY_LABELS.get(category, "Pratique"),
+                localize_category(cat, "en").get("label") or CATEGORY_LABELS_EN.get(category, "Practical"),
+            )
+    except Exception:
+        pass
+    return CATEGORY_LABELS.get(category, "Pratique"), CATEGORY_LABELS_EN.get(category, "Practical")
+
+
 def _ensure_html(text: str) -> str:
     text = text.strip()
     if not text:
@@ -139,10 +156,11 @@ def build_manual_article(form) -> dict:
         tags.insert(0, city)
 
     wc = _word_count(content)
+    label_fr, label_en = category_labels(category)
     fr_data = {
         "title": title,
         "excerpt": excerpt[:160],
-        "category_label": CATEGORY_LABELS.get(category, "Pratique"),
+        "category_label": label_fr,
         "content": content,
         "tags": tags[:12],
     }
@@ -152,7 +170,7 @@ def build_manual_article(form) -> dict:
             "title": (form.get("title_en") or "").strip(),
             "excerpt": _strip_html(form.get("excerpt_en") or "")[:160],
             "content": _ensure_html(form.get("content_en") or ""),
-            "category_label": (form.get("category_label_en") or CATEGORY_LABELS_EN.get(category, "Practical")),
+            "category_label": (form.get("category_label_en") or label_en),
             "tags": [t.strip() for t in (form.get("tags_en") or "").split(",") if t.strip()],
         }
     shared = {

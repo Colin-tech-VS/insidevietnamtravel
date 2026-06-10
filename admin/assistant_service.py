@@ -514,6 +514,11 @@ def _system_prompt() -> str:
     from data.vietnam_cities import ALL_CITY_VALUES
 
     cities = ", ".join(ALL_CITY_VALUES)
+    try:
+        from admin.store import get_categories
+        blog_categories = ", ".join(get_categories().keys())
+    except Exception:  # noqa: BLE001
+        blog_categories = "practical, food, itinerary, budget"
     return (
         "Tu es Linh 🧭, le copilote IA INTERNE de l'admin d'Inside Vietnam Travel "
         "(guide de voyage Vietnam, FR/EN). Tu n'es PAS Mai (l'assistante publique des "
@@ -556,6 +561,7 @@ def _system_prompt() -> str:
         "Après une recherche web, tu peux enchaîner directement un outil d'action (ex. "
         "add_map_points avec les restaurants trouvés et leurs adresses). "
         f"VILLES autorisées pour generate_guide/generate_destination : {cities}. "
+        f"CATÉGORIES blog existantes (clé du champ category) : {blog_categories}. "
         "OUTILS disponibles (champ \"tool\", sinon null) :\n"
         '- {"name":"web_search","params":{"query":"…"}} — rechercher sur internet (DuckDuckGo) : '
         "actualités/réglementation Vietnam (visa, prix, événements), concurrence, tendances SEO, "
@@ -571,7 +577,8 @@ def _system_prompt() -> str:
         '- {"name":"generate_newsletter","params":{"topic":"…","email_type":"actualite","notes":"…"}} — email newsletter (job en arrière-plan)\n'
         '- {"name":"generate_social_post","params":{"page_id":"…","brief":"…"}} — post Facebook (page_id du bloc PAGES PUBLIQUES, ou brief libre)\n'
         '- {"name":"set_destination_region","params":{"slug":"…","region":"north|central|south"}} — déplacer une destination publiée dans la colonne Nord/Centre/Sud du menu Destinations (confirmation auto)\n'
-        '- {"name":"update_article","params":{"slug":"…","title":"…","meta_title":"…","meta_description":"…","excerpt":"…","content":"…","tags":["…"],"focus_keyword":"…"}} — modifier un guide/article publié (/blog/slug) ; champs optionnels, ne passe que ceux à changer (confirmation auto)\n'
+        '- {"name":"update_article","params":{"slug":"…","title":"…","meta_title":"…","meta_description":"…","excerpt":"…","content":"…","tags":["…"],"focus_keyword":"…","category":"…"}} — modifier un guide/article publié (/blog/slug) ; champs optionnels, ne passe que ceux à changer. category = clé d\'une CATÉGORIE existante (sinon crée-la d\'abord avec add_category) (confirmation auto)\n'
+        '- {"name":"add_category","params":{"label_fr":"…","label_en":"…","description_fr":"…","description_en":"…","key":"…"}} — créer une catégorie de blog : page /categorie/<key> FR+EN, ajoutée automatiquement au menu du blog et au sitemap. key optionnelle (slug auto depuis label_fr) (confirmation auto)\n'
         '- {"name":"improve_article","params":{"slug":"…","instructions":"…"}} — réécrire/améliorer un guide publié par IA (SEO, clarté, maillage interne, longueur…) selon tes instructions ; job en arrière-plan après confirmation\n'
         '- {"name":"update_destination","params":{"slug":"…","tagline":"…","meta_title":"…","meta_description":"…","overview":"…","tips":["…"],"things_to_do":[{"title":"…","desc":"…"}],"region":"…"}} — modifier une page destination publiée ; champs optionnels (confirmation auto). slug = slug ÉTAT DU SITE (ex. delta-du-mekong)\n'
         '- {"name":"improve_destination","params":{"slug":"…","instructions":"…"}} — réécrire/améliorer une destination publiée par IA selon tes instructions ; job en arrière-plan après confirmation\n'
@@ -731,6 +738,8 @@ def execute_confirmation(token: str) -> dict:
         return _exec_set_destination_region(params)
     if action == "update_article":
         return _exec_update_article(params)
+    if action == "add_category":
+        return _exec_add_category(params)
     if action == "update_destination":
         return _exec_update_destination(params)
     if action == "improve_article":
@@ -953,13 +962,32 @@ def _destination_payload_for_ai(dest: dict) -> dict:
     return payload
 
 
+def _exec_add_category(params: dict) -> dict:
+    from admin.store import add_category
+
+    key, cat = add_category(
+        params.get("label_fr", ""),
+        key=params.get("key", ""),
+        label_en=params.get("label_en", ""),
+        description_fr=params.get("description_fr", ""),
+        description_en=params.get("description_en", ""),
+    )
+    return {
+        "message": (
+            f"✅ Catégorie créée : « {cat['label']} » — /categorie/{key} "
+            "(menu du blog et sitemap mis à jour automatiquement)."
+        ),
+        "url": f"/categorie/{key}",
+    }
+
+
 def _exec_update_article(params: dict) -> dict:
     from admin.store import ARTICLE_EDITABLE_FIELDS, update_article_fields
 
     slug = (params.get("slug") or "").strip()
     if not slug:
         raise ValueError("Slug d'article manquant.")
-    changed = [k for k in ARTICLE_EDITABLE_FIELDS if params.get(k)]
+    changed = [k for k in (*ARTICLE_EDITABLE_FIELDS, "category") if params.get(k)]
     if not changed:
         raise ValueError("Aucun champ à modifier.")
     article = update_article_fields(slug, params)
@@ -1300,18 +1328,45 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
             f"/{slug} apparaîtra dans la colonne {label} du menu Destinations (Nord/Centre/Sud).",
         )}
 
+    if name == "add_category":
+        from admin.store import get_categories, slugify
+
+        label_fr = (params.get("label_fr") or params.get("label") or "").strip()
+        if not label_fr:
+            raise ValueError("Indique le nom FR de la catégorie (label_fr).")
+        key = slugify((params.get("key") or "").strip() or label_fr)
+        if key in get_categories():
+            raise ValueError(f"La catégorie « {key} » existe déjà — visible sur /categorie/{key}.")
+        return {"confirm": create_confirmation(
+            "add_category",
+            {
+                "key": key,
+                "label_fr": label_fr,
+                "label_en": (params.get("label_en") or "").strip(),
+                "description_fr": (params.get("description_fr") or "").strip(),
+                "description_en": (params.get("description_en") or "").strip(),
+            },
+            f"Créer la catégorie « {label_fr} » ?",
+            f"/categorie/{key} sera ajoutée au blog (FR + EN), au menu des catégories et au sitemap.",
+        )}
+
     if name == "update_article":
-        from admin.store import ARTICLE_EDITABLE_FIELDS, get_article_by_slug
+        from admin.store import ARTICLE_EDITABLE_FIELDS, get_article_by_slug, get_categories
 
         slug = (params.get("slug") or "").strip()
         article = get_article_by_slug(slug)
         if not article:
             raise ValueError(f"Article introuvable : « {slug} » — vérifie le slug dans l'ÉTAT DU SITE.")
-        changed = [k for k in ARTICLE_EDITABLE_FIELDS if params.get(k)]
+        changed = [k for k in (*ARTICLE_EDITABLE_FIELDS, "category") if params.get(k)]
         if not changed:
             raise ValueError(
                 "Aucun champ à modifier — passe au moins title, meta_title, meta_description, "
-                "excerpt, content, tags ou focus_keyword."
+                "excerpt, content, tags, focus_keyword ou category."
+            )
+        category = (params.get("category") or "").strip()
+        if category and category not in get_categories():
+            raise ValueError(
+                f"Catégorie inconnue « {category} » — crée-la d'abord avec add_category."
             )
         return {"confirm": create_confirmation(
             "update_article",

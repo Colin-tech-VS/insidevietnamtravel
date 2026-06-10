@@ -50,7 +50,9 @@ from admin.store import (
     add_custom_partner, delete_custom_partner, get_custom_partners,
     save_custom_partners, slugify,
     get_reviews, save_reviews,
+    get_categories, add_category, delete_category, category_usage_counts,
 )
+from data.articles import CATEGORIES as BUILTIN_CATEGORIES
 from admin.newsletter_service import (
     get_newsletter_subscribers,
     build_manual_newsletter,
@@ -59,7 +61,7 @@ from admin.newsletter_service import (
     is_smtp_configured,
     render_newsletter_preview,
 )
-from admin.manual_content import build_manual_article, build_manual_destination, CATEGORY_LABELS
+from admin.manual_content import build_manual_article, build_manual_destination
 from data.affiliate_partners import PARTNER_BY_KEY
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin", template_folder="../templates/admin")
@@ -326,6 +328,8 @@ def guides():
     suggestions = get_topic_suggestions(use_ai=False)
 
     draft = _get_draft("article")
+    cats_fr = get_categories("fr")
+    counts = category_usage_counts()
     return render_template(
         "admin/guides.html",
         draft=draft,
@@ -335,9 +339,51 @@ def guides():
         suggestions=suggestions,
         vietnam_cities=VIETNAM_CITIES,
         guide_types=GUIDE_TYPES,
-        article_categories=[{"value": k, "label": v} for k, v in CATEGORY_LABELS.items()],
+        article_categories=[{"value": k, "label": c.get("label", k)} for k, c in cats_fr.items()],
+        blog_categories=[
+            {
+                "key": k,
+                "label": c.get("label", k),
+                "description": c.get("description", ""),
+                "builtin": k in BUILTIN_CATEGORIES,
+                "count": counts.get(k, 0),
+            }
+            for k, c in cats_fr.items()
+        ],
         draft_is_manual=bool((draft or {}).get("manual")),
     )
+
+
+@admin_bp.route("/categories/add", methods=["POST"])
+@login_required
+def categories_add():
+    try:
+        key, cat = add_category(
+            request.form.get("label_fr", ""),
+            key=request.form.get("key", ""),
+            label_en=request.form.get("label_en", ""),
+            description_fr=request.form.get("description_fr", ""),
+            description_en=request.form.get("description_en", ""),
+        )
+        flash(
+            f"Catégorie créée : « {cat['label']} » (/categorie/{key}) — "
+            "visible dans le blog et le sitemap.",
+            "success",
+        )
+    except ValueError as e:
+        flash(str(e), "error")
+    return redirect(url_for("admin.guides"))
+
+
+@admin_bp.route("/categories/<key>/delete", methods=["POST"])
+@login_required
+def categories_delete(key):
+    try:
+        delete_category(key)
+        flash(f"Catégorie supprimée : {key}", "success")
+    except ValueError as e:
+        flash(str(e), "error")
+    return redirect(url_for("admin.guides"))
 
 
 @admin_bp.route("/api/guides/suggestions", methods=["POST"])
