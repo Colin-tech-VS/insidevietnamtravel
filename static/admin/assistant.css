@@ -31,6 +31,10 @@
 
 .linh-chat__fab-icon { font-size: 1.15rem; }
 
+/* display:flex écraserait l'attribut hidden — cette règle rend le panneau
+   réellement fermable (même piège que .mai-chat__panel côté public). */
+.linh-chat__panel[hidden] { display: none !important; }
+
 .linh-chat__panel {
   position: fixed;
   right: 22px;
