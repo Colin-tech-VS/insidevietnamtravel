@@ -446,6 +446,41 @@ def persistent_image_url(
     return image_url
 
 
+def destination_image_url(
+    image_url: str | None,
+    photo_id: str | None,
+    source_url: str | None = None,
+) -> str | None:
+    """URL d'image destination — fidèle au choix enregistré en admin (champ `image`).
+
+    Contrairement à `persistent_image_url`, on ne remplace pas une image déjà choisie
+    par une autre photo du pool via `image_photo_id` (souvent un reliquat auto-généré).
+    Repli autorisé : fichier local manquant → `image_source_url` (image internet importée).
+    Le pool n'est utilisé que si aucune image n'a été définie en admin.
+    """
+    def _is_remote(u: str | None) -> bool:
+        return bool(u) and u.startswith(("http://", "https://"))
+
+    if _is_remote(image_url):
+        return image_url
+
+    if image_url:
+        if image_url.startswith("/static/"):
+            rel = image_url.removeprefix("/static/")
+            if (_STATIC_ROOT / rel).is_file():
+                return image_url
+            if _is_remote(source_url):
+                return source_url
+            return image_url
+        return image_url
+
+    if _is_remote(source_url):
+        return source_url
+    if photo_id and _local_pool_path(photo_id).exists():
+        return f"/static/images/pool/{photo_id}.webp"
+    return image_url
+
+
 def _article_image_meta(article: dict, slug: str, photo_id: str, placeholder: bool,
                         image_url: str | None = None) -> dict:
     city = article.get("city", "")
