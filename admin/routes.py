@@ -954,3 +954,63 @@ def api_affiliate_verify():
 @login_required
 def api_realtime():
     return jsonify(db.get_realtime_stats())
+
+
+# ── Linh — copilote IA interne (développement & SEO) ──────────────────
+# Différent de Mai (widget public) : voir admin/assistant_service.py.
+
+@admin_bp.route("/api/assistant", methods=["POST"])
+@login_required
+def api_assistant():
+    from admin import assistant_service
+
+    payload = request.get_json(silent=True) or {}
+    message = (payload.get("message") or "").strip()
+    history = payload.get("history") if isinstance(payload.get("history"), list) else []
+    try:
+        return jsonify(assistant_service.chat_reply(message, history))
+    except ValueError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    except Exception as exc:  # noqa: BLE001
+        return jsonify({"ok": False, "error": ai_client.friendly_error(exc)}), 502
+
+
+@admin_bp.route("/api/assistant/insights")
+@login_required
+def api_assistant_insights():
+    from admin import assistant_service
+
+    try:
+        return jsonify(assistant_service.build_insights())
+    except Exception as exc:  # noqa: BLE001
+        return jsonify({"ok": False, "error": str(exc)}), 500
+
+
+@admin_bp.route("/api/assistant/job/<kind>")
+@login_required
+def api_assistant_job(kind):
+    from admin import assistant_service
+
+    return jsonify(assistant_service.job_status(kind))
+
+
+@admin_bp.route("/api/assistant/confirm", methods=["POST"])
+@login_required
+def api_assistant_confirm():
+    from admin import assistant_service
+
+    payload = request.get_json(silent=True) or {}
+    token = (payload.get("token") or "").strip()
+    decision = payload.get("decision") or "confirm"
+    if not token:
+        return jsonify({"ok": False, "error": "Token manquant."}), 400
+    if decision == "cancel":
+        assistant_service.cancel_confirmation(token)
+        return jsonify({"ok": True, "message": "Action annulée — rien n'a été publié."})
+    try:
+        result = assistant_service.execute_confirmation(token)
+        return jsonify({"ok": True, **result})
+    except ValueError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    except Exception as exc:  # noqa: BLE001
+        return jsonify({"ok": False, "error": ai_client.friendly_error(exc)}), 502
