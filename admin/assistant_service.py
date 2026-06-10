@@ -583,7 +583,8 @@ def _system_prompt() -> str:
         '- {"name":"update_destination","params":{"slug":"…","tagline":"…","meta_title":"…","meta_description":"…","overview":"…","tips":["…"],"things_to_do":[{"title":"…","desc":"…"}],"region":"…"}} — modifier une page destination publiée ; champs optionnels (confirmation auto). slug = slug ÉTAT DU SITE (ex. delta-du-mekong)\n'
         '- {"name":"improve_destination","params":{"slug":"…","instructions":"…"}} — réécrire/améliorer une destination publiée par IA selon tes instructions ; job en arrière-plan après confirmation\n'
         '- {"name":"update_image","params":{"target":"article|destination","slug":"…","image_url":"https://…","query":"…","alt":"…"}} — mettre à jour l\'image d\'un article ou d\'une destination publiée. slug = slug ÉTAT DU SITE (ex. hue pour Huế, delta-du-mekong). Préfère query (mots-clés Pixabay, ex. « Hue imperial citadel Vietnam ») : fiable et sans URL cassée. image_url seulement si lien DIRECT (.jpg/.webp) ou page Wikimedia Commons /wiki/File:… — pas une page galerie HTML (pixnio, shutterstock…). alt facultatif. Job WebP après confirmation\n'
-        '- {"name":"add_map_points","params":{"city":"slug ou nom de la ville","points":[{"title":"…","address":"adresse complète","kind":"restaurant","desc":"…","price_hint":"…"}]}} — ajouter des points sur la carte interactive : restaurants, bars, hôtels, activités, lieux… kind de préférence ∈ hotel|activity|restaurant|bar|poi|service, mais tout autre type est accepté (ex. « spa », « marché nocturne ») : il est créé automatiquement avec sa couleur et sa légende ; address = adresse la plus précise possible (géocodée via OpenStreetMap), sinon « Nom, Ville » (confirmation auto)\n'
+        '- {"name":"add_map_points","params":{"city":"slug ou nom de la ville","points":[{"title":"…","address":"adresse complète","kind":"restaurant","desc":"…","price_hint":"…","image_url":"https://…"}]}} — ajouter des points sur la carte interactive : restaurants, bars, hôtels, activités, lieux… kind de préférence ∈ hotel|activity|restaurant|bar|poi|service, mais tout autre type est accepté (ex. « spa », « marché nocturne ») : il est créé automatiquement avec sa couleur et sa légende ; address = adresse la plus précise possible (géocodée via OpenStreetMap), sinon « Nom, Ville » ; image_url facultative (lien DIRECT vers une photo du lieu) — sans elle une photo est cherchée automatiquement sur Pixabay (confirmation auto)\n'
+        '- {"name":"update_map_images","params":{"title":"nom du point","city":"ville","image_url":"https://… ou mots-clés"}} ou {"all_missing":true} — mettre à jour la photo d\'un point existant de la carte (URL directe, mots-clés Pixabay, ou vide = recherche auto), ou trouver une photo pour TOUS les points sans image (job en arrière-plan) (confirmation auto)\n'
         '- {"name":"publish_draft","params":{"kind":"article"}} ou {"kind":"destination"} — publier le brouillon en attente (confirmation auto)\n'
         '- {"name":"publish_facebook","params":{}} — publier le dernier post généré (confirmation auto)\n'
         '- {"name":"send_newsletter","params":{"scope":"test","email":"…"}} ou {"scope":"all"} — envoyer la newsletter (confirmation auto)\n'
@@ -774,6 +775,8 @@ def execute_confirmation(token: str) -> dict:
         }
     if action == "add_map_points":
         return _exec_add_map_points(params)
+    if action == "update_map_images":
+        return _exec_update_map_images(params)
     raise ValueError(f"Action inconnue : {action}")
 
 
@@ -1178,6 +1181,27 @@ def _exec_add_map_points(params: dict) -> dict:
     return {"message": "\n".join(parts), "url": "/admin/map"}
 
 
+def _exec_update_map_images(params: dict) -> dict:
+    from admin import map_service
+
+    if params.get("all_missing"):
+        map_service.defer_backfill_point_images()
+        return {
+            "message": "🖼️ Recherche d'images lancée en arrière-plan pour tous les points de "
+            "carte sans photo — résultat visible dans /admin/map d'ici quelques minutes.",
+            "url": "/admin/map",
+        }
+    point = map_service.set_point_image_by_title(
+        (params.get("city") or "").strip(),
+        (params.get("title") or "").strip(),
+        (params.get("image_url") or params.get("query") or "").strip(),
+    )
+    return {
+        "message": f"🖼️ Image mise à jour pour « {point.get('title', '')} » sur la carte.",
+        "url": "/admin/map",
+    }
+
+
 def _exec_send_newsletter(params: dict) -> dict:
     from admin.newsletter_service import get_newsletter_subscribers, send_newsletter_email
 
@@ -1512,6 +1536,7 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
                 "affiliate_provider": (p.get("affiliate_provider") or "custom").strip(),
                 "affiliate_search": (p.get("affiliate_search") or title).strip(),
                 "affiliate_url": (p.get("affiliate_url") or "").strip(),
+                "image_url": (p.get("image_url") or "").strip(),
             })
         if not points:
             raise ValueError("Aucun point valide — chaque point doit avoir au minimum un title et une address.")
@@ -1534,7 +1559,32 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
             f"Ajouter {len(points)} point(s) {where} ?",
             listing + "\n\nChaque adresse sera géolocalisée via OpenStreetMap "
             "(si une adresse est introuvable, le point sera placé près du centre-ville, "
-            "position affinable ensuite).",
+            "position affinable ensuite). Une photo du lieu est ajoutée automatiquement "
+            "si image_url n'est pas fournie.",
+        )}
+
+    if name == "update_map_images":
+        if params.get("all_missing"):
+            return {"confirm": create_confirmation(
+                "update_map_images", {"all_missing": True},
+                "Chercher une photo pour tous les points de carte sans image ?",
+                "Recherche automatique (Pixabay) en arrière-plan : nom du lieu, "
+                "sinon type + ville. Les images déjà en place ne sont pas touchées.",
+            )}
+        title = (params.get("title") or "").strip()
+        if not title:
+            raise ValueError("Précise le titre du point (title) ou all_missing:true pour tout traiter.")
+        city = (params.get("city") or "").strip()
+        image = (params.get("image_url") or params.get("query") or "").strip()
+        how = (
+            f"Image : {image}" if image.startswith("http")
+            else f"Recherche Pixabay : « {image} »" if image
+            else "Recherche automatique (nom du lieu, sinon type + ville)"
+        )
+        return {"confirm": create_confirmation(
+            "update_map_images", {"title": title, "city": city, "image_url": image},
+            f"Mettre à jour la photo de « {title} » sur la carte ?",
+            how,
         )}
 
     if name == "publish_draft":

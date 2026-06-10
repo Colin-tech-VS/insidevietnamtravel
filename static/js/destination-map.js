@@ -49,6 +49,9 @@
 
   function popupHtml(p) {
     var html = '<div class="dest-map-popup">';
+    if (p.image) {
+      html += '<img class="dest-map-popup__img" src="' + escapeHtml(p.image) + '" alt="' + escapeHtml(p.title) + '" loading="lazy">';
+    }
     html += '<strong>' + escapeHtml(p.title) + '</strong>';
     if (p.kind_label) html += '<span class="dest-map-popup__kind">' + escapeHtml(p.kind_label) + '</span>';
     if (p.desc) html += '<p>' + escapeHtml(p.desc) + '</p>';

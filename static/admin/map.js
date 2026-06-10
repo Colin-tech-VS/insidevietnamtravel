@@ -32,7 +32,12 @@
       fillColor: metaFor(kind).color,
       fillOpacity: 0.9,
     }).addTo(map);
-    marker.bindPopup('<strong>' + escapeHtml(p.title) + '</strong><br>' + escapeHtml(p.destination_name || p.destination_slug || ''));
+    var popup = '';
+    if (p.image) {
+      popup += '<img src="' + escapeHtml(p.image) + '" alt="" style="display:block;width:100%;height:90px;object-fit:cover;border-radius:6px;margin-bottom:0.35rem;">';
+    }
+    popup += '<strong>' + escapeHtml(p.title) + '</strong><br>' + escapeHtml(p.destination_name || p.destination_slug || '');
+    marker.bindPopup(popup);
     bounds.push([p.lat, p.lng]);
   });
 

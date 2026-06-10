@@ -682,10 +682,10 @@ def _pixabay_query(article: dict) -> str:
     return " ".join(parts)
 
 
-def _fetch_pixabay_photo(query: str, seed: int) -> bytes:
-    """Repli réseau : cherche une photo Vietnam sur Pixabay et renvoie ses octets.
+def pixabay_photo_url(query: str, seed: int = 0, *, prefer_small: bool = False) -> str:
+    """URL d'une photo Pixabay pour `query` (sans téléchargement).
 
-    Nécessite PIXABAY_API_KEY (clé gratuite). Sans clé, lève une erreur → logo de marque.
+    Nécessite PIXABAY_API_KEY (clé gratuite). Lève une erreur si pas de clé ou pas de résultat.
     """
     key = _pixabay_api_key()
     if not key:
@@ -711,9 +711,21 @@ def _fetch_pixabay_photo(query: str, seed: int) -> bytes:
         raise ValueError("Aucune image Pixabay pour cette requête")
 
     hit = hits[seed % len(hits)]
-    img_url = hit.get("largeImageURL") or hit.get("webformatURL")
+    if prefer_small:
+        img_url = hit.get("webformatURL") or hit.get("largeImageURL")
+    else:
+        img_url = hit.get("largeImageURL") or hit.get("webformatURL")
     if not img_url:
         raise ValueError("URL d'image Pixabay manquante")
+    return img_url
+
+
+def _fetch_pixabay_photo(query: str, seed: int) -> bytes:
+    """Repli réseau : cherche une photo Vietnam sur Pixabay et renvoie ses octets.
+
+    Nécessite PIXABAY_API_KEY (clé gratuite). Sans clé, lève une erreur → logo de marque.
+    """
+    img_url = pixabay_photo_url(query, seed)
 
     img = requests.get(
         img_url,

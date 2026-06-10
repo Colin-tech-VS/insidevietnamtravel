@@ -1159,6 +1159,17 @@ def map_admin():
                 slug = request.form.get("destination_slug", "")
                 if pid and map_service.publish_pending_point(pid, slug):
                     flash("Point publié sur la carte.", "success")
+            elif action == "set_image":
+                pid = request.form.get("point_id", "")
+                point = map_service.set_point_image(pid, request.form.get("image", ""))
+                flash(f"Image mise à jour pour « {point.get('title', '')} ».", "success")
+            elif action == "backfill_images":
+                map_service.defer_backfill_point_images()
+                flash(
+                    "Recherche d'images lancée pour tous les points sans photo "
+                    "(quelques minutes en arrière-plan) — rechargez la page pour voir le résultat.",
+                    "success",
+                )
             elif action == "sync":
                 result = map_service.sync_from_destinations(replace=request.form.get("replace") == "1")
                 msg = f"{result['added']} point(s) affilié(s) synchronisé(s) sur la carte."

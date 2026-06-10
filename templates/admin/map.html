@@ -77,6 +77,11 @@
           <input type="url" id="map-custom-url" name="affiliate_url" placeholder="https://…">
         </div>
         <div class="form-field">
+          <label for="map-image">Image du lieu (URL)</label>
+          <input type="url" id="map-image" name="image_url" placeholder="https://… (vide = photo trouvée automatiquement)">
+          <p class="field-hint">Affichée dans le popup du point sur la carte. Laissez vide pour une recherche automatique (Pixabay) à partir du nom et du type de lieu.</p>
+        </div>
+        <div class="form-field">
           <label for="map-desc">Description courte</label>
           <textarea id="map-desc" name="desc" rows="2" placeholder="Optionnel"></textarea>
         </div>
@@ -87,26 +92,48 @@
     <section class="panel">
       <div class="panel__head-row">
         <h2>Points publiés ({{ points|length }})</h2>
-        <form method="post" class="inline-form" data-no-loader>
-          <input type="hidden" name="action" value="sync">
-          <label class="checkbox"><input type="checkbox" name="replace"> Remplacer les imports auto</label>
-          <button type="submit" class="btn btn-secondary btn-sm">Resynchroniser tous les affiliés</button>
-        </form>
+        <div class="inline-form">
+          <form method="post" class="inline-form" data-no-loader>
+            <input type="hidden" name="action" value="backfill_images">
+            <button type="submit" class="btn btn-secondary btn-sm">📷 Images auto pour les points sans photo</button>
+          </form>
+          <form method="post" class="inline-form" data-no-loader>
+            <input type="hidden" name="action" value="sync">
+            <label class="checkbox"><input type="checkbox" name="replace"> Remplacer les imports auto</label>
+            <button type="submit" class="btn btn-secondary btn-sm">Resynchroniser tous les affiliés</button>
+          </form>
+        </div>
       </div>
       {% if points %}
       <div class="table-scroll-x">
         <table class="admin-table">
           <thead>
-            <tr><th>Ville</th><th>Titre</th><th>Type</th><th>Affilié</th><th></th></tr>
+            <tr><th>Photo</th><th>Ville</th><th>Titre</th><th>Type</th><th>Affilié</th><th></th></tr>
           </thead>
           <tbody>
             {% for p in points %}
             <tr>
+              <td>
+                {% if p.image %}
+                <img class="map-point-thumb" src="{{ p.image }}" alt="" loading="lazy">
+                {% else %}
+                <span class="map-point-thumb map-point-thumb--empty" title="Pas encore de photo">📷</span>
+                {% endif %}
+              </td>
               <td>{{ p.destination_name or p.destination_slug }}</td>
               <td>{{ p.title }}<br><small class="muted">{{ p.address[:60] }}{% if p.address|length > 60 %}…{% endif %}</small></td>
               <td>{{ kind_meta[p.kind].label if p.kind in kind_meta else p.kind }}</td>
               <td>{{ p.affiliate_provider }}</td>
               <td>
+                <details class="map-image-edit">
+                  <summary class="btn btn-ghost btn-sm">Image</summary>
+                  <form method="post" class="inline-form" data-no-loader>
+                    <input type="hidden" name="action" value="set_image">
+                    <input type="hidden" name="point_id" value="{{ p.id }}">
+                    <input type="text" name="image" placeholder="URL ou mots-clés (vide = auto)">
+                    <button type="submit" class="btn btn-secondary btn-sm">OK</button>
+                  </form>
+                </details>
                 <form method="post" class="inline-form" onsubmit="return confirm('Supprimer ce point ?');">
                   <input type="hidden" name="action" value="delete">
                   <input type="hidden" name="point_id" value="{{ p.id }}">

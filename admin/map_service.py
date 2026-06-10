@@ -106,6 +106,135 @@ def legend_for_kinds(kinds, lang: str = "fr") -> list[dict]:
         for k in ordered + custom
     ]
 
+
+# ── Images des points (popups carte) ──────────────────────────────────
+# URLs distantes (Pixabay ou URL fournie) : le FS Scalingo est éphémère,
+# un fichier écrit au runtime disparaîtrait au redéploiement.
+
+_KIND_IMAGE_QUERY = {
+    "hotel": "hotel resort",
+    "activity": "tour excursion",
+    "restaurant": "restaurant food",
+    "bar": "bar cocktail",
+    "food": "street food",
+    "poi": "landmark temple",
+    "service": "travel",
+}
+
+
+def _point_image_queries(point: dict) -> list[str]:
+    """Requêtes Pixabay, de la plus spécifique (le lieu lui-même) à la plus générique."""
+    title = (point.get("title") or "").strip()
+    city = (point.get("destination_name") or point.get("requested_city") or "").strip()
+    kind = normalize_kind(point.get("kind") or "poi")
+    kind_q = _KIND_IMAGE_QUERY.get(kind, kind.replace("-", " "))
+    queries = []
+    if title:
+        queries.append(f"{title} vietnam")
+    if city:
+        queries.append(f"{kind_q} {city} vietnam")
+    queries.append(f"{kind_q} vietnam")
+    return queries
+
+
+def _point_image_seed(point: dict) -> int:
+    raw = (point.get("id") or point.get("title") or "").encode("utf-8")
+    return int(hashlib.md5(raw).hexdigest()[:8], 16)
+
+
+def find_point_image(point: dict) -> str:
+    """URL d'image illustrant le point (photo du lieu si trouvée, sinon type + ville)."""
+    from admin.image_service import pixabay_photo_url
+
+    seed = _point_image_seed(point)
+    last_err: Exception | None = None
+    for query in _point_image_queries(point):
+        try:
+            return pixabay_photo_url(query, seed, prefer_small=True)
+        except Exception as exc:  # noqa: BLE001 — on tente la requête suivante
+            last_err = exc
+    raise ValueError(f"Aucune image trouvée ({last_err}).")
+
+
+def resolve_point_image(point: dict, image: str) -> str:
+    """URL http(s) directe telle quelle ; mots-clés → recherche Pixabay ; vide → auto."""
+    value = (image or "").strip()
+    if value.startswith(("http://", "https://")):
+        return value
+    if value:
+        from admin.image_service import pixabay_photo_url
+
+        return pixabay_photo_url(f"{value} vietnam", _point_image_seed(point), prefer_small=True)
+    return find_point_image(point)
+
+
+def set_point_image(point_id: str, image: str = "") -> dict:
+    store = get_map_store()
+    for key in ("points", "pending"):
+        for p in store.get(key, []):
+            if p.get("id") == point_id:
+                p["image"] = resolve_point_image(p, image)
+                save_map_store(store)
+                return p
+    raise ValueError("Point introuvable.")
+
+
+def set_point_image_by_title(city: str, title: str, image: str = "") -> dict:
+    """Pour Linh : retrouve un point par titre (et ville si fournie) puis met son image."""
+    slug = resolve_destination_slug(city) if city else ""
+    norm = _normalize(title)
+    if not norm:
+        raise ValueError("Titre du point obligatoire.")
+    store = get_map_store()
+    for p in store.get("points", []):
+        if slug and p.get("destination_slug") != slug:
+            continue
+        p_norm = _normalize(p.get("title", ""))
+        if p_norm == norm or norm in p_norm or p_norm in norm:
+            return set_point_image(p["id"], image)
+    raise ValueError(f"Point « {title} » introuvable" + (f" à {city}" if city else "") + ".")
+
+
+def backfill_point_images(*, only_missing: bool = True, destination_slug: str | None = None) -> dict:
+    """Trouve une image pour chaque point qui n'en a pas (lent : 1-3 appels Pixabay/point)."""
+    store = get_map_store()
+    targets = [
+        p for p in store.get("points", [])
+        if (not destination_slug or p.get("destination_slug") == destination_slug)
+        and not (only_missing and p.get("image"))
+    ]
+    found: dict[str, str] = {}
+    errors = 0
+    for p in targets:
+        try:
+            found[p["id"]] = find_point_image(p)
+        except Exception:  # noqa: BLE001 — un point sans image ne bloque pas les autres
+            errors += 1
+    updated = 0
+    if found:
+        # Store relu après les appels réseau (longs) pour limiter l'écrasement
+        # d'éditions concurrentes.
+        fresh = get_map_store()
+        for p in fresh.get("points", []):
+            url = found.get(p.get("id"))
+            if url and not (only_missing and p.get("image")):
+                p["image"] = url
+                updated += 1
+        save_map_store(fresh)
+    return {"updated": updated, "errors": errors, "total": len(targets)}
+
+
+def defer_backfill_point_images() -> None:
+    import threading
+
+    def _run():
+        try:
+            backfill_point_images()
+        except Exception:
+            pass
+
+    threading.Thread(target=_run, daemon=True).start()
+
 PROVIDER_LABELS = {
     "booking": "Booking",
     "agoda": "Agoda",
@@ -681,6 +810,7 @@ def serialize_point_for_public(
         "kind": kind,
         "kind_label": kind_label(kind, lang, custom_kind_labels),
         "color": kind_color(kind),
+        "image": point.get("image", ""),
         "price_hint": point.get("price_hint", ""),
         "provider": provider,
         "provider_label": PROVIDER_LABELS.get(provider, provider),
@@ -869,6 +999,7 @@ def add_map_point(form: dict) -> dict:
     affiliate_url = (form.get("affiliate_url") or "").strip()
     desc = (form.get("desc") or "").strip()
     price_hint = (form.get("price_hint") or "").strip()
+    image = (form.get("image_url") or form.get("image") or "").strip()
 
     if not title:
         raise ValueError("Titre obligatoire.")
@@ -914,6 +1045,10 @@ def add_map_point(form: dict) -> dict:
         "source": "manual",
         "created_at": _now_iso(),
     }
+    try:
+        point["image"] = resolve_point_image(point, image)
+    except Exception:  # noqa: BLE001 — pas d'image (clé Pixabay absente…) : le point reste valide
+        point["image"] = image if image.startswith(("http://", "https://")) else ""
 
     if slug:
         dests = get_destinations_dict_safe()
