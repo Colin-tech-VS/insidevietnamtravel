@@ -1,10 +1,11 @@
-"""Recherche web pour Linh 🧭 — DuckDuckGo (HTML), sans clé API.
+"""Recherche web pour Linh 🧭 — bibliothèque ddgs, sans clé API.
 
-Pourquoi DuckDuckGo : pas de clé ni de quota à gérer (contrairement à Google CSE,
-Bing ou Tavily), et l'endpoint HTML est stable depuis des années. On passe par
-`requests` (déjà une dépendance) et on parse les résultats avec des regex ciblées
-sur les classes `result__a` / `result__snippet` — si le balisage change, on
-remonte une erreur lisible plutôt que des résultats vides silencieux.
+Pourquoi ddgs : DuckDuckGo bloque désormais le scraping direct de ses endpoints
+HTML/lite (HTTP 202 + page anti-bot), ce qui rendait la recherche de Linh
+inutilisable. La bibliothèque ddgs est maintenue précisément pour contourner
+cela (anti-bot géré, bascule automatique entre plusieurs moteurs). L'ancien
+scraping requests des endpoints html/lite reste en DERNIER repli au cas où
+ddgs serait indisponible (import impossible, incident…).
 
 Utilisé par l'outil `web_search` de Linh : la recherche est exécutée côté
 serveur, puis les résultats sont réinjectés dans un second appel IA qui rédige
@@ -49,6 +50,24 @@ def _clean_url(href: str) -> str:
     return href
 
 
+def _search_ddgs(query: str, max_results: int) -> list[dict]:
+    """Moteur principal : ddgs (anti-bot géré, plusieurs moteurs en interne)."""
+    from ddgs import DDGS
+
+    rows = DDGS(timeout=READ_TIMEOUT).text(
+        query, region="fr-fr", safesearch="moderate", max_results=max_results
+    )
+    results: list[dict] = []
+    for row in rows or []:
+        url = (row.get("href") or row.get("url") or "").strip()
+        title = _strip_tags(row.get("title") or "")
+        if not url.startswith("http") or not title:
+            continue
+        snippet = _strip_tags(row.get("body") or row.get("snippet") or "")
+        results.append({"title": title, "url": url, "snippet": snippet[:MAX_SNIPPET_LEN]})
+    return results[:max_results]
+
+
 def _parse_html_results(page: str, max_results: int) -> list[dict]:
     titles = re.findall(
         r'<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>(.*?)</a>', page, re.S
@@ -84,13 +103,22 @@ def _parse_lite_results(page: str, max_results: int) -> list[dict]:
 
 
 def search_web(query: str, max_results: int = 6) -> list[dict]:
-    """Recherche DuckDuckGo → [{title, url, snippet}]. Lève ValueError si KO."""
+    """Recherche web → [{title, url, snippet}]. Lève ValueError si tout échoue."""
     query = re.sub(r"\s+", " ", (query or "")).strip()[:MAX_QUERY_LEN]
     if len(query) < 2:
         raise ValueError("Requête de recherche vide.")
 
-    headers = {"User-Agent": USER_AGENT, "Accept-Language": "fr,en;q=0.8"}
     errors: list[str] = []
+
+    try:
+        results = _search_ddgs(query, max_results)
+        if results:
+            return results
+        errors.append("aucun résultat (ddgs)")
+    except Exception as exc:  # noqa: BLE001 — on tente le scraping direct en repli
+        errors.append(f"ddgs {type(exc).__name__}: {str(exc)[:120]}")
+
+    headers = {"User-Agent": USER_AGENT, "Accept-Language": "fr,en;q=0.8"}
 
     try:
         resp = requests.post(
