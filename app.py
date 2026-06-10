@@ -128,8 +128,18 @@ def _categories(lang=None):
 
 
 def _destinations(lang=None):
-    """Destinations publiques — le champ `image` du store admin est utilisé tel quel."""
-    return get_destinations_dict(lang or get_lang())
+    """Destinations publiques — image admin + repli source_url si fichier local absent."""
+    lang = lang or get_lang()
+    out = {}
+    for slug, d in get_destinations_dict(lang).items():
+        dest = dict(d)
+        dest["image"] = persistent_image_url(
+            dest.get("image"),
+            dest.get("image_photo_id"),
+            dest.get("image_source_url"),
+        )
+        out[slug] = dest
+    return out
 
 
 def _itineraries(lang=None):

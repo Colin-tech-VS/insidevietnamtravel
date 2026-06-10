@@ -1011,6 +1011,8 @@ def _exec_improve_destination(params: dict, report=None) -> dict:
 
 def _pixabay_query_for_image_params(params: dict) -> str:
     """Mots-clés Pixabay par défaut quand l'URL fournie n'est pas exploitable."""
+    from admin.image_service import destination_pixabay_query
+
     query = (params.get("query") or "").strip()
     if query:
         return query
@@ -1018,13 +1020,12 @@ def _pixabay_query_for_image_params(params: dict) -> str:
     slug = (params.get("slug") or "").strip()
     if target == "destination" and slug:
         try:
-            _, dest = _resolve_destination_slug(slug)
-            name = (dest.get("name") or slug).strip()
-            return f"{name} Vietnam imperial city landmark"
+            resolved, dest = _resolve_destination_slug(slug)
+            return destination_pixabay_query(resolved, dest)
         except ValueError:
             pass
     if slug:
-        return f"{slug.replace('-', ' ')} Vietnam travel"
+        return destination_pixabay_query(slug)
     return "Vietnam travel destination landmark"
 
 

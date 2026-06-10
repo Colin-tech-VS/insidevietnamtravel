@@ -154,13 +154,112 @@ SLUG_PHOTO_MAP: dict[str, str] = {
     "decouvrez-hanoi-en-7-jours-itineraire-ideal-pour-les-debutants-au-vietnam": "1772867342647-6e6d87a0b014",
 }
 
-# Photos Vietnam par page destination publique
+# Photos Vietnam par page destination publique (photo_id → ville)
 DESTINATION_PHOTO_MAP: dict[str, str] = {
     "hanoi": "1555921015-5532091f6026",
     "ho-chi-minh-city": "1583417319070-4a69db38a482",
     "hoi-an": "1528127269322-539801943592",
     "da-nang": "1555979864-7a8f9b4fddf8",
+    "halong": "1772867342647-6e6d87a0b014",
+    "sapa": "1531737212413-667205e1cda7",
+    "hue": "1578662996442-48f60103fc96",
+    "delta-du-mekong": "1605649487212-47bdab064df7",
+    "phu-quoc": "1480996408299-fc0e830b5db1",
 }
+
+DESTINATION_PHOTO_ALTERNATES: dict[str, list[str]] = {
+    "hanoi": ["1521993117367-b7f70ccd029d"],
+    "halong": ["1545172538-171a802bd867"],
+    "sapa": ["1480996408299-fc0e830b5db1", "1609412058473-c199497c3c5d"],
+    "hoi-an": ["1526139334526-f591a54b477c"],
+    "ho-chi-minh-city": ["1603852452378-a4e8d84324a2"],
+    "delta-du-mekong": ["1432405972618-c60b0225b8f9", "1559592413-7cec4d0cae2b"],
+    "phu-quoc": ["1555979864-7a8f9b4fddf8"],
+    "hue": ["1557750255-c76072a7aad1"],
+}
+
+# Requêtes Pixabay par défaut (Linh / admin) — toujours ancrées sur la ville
+DESTINATION_PIXABAY_QUERIES: dict[str, str] = {
+    "hanoi": "Hanoi Vietnam old quarter street food",
+    "ho-chi-minh-city": "Ho Chi Minh City Vietnam skyline",
+    "hoi-an": "Hoi An Vietnam ancient town river lanterns",
+    "da-nang": "Da Nang Vietnam beach coastline",
+    "halong": "Halong Bay Vietnam limestone karst boats",
+    "sapa": "Sapa Vietnam rice terrace mountains",
+    "hue": "Hue Vietnam imperial citadel pagoda",
+    "delta-du-mekong": "Mekong Delta Vietnam floating market boat",
+    "phu-quoc": "Phu Quoc Vietnam tropical beach turquoise",
+}
+
+
+def destination_pixabay_query(slug: str, dest: dict | None = None) -> str:
+    """Mots-clés Pixabay garantissant une photo de la bonne ville."""
+    if slug in DESTINATION_PIXABAY_QUERIES:
+        return DESTINATION_PIXABAY_QUERIES[slug]
+    name = (dest or {}).get("name") or slug.replace("-", " ")
+    return f"{name} Vietnam travel landmark"
+
+
+def _slug_theme_tokens(slug: str) -> set[str]:
+    key = slug.replace("-", "")
+    if key in _CITY_TOKENS:
+        return {_CITY_TOKENS[key]}
+    for city_key, token in _CITY_TOKENS.items():
+        if city_key in key or key.startswith(city_key):
+            return {token}
+    return set()
+
+
+def _photo_ids_for_destination(slug: str) -> list[str]:
+    """Photo_ids du pool compatibles avec le slug (ordre de préférence)."""
+    ordered: list[str] = []
+    primary = DESTINATION_PHOTO_MAP.get(slug)
+    if primary:
+        ordered.append(primary)
+    for pid in DESTINATION_PHOTO_ALTERNATES.get(slug, []):
+        if pid not in ordered:
+            ordered.append(pid)
+    tokens = _slug_theme_tokens(slug)
+    if tokens:
+        for pid, themes in PHOTO_THEMES.items():
+            if tokens & themes and pid not in ordered:
+                ordered.append(pid)
+    return ordered
+
+
+def _photo_id_from_pool_url(image_url: str | None) -> str:
+    if not image_url or "/static/images/pool/" not in image_url:
+        return ""
+    return image_url.rsplit("/", 1)[-1].removesuffix(".webp")
+
+
+def photo_id_matches_destination(slug: str, photo_id: str) -> bool:
+    if not photo_id:
+        return True
+    return photo_id in _photo_ids_for_destination(slug)
+
+
+def _align_destination_pool_image(dest: dict) -> dict | None:
+    """Corrige une image pool qui ne correspond pas à la ville de la page."""
+    slug = dest.get("slug", "")
+    image = (dest.get("image") or "").strip()
+    if image.startswith("/static/images/destinations/") or _is_remote_image_url(image):
+        return None
+
+    photo_id = (dest.get("image_photo_id") or "").strip() or _photo_id_from_pool_url(image)
+    if photo_id and photo_id_matches_destination(slug, photo_id):
+        pool_url = pool_image_url(photo_id)
+        if image != pool_url:
+            return {**dest, "image": pool_url, "image_photo_id": photo_id, "image_placeholder": False}
+        return None
+
+    pid = _pick_destination_photo_id(slug, abs(hash(slug)) % 9999)
+    return {
+        **dest,
+        "image": pool_image_url(pid),
+        "image_photo_id": pid,
+        "image_placeholder": False,
+    }
 
 LEGACY_PROMPTS: dict[str, str] = {
     "visa-vietnam-guide-complet-francais": (
@@ -479,6 +578,13 @@ def sync_destination_images(*, allow_network: bool = True) -> int:
     dests = get_destinations_dict()
     updated = 0
     for slug, dest in dests.items():
+        dest = {**dest, "slug": slug}
+        aligned = _align_destination_pool_image(dest)
+        if aligned:
+            dests[slug] = aligned
+            updated += 1
+            dest = aligned
+
         if destination_image_resolves(dest):
             continue
 
@@ -803,20 +909,20 @@ def regenerate_all_article_images() -> int:
 
 
 def _pick_destination_photo_id(slug: str, nonce: int = 0) -> str:
-    if slug in DESTINATION_PHOTO_MAP:
-        return DESTINATION_PHOTO_MAP[slug]
+    candidates = _photo_ids_for_destination(slug)
+    if not candidates:
+        candidates = [p[0] for p in VIETNAM_PHOTO_POOL]
     used = set()
     from admin.store import get_destinations_dict
     for d in get_destinations_dict().values():
         if pid := d.get("image_photo_id"):
             used.add(pid)
-    pool_ids = [p[0] for p in VIETNAM_PHOTO_POOL]
-    start = abs(hash(f"dest-{slug}-{nonce}")) % len(pool_ids)
-    for offset in range(len(pool_ids)):
-        pid = pool_ids[(start + offset) % len(pool_ids)]
+    start = abs(hash(f"dest-{slug}-{nonce}")) % len(candidates)
+    for offset in range(len(candidates)):
+        pid = candidates[(start + offset) % len(candidates)]
         if pid not in used:
             return pid
-    return pool_ids[start % len(pool_ids)]
+    return candidates[start % len(candidates)]
 
 
 def build_destination_image_prompt(dest: dict, ai_prompt: str | None = None) -> str:
@@ -864,7 +970,8 @@ def attach_image_to_destination(
     # Chemin rapide : RÉFÉRENCE directe d'une photo du pool (commitée → persistante au
     # redéploiement, contrairement à une copie sur le FS éphémère de Scalingo).
     if not want_ai:
-        for pid in [photo_id] + [p[0] for p in VIETNAM_PHOTO_POOL if p[0] != photo_id]:
+        pool_candidates = _photo_ids_for_destination(slug) or [photo_id]
+        for pid in pool_candidates:
             if _local_pool_path(pid).exists():
                 log(f"IMAGE dest done slug={slug} en {time.time() - t0:.1f}s pool_ref photo_id={pid}")
                 return _meta(pid, placeholder=False, image_url=f"/static/images/pool/{pid}.webp")
@@ -878,15 +985,15 @@ def attach_image_to_destination(
         try:
             return _fetch_vietnam_photo(photo_id), photo_id
         except Exception:
-            for alt_id in [p[0] for p in VIETNAM_PHOTO_POOL if p[0] != photo_id][:2]:
+            for alt_id in _photo_ids_for_destination(slug)[1:3]:
                 try:
                     return _fetch_vietnam_photo(alt_id), alt_id
                 except Exception:
                     continue
         # Pool local absent : repli réseau Pixabay (au lieu d'Unsplash).
         try:
-            query = " ".join(["Vietnam", dest.get("name", dest.get("city", ""))]).strip()
-            return _fetch_pixabay_photo(query or "Vietnam", seed), photo_id
+            query = destination_pixabay_query(slug, dest)
+            return _fetch_pixabay_photo(query, seed), photo_id
         except Exception:
             pass
         raise RuntimeError("Aucune image disponible")

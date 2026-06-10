@@ -344,16 +344,18 @@ def find_destination_slug(hint: str) -> str | None:
 
 def add_or_update_destination(dest: dict):
     from admin.image_service import (
+        _align_destination_pool_image,
         _local_pool_path,
         attach_image_to_destination,
         destination_image_resolves,
+        photo_id_matches_destination,
         pool_image_url,
     )
 
     dest = wrap_destination_i18n(dest)
     if not destination_image_resolves(dest):
         photo_id = (dest.get("image_photo_id") or "").strip()
-        if photo_id and _local_pool_path(photo_id).exists():
+        if photo_id and _local_pool_path(photo_id).exists() and photo_id_matches_destination(dest["slug"], photo_id):
             dest["image"] = pool_image_url(photo_id)
         else:
             dest.update(attach_image_to_destination(
@@ -361,6 +363,10 @@ def add_or_update_destination(dest: dict):
                 dest.get("image_prompt"),
                 image_nonce=abs(hash(dest["slug"])) % 9999,
             ))
+    else:
+        aligned = _align_destination_pool_image(dest)
+        if aligned:
+            dest.update(aligned)
     data = _raw_destinations()
     data[dest["slug"]] = dest
     save_destinations(data)
