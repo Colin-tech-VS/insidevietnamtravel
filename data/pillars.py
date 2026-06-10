@@ -306,9 +306,9 @@ PILLARS: dict[str, dict] = {
         "meta_title": {"fr": "Itinéraires Vietnam : 3, 7, 10 jours et plus",
                        "en": "Vietnam itineraries: 3, 7, 10 days and more"},
         "meta_description": {
-            "fr": "Itinéraires au Vietnam par durée (3, 7, 10 jours), conseils Nord/Centre/"
+            "fr": "Itinéraires au Vietnam par durée (3, 7, 10, 15 jours), conseils Nord/Centre/"
                   "Sud et planificateur sur mesure pour composer votre voyage.",
-            "en": "Vietnam itineraries by length (3, 7, 10 days), north/centre/south tips "
+            "en": "Vietnam itineraries by length (3, 7, 10, 15 days), north/centre/south tips "
                   "and a tailored planner to build your trip.",
         },
         "clusters": [
@@ -326,8 +326,11 @@ PILLARS: dict[str, dict] = {
                        "La traversée Nord-Sud la plus demandée.",
                        "The most popular north–south crossing.",
                        slug="10-days-vietnam"),
-                 _link(None, "Le Vietnam en 15 jours et plus",
-                       "Vietnam in 15 days and more"),
+                 _link("itinerary", "Le Vietnam en 15 jours et plus",
+                       "Vietnam in 15 days and more",
+                       "La grande traversée Nord-Sud : Sapa, Halong, Huế, Hội An et Mékong.",
+                       "The full north–south crossing: Sapa, Halong, Huế, Hội An and Mekong.",
+                       slug="15-days-vietnam"),
              ]},
             {"title": {"fr": "Composer le vôtre", "en": "Build your own"},
              "links": [

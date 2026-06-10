@@ -233,7 +233,7 @@ DURATION_KEYS = ("short", "medium", "long")
 DURATION_ITINERARIES: dict[str, list[str]] = {
     "short": ["7-days-vietnam"],
     "medium": ["10-days-vietnam"],
-    "long": ["10-days-vietnam", "7-days-vietnam"],
+    "long": ["15-days-vietnam", "10-days-vietnam"],
 }
 
 GROUP_BOOST: dict[str, dict] = {
