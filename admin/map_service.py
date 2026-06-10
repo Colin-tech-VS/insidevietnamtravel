@@ -743,6 +743,38 @@ def build_chat_map_chunks(lang: str, track_url_fn: Callable[[str, str], str]) ->
     return chunks
 
 
+def geocode_point_best_effort(title: str, address: str, city: str = "") -> dict | None:
+    """Géocode un point en essayant plusieurs requêtes, de la plus précise à la
+    plus large : les adresses dictées par l'IA ou copiées d'un site sont souvent
+    absentes d'OpenStreetMap au format exact (restos, petits commerces…)."""
+    queries: list[str] = []
+
+    def push(query: str) -> None:
+        query = (query or "").strip(" ,")
+        if query and all(query.lower() != q.lower() for q in queries):
+            queries.append(query)
+
+    parts = [p.strip() for p in (address or "").split(",") if p.strip()]
+    city_in_address = bool(city) and _normalize(city) in _normalize(address or "")
+    suffix = "" if city_in_address or not city else f", {city}"
+    push(address)
+    push(f"{address}{suffix}")
+    # Rue sans le numéro : Nominatim connaît souvent la rue mais pas le n° exact.
+    no_number = re.sub(r"^\s*(?:s[ốo]\s*)?\d+[a-zA-Z]?(?:\s*[/-]\s*\d+[a-zA-Z]?)*[,\s]+", "", address, flags=re.IGNORECASE)
+    if no_number and no_number != address:
+        push(f"{no_number}{suffix}")
+    area = city or (parts[-1] if parts else "")
+    if title and area:
+        push(f"{title}, {area}")
+
+    for query in queries[:4]:
+        try:
+            return geocode_address(query)
+        except Exception:  # noqa: BLE001 — on tente la requête suivante
+            continue
+    return None
+
+
 def add_map_point(form: dict) -> dict:
     title = (form.get("title") or "").strip()
     address = (form.get("address") or "").strip()
@@ -761,8 +793,23 @@ def add_map_point(form: dict) -> dict:
     if kind not in KIND_LABELS:
         raise ValueError("Type de point invalide.")
 
-    geo = geocode_address(address)
     slug = resolve_destination_slug(city)
+    store = get_map_store()
+    geo = geocode_point_best_effort(title, address, city)
+    approx = False
+    if geo is None:
+        # Adresse inconnue d'OSM : si la ville est publiée, on place le point
+        # près du centre-ville plutôt que d'échouer — affinable dans /admin/map.
+        if not slug:
+            raise ValueError(f"Adresse introuvable : {address}")
+        city_label = get_destinations_dict_safe()[slug].get("name", slug)
+        try:
+            center = _city_center(store, slug, city_label)
+        except Exception:  # noqa: BLE001
+            raise ValueError(f"Adresse introuvable : {address}") from None
+        lat, lng = _spread_coords(center, f"{slug}:manual:{_normalize(title)}")
+        geo = {"lat": lat, "lng": lng, "display_name": f"{city_label} (position approximative)"}
+        approx = True
 
     point = {
         "id": str(uuid.uuid4()),
@@ -778,11 +825,11 @@ def add_map_point(form: dict) -> dict:
         "affiliate_search": affiliate_search,
         "affiliate_url": affiliate_url,
         "affiliate_link_type": "hotel" if kind == "hotel" else "activity" if kind == "activity" else "global",
+        "geo_approx": approx,
         "source": "manual",
         "created_at": _now_iso(),
     }
 
-    store = get_map_store()
     if slug:
         dests = get_destinations_dict_safe()
         point["destination_slug"] = slug
@@ -790,7 +837,7 @@ def add_map_point(form: dict) -> dict:
         point["fingerprint"] = _point_fingerprint(slug, f"manual:{point['id']}")
         store.setdefault("points", []).append(point)
         save_map_store(store)
-        return {"status": "published", "point": point, "slug": slug}
+        return {"status": "published", "point": point, "slug": slug, "approx": approx}
 
     point["requested_city"] = city or "(non précisée)"
     point["pending_reason"] = "destination_not_published"
@@ -799,6 +846,7 @@ def add_map_point(form: dict) -> dict:
     return {
         "status": "pending",
         "point": point,
+        "approx": approx,
         "message": (
             f"« {city or 'Ville inconnue'} » n'a pas encore de page destination — "
             "le point est en attente."

@@ -162,6 +162,56 @@
   30% { transform: translateY(-4px); opacity: 1; }
 }
 
+/* Effet « machine à écrire » (même rendu que Mai) — clic = tout afficher */
+.linh-chat__bubble-wrap--streaming { cursor: pointer; }
+
+.linh-chat__bubble--streaming {
+  position: relative;
+  overflow: hidden;
+}
+
+.linh-chat__bubble--streaming::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgba(27, 77, 74, 0.07) 45%,
+    rgba(196, 160, 83, 0.1) 55%,
+    transparent 100%
+  );
+  background-size: 220% 100%;
+  animation: linh-stream-shimmer 3.2s ease-in-out infinite;
+}
+
+@keyframes linh-stream-shimmer {
+  0% { background-position: 130% 0; opacity: 0.25; }
+  50% { opacity: 0.55; }
+  100% { background-position: -130% 0; opacity: 0.25; }
+}
+
+.linh-chat__stream-text { display: inline; }
+
+.linh-chat__cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.05em;
+  margin-left: 1px;
+  vertical-align: text-bottom;
+  border-radius: 1px;
+  background: linear-gradient(180deg, #1B4D4A, #C4A053);
+  animation: linh-cursor-blink 0.85s ease-in-out infinite;
+  box-shadow: 0 0 6px rgba(196, 160, 83, 0.35);
+}
+
+@keyframes linh-cursor-blink {
+  0%, 100% { opacity: 1; transform: scaleY(1); }
+  50% { opacity: 0.25; transform: scaleY(0.85); }
+}
+
 /* Audit — cartes de constats */
 .linh-chat__findings {
   display: flex;

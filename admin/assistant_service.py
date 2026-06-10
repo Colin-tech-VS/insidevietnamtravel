@@ -702,10 +702,13 @@ def _exec_add_map_points(params: dict) -> dict:
 
     published: list[str] = []
     pending: list[str] = []
+    approx: list[str] = []
     errors: list[str] = []
     for point in params.get("points") or []:
         try:
             result = map_service.add_map_point(point)
+            if result.get("approx"):
+                approx.append(point["title"])
             (published if result["status"] == "published" else pending).append(point["title"])
         except Exception as exc:  # noqa: BLE001 — un point en échec ne bloque pas les autres
             errors.append(f"{point.get('title', '?')} ({exc})")
@@ -713,6 +716,11 @@ def _exec_add_map_points(params: dict) -> dict:
     parts = []
     if published:
         parts.append(f"✅ {len(published)} point(s) ajouté(s) sur la carte : " + ", ".join(published) + ".")
+    if approx:
+        parts.append(
+            f"📍 {len(approx)} point(s) placé(s) près du centre-ville (adresse exacte introuvable "
+            "sur OpenStreetMap) : " + ", ".join(approx) + " — position affinable depuis /admin/map."
+        )
     if pending:
         parts.append(
             f"⏳ {len(pending)} point(s) en attente (pas de page destination publiée pour cette ville) : "
@@ -939,7 +947,9 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
         return {"confirm": create_confirmation(
             "add_map_points", {"points": points},
             f"Ajouter {len(points)} point(s) {where} ?",
-            listing + "\n\nChaque adresse sera géolocalisée via OpenStreetMap.",
+            listing + "\n\nChaque adresse sera géolocalisée via OpenStreetMap "
+            "(si une adresse est introuvable, le point sera placé près du centre-ville, "
+            "position affinable ensuite).",
         )}
 
     if name == "publish_draft":
