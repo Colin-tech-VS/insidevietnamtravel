@@ -36,6 +36,7 @@ from seo_utils import (
     item_list_schema,
     organization_schema,
     truncate_text,
+    webpage_schema,
     website_schema,
 )
 from admin import admin_bp
@@ -257,7 +258,13 @@ def inject_globals():
         "hreflang_urls": hreflang_urls(),
         "switch_lang_url": switch_lang_url(),
         "page_url_in_lang": page_url_in_lang,
-        "meta_keywords": None,
+        # Valeurs SEO par défaut : garantissent que TOUTE page (même future ou qui
+        # oublierait de les passer) expédie des balises meta/OG cohérentes. Les routes
+        # qui passent ces kwargs à render_template les remplacent automatiquement.
+        "meta_title": f"{config.SITE_NAME} — {config.SITE_TAGLINE_I18N.get(lang, config.SITE_TAGLINE)}",
+        "meta_description": config.SITE_DESCRIPTION_I18N.get(lang, config.SITE_DESCRIPTION),
+        "meta_keywords": config.SITE_KEYWORDS_I18N.get(lang, config.SITE_KEYWORDS),
+        "og_image": None,
         "legal_contact_email": config.LEGAL_CONTACT_EMAIL,
         "legal_updated": config.LEGAL_UPDATED_I18N.get(lang, config.LEGAL_UPDATED),
         "site_tagline": config.SITE_TAGLINE_I18N.get(lang, config.SITE_TAGLINE),
@@ -311,6 +318,13 @@ def seo_website():
 
 
 @app.template_global()
+def seo_webpage(name=None, description=None, url=None, image=None):
+    """Noeud WebPage de la page courante (émis globalement par base.html)."""
+    return webpage_schema(name, description, url or canonical_for_request(get_lang()),
+                          image, get_lang())
+
+
+@app.template_global()
 def pillar_backlinks(endpoint: str, slug: str | None = None) -> list[dict]:
     """Maillage retour : pilier(s) de silo référençant cette page (contenu → pilier)."""
     return pillars.find_pillars_for(endpoint, slug, get_lang(), lang_url)
@@ -351,7 +365,7 @@ def is_article_new(article, days: int = 14) -> bool:
 
 @app.template_global()
 def article_image_url(article) -> str:
-    return article.get("image") or url_for("static", filename="images/og-default.svg")
+    return article.get("image") or url_for("static", filename="images/og-default.jpg")
 
 
 def _variant_exists(static_rel: str) -> bool:
@@ -361,7 +375,7 @@ def _variant_exists(static_rel: str) -> bool:
 @app.template_global()
 def responsive_image(image_url: str, *, card: bool = False) -> dict:
     """src + srcset pour images WebP locales avec variantes -640/-960."""
-    fallback = image_url or url_for("static", filename="images/og-default.svg")
+    fallback = image_url or url_for("static", filename="images/og-default.jpg")
     if not image_url or not image_url.endswith(".webp") or "/static/images/" not in image_url:
         return {"src": fallback, "srcset": "", "sizes": ""}
 
@@ -647,6 +661,7 @@ def useful_apps():
         meta_keywords="applications Vietnam, Grab Vietnam, apps voyage Vietnam, éviter arnaques Vietnam"
         if lang == "fr"
         else "Vietnam apps, Grab Vietnam, travel apps Vietnam, avoid scams Vietnam",
+        og_image="/static/images/pool/1521993117367-b7f70ccd029d.webp",
     )
 
 
@@ -664,6 +679,7 @@ def safety_guide():
         meta_title=t("meta.safety.title", lang),
         meta_description=t("meta.safety.desc", lang),
         meta_keywords=t("meta.safety.kw", lang),
+        og_image="/static/images/pool/1528127269322-539801943592.webp",
     )
 
 
@@ -679,6 +695,7 @@ def customs_guide():
         meta_title=t("meta.customs.title", lang),
         meta_description=t("meta.customs.desc", lang),
         meta_keywords=t("meta.customs.kw", lang),
+        og_image="/static/images/pool/1557750255-c76072a7aad1.webp",
     )
 
 
@@ -694,6 +711,7 @@ def phrases_guide():
         meta_title=t("meta.phrases.title", lang),
         meta_description=t("meta.phrases.desc", lang),
         meta_keywords=t("meta.phrases.kw", lang),
+        og_image="/static/images/pool/1531737212413-667205e1cda7.webp",
     )
 
 
@@ -732,6 +750,7 @@ def article(slug):
         meta_title=article_meta_title(post),
         meta_description=article_meta_description(post, lang),
         meta_keywords=", ".join(post.get("tags", [])[:10]),
+        og_image=post.get("image"),
     )
 
 
@@ -1033,6 +1052,7 @@ def pillar(slug):
         meta_title=p["meta_title"],
         meta_description=p["meta_description"],
         meta_keywords=f"{p['title']}, Vietnam, voyage Vietnam, guide Vietnam",
+        og_image=(f"/static/images/pool/{p.get('photo_id')}.webp" if p.get("photo_id") else None),
     )
 
 
@@ -1054,6 +1074,7 @@ def destination_page(slug):
         meta_title=dest.get("meta_title") or build_meta_title(f"Guide {dest['name']} Vietnam"),
         meta_description=truncate_text(dest.get("meta_description", ""), 160),
         meta_keywords=t("meta.dest.kw", lang, name=dest["name"]),
+        og_image=dest.get("image"),
     )
 
 

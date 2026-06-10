@@ -67,4 +67,9 @@ LEGAL_UPDATED = "8 juin 2026"
 LEGAL_UPDATED_I18N = {"fr": LEGAL_UPDATED, "en": "8 June 2026"}
 SITE_AUTHOR = "Inside Vietnam Travel"
 LEGAL_CONTACT_EMAIL = os.environ.get("LEGAL_CONTACT_EMAIL", "contact@insidevietnamtravel.fr")
+# Profils sociaux officiels (Facebook, Instagram, etc.) pour le schema Organization
+# (sameAs) — séparés par des virgules dans la variable d'env SITE_SOCIAL_URLS.
+SITE_SOCIAL_URLS = [
+    u.strip() for u in os.environ.get("SITE_SOCIAL_URLS", "").split(",") if u.strip()
+]
 LEGAL_UPDATED = "8 juin 2026"

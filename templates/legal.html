@@ -1,4 +1,14 @@
 {% extends "base.html" %}
+{% from "macros/seo.html" import json_ld_graph with context %}
+
+{% block structured_data %}
+{{ json_ld_graph([
+  seo_breadcrumb([
+    (t('nav.home'), site.SITE_URL ~ lang_url('index')),
+    (t('footer.legal'), None),
+  ]),
+]) }}
+{% endblock %}
 
 {% block content %}
 <header class="page-hero page-hero--about">

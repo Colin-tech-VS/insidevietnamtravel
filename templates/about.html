@@ -12,7 +12,6 @@
     "inLanguage": "en-GB" if lang == 'en' else "fr-FR",
     "mainEntity": {"@id": site.SITE_URL ~ "/#organization"}
   },
-  seo_organization(),
   seo_breadcrumb([
     (t('nav.home'), site.SITE_URL ~ lang_url('index')),
     (t('nav.about'), None),

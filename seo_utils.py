@@ -80,17 +80,22 @@ def _strip_tags(html: str) -> str:
 def organization_schema(lang: str = "fr") -> dict:
     desc = config.SITE_DESCRIPTION_I18N.get(lang, config.SITE_DESCRIPTION)
     base = config.SITE_URL.rstrip("/")
+    # sameAs : profils sociaux officiels (configurables) + ressources canoniques.
+    same_as = [base] + list(getattr(config, "SITE_SOCIAL_URLS", []) or []) + [f"{base}/llms.txt"]
     return {
         "@type": "Organization",
         "@id": f"{base}/#organization",
         "name": config.SITE_NAME,
         "url": base,
         "description": desc,
+        # Logo raster (Google ignore les SVG pour le logo d'organisation).
         "logo": {
             "@type": "ImageObject",
-            "url": f"{base}/static/images/favicon.svg",
+            "url": f"{base}/static/images/favicon-180.png",
+            "width": 180,
+            "height": 180,
         },
-        "image": f"{base}/static/images/og-default.svg",
+        "image": f"{base}/static/images/og-default.jpg",
         "email": config.LEGAL_CONTACT_EMAIL,
         "areaServed": {"@type": "Country", "name": "Vietnam"},
         "knowsAbout": [
@@ -103,7 +108,7 @@ def organization_schema(lang: str = "fr") -> dict:
             "@type": "Audience",
             "audienceType": "International travellers planning a trip to Vietnam",
         },
-        "sameAs": [base, f"{base}/llms.txt"],
+        "sameAs": same_as,
         "contactPoint": {
             "@type": "ContactPoint",
             "contactType": "customer support",
@@ -134,6 +139,38 @@ def website_schema(lang: str = "fr") -> dict:
             "name": config.SITE_NAME,
         },
     }
+
+
+def webpage_schema(
+    name: str,
+    description: str,
+    url: str,
+    image: str | None = None,
+    lang: str = "fr",
+) -> dict:
+    """Noeud WebPage de la page courante — rattache à l'Organization et au WebSite.
+
+    Emis sur CHAQUE page (y compris futures) depuis base.html : ancre l'entité de la
+    page dans le graphe (utile aux rich results et au knowledge graph de Google).
+    """
+    from i18n_utils import schema_language
+
+    base = config.SITE_URL.rstrip("/")
+    data: dict = {
+        "@type": "WebPage",
+        "@id": f"{url}#webpage",
+        "url": url,
+        "name": name or config.SITE_NAME,
+        "description": truncate_text(
+            description or config.SITE_DESCRIPTION_I18N.get(lang, config.SITE_DESCRIPTION), 200
+        ),
+        "inLanguage": schema_language(lang),
+        "isPartOf": {"@id": f"{base}/#website"},
+        "about": {"@id": f"{base}/#organization"},
+    }
+    if image:
+        data["primaryImageOfPage"] = {"@type": "ImageObject", "url": image}
+    return data
 
 
 def breadcrumb_schema(items: list[tuple[str, str | None]]) -> dict:

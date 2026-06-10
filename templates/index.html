@@ -23,9 +23,9 @@
 {% set list_dest = "Destinations Vietnam" if lang == 'fr' else "Vietnam destinations" %}
 {% set list_itin = "Itinéraires voyage Vietnam" if lang == 'fr' else "Vietnam travel itineraries" %}
 {% set geo_faq_schema = seo_faq(geo_faq) %}
+{# Organization + WebSite sont desormais emis globalement (base.html) sur toutes les
+   pages : ici on n'ajoute que les schemas specifiques a l'accueil. #}
 {{ json_ld_graph([
-  seo_organization(),
-  seo_website(),
   seo_item_list(list_dest, dest_items),
   seo_item_list(list_itin, itin_items),
 ] + ([geo_faq_schema] if geo_faq_schema else [])) }}

@@ -2,13 +2,13 @@
 {% from "macros/seo.html" import json_ld_graph with context %}
 
 {% block structured_data %}
-{{ json_ld_graph([{
-  "@type": "WebPage",
-  "name": meta_title,
-  "description": meta_description,
-  "url": canonical_url,
-  "inLanguage": "en-GB" if lang == 'en' else "fr-FR"
-}]) }}
+{# Le noeud WebPage est emis globalement (base.html) : ici on ajoute le fil d'Ariane. #}
+{{ json_ld_graph([
+  seo_breadcrumb([
+    (t('nav.home'), site.SITE_URL ~ lang_url('index')),
+    (t('footer.privacy'), None),
+  ]),
+]) }}
 {% endblock %}
 
 {% block content %}
