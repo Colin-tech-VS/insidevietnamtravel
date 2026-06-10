@@ -145,37 +145,58 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  document.querySelectorAll('.content-image-form').forEach((form) => {
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const slug = form.dataset.slug;
-      const target = form.dataset.target || 'article';
-      const image_url = (form.querySelector('[name="image_url"]') || {}).value || '';
-      const query = (form.querySelector('[name="query"]') || {}).value || '';
-      const alt = (form.querySelector('[name="alt"]') || {}).value || '';
-      if (!image_url.trim() && !query.trim()) {
-        alert('Indiquez une URL d\'image ou des mots-clés Pixabay.');
-        return;
-      }
-      const url = target === 'destination'
-        ? `/admin/api/content/destination/${encodeURIComponent(slug)}/image`
-        : `/admin/api/content/article/${encodeURIComponent(slug)}/image`;
-      startLoader('Mise à jour de la photo…');
-      postJson(url, {
+  function postImageUpdate(url, form) {
+    const fileInput = form.querySelector('[name="image_file"]');
+    const file = fileInput && fileInput.files && fileInput.files[0];
+    const image_url = (form.querySelector('[name="image_url"]') || {}).value || '';
+    const query = (form.querySelector('[name="query"]') || {}).value || '';
+    const alt = (form.querySelector('[name="alt"]') || {}).value || '';
+    if (!file && !image_url.trim() && !query.trim()) {
+      alert('Importez un fichier, ou indiquez une URL / des mots-clés Pixabay.');
+      return Promise.resolve();
+    }
+    startLoader('Mise à jour de la photo…');
+    let body;
+    let headers = { Accept: 'application/json' };
+    if (file) {
+      body = new FormData();
+      body.append('image_file', file);
+      if (alt.trim()) body.append('alt', alt.trim());
+      if (image_url.trim()) body.append('image_url', image_url.trim());
+      if (query.trim()) body.append('query', query.trim());
+    } else {
+      headers['Content-Type'] = 'application/json';
+      body = JSON.stringify({
         image_url: image_url.trim(),
         query: query.trim(),
         alt: alt.trim(),
-      }).then(({ ok, data }) => {
+      });
+    }
+    return fetch(url, { method: 'POST', credentials: 'same-origin', headers, body })
+      .then((r) => r.json().then((data) => ({ ok: r.ok, data })))
+      .then(({ ok, data }) => {
         if (!ok || !data.ok) {
           stopLoader();
           alert(data.error || 'Impossible de mettre à jour l\'image.');
           return;
         }
         pollJob();
-      }).catch(() => {
+      })
+      .catch(() => {
         stopLoader();
         alert('Erreur réseau.');
       });
+  }
+
+  document.querySelectorAll('.content-image-form').forEach((form) => {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const slug = form.dataset.slug;
+      const target = form.dataset.target || 'article';
+      const url = target === 'destination'
+        ? `/admin/api/content/destination/${encodeURIComponent(slug)}/image`
+        : `/admin/api/content/article/${encodeURIComponent(slug)}/image`;
+      postImageUpdate(url, form);
     });
   });
 });

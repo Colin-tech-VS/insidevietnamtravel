@@ -9,9 +9,10 @@
         <button type="submit" class="btn btn-secondary btn-sm" {% if not groq_ok %}disabled{% endif %}>Améliorer IA</button>
       </div>
     </form>
-    <form class="content-image-form" data-target="{{ target }}" data-slug="{{ slug }}" data-no-loader>
+    <form class="content-image-form" data-target="{{ target }}" data-slug="{{ slug }}" data-no-loader enctype="multipart/form-data">
       <p class="content-edit-tools__label">Photo de couverture</p>
-      <input type="url" name="image_url" class="inline-input" placeholder="URL directe (https://…)">
+      <input type="file" name="image_file" class="inline-input inline-input--file" accept="image/jpeg,image/png,image/webp,image/gif">
+      <input type="url" name="image_url" class="inline-input" placeholder="Ou URL directe (https://…)">
       <input type="text" name="query" class="inline-input" placeholder="Ou mots-clés Pixabay (ex: Halong bay Vietnam)">
       <input type="text" name="alt" class="inline-input" placeholder="Texte alt SEO (optionnel)">
       <button type="submit" class="btn btn-secondary btn-sm">Mettre à jour la photo</button>

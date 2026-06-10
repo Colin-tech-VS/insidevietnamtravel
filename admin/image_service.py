@@ -943,6 +943,65 @@ def set_remote_image_for_destination(dest: dict, image_url: str, alt: str | None
     }
 
 
+MAX_UPLOAD_BYTES = 12 * 1024 * 1024
+
+
+def read_uploaded_image_bytes(file_storage) -> bytes:
+    """Lit et valide un fichier image importé depuis l'admin (max 12 Mo)."""
+    if not file_storage or not getattr(file_storage, "filename", None):
+        raise ValueError("Fichier image manquant.")
+    raw = file_storage.read()
+    if not raw or len(raw) < 200:
+        raise ValueError("Fichier image vide ou invalide.")
+    if len(raw) > MAX_UPLOAD_BYTES:
+        raise ValueError("Image trop lourde (maximum 12 Mo).")
+    try:
+        with Image.open(io.BytesIO(raw)) as img:
+            img.verify()
+        with Image.open(io.BytesIO(raw)) as img:
+            if img.format not in ("JPEG", "PNG", "WEBP", "GIF"):
+                raise ValueError("Format non supporté.")
+    except ValueError:
+        raise
+    except Exception as exc:
+        raise ValueError("Format d'image non supporté (JPEG, PNG, WebP, GIF).") from exc
+    return raw
+
+
+def _write_uploaded_webp(raw: bytes, out_path: Path) -> None:
+    """Encode un fichier importé en WebP 1200×675 (+ variantes si possible)."""
+    try:
+        _run_with_deadline(_to_webp, IMAGE_ENCODE_DEADLINE, raw, out_path)
+    except Exception:
+        _write_webp_fast(raw, out_path)
+
+
+def set_uploaded_image_for_article(article: dict, raw: bytes, alt: str | None = None) -> dict:
+    """Remplace l'image d'un article par un fichier importé (WebP optimisé)."""
+    slug = article["slug"]
+    _write_uploaded_webp(raw, BLOG_IMAGES_DIR / f"{slug}.webp")
+    meta = _article_image_meta(article, slug, "", placeholder=False)
+    meta["image_photo_id"] = ""
+    meta["image_source_url"] = ""
+    if alt and alt.strip():
+        meta["image_alt"] = alt.strip()[:140]
+    return meta
+
+
+def set_uploaded_image_for_destination(dest: dict, raw: bytes, alt: str | None = None) -> dict:
+    """Remplace l'image d'une destination par un fichier importé (WebP optimisé)."""
+    slug = dest["slug"]
+    _write_uploaded_webp(raw, DEST_IMAGES_DIR / f"{slug}.webp")
+    name = dest.get("name", dest.get("city", "Vietnam"))
+    return {
+        "image": f"/static/images/destinations/{slug}.webp",
+        "image_alt": (alt.strip() if alt and alt.strip() else f"Guide voyage {name}, Vietnam")[:140],
+        "image_photo_id": "",
+        "image_placeholder": False,
+        "image_source_url": "",
+    }
+
+
 def ensure_all_destination_images() -> int:
     """Génère les images manquantes pour toutes les destinations."""
     from admin.store import get_destinations_dict, save_destinations

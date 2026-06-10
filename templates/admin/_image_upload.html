@@ -1,0 +1,7 @@
+{% macro cover_image_field(id_prefix="", compact=false) %}
+<div class="form-field image-upload-field{% if compact %} image-upload-field--compact{% endif %}">
+  <label{% if id_prefix %} for="{{ id_prefix }}image-file"{% endif %}>Importer une photo</label>
+  <input type="file"{% if id_prefix %} id="{{ id_prefix }}image-file"{% endif %} name="image_file" accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif">
+  <p class="field-hint">JPEG, PNG ou WebP — max 12 Mo. Prioritaire sur l'URL / Pixabay.</p>
+</div>
+{% endmacro %}

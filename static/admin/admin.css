@@ -1762,6 +1762,21 @@ select optgroup { font-weight: 700; color: var(--teal); }
   border: 1px solid var(--rice-dark);
   border-radius: var(--radius-sm);
 }
+.content-edit-tools .inline-input--file {
+  padding: 0.25rem 0;
+  border: none;
+  background: transparent;
+}
+.image-upload-field input[type="file"] {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  font-size: 0.88rem;
+  margin-top: 0.25rem;
+}
+.image-upload-field--compact .field-hint {
+  font-size: 0.75rem;
+}
 
 /* ── En-têtes de page, badges, accessibilité ───────── */
 .admin-page-header {

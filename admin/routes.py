@@ -15,7 +15,14 @@ from admin import groq_ai
 from admin import groq_destinations
 from admin import groq_newsletter
 from admin import draft_store
-from admin.image_service import attach_image_to_article, attach_image_to_destination, ensure_all_destination_images
+from admin.image_service import (
+    attach_image_to_article,
+    attach_image_to_destination,
+    ensure_all_destination_images,
+    read_uploaded_image_bytes,
+    set_uploaded_image_for_article,
+    set_uploaded_image_for_destination,
+)
 from admin.topic_suggestions import get_topic_suggestions
 from admin.admin_recommendations import (
     get_dashboard_recommendations,
@@ -31,6 +38,7 @@ from admin.content_editor import (
     improve_published_article,
     improve_published_destination,
     update_published_image,
+    update_published_image_upload,
 )
 from admin.store import (
     get_settings, save_settings,
@@ -102,6 +110,43 @@ def _start_content_job(fn, *, initial_phase: str = "Traitement en cours…") -> 
 
 def _content_job_status() -> dict:
     return draft_store.status(session.get(_CONTENT_JOB_KEY))
+
+
+def _parse_image_update_request() -> tuple[str, str, str, bytes | None]:
+    """Extrait URL, requête Pixabay, alt et éventuellement les octets d'un fichier importé."""
+    if request.content_type and "multipart" in request.content_type:
+        alt = (request.form.get("alt") or "").strip()
+        image_url = (request.form.get("image_url") or "").strip()
+        query = (request.form.get("query") or "").strip()
+        upload = None
+        f = request.files.get("image_file")
+        if f and f.filename:
+            upload = read_uploaded_image_bytes(f)
+        return image_url, query, alt, upload
+    data = request.get_json(silent=True) or {}
+    return (
+        (data.get("image_url") or "").strip(),
+        (data.get("query") or "").strip(),
+        (data.get("alt") or "").strip(),
+        None,
+    )
+
+
+def _apply_form_cover_image(item: dict, *, is_destination: bool = False) -> None:
+    """Applique une image importée ou Pixabay au formulaire manuel (priorité : fichier)."""
+    f = request.files.get("image_file")
+    alt = (request.form.get("image_alt") or request.form.get("alt") or "").strip() or None
+    if f and f.filename:
+        raw = read_uploaded_image_bytes(f)
+        if is_destination:
+            item.update(set_uploaded_image_for_destination(item, raw, alt))
+        else:
+            item.update(set_uploaded_image_for_article(item, raw, alt))
+    elif request.form.get("generate_image") == "on":
+        if is_destination:
+            item.update(attach_image_to_destination(item, None))
+        else:
+            item.update(attach_image_to_article(item, None))
 
 
 def _generate_draft(report, topic: str, guide_type: str, city: str) -> dict:
@@ -257,8 +302,7 @@ def guides():
                         if existing.get(key) and not article.get(key):
                             article[key] = existing[key]
                     article["editing_slug"] = editing_slug
-                if request.form.get("generate_image") == "on":
-                    article.update(attach_image_to_article(article, None))
+                _apply_form_cover_image(article, is_destination=False)
                 if action == "manual_publish":
                     if request.form.get("featured") == "on":
                         article["featured"] = True
@@ -399,14 +443,13 @@ def api_improve_published_destination(slug):
 def api_update_article_image(slug):
     if not get_article_by_slug(slug):
         return jsonify({"ok": False, "error": "Article introuvable"}), 404
-    data = request.get_json(silent=True) or {}
-    image_url = (data.get("image_url") or "").strip()
-    query = (data.get("query") or "").strip()
-    alt = (data.get("alt") or "").strip()
-    if not image_url and not query:
-        return jsonify({"ok": False, "error": "URL ou mots-clés Pixabay obligatoires"}), 400
+    image_url, query, alt, upload_bytes = _parse_image_update_request()
+    if not upload_bytes and not image_url and not query:
+        return jsonify({"ok": False, "error": "Importez un fichier, ou indiquez une URL / mots-clés Pixabay"}), 400
 
     def job(report):
+        if upload_bytes:
+            return update_published_image_upload("article", slug, upload_bytes, alt=alt, report=report)
         return update_published_image(
             "article", slug, image_url=image_url, query=query, alt=alt, report=report,
         )
@@ -420,14 +463,13 @@ def api_update_article_image(slug):
 def api_update_destination_image(slug):
     if not get_destination_by_slug(slug):
         return jsonify({"ok": False, "error": "Destination introuvable"}), 404
-    data = request.get_json(silent=True) or {}
-    image_url = (data.get("image_url") or "").strip()
-    query = (data.get("query") or "").strip()
-    alt = (data.get("alt") or "").strip()
-    if not image_url and not query:
-        return jsonify({"ok": False, "error": "URL ou mots-clés Pixabay obligatoires"}), 400
+    image_url, query, alt, upload_bytes = _parse_image_update_request()
+    if not upload_bytes and not image_url and not query:
+        return jsonify({"ok": False, "error": "Importez un fichier, ou indiquez une URL / mots-clés Pixabay"}), 400
 
     def job(report):
+        if upload_bytes:
+            return update_published_image_upload("destination", slug, upload_bytes, alt=alt, report=report)
         return update_published_image(
             "destination", slug, image_url=image_url, query=query, alt=alt, report=report,
         )
@@ -492,14 +534,13 @@ def destinations_admin():
                 dest = build_manual_destination(request.form)
                 editing_slug = (request.form.get("editing_slug") or "").strip()
                 existing = get_destination_by_slug(editing_slug) if editing_slug else None
-                if request.form.get("generate_image") == "on":
-                    dest.update(attach_image_to_destination(dest, None))
                 if existing:
                     # Édition : on conserve image, hôtels, activités… non resaisis.
                     for key in ("image", "image_photo_id", "image_alt", "hotels", "activities", "region"):
                         if existing.get(key) and not dest.get(key):
                             dest[key] = existing[key]
                     dest["editing_slug"] = editing_slug
+                _apply_form_cover_image(dest, is_destination=True)
                 if action == "manual_publish":
                     dest.pop("editing_slug", None)
                     add_or_update_destination(dest)

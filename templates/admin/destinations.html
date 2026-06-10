@@ -1,5 +1,6 @@
 {% extends "admin/layout.html" %}
 {% from "admin/_content_tools.html" import published_content_tools %}
+{% from "admin/_image_upload.html" import cover_image_field %}
 
 
 
@@ -121,7 +122,7 @@
 
         <h2>{% if draft and draft.editing_slug %}✎ Modifier « {{ draft.name }} »{% else %}✎ Rédiger manuellement{% endif %}</h2>
 
-        <form method="post" id="dest-form-manual" class="guide-form">
+        <form method="post" id="dest-form-manual" class="guide-form" enctype="multipart/form-data">
 
           {% if draft and draft.manual and draft.editing_slug %}
 
@@ -281,7 +282,9 @@
 
 
 
-          <label class="checkbox"><input type="checkbox" name="generate_image" {% if not draft or not draft.editing_slug %}checked{% endif %}> {% if draft and draft.editing_slug %}Nouvelle image Vietnam (Pixabay WebP){% else %}Ajouter une image Vietnam (WebP){% endif %}</label>
+          {{ cover_image_field("manual-dest-") }}
+
+          <label class="checkbox"><input type="checkbox" name="generate_image" {% if not draft or not draft.editing_slug %}checked{% endif %}> {% if draft and draft.editing_slug %}Sinon : nouvelle image auto (Pixabay){% else %}Sinon : image auto Vietnam (Pixabay){% endif %}</label>
 
 
 
