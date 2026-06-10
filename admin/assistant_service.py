@@ -538,9 +538,9 @@ def _system_prompt() -> str:
         "deviner. "
         "Tu peux AGIR à la place de l'admin via le champ \"tool\" : tu sais faire TOUT ce "
         "que l'admin peut faire dans /admin — générer un guide, une destination, une "
-        "newsletter, un post Facebook, modifier une destination, mettre à jour l'image "
-        "d'un article/d'une destination (y compris depuis une image trouvée sur internet), "
-        "ajouter des points carte, "
+        "newsletter, un post Facebook, modifier ou améliorer par IA un guide/article ou "
+        "une destination publiée, mettre à jour l'image d'un article/d'une destination "
+        "(y compris depuis internet), ajouter des points carte, "
         "publier/envoyer. Si l'admin demande une action couverte par un outil, appelle "
         "l'outil SANS tergiverser ; s'il n'existe pas d'outil, donne le lien admin prefill. "
         "CONFIRMATIONS — règles strictes : "
@@ -571,7 +571,10 @@ def _system_prompt() -> str:
         '- {"name":"generate_newsletter","params":{"topic":"…","email_type":"actualite","notes":"…"}} — email newsletter (job en arrière-plan)\n'
         '- {"name":"generate_social_post","params":{"page_id":"…","brief":"…"}} — post Facebook (page_id du bloc PAGES PUBLIQUES, ou brief libre)\n'
         '- {"name":"set_destination_region","params":{"slug":"…","region":"north|central|south"}} — déplacer une destination publiée dans la colonne Nord/Centre/Sud du menu Destinations (confirmation auto)\n'
-        '- {"name":"update_destination","params":{"slug":"…","tagline":"…","meta_title":"…","meta_description":"…","overview":"…","region":"…"}} — modifier une page destination publiée ; tous les champs sont optionnels, ne passe que ceux à changer (confirmation auto)\n'
+        '- {"name":"update_article","params":{"slug":"…","title":"…","meta_title":"…","meta_description":"…","excerpt":"…","content":"…","tags":["…"],"focus_keyword":"…"}} — modifier un guide/article publié (/blog/slug) ; champs optionnels, ne passe que ceux à changer (confirmation auto)\n'
+        '- {"name":"improve_article","params":{"slug":"…","instructions":"…"}} — réécrire/améliorer un guide publié par IA (SEO, clarté, maillage interne, longueur…) selon tes instructions ; job en arrière-plan après confirmation\n'
+        '- {"name":"update_destination","params":{"slug":"…","tagline":"…","meta_title":"…","meta_description":"…","overview":"…","tips":["…"],"things_to_do":[{"title":"…","desc":"…"}],"region":"…"}} — modifier une page destination publiée ; champs optionnels (confirmation auto). slug = slug ÉTAT DU SITE (ex. delta-du-mekong)\n'
+        '- {"name":"improve_destination","params":{"slug":"…","instructions":"…"}} — réécrire/améliorer une destination publiée par IA selon tes instructions ; job en arrière-plan après confirmation\n'
         '- {"name":"update_image","params":{"target":"article|destination","slug":"…","image_url":"https://…","query":"…","alt":"…"}} — mettre à jour l\'image d\'un article ou d\'une destination publié(e). slug = slug EXACT du bloc ÉTAT DU SITE (ex. delta-du-mekong, pas un libellé ville). Donne SOIT image_url (URL directe, ex. via web_search), SOIT query (mots-clés Pixabay). alt facultatif. Téléchargement + WebP en arrière-plan après confirmation\n'
         '- {"name":"add_map_points","params":{"city":"slug ou nom de la ville","points":[{"title":"…","address":"adresse complète","kind":"food","desc":"…","price_hint":"…"}]}} — ajouter des points sur la carte interactive : restaurants, hôtels, activités, lieux. kind ∈ hotel|activity|food|poi|service ; address = adresse la plus précise possible (géocodée via OpenStreetMap), sinon « Nom, Ville » (confirmation auto)\n'
         '- {"name":"publish_draft","params":{"kind":"article"}} ou {"kind":"destination"} — publier le brouillon en attente (confirmation auto)\n'
@@ -707,8 +710,30 @@ def execute_confirmation(token: str) -> dict:
         return _exec_send_newsletter(params)
     if action == "set_destination_region":
         return _exec_set_destination_region(params)
+    if action == "update_article":
+        return _exec_update_article(params)
     if action == "update_destination":
         return _exec_update_destination(params)
+    if action == "improve_article":
+        job_token = start_action_job(
+            lambda report: _exec_improve_article(params, report),
+            initial_phase="Préparation de l'amélioration IA…",
+        )
+        return {
+            "async": True,
+            "job_token": job_token,
+            "message": "⏳ Amélioration IA de l'article en cours (rédaction + maillage interne)…",
+        }
+    if action == "improve_destination":
+        job_token = start_action_job(
+            lambda report: _exec_improve_destination(params, report),
+            initial_phase="Préparation de l'amélioration IA…",
+        )
+        return {
+            "async": True,
+            "job_token": job_token,
+            "message": "⏳ Amélioration IA de la destination en cours…",
+        }
     if action == "update_image":
         job_token = start_action_job(
             lambda report: _exec_update_image(params, report),
@@ -868,11 +893,100 @@ def _exec_set_destination_region(params: dict) -> dict:
 def _exec_update_destination(params: dict) -> dict:
     from admin.store import update_destination_fields
 
-    slug = (params.get("slug") or "").strip()
-    dest = update_destination_fields(slug, params)
+    resolved_slug, _dest = _resolve_destination_slug((params.get("slug") or "").strip())
+    dest = update_destination_fields(resolved_slug, params)
     return {
-        "message": f"✅ Page destination mise à jour : « {dest.get('name', slug)} » (/{slug}).",
-        "url": f"/{slug}",
+        "message": f"✅ Page destination mise à jour : « {dest.get('name', resolved_slug)} » (/{resolved_slug}).",
+        "url": f"/{resolved_slug}",
+    }
+
+
+def _article_payload_for_ai(slug: str) -> dict:
+    """Article publié au format plat attendu par improve_guide."""
+    from admin.store import ARTICLE_EDITABLE_FIELDS, get_article_by_slug
+
+    article = get_article_by_slug(slug)
+    if not article:
+        raise ValueError(f"Article introuvable : « {slug} ».")
+    fr = article.get("i18n", {}).get("fr", {})
+    payload = {
+        k: article.get(k) or fr.get(k, "")
+        for k in (*ARTICLE_EDITABLE_FIELDS, "guide_type", "city", "category", "image_prompt")
+    }
+    payload["slug"] = slug
+    payload["guide_type"] = article.get("guide_type", "Guide pratique")
+    payload["tags"] = article.get("tags") or fr.get("tags") or []
+    return payload
+
+
+def _destination_payload_for_ai(dest: dict) -> dict:
+    """Destination publiée au format attendu par improve_destination."""
+    from admin.store import DESTINATION_EDITABLE_FIELDS, DESTINATION_LIST_FIELDS
+
+    fr = dest.get("i18n", {}).get("fr", {})
+    payload = {k: dest.get(k) or fr.get(k, "") for k in DESTINATION_EDITABLE_FIELDS}
+    for key in (*DESTINATION_LIST_FIELDS, "tips", "hotels", "activities", "image_prompt", "location_meta"):
+        val = dest.get(key) or fr.get(key)
+        if val:
+            payload[key] = val
+    payload["slug"] = dest["slug"]
+    payload["name"] = dest.get("name") or fr.get("name", dest["slug"])
+    return payload
+
+
+def _exec_update_article(params: dict) -> dict:
+    from admin.store import ARTICLE_EDITABLE_FIELDS, update_article_fields
+
+    slug = (params.get("slug") or "").strip()
+    if not slug:
+        raise ValueError("Slug d'article manquant.")
+    changed = [k for k in ARTICLE_EDITABLE_FIELDS if params.get(k)]
+    if not changed:
+        raise ValueError("Aucun champ à modifier.")
+    article = update_article_fields(slug, params)
+    return {
+        "message": f"✅ Article mis à jour : « {article.get('title', slug)} » (/blog/{slug}).",
+        "url": f"/blog/{slug}",
+    }
+
+
+def _exec_improve_article(params: dict, report=None) -> dict:
+    from admin import groq_ai
+    from admin.store import apply_improved_article
+
+    slug = (params.get("slug") or "").strip()
+    instructions = (params.get("instructions") or "").strip()
+    if not slug:
+        raise ValueError("Slug d'article manquant.")
+    if not instructions:
+        raise ValueError("Instructions d'amélioration manquantes.")
+    article = _article_payload_for_ai(slug)
+    if report:
+        report("Réécriture IA de l'article…")
+    improved = groq_ai.improve_guide(article, instructions, progress=report)
+    apply_improved_article(slug, improved)
+    return {
+        "message": f"✅ Article amélioré par l'IA : « {improved.get('title', slug)} » — version EN retraduite.",
+        "url": f"/blog/{slug}",
+    }
+
+
+def _exec_improve_destination(params: dict, report=None) -> dict:
+    from admin import groq_destinations
+    from admin.store import apply_improved_destination
+
+    resolved_slug, dest = _resolve_destination_slug((params.get("slug") or "").strip())
+    instructions = (params.get("instructions") or "").strip()
+    if not instructions:
+        raise ValueError("Instructions d'amélioration manquantes.")
+    payload = _destination_payload_for_ai(dest)
+    if report:
+        report("Réécriture IA de la page destination…")
+    improved = groq_destinations.improve_destination(payload, instructions, progress=report)
+    apply_improved_destination(resolved_slug, improved)
+    return {
+        "message": f"✅ Destination améliorée par l'IA : « {improved.get('name', resolved_slug)} » — version EN retraduite.",
+        "url": f"/{resolved_slug}",
     }
 
 
@@ -1132,20 +1246,81 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
             f"/{slug} apparaîtra dans la colonne {label} du menu Destinations (Nord/Centre/Sud).",
         )}
 
-    if name == "update_destination":
-        from admin.store import DESTINATION_EDITABLE_FIELDS, get_destination_by_slug
+    if name == "update_article":
+        from admin.store import ARTICLE_EDITABLE_FIELDS, get_article_by_slug
 
         slug = (params.get("slug") or "").strip()
-        dest = get_destination_by_slug(slug)
-        if not dest:
-            raise ValueError(f"Destination introuvable : « {slug} » — vérifie le slug dans l'ÉTAT DU SITE.")
-        changed = [k for k in (*DESTINATION_EDITABLE_FIELDS, "tips", "region") if params.get(k)]
+        article = get_article_by_slug(slug)
+        if not article:
+            raise ValueError(f"Article introuvable : « {slug} » — vérifie le slug dans l'ÉTAT DU SITE.")
+        changed = [k for k in ARTICLE_EDITABLE_FIELDS if params.get(k)]
         if not changed:
-            raise ValueError("Aucun champ à modifier — passe au moins tagline, meta_title, meta_description, overview, tips ou region.")
+            raise ValueError(
+                "Aucun champ à modifier — passe au moins title, meta_title, meta_description, "
+                "excerpt, content, tags ou focus_keyword."
+            )
         return {"confirm": create_confirmation(
-            "update_destination", params,
-            f"Modifier la page « {dest.get('name', slug)} » ?",
-            f"/{slug} — champs modifiés : {', '.join(changed)}. La version EN sera retraduite automatiquement si le texte FR change.",
+            "update_article",
+            {**params, "slug": slug},
+            f"Modifier l'article « {article.get('title', slug)} » ?",
+            f"/blog/{slug} — champs modifiés : {', '.join(changed)}. La version EN sera retraduite si le texte FR change.",
+        )}
+
+    if name == "improve_article":
+        from admin.store import get_article_by_slug
+
+        slug = (params.get("slug") or "").strip()
+        instructions = (params.get("instructions") or "").strip()
+        if not slug:
+            raise ValueError("Indique le slug de l'article (bloc ÉTAT DU SITE).")
+        if not instructions:
+            raise ValueError("Indique les instructions d'amélioration (ex. « enrichir la section visa », « optimiser le SEO »).")
+        article = get_article_by_slug(slug)
+        if not article:
+            raise ValueError(f"Article introuvable : « {slug} » — vérifie le slug.")
+        preview = instructions[:120] + ("…" if len(instructions) > 120 else "")
+        return {"confirm": create_confirmation(
+            "improve_article",
+            {"slug": slug, "instructions": instructions},
+            f"Améliorer par IA l'article « {article.get('title', slug)} » ?",
+            f"/blog/{slug}\nInstructions : {preview}\nL'IA réécrira le contenu FR (maillage interne inclus), puis retraduction EN.",
+        )}
+
+    if name == "update_destination":
+        from admin.store import DESTINATION_EDITABLE_FIELDS, DESTINATION_LIST_FIELDS
+
+        slug = (params.get("slug") or "").strip()
+        resolved_slug, dest = _resolve_destination_slug(slug)
+        changed = [
+            k for k in (*DESTINATION_EDITABLE_FIELDS, *DESTINATION_LIST_FIELDS, "tips", "region")
+            if params.get(k)
+        ]
+        if not changed:
+            raise ValueError(
+                "Aucun champ à modifier — passe au moins tagline, meta_title, meta_description, "
+                "overview, things_to_do, tips ou region."
+            )
+        confirm_params = {**params, "slug": resolved_slug}
+        return {"confirm": create_confirmation(
+            "update_destination", confirm_params,
+            f"Modifier la page « {dest.get('name', resolved_slug)} » ?",
+            f"/{resolved_slug} — champs modifiés : {', '.join(changed)}. La version EN sera retraduite si le texte FR change.",
+        )}
+
+    if name == "improve_destination":
+        slug = (params.get("slug") or "").strip()
+        instructions = (params.get("instructions") or "").strip()
+        if not slug:
+            raise ValueError("Indique le slug de la destination (bloc ÉTAT DU SITE).")
+        if not instructions:
+            raise ValueError("Indique les instructions d'amélioration (ex. « ajouter Mỹ Tho », « enrichir les conseils pratiques »).")
+        resolved_slug, dest = _resolve_destination_slug(slug)
+        preview = instructions[:120] + ("…" if len(instructions) > 120 else "")
+        return {"confirm": create_confirmation(
+            "improve_destination",
+            {"slug": resolved_slug, "instructions": instructions},
+            f"Améliorer par IA la destination « {dest.get('name', resolved_slug)} » ?",
+            f"/{resolved_slug}\nInstructions : {preview}\nL'IA réécrira la page FR, puis retraduction EN.",
         )}
 
     if name == "update_image":

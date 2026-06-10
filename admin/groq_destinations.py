@@ -150,3 +150,67 @@ La page doit convaincre un voyageur de visiter {city} et l'aider à planifier : 
     # EN générée à la publication (store.save_destinations → _auto_translate_destination) :
     # on ne bloque pas l'aperçu avec un appel IA supplémentaire + sa pause anti rate-limit.
     return dest
+
+
+def improve_destination(dest: dict, instructions: str, progress=None) -> dict:
+    """Améliore une page destination publiée selon les instructions éditoriales."""
+    ai_client.require_api_key()
+    report = progress or (lambda *_: None)
+    report("Analyse et amélioration de la page destination…")
+
+    slug = dest.get("slug", "")
+    city = dest.get("name") or dest.get("city") or slug
+
+    response = ai_client.chat_completion(
+        fast=True,
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": (
+                    f"Améliore cette page destination Vietnam pour voyageurs français.\n"
+                    f"Instructions : {instructions}\n"
+                    f"Minimum {MIN_WORDS} mots au total (overview + sections).\n"
+                    f"Conserve le slug « {slug} » et le nom « {city} ».\n\n"
+                    f"Page actuelle :\n{json.dumps(dest, ensure_ascii=False)}"
+                ),
+            },
+        ],
+        temperature=0.55,
+        max_tokens=GEN_MAX_TOKENS,
+    )
+
+    data = ai_client.parse_json(response.choices[0].message.content)
+    improved = _build_destination(data, city, slug)
+    improved["slug"] = slug
+
+    if _total_words(improved) < MIN_WORDS * EXPAND_TOLERANCE:
+        report("Enrichissement de la description…")
+        expand = ai_client.chat_completion(
+            fast=True,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {
+                    "role": "user",
+                    "content": (
+                        f"La page est encore trop courte ({_total_words(improved)} mots). "
+                        f"Enrichis pour atteindre {MIN_WORDS}+ mots.\n"
+                        f"Instructions : {instructions}\n\n"
+                        f"{json.dumps(improved, ensure_ascii=False)}"
+                    ),
+                },
+            ],
+            temperature=0.5,
+            max_tokens=GEN_MAX_TOKENS,
+            pause_before=1.5,
+        )
+        data = ai_client.parse_json(expand.choices[0].message.content)
+        improved = _build_destination(data, city, slug)
+        improved["slug"] = slug
+
+    # Conserver image et métadonnées non textuelles de la page existante.
+    for key in ("image", "image_photo_id", "image_source_url", "image_placeholder", "image_alt", "region"):
+        if dest.get(key) is not None:
+            improved[key] = dest[key]
+    improved.pop("i18n", None)
+    return improved

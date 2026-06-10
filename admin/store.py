@@ -268,6 +268,12 @@ def delete_destination(slug: str):
 
 # Champs texte FR modifiables sur une destination publiée (admin & Linh).
 DESTINATION_EDITABLE_FIELDS = ("name", "tagline", "meta_title", "meta_description", "overview")
+DESTINATION_LIST_FIELDS = ("things_to_do", "hotels", "activities")
+
+# Champs texte FR modifiables sur un article/guide publié (admin & Linh).
+ARTICLE_EDITABLE_FIELDS = (
+    "title", "meta_title", "meta_description", "excerpt", "content", "tags", "focus_keyword",
+)
 
 
 def set_destination_region(slug: str, region: str) -> dict:
@@ -320,6 +326,14 @@ def update_destination_fields(slug: str, fields: dict) -> dict:
             dest["i18n"]["fr"]["tips"] = tips
             changed_fr = True
 
+    for key in DESTINATION_LIST_FIELDS:
+        value = fields.get(key)
+        if not isinstance(value, list) or not value:
+            continue
+        dest[key] = value
+        dest["i18n"]["fr"][key] = value
+        changed_fr = True
+
     region = (fields.get("region") or "").strip().lower()
     if region:
         from data.trip_planner import REGION_ORDER
@@ -350,6 +364,81 @@ def _apply_image_meta(item: dict, meta: dict) -> None:
         item["image_alt"] = alt
         item.setdefault("i18n", {}).setdefault("fr", {})["image_alt"] = alt
         item.setdefault("i18n", {}).setdefault("en", {})["image_alt"] = alt
+
+
+def update_article_fields(slug: str, fields: dict) -> dict:
+    """Met à jour un article/guide publié : textes FR (retraduction EN automatique)."""
+    data = _raw_articles()
+    for i, raw in enumerate(data):
+        if raw.get("slug") != slug:
+            continue
+        article = wrap_article_i18n(raw)
+        changed_fr = False
+        for key in ARTICLE_EDITABLE_FIELDS:
+            value = fields.get(key)
+            if value is None:
+                continue
+            if key == "tags":
+                if isinstance(value, str):
+                    value = [t.strip() for t in value.split(",") if t.strip()]
+                if not isinstance(value, list):
+                    continue
+                value = [str(t).strip() for t in value if str(t).strip()]
+            else:
+                value = str(value).strip()
+                if not value:
+                    continue
+                if key in ("meta_title",):
+                    value = value[:70]
+                if key in ("meta_description", "excerpt"):
+                    value = value[:160]
+            article[key] = value
+            article["i18n"]["fr"][key] = value
+            changed_fr = True
+        if changed_fr:
+            article["i18n"]["en"] = {}
+            article["date"] = date.today().isoformat()
+        data[i] = article
+        save_articles(data)
+        return article
+    raise ValueError(f"Article introuvable : {slug}")
+
+
+def apply_improved_article(slug: str, improved: dict) -> dict:
+    """Enregistre le résultat d'un improve_guide IA sur un article publié."""
+    data = _raw_articles()
+    for i, raw in enumerate(data):
+        if raw.get("slug") != slug:
+            continue
+        article = wrap_article_i18n(raw)
+        for key in ARTICLE_EDITABLE_FIELDS:
+            if improved.get(key):
+                val = improved[key]
+                if key in ("meta_title",):
+                    val = str(val)[:70]
+                if key in ("meta_description", "excerpt"):
+                    val = str(val)[:160]
+                article[key] = val
+                article["i18n"]["fr"][key] = val
+        for extra in ("word_count", "read_time", "image_prompt"):
+            if improved.get(extra):
+                article[extra] = improved[extra]
+        article["i18n"]["en"] = {}
+        article["date"] = date.today().isoformat()
+        data[i] = article
+        save_articles(data)
+        return article
+    raise ValueError(f"Article introuvable : {slug}")
+
+
+def apply_improved_destination(slug: str, improved: dict) -> dict:
+    """Enregistre le résultat d'un improve_destination IA sur une page publiée."""
+    fields = {
+        k: improved[k]
+        for k in (*DESTINATION_EDITABLE_FIELDS, *DESTINATION_LIST_FIELDS, "tips")
+        if improved.get(k)
+    }
+    return update_destination_fields(slug, fields)
 
 
 def update_article_image(slug: str, meta: dict) -> dict:
