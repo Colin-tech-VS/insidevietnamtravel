@@ -6,6 +6,7 @@ from datetime import date
 
 from data.affiliates import AFFILIATE_IDS as DEFAULT_AFFILIATE_IDS
 from data.articles import ARTICLES as DEFAULT_ARTICLES
+from data.experience_articles import EXPERIENCE_ARTICLES
 from data.articles import CATEGORIES as DEFAULT_CATEGORIES
 from data.destinations import DESTINATIONS as DEFAULT_DESTINATIONS
 
@@ -94,11 +95,41 @@ def is_configured(value: str) -> bool:
     return "PLACEHOLDER" not in value.upper()
 
 
-def _raw_articles() -> list:
+_BUILTIN_ARTICLES_SYNCED = False
+
+
+def ensure_builtin_articles() -> int:
+    """Injecte les articles embarqués manquants (ex. guides expérience) dans le store KV.
+
+    En production Scalingo le contenu vit dans Postgres (app_kv), pas dans le JSON git :
+    sans cette synchro, les nouveaux slugs référencés par les piliers renvoient 404.
+    """
+    global _BUILTIN_ARTICLES_SYNCED
+    if _BUILTIN_ARTICLES_SYNCED:
+        return 0
+
+    builtins = [*EXPERIENCE_ARTICLES, *DEFAULT_ARTICLES]
     stored = get_json("articles", None, file_name="articles.json")
     if stored is None:
-        set_json("articles", DEFAULT_ARTICLES, file_name="articles.json")
-        return deepcopy(DEFAULT_ARTICLES)
+        merged = builtins
+        set_json("articles", merged, file_name="articles.json")
+        _BUILTIN_ARTICLES_SYNCED = True
+        return len(merged)
+
+    known = {a.get("slug") for a in stored if a.get("slug")}
+    to_add = [a for a in builtins if a.get("slug") and a["slug"] not in known]
+    if to_add:
+        set_json("articles", [*to_add, *stored], file_name="articles.json")
+    _BUILTIN_ARTICLES_SYNCED = True
+    return len(to_add)
+
+
+def _raw_articles() -> list:
+    ensure_builtin_articles()
+    stored = get_json("articles", None, file_name="articles.json")
+    if stored is None:
+        set_json("articles", [*EXPERIENCE_ARTICLES, *DEFAULT_ARTICLES], file_name="articles.json")
+        return deepcopy([*EXPERIENCE_ARTICLES, *DEFAULT_ARTICLES])
     return stored
 
 

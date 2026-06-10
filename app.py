@@ -1318,7 +1318,13 @@ def not_found(e):
 
 
 def _startup_tasks():
+    from admin.store import ensure_builtin_articles
     from admin.image_service import ensure_responsive_variants
+
+    added = ensure_builtin_articles()
+    if added:
+        import logging
+        logging.getLogger(__name__).info("Articles embarqués synchronisés : %s ajouté(s)", added)
     ensure_responsive_variants()
     try:
         from admin import map_service
