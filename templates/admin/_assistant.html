@@ -1,0 +1,43 @@
+{# Linh 🧭 — copilote IA interne de l'admin (développement & SEO).
+   Distinct de Mai (widget public voyageurs) : visible uniquement connecté. #}
+<div class="linh-chat" id="linh-chat"
+     data-api-url="{{ url_for('admin.api_assistant') }}"
+     data-insights-url="{{ url_for('admin.api_assistant_insights') }}"
+     data-job-url="{{ url_for('admin.api_assistant_job', kind='KIND') }}"
+     data-confirm-url="{{ url_for('admin.api_assistant_confirm') }}">
+  <button type="button" class="linh-chat__fab" id="linh-chat-fab" aria-expanded="false"
+          aria-controls="linh-chat-panel" aria-label="Ouvrir Linh, copilote IA du site">
+    <span class="linh-chat__fab-icon" aria-hidden="true">🧭</span>
+    <span class="linh-chat__fab-label">Linh</span>
+  </button>
+
+  <div class="linh-chat__panel" id="linh-chat-panel" hidden role="dialog" aria-modal="false" aria-labelledby="linh-chat-title">
+    <header class="linh-chat__head">
+      <div class="linh-chat__brand">
+        <span class="linh-chat__head-avatar" aria-hidden="true">🧭</span>
+        <div>
+          <h2 class="linh-chat__title" id="linh-chat-title">Linh — Copilote du site</h2>
+          <p class="linh-chat__subtitle">Développement, idées & SEO · admin uniquement</p>
+        </div>
+      </div>
+      <button type="button" class="linh-chat__close" id="linh-chat-close" aria-label="Fermer">✕</button>
+    </header>
+
+    <div class="linh-chat__messages" id="linh-chat-messages" aria-live="polite"></div>
+
+    <div class="linh-chat__suggestions" id="linh-chat-suggestions"></div>
+
+    <form class="linh-chat__form" id="linh-chat-form" data-no-loader>
+      <label class="sr-only" for="linh-chat-input">Votre demande à Linh</label>
+      <textarea id="linh-chat-input" class="linh-chat__input" rows="1"
+                placeholder="Audit, idées de pages, génération de contenu…" maxlength="1500"></textarea>
+      <button type="submit" class="linh-chat__send" aria-label="Envoyer">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/>
+        </svg>
+      </button>
+    </form>
+    <p class="linh-chat__disclaimer">Linh peut générer du contenu, mais ne publie jamais sans votre confirmation.</p>
+  </div>
+</div>
+<script src="{{ url_for('static', filename='admin/assistant.js') }}" defer></script>

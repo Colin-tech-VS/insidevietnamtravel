@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='admin/admin.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin/assistant.css') }}">
   <style>
     body.is-loading { overflow: hidden; }
     #page-loader {
@@ -144,6 +145,7 @@
       </main>
     </div>
   </div>
+  {% include "admin/_assistant.html" %}
   {% else %}
   {% block guest %}{% endblock %}
   {% endif %}
