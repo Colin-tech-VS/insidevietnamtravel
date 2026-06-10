@@ -1,0 +1,21 @@
+{% macro published_content_tools(target, slug, name, groq_ok, ai_label) %}
+<details class="content-edit-tools">
+  <summary>✎ Édition & photo</summary>
+  <div class="content-edit-tools__body">
+    <form class="content-improve-form" data-target="{{ target }}" data-slug="{{ slug }}" data-no-loader>
+      <p class="content-edit-tools__label">Améliorer « {{ name }} » avec {{ ai_label }}</p>
+      <div class="content-edit-tools__row">
+        <input type="text" name="instructions" class="inline-input" placeholder="Ex: plus de détails, prix, FAQ, liens internes…" {% if not groq_ok %}disabled{% endif %}>
+        <button type="submit" class="btn btn-secondary btn-sm" {% if not groq_ok %}disabled{% endif %}>Améliorer IA</button>
+      </div>
+    </form>
+    <form class="content-image-form" data-target="{{ target }}" data-slug="{{ slug }}" data-no-loader>
+      <p class="content-edit-tools__label">Photo de couverture</p>
+      <input type="url" name="image_url" class="inline-input" placeholder="URL directe (https://…)">
+      <input type="text" name="query" class="inline-input" placeholder="Ou mots-clés Pixabay (ex: Halong bay Vietnam)">
+      <input type="text" name="alt" class="inline-input" placeholder="Texte alt SEO (optionnel)">
+      <button type="submit" class="btn btn-secondary btn-sm">Mettre à jour la photo</button>
+    </form>
+  </div>
+</details>
+{% endmacro %}

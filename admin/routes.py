@@ -27,10 +27,15 @@ from data.vietnam_cities import VIETNAM_CITIES, GUIDE_TYPES, ALL_CITY_VALUES
 from data.trip_planner import REGION_LABELS_FR, REGION_ORDER, resolve_region
 from admin.affiliate_service import build_affiliate_summary, build_site_analytics, compute_estimated_commission
 from admin.affiliate_verify import normalize_affiliate_input, parse_viator_embed, verify_affiliate_id
+from admin.content_editor import (
+    improve_published_article,
+    improve_published_destination,
+    update_published_image,
+)
 from admin.store import (
     get_settings, save_settings,
     get_affiliate_ids, save_affiliate_ids,
-    get_articles, add_article,
+    get_articles, add_article, get_article_by_slug, replace_published_article,
     get_destinations_dict, add_or_update_destination, delete_destination,
     get_destination_by_slug, set_destination_region,
     count_newsletter_subscribers,
@@ -84,6 +89,19 @@ def _start_draft_job(kind: str, fn, initial_phase: str = "Connexion au moteur IA
 
 def _draft_status(kind: str) -> dict:
     return draft_store.status(session.get(_draft_token_key(kind)))
+
+
+_CONTENT_JOB_KEY = "content_job_token"
+
+
+def _start_content_job(fn, *, initial_phase: str = "Traitement en cours…") -> None:
+    token = draft_store.new_token()
+    session[_CONTENT_JOB_KEY] = token
+    draft_store.start_job(token, fn, ai_client.friendly_error, initial_phase=initial_phase)
+
+
+def _content_job_status() -> dict:
+    return draft_store.status(session.get(_CONTENT_JOB_KEY))
 
 
 def _generate_draft(report, topic: str, guide_type: str, city: str) -> dict:
@@ -215,13 +233,41 @@ def guides():
                     )
                     _store_draft("article", article)
                     flash("Article amélioré par l'IA.", "success")
+            elif action == "edit":
+                slug = request.form.get("slug", "").strip()
+                article = get_article_by_slug(slug, "fr")
+                if not article:
+                    flash("Article introuvable.", "error")
+                else:
+                    draft = {**article, "manual": True, "editing_slug": slug}
+                    _store_draft("article", draft)
+                    flash(
+                        f"« {article.get('title', slug)} » chargé dans le formulaire — modifiez puis enregistrez.",
+                        "success",
+                    )
             elif action in ("manual_draft", "manual_publish"):
                 article = build_manual_article(request.form)
+                editing_slug = (request.form.get("editing_slug") or "").strip()
+                existing = get_article_by_slug(editing_slug) if editing_slug else None
+                if existing:
+                    for key in (
+                        "image", "image_photo_id", "image_alt", "image_source_url",
+                        "featured", "guide_type", "image_placeholder",
+                    ):
+                        if existing.get(key) and not article.get(key):
+                            article[key] = existing[key]
+                    article["editing_slug"] = editing_slug
                 if request.form.get("generate_image") == "on":
                     article.update(attach_image_to_article(article, None))
                 if action == "manual_publish":
                     if request.form.get("featured") == "on":
                         article["featured"] = True
+                    if editing_slug:
+                        article.pop("editing_slug", None)
+                        replace_published_article(editing_slug, article)
+                        _clear_draft("article")
+                        flash(f"Article mis à jour : /blog/{article['slug']}", "success")
+                        return redirect(url_for("admin.guides"))
                     add_article(article)
                     _clear_draft("article")
                     flash(f"Article publié : /blog/{article['slug']}", "success")
@@ -302,6 +348,92 @@ def api_improve_guide():
 @login_required
 def api_guide_draft_status():
     return jsonify(_draft_status("article"))
+
+
+@admin_bp.route("/api/content/job-status")
+@login_required
+def api_content_job_status():
+    return jsonify(_content_job_status())
+
+
+@admin_bp.route("/api/content/article/<slug>/improve", methods=["POST"])
+@login_required
+def api_improve_published_article(slug):
+    if not ai_client.is_configured():
+        return jsonify({"ok": False, "error": "Aucune clé IA configurée"}), 400
+    if not get_article_by_slug(slug):
+        return jsonify({"ok": False, "error": "Article introuvable"}), 404
+    data = request.get_json(silent=True) or {}
+    instructions = (data.get("instructions") or "").strip()
+    if not instructions:
+        return jsonify({"ok": False, "error": "Instructions obligatoires"}), 400
+
+    def job(report):
+        return improve_published_article(slug, instructions, report)
+
+    _start_content_job(job, initial_phase="Amélioration IA de l'article…")
+    return jsonify({"ok": True, "started": True})
+
+
+@admin_bp.route("/api/content/destination/<slug>/improve", methods=["POST"])
+@login_required
+def api_improve_published_destination(slug):
+    if not ai_client.is_configured():
+        return jsonify({"ok": False, "error": "Aucune clé IA configurée"}), 400
+    if not get_destination_by_slug(slug):
+        return jsonify({"ok": False, "error": "Destination introuvable"}), 404
+    data = request.get_json(silent=True) or {}
+    instructions = (data.get("instructions") or "").strip()
+    if not instructions:
+        return jsonify({"ok": False, "error": "Instructions obligatoires"}), 400
+
+    def job(report):
+        return improve_published_destination(slug, instructions, report)
+
+    _start_content_job(job, initial_phase="Amélioration IA de la destination…")
+    return jsonify({"ok": True, "started": True})
+
+
+@admin_bp.route("/api/content/article/<slug>/image", methods=["POST"])
+@login_required
+def api_update_article_image(slug):
+    if not get_article_by_slug(slug):
+        return jsonify({"ok": False, "error": "Article introuvable"}), 404
+    data = request.get_json(silent=True) or {}
+    image_url = (data.get("image_url") or "").strip()
+    query = (data.get("query") or "").strip()
+    alt = (data.get("alt") or "").strip()
+    if not image_url and not query:
+        return jsonify({"ok": False, "error": "URL ou mots-clés Pixabay obligatoires"}), 400
+
+    def job(report):
+        return update_published_image(
+            "article", slug, image_url=image_url, query=query, alt=alt, report=report,
+        )
+
+    _start_content_job(job, initial_phase="Mise à jour de l'image…")
+    return jsonify({"ok": True, "started": True})
+
+
+@admin_bp.route("/api/content/destination/<slug>/image", methods=["POST"])
+@login_required
+def api_update_destination_image(slug):
+    if not get_destination_by_slug(slug):
+        return jsonify({"ok": False, "error": "Destination introuvable"}), 404
+    data = request.get_json(silent=True) or {}
+    image_url = (data.get("image_url") or "").strip()
+    query = (data.get("query") or "").strip()
+    alt = (data.get("alt") or "").strip()
+    if not image_url and not query:
+        return jsonify({"ok": False, "error": "URL ou mots-clés Pixabay obligatoires"}), 400
+
+    def job(report):
+        return update_published_image(
+            "destination", slug, image_url=image_url, query=query, alt=alt, report=report,
+        )
+
+    _start_content_job(job, initial_phase="Mise à jour de l'image…")
+    return jsonify({"ok": True, "started": True})
 
 
 def _generate_destination_draft(report, city: str, notes: str = "") -> dict:

@@ -1,4 +1,5 @@
 {% extends "admin/layout.html" %}
+{% from "admin/_content_tools.html" import published_content_tools %}
 
 {% block title %}Guides{% endblock %}
 
@@ -8,7 +9,7 @@
 
 {% block content %}
 
-<p class="page-sub">Créez des articles avec l'IA ou rédigez-les vous-même — idées locales par défaut, IA sur demande.</p>
+<p class="page-sub">Créez, modifiez et enrichissez vos guides — rédaction manuelle, génération IA, amélioration et photo de couverture depuis la liste des articles publiés.</p>
 
 
 
@@ -156,9 +157,14 @@
 
       <div id="tab-manual" class="content-panel" role="tabpanel" {% if not draft_is_manual %}hidden{% endif %}>
 
-        <h2>✎ Rédiger manuellement</h2>
+        <h2>{% if draft and draft.manual and draft.editing_slug %}✎ Modifier « {{ draft.title }} »{% else %}✎ Rédiger manuellement{% endif %}</h2>
 
         <form method="post" id="guide-form-manual" class="guide-form">
+
+          {% if draft and draft.manual and draft.editing_slug %}
+          <input type="hidden" name="editing_slug" value="{{ draft.editing_slug }}">
+          <p class="field-hint">Vous modifiez l'article publié <code>/blog/{{ draft.editing_slug }}</code> — l'image actuelle est conservée sauf si vous cochez « Nouvelle image ».</p>
+          {% endif %}
 
           <div class="form-field">
 
@@ -278,7 +284,7 @@
 
 
 
-          <label class="checkbox"><input type="checkbox" name="generate_image" checked> Ajouter une image Vietnam (WebP)</label>
+          <label class="checkbox"><input type="checkbox" name="generate_image" {% if not draft or not draft.editing_slug %}checked{% endif %}> {% if draft and draft.editing_slug %}Nouvelle image Vietnam (Pixabay WebP){% else %}Ajouter une image Vietnam (WebP){% endif %}</label>
 
 
 
@@ -286,7 +292,7 @@
 
             <button type="submit" name="action" value="manual_draft" class="btn btn-secondary">Enregistrer brouillon</button>
 
-            <button type="submit" name="action" value="manual_publish" class="btn btn-primary">Publier directement</button>
+            <button type="submit" name="action" value="manual_publish" class="btn btn-primary">{% if draft and draft.editing_slug %}Enregistrer les modifications{% else %}Publier directement{% endif %}</button>
 
             <label class="checkbox"><input type="checkbox" name="featured"> À la une</label>
 
@@ -481,21 +487,47 @@
 
       <h2>📚 Articles publiés</h2>
 
-      <p class="guides-stats-count"><strong>{{ articles|length }}</strong> récents affichés</p>
+      <p class="guides-stats-count"><strong>{{ articles|length }}</strong> article(s)</p>
 
       <ul class="published-list">
 
-        {% for a in articles[:8] %}
+        {% for a in articles %}
 
-        <li>
+        <li class="dest-admin-item">
 
-          <a href="{{ url_for('article', slug=a.slug) }}" target="_blank" rel="noopener">
+          <div class="dest-admin-item__head">
 
-            <span class="published-list__title">{{ a.title[:55] }}{% if a.title|length > 55 %}…{% endif %}</span>
+            {% if a.image %}
 
-            <span class="published-list__date">{{ a.date }}</span>
+            <img src="{{ a.image }}" alt="" class="dest-admin-item__thumb" width="64" height="36" loading="lazy">
 
-          </a>
+            {% endif %}
+
+            <div>
+
+              <a href="{{ url_for('article', slug=a.slug) }}" target="_blank" rel="noopener"><strong>{{ a.title[:48] }}{% if a.title|length > 48 %}…{% endif %}</strong></a>
+
+              <span class="published-list__date">/blog/{{ a.slug }} · {{ a.date }}</span>
+
+            </div>
+
+          </div>
+
+          <div class="dest-admin-item__actions">
+
+            <form method="post" class="dest-admin-item__edit">
+
+              <input type="hidden" name="action" value="edit">
+
+              <input type="hidden" name="slug" value="{{ a.slug }}">
+
+              <button type="submit" class="btn btn-secondary btn-sm">Modifier</button>
+
+            </form>
+
+            {{ published_content_tools("article", a.slug, a.title[:40], groq_ok, ai_provider_label) }}
+
+          </div>
 
         </li>
 
@@ -520,6 +552,8 @@
 {% block scripts %}
 
 <script src="{{ url_for('static', filename='admin/wysiwyg.js') }}"></script>
+
+<script src="{{ url_for('static', filename='admin/content-editor.js') }}"></script>
 
 <script src="{{ url_for('static', filename='admin/guides.js') }}"></script>
 

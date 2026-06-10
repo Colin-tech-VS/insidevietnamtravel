@@ -578,6 +578,7 @@ def _build_article(spec: dict) -> dict:
         "category": "itinerary",
         "date": "2026-06-10",
         "updated_at": "2026-06-10",
+        "builtin_version": "2026-06-10-v2",
         "city": spec["city"],
         "featured": False,
         "read_time": spec["read_time"],

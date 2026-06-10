@@ -106,9 +106,43 @@ _EXPERIENCE_SLUGS = {a.get("slug") for a in EXPERIENCE_ARTICLES if a.get("slug")
 
 
 def _overlay_experience_articles(stored: list) -> list:
-    """Remplace toujours les guides expérience par la version embarquée (contenu à jour)."""
+    """Fusionne les guides expérience embarqués (sauf si modifiés manuellement en admin)."""
+    by_slug = {a.get("slug"): a for a in stored if a.get("slug")}
+    merged: list = []
+    for builtin in EXPERIENCE_ARTICLES:
+        slug = builtin.get("slug")
+        if not slug:
+            continue
+        existing = by_slug.get(slug)
+        if existing and existing.get("admin_edited"):
+            merged.append(existing)
+        elif not existing or existing.get("builtin_version") != builtin.get("builtin_version"):
+            merged.append(deepcopy(builtin))
+        else:
+            merged.append(existing)
     rest = [a for a in stored if a.get("slug") not in _EXPERIENCE_SLUGS]
-    return [deepcopy(a) for a in EXPERIENCE_ARTICLES] + rest
+    return merged + rest
+
+
+def _raw_stored_articles() -> list:
+    """Lecture KV brute (sans overlay expérience)."""
+    try:
+        stored = get_json("articles", None, file_name="articles.json")
+    except Exception:
+        return []
+    return list(stored) if stored is not None else []
+
+
+def replace_published_article(editing_slug: str, article: dict) -> dict:
+    """Remplace un article publié (édition manuelle admin)."""
+    article = wrap_article_i18n(article)
+    article["admin_edited"] = True
+    article["updated_at"] = date.today().isoformat()
+    stored = _raw_stored_articles()
+    stored = [a for a in stored if a.get("slug") not in (editing_slug, article["slug"])]
+    stored.insert(0, article)
+    save_articles(stored)
+    return article
 
 
 def ensure_builtin_articles() -> int:
@@ -448,6 +482,8 @@ def update_article_fields(slug: str, fields: dict) -> dict:
         if changed_fr:
             article["i18n"]["en"] = {}
             article["date"] = date.today().isoformat()
+        article["admin_edited"] = True
+        article["updated_at"] = date.today().isoformat()
         data[i] = article
         save_articles(data)
         return article
@@ -475,6 +511,8 @@ def apply_improved_article(slug: str, improved: dict) -> dict:
                 article[extra] = improved[extra]
         article["i18n"]["en"] = {}
         article["date"] = date.today().isoformat()
+        article["admin_edited"] = True
+        article["updated_at"] = date.today().isoformat()
         data[i] = article
         save_articles(data)
         return article

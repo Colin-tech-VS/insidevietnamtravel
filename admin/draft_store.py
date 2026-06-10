@@ -90,11 +90,15 @@ def status(token: str | None) -> dict:
         entry = _STORE.get(token)
         if not entry:
             return {"status": "missing", "error": "", "phase": ""}
-        return {
+        out = {
             "status": entry.get("status", "missing"),
             "error": entry.get("error", ""),
             "phase": entry.get("phase", ""),
         }
+        draft = entry.get("draft")
+        if entry.get("status") == "done" and isinstance(draft, dict) and draft.get("message"):
+            out["result"] = draft
+        return out
 
 
 def start_job(

@@ -1722,6 +1722,47 @@ select optgroup { font-weight: 700; color: var(--teal); }
 .dest-admin-item__region { display: flex; align-items: center; gap: 0.4rem; }
 .dest-admin-item__region select { padding: 0.3rem 0.5rem; font-size: 0.85rem; border-radius: var(--radius-sm); }
 
+.content-edit-tools {
+  width: 100%;
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+}
+.content-edit-tools summary {
+  cursor: pointer;
+  color: var(--teal);
+  font-weight: 500;
+  list-style: none;
+}
+.content-edit-tools summary::-webkit-details-marker { display: none; }
+.content-edit-tools__body {
+  margin-top: 0.5rem;
+  padding: 0.65rem;
+  background: var(--rice);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+.content-edit-tools__label {
+  margin: 0 0 0.25rem;
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+}
+.content-edit-tools__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+.content-edit-tools .inline-input {
+  flex: 1 1 140px;
+  min-width: 0;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.82rem;
+  border: 1px solid var(--rice-dark);
+  border-radius: var(--radius-sm);
+}
+
 /* ── En-têtes de page, badges, accessibilité ───────── */
 .admin-page-header {
   display: flex;

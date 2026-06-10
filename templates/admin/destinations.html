@@ -1,4 +1,5 @@
 {% extends "admin/layout.html" %}
+{% from "admin/_content_tools.html" import published_content_tools %}
 
 
 
@@ -10,7 +11,7 @@
 
 {% block content %}
 
-<p class="page-sub">Créez des pages ville avec l'IA ou rédigez-les vous-même — contenu SEO + image Vietnam WebP.</p>
+<p class="page-sub">Créez et modifiez vos pages destination — manuel ou IA, amélioration et photo de couverture depuis la liste publiée.</p>
 
 
 
@@ -280,7 +281,7 @@
 
 
 
-          <label class="checkbox"><input type="checkbox" name="generate_image" checked> Ajouter une image Vietnam (WebP)</label>
+          <label class="checkbox"><input type="checkbox" name="generate_image" {% if not draft or not draft.editing_slug %}checked{% endif %}> {% if draft and draft.editing_slug %}Nouvelle image Vietnam (Pixabay WebP){% else %}Ajouter une image Vietnam (WebP){% endif %}</label>
 
 
 
@@ -442,6 +443,8 @@
 
             </form>
 
+            {{ published_content_tools("destination", d.slug, d.name, groq_ok, ai_provider_label) }}
+
             <form method="post" class="dest-admin-item__delete" onsubmit="return confirm('Supprimer {{ d.name }} ?')">
 
               <input type="hidden" name="action" value="delete">
@@ -477,6 +480,8 @@
 {% block scripts %}
 
 <script src="{{ url_for('static', filename='admin/wysiwyg.js') }}"></script>
+
+<script src="{{ url_for('static', filename='admin/content-editor.js') }}"></script>
 
 <script src="{{ url_for('static', filename='admin/destinations.js') }}"></script>
 
