@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+import unicodedata
 from typing import Any, Callable
 
 GROUP_KEYS = ("solo", "couple", "family", "friends")
@@ -24,6 +26,51 @@ CITY_REGION = {c["slug"]: c["region"] for c in PLANNER_CITIES}
 
 REGION_ORDER = ("north", "central", "south")
 
+REGION_LABELS_FR = {"north": "Nord", "central": "Centre", "south": "Sud"}
+
+
+def _normalize_place(text: Any) -> str:
+    """« Cát Bà » / « cat-ba » / « Cat Ba » → « cat ba » (clé de comparaison)."""
+    text = unicodedata.normalize("NFKD", str(text or ""))
+    text = "".join(c for c in text if not unicodedata.combining(c))
+    text = text.lower().replace("đ", "d")
+    return re.sub(r"[^a-z0-9]+", " ", text).strip()
+
+
+def _city_name_regions() -> dict[str, str]:
+    from data.vietnam_cities import VIETNAM_CITIES
+
+    group_region = {"Nord": "north", "Centre": "central", "Sud": "south"}
+    out: dict[str, str] = {}
+    for group, cities in VIETNAM_CITIES.items():
+        region = group_region.get(group)
+        if not region:
+            continue
+        for city in cities:
+            for part in city["value"].split("/"):
+                key = _normalize_place(part)
+                if key:
+                    out[key] = region
+    return out
+
+
+CITY_NAME_REGION = _city_name_regions()
+
+
+def resolve_region(slug: str, dest: dict | None = None) -> str:
+    """Région d'une destination : champ explicite > slug connu > ville/nom."""
+    dest = dest or {}
+    region = str(dest.get("region") or "").strip().lower()
+    if region in REGION_ORDER:
+        return region
+    if slug in CITY_REGION:
+        return CITY_REGION[slug]
+    for candidate in (dest.get("city"), dest.get("name"), slug):
+        key = _normalize_place(candidate)
+        if key and key in CITY_NAME_REGION:
+            return CITY_NAME_REGION[key]
+    return "central"
+
 
 def destinations_by_region(
     destinations: dict,
@@ -38,7 +85,7 @@ def destinations_by_region(
     buckets: dict[str, list[dict]] = {k: [] for k in REGION_ORDER}
 
     for slug, dest in destinations.items():
-        region = CITY_REGION.get(slug, "central")
+        region = resolve_region(slug, dest)
         if region not in buckets:
             region = "central"
         buckets[region].append({

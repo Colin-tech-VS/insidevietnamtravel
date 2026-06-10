@@ -24,6 +24,7 @@ from admin.admin_recommendations import (
     get_revenue_recommendations,
 )
 from data.vietnam_cities import VIETNAM_CITIES, GUIDE_TYPES, ALL_CITY_VALUES
+from data.trip_planner import REGION_LABELS_FR, REGION_ORDER, resolve_region
 from admin.affiliate_service import build_affiliate_summary, build_site_analytics, compute_estimated_commission
 from admin.affiliate_verify import normalize_affiliate_input, parse_viator_embed, verify_affiliate_id
 from admin.store import (
@@ -31,6 +32,7 @@ from admin.store import (
     get_affiliate_ids, save_affiliate_ids,
     get_articles, add_article,
     get_destinations_dict, add_or_update_destination, delete_destination,
+    get_destination_by_slug, set_destination_region,
     count_newsletter_subscribers,
     add_custom_partner, delete_custom_partner, get_custom_partners,
     save_custom_partners, slugify,
@@ -323,7 +325,10 @@ def destinations_admin():
         try:
             if action == "publish" and _get_draft("destination"):
                 dest = _get_draft("destination")
+                editing_slug = dest.pop("editing_slug", "")
                 add_or_update_destination(dest)
+                if editing_slug and editing_slug != dest["slug"]:
+                    delete_destination(editing_slug)
                 _clear_draft("destination")
                 flash(f"Destination publiée : /{dest['slug']}", "success")
                 return redirect(url_for("admin.destinations_admin"))
@@ -332,12 +337,42 @@ def destinations_admin():
                 if slug:
                     delete_destination(slug)
                     flash("Destination supprimée.", "success")
+            elif action == "set_region":
+                slug = request.form.get("slug", "")
+                region = request.form.get("region", "")
+                dest = set_destination_region(slug, region)
+                flash(
+                    f"« {dest.get('name', slug)} » placée dans la section "
+                    f"{REGION_LABELS_FR.get(region, region)}.",
+                    "success",
+                )
+            elif action == "edit":
+                slug = request.form.get("slug", "")
+                dest = get_destination_by_slug(slug, "fr")
+                if not dest:
+                    flash("Destination introuvable.", "error")
+                else:
+                    draft = {**dest, "manual": True, "editing_slug": slug}
+                    draft.setdefault("region", resolve_region(slug, dest))
+                    _store_draft("destination", draft)
+                    flash(f"« {dest.get('name', slug)} » chargée dans le formulaire — modifiez puis publiez.", "success")
             elif action in ("manual_draft", "manual_publish"):
                 dest = build_manual_destination(request.form)
+                editing_slug = (request.form.get("editing_slug") or "").strip()
+                existing = get_destination_by_slug(editing_slug) if editing_slug else None
                 if request.form.get("generate_image") == "on":
                     dest.update(attach_image_to_destination(dest, None))
+                if existing:
+                    # Édition : on conserve image, hôtels, activités… non resaisis.
+                    for key in ("image", "image_photo_id", "image_alt", "hotels", "activities", "region"):
+                        if existing.get(key) and not dest.get(key):
+                            dest[key] = existing[key]
+                    dest["editing_slug"] = editing_slug
                 if action == "manual_publish":
+                    dest.pop("editing_slug", None)
                     add_or_update_destination(dest)
+                    if existing and editing_slug != dest["slug"]:
+                        delete_destination(editing_slug)
                     _clear_draft("destination")
                     flash(f"Destination publiée : /{dest['slug']}", "success")
                     return redirect(url_for("admin.destinations_admin"))
@@ -350,7 +385,13 @@ def destinations_admin():
         return redirect(url_for("admin.destinations_admin"))
 
     ensure_all_destination_images()
-    dest_list = sorted(get_destinations_dict().values(), key=lambda d: d.get("name", ""))
+    dest_list = []
+    for slug, d in get_destinations_dict().items():
+        d["region_key"] = resolve_region(slug, d)
+        d["region_label"] = REGION_LABELS_FR.get(d["region_key"], d["region_key"])
+        dest_list.append(d)
+    region_rank = {key: i for i, key in enumerate(REGION_ORDER)}
+    dest_list.sort(key=lambda d: (region_rank.get(d["region_key"], 9), (d.get("name") or "").lower()))
     city_options = [c for c in ALL_CITY_VALUES if c != "Tout le Vietnam"]
 
     draft = _get_draft("destination")
@@ -359,6 +400,7 @@ def destinations_admin():
         draft=draft,
         destinations=dest_list,
         city_options=city_options,
+        region_options=[(key, REGION_LABELS_FR[key]) for key in REGION_ORDER],
         groq_ok=ai_client.is_configured(),
         ai_provider_label=ai_client.provider_label(),
         draft_is_manual=bool((draft or {}).get("manual")),

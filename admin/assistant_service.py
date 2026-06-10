@@ -45,7 +45,7 @@ SUGGESTIONS = [
 _ADMIN_PAGE_NOTES = {
     "admin.dashboard": ("Dashboard", "Vue d'ensemble : trafic, revenus, recommandations, choix du moteur IA (Groq/Mistral)."),
     "admin.guides": ("Guides IA", "Génération d'articles SEO par IA (ville + sujet + type), amélioration IA, rédaction manuelle, publication sur /blog."),
-    "admin.destinations_admin": ("Destinations", "Création/édition des pages destinations (IA ou manuel), images WebP, publication sur /<slug>."),
+    "admin.destinations_admin": ("Destinations", "Création/édition des pages destinations (IA ou manuel), images WebP, choix de la section Nord/Centre/Sud, publication sur /<slug>."),
     "admin.map_admin": ("Carte", "Points d'intérêt et pins affiliés (hôtels, activités) sur les cartes interactives des destinations."),
     "admin.newsletter_admin": ("Newsletter", "Composition d'emails (IA ou manuel), envoi test / abonné / tous, gestion des abonnés."),
     "admin.social": ("Réseaux sociaux", "Génération IA et publication de posts Facebook (lien UTM ou photo), configuration page/token."),
@@ -139,6 +139,7 @@ def build_site_snapshot() -> dict:
             {
                 "slug": s,
                 "name": d.get("name", s),
+                "region": _dest_region(s, d),
                 "has_image": bool(d.get("image")),
                 "has_meta": bool(d.get("meta_description")),
                 "tips": len(d.get("tips") or []),
@@ -184,6 +185,11 @@ def build_site_snapshot() -> dict:
         },
     }
     return snapshot
+
+
+def _dest_region(slug: str, dest: dict) -> str:
+    from data.trip_planner import resolve_region
+    return resolve_region(slug, dest)
 
 
 def _smtp_ok() -> bool:
@@ -391,7 +397,10 @@ def _format_snapshot(snap: dict) -> str:
             f"{a.get('words', 0)} mots, {a.get('date', '?')}]" + (f" ⚠ {', '.join(flags)}" if flags else "")
         )
     dests = snap.get("destinations", [])
-    lines.append(f"Destinations publiées ({len(dests)}): " + ", ".join(d["slug"] for d in dests))
+    lines.append(
+        f"Destinations publiées ({len(dests)}, avec leur région nord/centre/sud): "
+        + ", ".join(f"{d['slug']} [{d.get('region', '?')}]" for d in dests)
+    )
     return "\n".join(lines)
 
 
@@ -444,6 +453,8 @@ def _system_prompt() -> str:
         '- {"name":"generate_destination","params":{"city":"…","notes":"…"}} — page destination (job en arrière-plan)\n'
         '- {"name":"generate_newsletter","params":{"topic":"…","email_type":"actualite","notes":"…"}} — email newsletter (job en arrière-plan)\n'
         '- {"name":"generate_social_post","params":{"page_id":"…","brief":"…"}} — post Facebook (page_id du bloc PAGES PUBLIQUES, ou brief libre)\n'
+        '- {"name":"set_destination_region","params":{"slug":"…","region":"north|central|south"}} — déplacer une destination publiée dans la colonne Nord/Centre/Sud du menu Destinations (confirmation auto)\n'
+        '- {"name":"update_destination","params":{"slug":"…","tagline":"…","meta_title":"…","meta_description":"…","overview":"…","region":"…"}} — modifier une page destination publiée ; tous les champs sont optionnels, ne passe que ceux à changer (confirmation auto)\n'
         '- {"name":"publish_draft","params":{"kind":"article"}} ou {"kind":"destination"} — publier le brouillon en attente (confirmation auto)\n'
         '- {"name":"publish_facebook","params":{}} — publier le dernier post généré (confirmation auto)\n'
         '- {"name":"send_newsletter","params":{"scope":"test","email":"…"}} ou {"scope":"all"} — envoyer la newsletter (confirmation auto)\n'
@@ -496,6 +507,10 @@ def execute_confirmation(token: str) -> dict:
         return _exec_publish_facebook()
     if action == "send_newsletter":
         return _exec_send_newsletter(params)
+    if action == "set_destination_region":
+        return _exec_set_destination_region(params)
+    if action == "update_destination":
+        return _exec_update_destination(params)
     raise ValueError(f"Action inconnue : {action}")
 
 
@@ -624,6 +639,31 @@ def _exec_publish_facebook() -> dict:
     draft_store.clear(session.pop(_draft_token_key("social"), None))
     permalink = fb.post_permalink(result)
     return {"message": f"✅ Publié sur Facebook. {permalink}".strip(), "url": permalink}
+
+
+def _exec_set_destination_region(params: dict) -> dict:
+    from data.trip_planner import REGION_LABELS_FR
+    from admin.store import set_destination_region
+
+    slug = (params.get("slug") or "").strip()
+    region = (params.get("region") or "").strip().lower()
+    dest = set_destination_region(slug, region)
+    label = REGION_LABELS_FR.get(region, region)
+    return {
+        "message": f"✅ « {dest.get('name', slug)} » est maintenant dans la section {label} du menu Destinations.",
+        "url": f"/{slug}",
+    }
+
+
+def _exec_update_destination(params: dict) -> dict:
+    from admin.store import update_destination_fields
+
+    slug = (params.get("slug") or "").strip()
+    dest = update_destination_fields(slug, params)
+    return {
+        "message": f"✅ Page destination mise à jour : « {dest.get('name', slug)} » (/{slug}).",
+        "url": f"/{slug}",
+    }
 
 
 def _exec_send_newsletter(params: dict) -> dict:
@@ -757,6 +797,40 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
                 message[:220] + ("…" if len(message) > 220 else ""),
             ),
         }
+
+    if name == "set_destination_region":
+        from data.trip_planner import REGION_LABELS_FR, REGION_ORDER
+        from admin.store import get_destination_by_slug
+
+        slug = (params.get("slug") or "").strip()
+        region = (params.get("region") or "").strip().lower()
+        dest = get_destination_by_slug(slug)
+        if not dest:
+            raise ValueError(f"Destination introuvable : « {slug} » — vérifie le slug dans l'ÉTAT DU SITE.")
+        if region not in REGION_ORDER:
+            raise ValueError("Région invalide — utilise north, central ou south.")
+        label = REGION_LABELS_FR.get(region, region)
+        return {"confirm": create_confirmation(
+            "set_destination_region", {"slug": slug, "region": region},
+            f"Déplacer « {dest.get('name', slug)} » dans la section {label} ?",
+            f"/{slug} apparaîtra dans la colonne {label} du menu Destinations (Nord/Centre/Sud).",
+        )}
+
+    if name == "update_destination":
+        from admin.store import DESTINATION_EDITABLE_FIELDS, get_destination_by_slug
+
+        slug = (params.get("slug") or "").strip()
+        dest = get_destination_by_slug(slug)
+        if not dest:
+            raise ValueError(f"Destination introuvable : « {slug} » — vérifie le slug dans l'ÉTAT DU SITE.")
+        changed = [k for k in (*DESTINATION_EDITABLE_FIELDS, "tips", "region") if params.get(k)]
+        if not changed:
+            raise ValueError("Aucun champ à modifier — passe au moins tagline, meta_title, meta_description, overview, tips ou region.")
+        return {"confirm": create_confirmation(
+            "update_destination", params,
+            f"Modifier la page « {dest.get('name', slug)} » ?",
+            f"/{slug} — champs modifiés : {', '.join(changed)}. La version EN sera retraduite automatiquement si le texte FR change.",
+        )}
 
     if name == "publish_draft":
         kind = params.get("kind") or "article"
