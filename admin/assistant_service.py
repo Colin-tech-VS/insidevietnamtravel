@@ -9,7 +9,8 @@ priorités et calendrier, toujours avec un objectif SEO. Elle connaît :
   affiliation, revenus, newsletter, avis, contact, configuration IA/Facebook).
 
 Elle peut aussi AGIR (tout ce que l'admin peut faire) : générer un guide, une
-destination, une newsletter ou un post Facebook — via les mêmes jobs en tâche de
+destination, une newsletter ou un post Facebook, ajouter des points sur la
+carte (restaurants, hôtels, activités…) — via les mêmes jobs en tâche de
 fond que l'admin (draft_store, mêmes tokens de session : le brouillon apparaît
 aussi dans la page admin correspondante). Toute PUBLICATION (site, newsletter,
 réseaux sociaux) exige une confirmation explicite de l'admin : l'action est mise
@@ -458,6 +459,11 @@ def _system_prompt() -> str:
         "confirmation explicite de l'admin — le système s'en charge quand tu utilises un "
         "outil de publication ; n'affirme jamais avoir publié sans confirmation. "
         "N'utilise un outil QUE si l'admin demande une action ; pour une question, réponds sans outil. "
+        "MAIS si l'admin ACCEPTE une action que tu viens de proposer (« oui », « ok », « vas-y », "
+        "« fais-le », « ajoute-les »), tu DOIS appeler IMMÉDIATEMENT l'outil correspondant dans "
+        "cette réponse — ne dis JAMAIS que c'est fait ou en cours si le champ \"tool\" est null. "
+        "Après une recherche web, tu peux enchaîner directement un outil d'action (ex. "
+        "add_map_points avec les restaurants trouvés et leurs adresses). "
         f"VILLES autorisées pour generate_guide/generate_destination : {cities}. "
         "OUTILS disponibles (champ \"tool\", sinon null) :\n"
         '- {"name":"web_search","params":{"query":"…"}} — rechercher sur internet (DuckDuckGo) : '
@@ -472,13 +478,19 @@ def _system_prompt() -> str:
         '- {"name":"generate_social_post","params":{"page_id":"…","brief":"…"}} — post Facebook (page_id du bloc PAGES PUBLIQUES, ou brief libre)\n'
         '- {"name":"set_destination_region","params":{"slug":"…","region":"north|central|south"}} — déplacer une destination publiée dans la colonne Nord/Centre/Sud du menu Destinations (confirmation auto)\n'
         '- {"name":"update_destination","params":{"slug":"…","tagline":"…","meta_title":"…","meta_description":"…","overview":"…","region":"…"}} — modifier une page destination publiée ; tous les champs sont optionnels, ne passe que ceux à changer (confirmation auto)\n'
+        '- {"name":"add_map_points","params":{"city":"slug ou nom de la ville","points":[{"title":"…","address":"adresse complète","kind":"food","desc":"…","price_hint":"…"}]}} — ajouter des points sur la carte interactive : restaurants, hôtels, activités, lieux. kind ∈ hotel|activity|food|poi|service ; address = adresse la plus précise possible (géocodée via OpenStreetMap), sinon « Nom, Ville » (confirmation auto)\n'
         '- {"name":"publish_draft","params":{"kind":"article"}} ou {"kind":"destination"} — publier le brouillon en attente (confirmation auto)\n'
         '- {"name":"publish_facebook","params":{}} — publier le dernier post généré (confirmation auto)\n'
         '- {"name":"send_newsletter","params":{"scope":"test","email":"…"}} ou {"scope":"all"} — envoyer la newsletter (confirmation auto)\n'
         "Ton : direct, structuré, orienté impact — un consultant produit/SEO senior. "
         "Mets en avant 2 à 5 points clés avec **double astérisques**. Termine toujours ta réponse. "
         "Les \"actions\" sont des liens internes UNIQUEMENT (URLs commençant par « / », "
-        "pages admin ou pages publiques du site). "
+        "pages admin ou pages publiques du site) ; ils s'ouvrent dans le même onglet sans "
+        "fermer la conversation. Pour ouvrir une page admin avec son formulaire DÉJÀ "
+        "PRÉ-REMPLI, ajoute ?prefill=1&<champ>=<valeur> à l'URL (champ = attribut name du "
+        "formulaire). Exemples : /admin/map?prefill=1&title=…&address=…&kind=food&city=… · "
+        "/admin/guides?prefill=1&city=…&topic=… · /admin/destinations?prefill=1&city=…&notes=… · "
+        "/admin/newsletter?prefill=1&topic=…&notes=… "
         'Réponds STRICTEMENT en JSON : {"message":"…","actions":[{"label":"…","url":"/…"}],"tool":null}'
     )
 
@@ -528,6 +540,8 @@ def execute_confirmation(token: str) -> dict:
         return _exec_set_destination_region(params)
     if action == "update_destination":
         return _exec_update_destination(params)
+    if action == "add_map_points":
+        return _exec_add_map_points(params)
     raise ValueError(f"Action inconnue : {action}")
 
 
@@ -681,6 +695,34 @@ def _exec_update_destination(params: dict) -> dict:
         "message": f"✅ Page destination mise à jour : « {dest.get('name', slug)} » (/{slug}).",
         "url": f"/{slug}",
     }
+
+
+def _exec_add_map_points(params: dict) -> dict:
+    from admin import map_service
+
+    published: list[str] = []
+    pending: list[str] = []
+    errors: list[str] = []
+    for point in params.get("points") or []:
+        try:
+            result = map_service.add_map_point(point)
+            (published if result["status"] == "published" else pending).append(point["title"])
+        except Exception as exc:  # noqa: BLE001 — un point en échec ne bloque pas les autres
+            errors.append(f"{point.get('title', '?')} ({exc})")
+
+    parts = []
+    if published:
+        parts.append(f"✅ {len(published)} point(s) ajouté(s) sur la carte : " + ", ".join(published) + ".")
+    if pending:
+        parts.append(
+            f"⏳ {len(pending)} point(s) en attente (pas de page destination publiée pour cette ville) : "
+            + ", ".join(pending) + " — publiez-les depuis /admin/map."
+        )
+    if errors:
+        parts.append("⚠️ Non ajouté(s) : " + " ; ".join(errors))
+    if not parts:
+        parts.append("Aucun point n'a pu être ajouté.")
+    return {"message": "\n".join(parts), "url": "/admin/map"}
 
 
 def _exec_send_newsletter(params: dict) -> dict:
@@ -847,6 +889,57 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
             "update_destination", params,
             f"Modifier la page « {dest.get('name', slug)} » ?",
             f"/{slug} — champs modifiés : {', '.join(changed)}. La version EN sera retraduite automatiquement si le texte FR change.",
+        )}
+
+    if name == "add_map_points":
+        from admin import map_service
+
+        raw_points = params.get("points") or []
+        if isinstance(raw_points, dict):
+            raw_points = [raw_points]
+        default_city = (params.get("city") or "").strip()
+        points: list[dict] = []
+        for p in raw_points[:10]:
+            if not isinstance(p, dict):
+                continue
+            title = (p.get("title") or "").strip()
+            address = (p.get("address") or "").strip()
+            if not title or not address:
+                continue
+            kind = (p.get("kind") or "poi").strip().lower()
+            if kind not in map_service.KIND_LABELS:
+                kind = "poi"
+            points.append({
+                "title": title,
+                "address": address,
+                "city": (p.get("city") or default_city).strip(),
+                "kind": kind,
+                "desc": (p.get("desc") or "").strip(),
+                "price_hint": (p.get("price_hint") or "").strip(),
+                "affiliate_provider": (p.get("affiliate_provider") or "custom").strip(),
+                "affiliate_search": (p.get("affiliate_search") or title).strip(),
+                "affiliate_url": (p.get("affiliate_url") or "").strip(),
+            })
+        if not points:
+            raise ValueError("Aucun point valide — chaque point doit avoir au minimum un title et une address.")
+
+        slug = map_service.resolve_destination_slug(points[0]["city"])
+        if slug:
+            place = map_service.get_destinations_dict_safe().get(slug, {}).get("name", slug)
+            where = f"sur la carte de {place}"
+        else:
+            where = (
+                f"pour « {points[0]['city'] or 'ville non précisée'} » (pas de page destination publiée : "
+                "les points iront en attente dans /admin/map)"
+            )
+        kinds = map_service.KIND_LABELS
+        listing = "\n".join(
+            f"• {p['title']} ({kinds[p['kind']]['fr']}) — {p['address']}" for p in points
+        )
+        return {"confirm": create_confirmation(
+            "add_map_points", {"points": points},
+            f"Ajouter {len(points)} point(s) {where} ?",
+            listing + "\n\nChaque adresse sera géolocalisée via OpenStreetMap.",
         )}
 
     if name == "publish_draft":

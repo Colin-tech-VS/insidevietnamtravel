@@ -1,6 +1,9 @@
 /* Linh 🧭 — copilote IA interne de l'admin (développement & SEO).
    Chat + briefing d'audit à l'ouverture + jobs de génération en arrière-plan
-   + cartes de confirmation : aucune publication sans clic « Confirmer ». */
+   + cartes de confirmation : aucune publication sans clic « Confirmer ».
+   L'état (conversation, panneau ouvert, job en cours, confirmations) est
+   conservé en sessionStorage : les liens internes proposés par Linh s'ouvrent
+   dans le MÊME onglet et la conversation reste affichée après navigation. */
 (function initLinhAssistant() {
   'use strict';
 
@@ -20,11 +23,37 @@
   var jobUrlTpl = root.dataset.jobUrl;
   var confirmUrl = root.dataset.confirmUrl;
 
-  var history = [];
-  var suggestions = [];
+  var STORAGE_KEY = 'linhChatState';
+
+  function loadState() {
+    try {
+      var st = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || 'null');
+      if (st && typeof st === 'object') {
+        return {
+          open: !!st.open,
+          opened: !!st.opened,
+          history: Array.isArray(st.history) ? st.history : [],
+          items: Array.isArray(st.items) ? st.items : [],
+          suggestions: Array.isArray(st.suggestions) ? st.suggestions : [],
+          job: typeof st.job === 'string' ? st.job : '',
+        };
+      }
+    } catch (e) { /* sessionStorage indisponible */ }
+    return { open: false, opened: false, history: [], items: [], suggestions: [], job: '' };
+  }
+
+  var state = loadState();
+  var history = state.history;
   var busy = false;
-  var opened = false;
   var jobTimer = 0;
+
+  function saveState() {
+    if (history.length > 30) history.splice(0, history.length - 30);
+    if (state.items.length > 60) state.items.splice(0, state.items.length - 60);
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) { /* quota / navigation privée */ }
+  }
 
   function escapeHtml(s) {
     return String(s)
@@ -43,6 +72,13 @@
     return html;
   }
 
+  /* Lien interne (« /admin/… », « /hanoi »…) : même onglet, la conversation
+     est restaurée après navigation. Lien externe : nouvel onglet. */
+  function linkAttrs(url) {
+    var internal = url.charAt(0) === '/' && url.charAt(1) !== '/';
+    return internal ? '' : ' target="_blank" rel="noopener"';
+  }
+
   function scrollBottom() {
     window.requestAnimationFrame(function () {
       messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -58,6 +94,14 @@
     wrap.appendChild(bubble);
     messagesEl.appendChild(wrap);
     scrollBottom();
+    return wrap;
+  }
+
+  /* Affiche ET mémorise une bulle (restituée après navigation). */
+  function say(role, html, extraClass) {
+    var wrap = appendBubble(role, html, extraClass);
+    state.items.push({ t: 'b', role: role, html: html, cls: extraClass || '' });
+    saveState();
     return wrap;
   }
 
@@ -81,7 +125,7 @@
     if (!actions || !actions.length) return '';
     var html = '<div class="linh-chat__actions">';
     actions.forEach(function (a) {
-      html += '<a class="linh-chat__action" href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener">'
+      html += '<a class="linh-chat__action" href="' + escapeHtml(a.url) + '"' + linkAttrs(a.url) + '>'
         + '<span>' + escapeHtml(a.label) + '</span><span aria-hidden="true">→</span></a>';
     });
     html += '</div>';
@@ -97,7 +141,7 @@
         + '<div class="linh-chat__finding-body">'
         + '<strong>' + escapeHtml(f.title) + '</strong>'
         + '<small>' + escapeHtml(f.detail) + '</small>'
-        + (f.url ? '<a href="' + escapeHtml(f.url) + '" target="_blank" rel="noopener">Ouvrir →</a>' : '')
+        + (f.url ? '<a href="' + escapeHtml(f.url) + '"' + linkAttrs(f.url) + '>Ouvrir →</a>' : '')
         + '</div>'
         + '<span class="linh-chat__finding-sev">' + escapeHtml(f.severity || '') + '</span>'
         + '</div>';
@@ -117,8 +161,20 @@
     });
   }
 
-  function renderConfirmCard(confirm) {
+  function markConfirmDone(token) {
+    state.items.forEach(function (item) {
+      if (item.t === 'c' && item.confirm && item.confirm.token === token) item.done = true;
+    });
+    saveState();
+  }
+
+  function renderConfirmCard(confirm, opts) {
     if (!confirm || !confirm.token) return;
+    opts = opts || {};
+    if (!opts.restored) {
+      state.items.push({ t: 'c', confirm: confirm, done: false });
+      saveState();
+    }
     var wrap = appendBubble('assistant', '', 'linh-chat__bubble-wrap--confirm');
     var bubble = wrap.querySelector('.linh-chat__bubble');
     bubble.classList.add('linh-chat__bubble--confirm');
@@ -126,7 +182,7 @@
       + '<p class="linh-chat__confirm-title">🔒 ' + escapeHtml(confirm.title) + '</p>'
       + '<p class="linh-chat__confirm-summary">' + formatMessage(confirm.summary) + '</p>'
       + '<div class="linh-chat__confirm-btns">'
-      + '<button type="button" class="linh-chat__btn linh-chat__btn--ok">Confirmer la publication</button>'
+      + '<button type="button" class="linh-chat__btn linh-chat__btn--ok">Confirmer</button>'
       + '<button type="button" class="linh-chat__btn linh-chat__btn--cancel">Annuler</button>'
       + '</div></div>';
 
@@ -139,28 +195,37 @@
       bubble.classList.add('linh-chat__bubble--confirm-done');
     }
 
+    if (opts.done) {
+      disable();
+      return;
+    }
+
     okBtn.addEventListener('click', function () {
       disable();
-      showTyping('Publication en cours…');
+      markConfirmDone(confirm.token);
+      showTyping('Exécution en cours…');
       postConfirm(confirm.token, 'confirm').then(function (res) {
         removeTyping();
         if (res.ok) {
-          appendBubble('assistant', formatMessage(res.data.message || '✅ Fait.'));
-          history.push({ role: 'assistant', content: res.data.message || 'Publication confirmée et effectuée.' });
+          say('assistant', formatMessage(res.data.message || '✅ Fait.'));
+          history.push({ role: 'assistant', content: res.data.message || 'Action confirmée et effectuée.' });
         } else {
-          appendBubble('assistant', formatMessage('⚠️ ' + (res.data.error || 'Échec de la publication.')), 'linh-chat__bubble-wrap--error');
+          say('assistant', formatMessage('⚠️ ' + (res.data.error || 'Échec de l\'action.')), 'linh-chat__bubble-wrap--error');
         }
+        saveState();
       }).catch(function () {
         removeTyping();
-        appendBubble('assistant', formatMessage('⚠️ Erreur réseau pendant la publication.'), 'linh-chat__bubble-wrap--error');
+        say('assistant', formatMessage('⚠️ Erreur réseau pendant l\'exécution.'), 'linh-chat__bubble-wrap--error');
       });
     });
 
     cancelBtn.addEventListener('click', function () {
       disable();
+      markConfirmDone(confirm.token);
       postConfirm(confirm.token, 'cancel').finally(function () {
-        appendBubble('assistant', formatMessage('Très bien, **rien n\'a été publié**. Le brouillon reste disponible dans l\'admin.'));
-        history.push({ role: 'assistant', content: 'Publication annulée par l\'admin — rien n\'a été publié.' });
+        say('assistant', formatMessage('Très bien, **rien n\'a été publié**. Le brouillon reste disponible dans l\'admin.'));
+        history.push({ role: 'assistant', content: 'Action annulée par l\'admin — rien n\'a été fait.' });
+        saveState();
       });
     });
   }
@@ -168,6 +233,14 @@
   function pollJob(kind) {
     if (jobTimer) window.clearTimeout(jobTimer);
     var url = jobUrlTpl.replace('KIND', kind);
+    state.job = kind;
+    saveState();
+
+    function finish() {
+      state.job = '';
+      saveState();
+      busy = false;
+    }
 
     function tick() {
       fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
@@ -185,13 +258,15 @@
             if (st.preview_url) {
               html += renderActions([{ label: 'Voir l\'aperçu dans l\'admin', url: st.preview_url }]);
             }
-            appendBubble('assistant', html);
+            say('assistant', html);
             history.push({ role: 'assistant', content: st.summary || 'Brouillon prêt.' });
             if (st.confirm) renderConfirmCard(st.confirm);
           } else if (st.status === 'error') {
-            appendBubble('assistant', formatMessage('⚠️ ' + (st.error || 'Échec de la génération.')), 'linh-chat__bubble-wrap--error');
+            say('assistant', formatMessage('⚠️ ' + (st.error || 'Échec de la génération.')), 'linh-chat__bubble-wrap--error');
+          } else {
+            say('assistant', formatMessage('⚠️ Génération introuvable (session expirée ?) — relancez la demande.'), 'linh-chat__bubble-wrap--error');
           }
-          busy = false;
+          finish();
         })
         .catch(function () {
           jobTimer = window.setTimeout(tick, 4000);
@@ -202,9 +277,9 @@
   }
 
   function renderSuggestions() {
-    if (!suggestionsEl || !suggestions.length) return;
+    if (!suggestionsEl || !state.suggestions.length) return;
     suggestionsEl.innerHTML = '';
-    suggestions.forEach(function (q) {
+    state.suggestions.forEach(function (q) {
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'linh-chat__chip';
@@ -219,6 +294,8 @@
 
   function hideSuggestions() {
     if (suggestionsEl) suggestionsEl.innerHTML = '';
+    state.suggestions = [];
+    saveState();
   }
 
   function loadInsights() {
@@ -228,14 +305,15 @@
       .then(function (data) {
         removeTyping();
         if (!data.ok) {
-          appendBubble('assistant', formatMessage('⚠️ ' + (data.error || 'Briefing indisponible.')), 'linh-chat__bubble-wrap--error');
+          say('assistant', formatMessage('⚠️ ' + (data.error || 'Briefing indisponible.')), 'linh-chat__bubble-wrap--error');
           return;
         }
-        suggestions = data.suggestions || [];
+        state.suggestions = data.suggestions || [];
         var html = formatMessage(data.greeting || '');
         html += renderFindings(data.findings);
-        appendBubble('assistant', html);
+        say('assistant', html);
         history.push({ role: 'assistant', content: data.greeting || '' });
+        saveState();
         renderSuggestions();
       })
       .catch(function () {
@@ -249,8 +327,9 @@
     if (!text || busy) return;
     busy = true;
     hideSuggestions();
-    appendBubble('user', formatMessage(text));
+    say('user', formatMessage(text));
     history.push({ role: 'user', content: text });
+    saveState();
     input.value = '';
     input.style.height = 'auto';
     showTyping('Linh analyse le site…');
@@ -276,9 +355,10 @@
         html += renderFindings(d.findings);
         html += renderActions(d.actions);
         if (d.message || d.findings || d.actions || d.post_preview) {
-          appendBubble('assistant', html);
+          say('assistant', html);
         }
         history.push({ role: 'assistant', content: d.message || '' });
+        saveState();
 
         if (d.confirm) renderConfirmCard(d.confirm);
 
@@ -303,16 +383,23 @@
   function openPanel() {
     panel.hidden = false;
     fab.setAttribute('aria-expanded', 'true');
-    if (!opened) {
-      opened = true;
+    state.open = true;
+    if (!state.opened) {
+      state.opened = true;
+      saveState();
       loadInsights();
+    } else {
+      saveState();
     }
     input.focus();
+    scrollBottom();
   }
 
   function closePanel() {
     panel.hidden = true;
     fab.setAttribute('aria-expanded', 'false');
+    state.open = false;
+    saveState();
   }
 
   fab.addEventListener('click', function () {
@@ -340,4 +427,17 @@
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 96) + 'px';
   });
+
+  /* ── Restauration après navigation ── */
+  state.items.forEach(function (item) {
+    if (item.t === 'b') appendBubble(item.role, item.html, item.cls);
+    else if (item.t === 'c') renderConfirmCard(item.confirm, { restored: true, done: item.done });
+  });
+  renderSuggestions();
+  if (state.job) {
+    busy = true;
+    showTyping('Génération en cours…');
+    pollJob(state.job);
+  }
+  if (state.open) openPanel();
 })();
