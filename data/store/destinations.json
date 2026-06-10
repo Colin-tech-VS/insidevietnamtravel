@@ -1265,9 +1265,12 @@
             "price_hint": "dès 45 €",
             "provider": "getyourguide"
           }
-        ]
+        ],
+        "image_alt": "Citadelle imperiale de Hue, Vietnam"
       },
-      "en": {}
+      "en": {
+        "image_alt": "Citadelle imperiale de Hue, Vietnam"
+      }
     },
     "name": "Huế",
     "meta_title": "Guide Huế 2026 — Cité impériale, tombeaux royaux & rivière",
@@ -1348,9 +1351,11 @@
         "provider": "getyourguide"
       }
     ],
-    "image": "/static/images/pool/1772867342647-6e6d87a0b014.webp",
-    "image_alt": "Guide voyage Huế, Vietnam",
-    "image_photo_id": "1772867342647-6e6d87a0b014"
+    "image": "/static/images/destinations/hue.webp",
+    "image_alt": "Citadelle imperiale de Hue, Vietnam",
+    "image_photo_id": "",
+    "image_source_url": "https://pixnio.com/free-images/2024/11/18/2024-11-18-13-14-24-1344x1012.jpg",
+    "image_placeholder": false
   },
   "phu-quoc": {
     "slug": "phu-quoc",

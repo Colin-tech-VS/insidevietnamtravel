@@ -575,7 +575,7 @@ def _system_prompt() -> str:
         '- {"name":"improve_article","params":{"slug":"…","instructions":"…"}} — réécrire/améliorer un guide publié par IA (SEO, clarté, maillage interne, longueur…) selon tes instructions ; job en arrière-plan après confirmation\n'
         '- {"name":"update_destination","params":{"slug":"…","tagline":"…","meta_title":"…","meta_description":"…","overview":"…","tips":["…"],"things_to_do":[{"title":"…","desc":"…"}],"region":"…"}} — modifier une page destination publiée ; champs optionnels (confirmation auto). slug = slug ÉTAT DU SITE (ex. delta-du-mekong)\n'
         '- {"name":"improve_destination","params":{"slug":"…","instructions":"…"}} — réécrire/améliorer une destination publiée par IA selon tes instructions ; job en arrière-plan après confirmation\n'
-        '- {"name":"update_image","params":{"target":"article|destination","slug":"…","image_url":"https://…","query":"…","alt":"…"}} — mettre à jour l\'image d\'un article ou d\'une destination publié(e). slug = slug EXACT du bloc ÉTAT DU SITE (ex. delta-du-mekong, pas un libellé ville). Donne SOIT image_url (URL directe, ex. via web_search), SOIT query (mots-clés Pixabay). alt facultatif. Téléchargement + WebP en arrière-plan après confirmation\n'
+        '- {"name":"update_image","params":{"target":"article|destination","slug":"…","image_url":"https://…","query":"…","alt":"…"}} — mettre à jour l\'image d\'un article ou d\'une destination publiée. slug = slug ÉTAT DU SITE (ex. hue pour Huế, delta-du-mekong). Préfère query (mots-clés Pixabay, ex. « Hue imperial citadel Vietnam ») : fiable et sans URL cassée. image_url seulement si lien DIRECT (.jpg/.webp) ou page Wikimedia Commons /wiki/File:… — pas une page galerie HTML (pixnio, shutterstock…). alt facultatif. Job WebP après confirmation\n'
         '- {"name":"add_map_points","params":{"city":"slug ou nom de la ville","points":[{"title":"…","address":"adresse complète","kind":"food","desc":"…","price_hint":"…"}]}} — ajouter des points sur la carte interactive : restaurants, hôtels, activités, lieux. kind ∈ hotel|activity|food|poi|service ; address = adresse la plus précise possible (géocodée via OpenStreetMap), sinon « Nom, Ville » (confirmation auto)\n'
         '- {"name":"publish_draft","params":{"kind":"article"}} ou {"kind":"destination"} — publier le brouillon en attente (confirmation auto)\n'
         '- {"name":"publish_facebook","params":{}} — publier le dernier post généré (confirmation auto)\n'
@@ -1009,17 +1009,51 @@ def _exec_improve_destination(params: dict, report=None) -> dict:
     }
 
 
+def _pixabay_query_for_image_params(params: dict) -> str:
+    """Mots-clés Pixabay par défaut quand l'URL fournie n'est pas exploitable."""
+    query = (params.get("query") or "").strip()
+    if query:
+        return query
+    target = (params.get("target") or "").strip().lower()
+    slug = (params.get("slug") or "").strip()
+    if target == "destination" and slug:
+        try:
+            _, dest = _resolve_destination_slug(slug)
+            name = (dest.get("name") or slug).strip()
+            return f"{name} Vietnam imperial city landmark"
+        except ValueError:
+            pass
+    if slug:
+        return f"{slug.replace('-', ' ')} Vietnam travel"
+    return "Vietnam travel destination landmark"
+
+
 def _resolve_image_url(params: dict, report=None) -> str:
-    """URL d'image : image_url directe, sinon recherche Pixabay bornée (échéance murale)."""
+    """URL d'image : directe/Commons/og:image, sinon Pixabay (repli fiable)."""
+    from admin.image_service import (
+        IMAGE_STEP_HARD_DEADLINE,
+        _run_with_deadline,
+        pixabay_image_url,
+        resolve_direct_image_url,
+    )
+
     image_url = (params.get("image_url") or "").strip()
     if image_url:
-        return image_url
-    query = (params.get("query") or "").strip()
+        direct = resolve_direct_image_url(image_url)
+        if direct:
+            return direct
+        query = _pixabay_query_for_image_params(params)
+        if report:
+            report(
+                f"URL page non utilisable — recherche Pixabay « {query[:60]} »…"
+            )
+        return _run_with_deadline(pixabay_image_url, IMAGE_STEP_HARD_DEADLINE, query)
+
+    query = _pixabay_query_for_image_params(params)
     if not query:
         raise ValueError("Indique une URL d'image (image_url) ou des mots-clés (query).")
     if report:
         report(f"Recherche d'image « {query[:60]} »…")
-    from admin.image_service import IMAGE_STEP_HARD_DEADLINE, _run_with_deadline, pixabay_image_url
     return _run_with_deadline(pixabay_image_url, IMAGE_STEP_HARD_DEADLINE, query)
 
 
@@ -1368,21 +1402,26 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
             label = item.get("title", slug)
             where = f"l'article « {label} » (/blog/{slug})"
 
-        # Pré-résolution Pixabay AVANT confirmation : l'exécution ne fait plus que
-        # télécharger + encoder (plus rapide, moins de risque de timeout routeur).
-        pending_query = query
-        if not image_url and query:
-            image_url = _resolve_image_url({"query": query})
-            pending_query = ""
+        # Pré-résolution AVANT confirmation : URL directe, Commons, og:image ou Pixabay.
+        resolve_params = {
+            "target": target,
+            "slug": resolved_slug if target == "destination" else slug,
+            "image_url": image_url,
+            "query": query,
+        }
+        try:
+            resolved_image_url = _resolve_image_url(resolve_params)
+        except ValueError as exc:
+            raise ValueError(str(exc)) from exc
 
-        src = image_url if image_url else f"recherche d'image « {query} »"
+        src = resolved_image_url
         return {"confirm": create_confirmation(
             "update_image",
             {
                 "target": target,
                 "slug": resolved_slug if target == "destination" else slug,
-                "image_url": image_url,
-                "query": pending_query,
+                "image_url": resolved_image_url,
+                "query": "",
                 "alt": params.get("alt", ""),
             },
             f"Mettre à jour l'image de {where} ?",

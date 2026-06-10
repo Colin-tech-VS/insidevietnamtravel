@@ -298,6 +298,7 @@ def get_destination_by_slug(slug: str, lang: str | None = None) -> dict | None:
 
 # Alias courants (erreurs de slug par Linh ou libellés ville ≠ slug publié).
 _DESTINATION_SLUG_ALIASES: dict[str, str] = {
+    "hu": "hue",
     "m-tho-delta-mekong": "delta-du-mekong",
     "my-tho-delta-mekong": "delta-du-mekong",
     "my-tho": "delta-du-mekong",

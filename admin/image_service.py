@@ -915,6 +915,110 @@ def attach_image_to_destination(
 # Taille max d'une image téléchargée depuis le web (octets) — garde-fou mémoire/abus.
 MAX_DOWNLOAD_BYTES = 12 * 1024 * 1024
 _IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp")
+_DIRECT_IMAGE_HOST_MARKERS = (
+    "upload.wikimedia.org",
+    "images.unsplash.com",
+    "cdn.pixabay.com",
+    "pixabay.com/get/",
+    "live.staticflickr.com",
+    "i.imgur.com",
+)
+
+
+def _looks_like_direct_image_url(url: str) -> bool:
+    path = urllib.parse.urlparse(url).path.lower()
+    if "/wiki/file:" in path:
+        return False
+    if path.endswith(_IMAGE_EXTS):
+        return True
+    lower = url.lower()
+    return any(marker in lower for marker in _DIRECT_IMAGE_HOST_MARKERS)
+
+
+def _wikimedia_commons_direct_url(page_url: str) -> str | None:
+    """Convertit une page Commons /wiki/File:… en URL directe (API Wikimedia)."""
+    try:
+        path = urllib.parse.urlparse(page_url).path
+        if "/wiki/File:" not in path:
+            return None
+        filename = urllib.parse.unquote(path.split("/wiki/File:", 1)[1].split("#")[0])
+        resp = requests.get(
+            "https://commons.wikimedia.org/w/api.php",
+            params={
+                "action": "query",
+                "titles": f"File:{filename}",
+                "prop": "imageinfo",
+                "iiprop": "url",
+                "iiurlwidth": 1200,
+                "format": "json",
+            },
+            timeout=(REMOTE_IMAGE_CONNECT_TIMEOUT, REMOTE_IMAGE_READ_TIMEOUT),
+            headers={"User-Agent": "InsideVietnamTravel/1.0"},
+        )
+        resp.raise_for_status()
+        pages = resp.json().get("query", {}).get("pages", {})
+        for page in pages.values():
+            if page.get("missing"):
+                continue
+            infos = page.get("imageinfo") or []
+            if infos:
+                return infos[0].get("thumburl") or infos[0].get("url")
+    except Exception:
+        return None
+    return None
+
+
+def _extract_og_image_url(page_url: str) -> str | None:
+    """Extrait og:image / twitter:image d'une page HTML (galerie, article…)."""
+    try:
+        resp = requests.get(
+            page_url,
+            timeout=(REMOTE_IMAGE_CONNECT_TIMEOUT, REMOTE_IMAGE_READ_TIMEOUT),
+            headers={"User-Agent": "Mozilla/5.0 (compatible; InsideVietnamTravel/1.0)"},
+            stream=True,
+        )
+        resp.raise_for_status()
+        buf = bytearray()
+        for chunk in resp.iter_content(4096):
+            if not chunk:
+                continue
+            buf.extend(chunk)
+            if len(buf) >= 80_000:
+                break
+        html = bytes(buf).decode("utf-8", errors="ignore")
+        patterns = (
+            r'<meta[^>]+property=["\']og:image(?::url)?["\'][^>]+content=["\']([^"\']+)',
+            r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image(?::url)?["\']',
+            r'<meta[^>]+name=["\']twitter:image["\'][^>]+content=["\']([^"\']+)',
+            r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+name=["\']twitter:image["\']',
+        )
+        for pattern in patterns:
+            match = re.search(pattern, html, re.I)
+            if match:
+                candidate = urllib.parse.urljoin(page_url, match.group(1).strip())
+                if candidate.startswith(("http://", "https://")):
+                    return candidate
+    except Exception:
+        return None
+    return None
+
+
+def resolve_direct_image_url(url: str, *, depth: int = 0) -> str | None:
+    """Résout une URL (directe, Commons, page HTML) vers une image téléchargeable."""
+    url = (url or "").strip()
+    if not url.lower().startswith(("http://", "https://")):
+        return None
+    if _looks_like_direct_image_url(url):
+        return url
+    if "wikimedia.org/wiki/File:" in url:
+        direct = _wikimedia_commons_direct_url(url)
+        if direct:
+            return direct
+    if depth < 1:
+        og = _extract_og_image_url(url)
+        if og and og != url:
+            return resolve_direct_image_url(og, depth=depth + 1)
+    return None
 
 
 def _download_image_bytes(url: str) -> bytes:
@@ -927,8 +1031,9 @@ def _download_image_bytes(url: str) -> bytes:
     if not url or not url.lower().startswith(("http://", "https://")):
         raise ValueError("URL d'image invalide — fournis une adresse http(s) directe vers une image.")
 
+    resolved = resolve_direct_image_url(url) or url
     resp = requests.get(
-        url,
+        resolved,
         timeout=(REMOTE_IMAGE_CONNECT_TIMEOUT, REMOTE_IMAGE_READ_TIMEOUT),
         headers={"User-Agent": "InsideVietnamTravel/1.0"},
         stream=True,
@@ -936,10 +1041,14 @@ def _download_image_bytes(url: str) -> bytes:
     resp.raise_for_status()
 
     ctype = (resp.headers.get("Content-Type") or "").lower()
-    path_lower = urllib.parse.urlparse(url).path.lower()
+    path_lower = urllib.parse.urlparse(resolved).path.lower()
     looks_image = ctype.startswith("image/") or path_lower.endswith(_IMAGE_EXTS)
     if not looks_image:
-        raise ValueError(f"L'URL ne renvoie pas une image (type : {ctype or 'inconnu'}).")
+        raise ValueError(
+            f"L'URL ne renvoie pas une image (type : {ctype or 'inconnu'}). "
+            "Utilise une URL directe (.jpg/.webp), une page Wikimedia Commons, "
+            "ou le paramètre query (ex. « Hue imperial citadel Vietnam ») pour Pixabay."
+        )
 
     data = bytearray()
     for chunk in resp.iter_content(8192):
