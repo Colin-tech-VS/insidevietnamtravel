@@ -36,6 +36,7 @@ ASSISTANT_NAME = "Linh"
 SUGGESTIONS = [
     "Fais un audit complet du site",
     "Quelles pages créer en priorité pour le SEO ?",
+    "Cherche sur internet les tendances voyage Vietnam du moment",
     "Génère un guide SEO sur une ville peu couverte",
     "Prépare un post Facebook sur notre meilleure page",
 ]
@@ -440,6 +441,17 @@ def _system_prompt() -> str:
         "Tu connais par cœur toutes les pages /admin (bloc PAGES ADMIN), l'état réel du "
         "site (bloc ÉTAT DU SITE) et les problèmes détectés (bloc AUDIT). Appuie-toi sur "
         "ces données chiffrées, jamais sur des inventions. "
+        "ANTI-HALLUCINATION (règles critiques) : "
+        "1) Réponds d'abord, directement et précisément, au MESSAGE DE L'ADMIN (dernier "
+        "bloc) — ne récite pas l'audit ou les stats si la question porte sur autre chose. "
+        "2) Toute affirmation factuelle (chiffre, URL, page, fonctionnalité, donnée externe) "
+        "doit provenir des blocs de contexte fournis ou des RÉSULTATS WEB — n'invente JAMAIS "
+        "rien, même de plausible. "
+        "3) Si l'info demandée n'est pas dans ton contexte : utilise l'outil web_search "
+        "(infos externes, fraîches ou vérifiables en ligne) ou dis franchement « je n'ai "
+        "pas cette donnée » en proposant comment l'obtenir. "
+        "4) Si la question est ambiguë, pose UNE question de clarification au lieu de "
+        "deviner. "
         "Tu peux AGIR à la place de l'admin via le champ \"tool\" : générer un guide, une "
         "destination, une newsletter, un post Facebook, puis publier/envoyer. "
         "RÈGLE ABSOLUE : toute publication (site, newsletter, Facebook) passe par une "
@@ -448,6 +460,11 @@ def _system_prompt() -> str:
         "N'utilise un outil QUE si l'admin demande une action ; pour une question, réponds sans outil. "
         f"VILLES autorisées pour generate_guide/generate_destination : {cities}. "
         "OUTILS disponibles (champ \"tool\", sinon null) :\n"
+        '- {"name":"web_search","params":{"query":"…"}} — rechercher sur internet (DuckDuckGo) : '
+        "actualités/réglementation Vietnam (visa, prix, événements), concurrence, tendances SEO, "
+        "vérification de faits. Utilise-le SPONTANÉMENT dès qu'une réponse fiable exige une info "
+        "absente de ton contexte, au lieu de deviner ; les résultats te seront fournis dans un "
+        "bloc RÉSULTATS WEB et tu rédigeras alors ta réponse en citant les URLs sources\n"
         '- {"name":"audit_site","params":{}} — relancer l\'audit complet et présenter les résultats\n'
         '- {"name":"generate_guide","params":{"city":"…","topic":"…","guide_type":"article blog"}} — guide SEO (job en arrière-plan)\n'
         '- {"name":"generate_destination","params":{"city":"…","notes":"…"}} — page destination (job en arrière-plan)\n'
@@ -870,6 +887,56 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
 
 # ── Chat principal ───────────────────────────────────────────────────────────
 
+def _ask_linh(user_block: str) -> dict:
+    from admin import ai_client
+
+    resp = ai_client.chat_completion(
+        messages=[
+            {"role": "system", "content": _system_prompt()},
+            {"role": "user", "content": user_block},
+        ],
+        max_tokens=1600,
+        # Température basse : Linh doit rester factuelle et collée à son contexte
+        # (anti-hallucination) — la créativité est utile aux générateurs, pas ici.
+        temperature=0.3,
+        json_mode=True,
+        deadline=90,
+    )
+    return ai_client.parse_json(resp.choices[0].message.content)
+
+
+def _web_search_round(user_block: str, params: dict, first: dict) -> dict:
+    """Exécute la recherche web demandée par Linh puis redemande la réponse finale.
+
+    Une seule passe par message : la recherche est faite côté serveur, ses
+    résultats sont réinjectés dans le prompt et Linh rédige une réponse sourcée.
+    """
+    from admin.web_search import format_results, search_web
+
+    query = (params.get("query") or "").strip()
+    try:
+        results = search_web(query, max_results=6)
+    except Exception as exc:  # noqa: BLE001 — la recherche échoue, pas le chat
+        first["message"] = ((first.get("message") or "").strip() + f"\n\n⚠️ {exc}").strip()
+        first["tool"] = None
+        return first
+
+    followup = (
+        user_block
+        + "\n\nRÉSULTATS WEB (recherche effectuée à l'instant) :\n"
+        + format_results(query, results)
+        + "\n\nRédige maintenant ta réponse finale au MESSAGE DE L'ADMIN en t'appuyant "
+        "sur ces RÉSULTATS WEB : cite dans le message les URLs sources que tu utilises, "
+        "et signale ce que la recherche ne permet pas de confirmer. "
+        "Ne rappelle plus l'outil web_search."
+    )
+    data = _ask_linh(followup)
+    tool = data.get("tool")
+    if isinstance(tool, dict) and (tool.get("name") or "").strip() == "web_search":
+        data["tool"] = None  # une seule recherche par message — pas de boucle
+    return data
+
+
 def chat_reply(message: str, history: list[dict]) -> dict:
     from admin import ai_client
 
@@ -902,17 +969,13 @@ def chat_reply(message: str, history: list[dict]) -> dict:
         f"MESSAGE DE L'ADMIN:\n{message}"
     )
 
-    resp = ai_client.chat_completion(
-        messages=[
-            {"role": "system", "content": _system_prompt()},
-            {"role": "user", "content": user_block},
-        ],
-        max_tokens=1600,
-        temperature=0.55,
-        json_mode=True,
-        deadline=90,
-    )
-    data = ai_client.parse_json(resp.choices[0].message.content)
+    data = _ask_linh(user_block)
+
+    # Recherche internet : exécutée tout de suite (aller-retour serveur), les
+    # autres outils suivent le circuit habituel via _handle_tool plus bas.
+    tool = data.get("tool")
+    if isinstance(tool, dict) and (tool.get("name") or "").strip() == "web_search":
+        data = _web_search_round(user_block, tool.get("params") or {}, data)
 
     actions = []
     for link in (data.get("actions") or [])[:4]:
