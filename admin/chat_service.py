@@ -385,18 +385,142 @@ def _repair_message(message: str, lang: str, *, has_links: bool, city: str = "")
     return msg + suffix
 
 
+def _fold(text: str) -> str:
+    """Minuscules sans accents — pour comparer noms de villes et messages."""
+    # « đ » (D barré vietnamien) n'est pas décomposé par NFKD : Đà Lạt → da lat.
+    text = (text or "").lower().replace("đ", "d")
+    text = unicodedata.normalize("NFKD", text)
+    return "".join(c for c in text if not unicodedata.combining(c))
+
+
+def _contains_word(hay: str, needle: str) -> bool:
+    """Présence en mot entier : « hue » ne matche pas « thue » ni « hueco »."""
+    return bool(re.search(rf"(?<![a-z0-9]){re.escape(needle)}(?![a-z0-9])", hay))
+
+
+# Villes vietnamiennes que Mai doit reconnaître — y compris SANS page destination.
+# Les descriptifs ancrent le modèle sur la BONNE ville (Đà Lạt ≠ Huế…) et lui
+# permettent de répondre honnêtement quand le site n'a pas encore de page dédiée.
+_KNOWN_CITIES: tuple[dict, ...] = (
+    {"name": "Hanoï", "aliases": ("hanoi",),
+     "fr": "capitale du Vietnam, au Nord — vieux quartier des 36 corporations, lacs, street food",
+     "en": "Vietnam's capital, in the North — Old Quarter, lakes, street food"},
+    {"name": "Baie d'Ha Long", "aliases": ("ha long", "halong"),
+     "fr": "baie classée UNESCO au Nord — croisières entre pitons karstiques",
+     "en": "UNESCO bay in the North — cruises among karst peaks"},
+    {"name": "Ninh Bình", "aliases": ("ninh binh", "tam coc", "trang an"),
+     "fr": "« baie d'Halong terrestre » au Nord — Tam Cốc, Tràng An, barques entre rizières",
+     "en": "the “inland Ha Long Bay”, North — Tam Cốc, Tràng An boat rides among rice fields"},
+    {"name": "Sapa", "aliases": ("sapa", "sa pa"),
+     "fr": "montagnes du Nord-Ouest — rizières en terrasses, treks, minorités ethniques",
+     "en": "northwestern mountains — terraced rice fields, treks, ethnic minorities"},
+    {"name": "Ha Giang", "aliases": ("ha giang",),
+     "fr": "extrême Nord — boucle à moto spectaculaire, cols et villages",
+     "en": "far North — spectacular motorbike loop, passes and villages"},
+    {"name": "Mai Châu", "aliases": ("mai chau",),
+     "fr": "vallée paisible au Nord — rizières, maisons sur pilotis",
+     "en": "peaceful northern valley — rice paddies, stilt houses"},
+    {"name": "Cát Bà", "aliases": ("cat ba",),
+     "fr": "île au sud de la baie d'Halong — parc national, baie de Lan Hạ",
+     "en": "island south of Ha Long Bay — national park, Lan Hạ Bay"},
+    {"name": "Huế", "aliases": ("hue",),
+     "fr": "ancienne capitale IMPÉRIALE, sur la côte Centre — citadelle, tombeaux royaux, rivière des Parfums (à ne PAS confondre avec Đà Lạt)",
+     "en": "the former IMPERIAL capital on the central coast — citadel, royal tombs, Perfume River (NOT to be confused with Đà Lạt)"},
+    {"name": "Hội An", "aliases": ("hoi an", "hoian"),
+     "fr": "vieille ville UNESCO du Centre — lanternes, tailleurs, plages proches",
+     "en": "UNESCO old town in the Center — lanterns, tailors, nearby beaches"},
+    {"name": "Đà Nẵng", "aliases": ("da nang", "danang"),
+     "fr": "grande ville balnéaire du Centre — plages, pont d'Or, montagnes de Marbre",
+     "en": "major central beach city — beaches, Golden Bridge, Marble Mountains"},
+    {"name": "Nha Trang", "aliases": ("nha trang",),
+     "fr": "station balnéaire du Centre-Sud — plages, îles, plongée",
+     "en": "south-central seaside resort — beaches, islands, diving"},
+    {"name": "Đà Lạt", "aliases": ("da lat", "dalat"),
+     "fr": "ville d'ALTITUDE des hauts plateaux du Centre (1 500 m) — air frais, pins, cascades, café (à ne PAS confondre avec Huế)",
+     "en": "HIGHLAND city in the Central Highlands (1,500 m) — cool air, pine forests, waterfalls, coffee (NOT to be confused with Huế)"},
+    {"name": "Quy Nhơn", "aliases": ("quy nhon", "qui nhon"),
+     "fr": "littoral tranquille du Centre-Sud — plages, tours cham",
+     "en": "quiet south-central coast — beaches, Cham towers"},
+    {"name": "Phong Nha", "aliases": ("phong nha",),
+     "fr": "parc national du Centre (Quảng Bình) — grottes géantes (Sơn Đoòng, Paradise Cave)",
+     "en": "central national park (Quảng Bình) — giant caves (Sơn Đoòng, Paradise Cave)"},
+    {"name": "Mỹ Sơn", "aliases": ("my son", "myson"),
+     "fr": "sanctuaire cham UNESCO près de Hội An",
+     "en": "UNESCO Cham sanctuary near Hội An"},
+    {"name": "Ho Chi Minh-Ville", "aliases": ("saigon", "ho chi minh", "hcmv", "hcmc"),
+     "fr": "métropole du Sud (Saigon) — street food, histoire, vie nocturne",
+     "en": "the southern metropolis (Saigon) — street food, history, nightlife"},
+    {"name": "Delta du Mékong", "aliases": ("mekong", "my tho", "ben tre"),
+     "fr": "Sud — canaux, marchés flottants, vergers",
+     "en": "South — canals, floating markets, orchards"},
+    {"name": "Cần Thơ", "aliases": ("can tho",),
+     "fr": "cœur du delta du Mékong — marché flottant de Cái Răng",
+     "en": "heart of the Mekong Delta — Cái Răng floating market"},
+    {"name": "Vũng Tàu", "aliases": ("vung tau",),
+     "fr": "station balnéaire proche de Saigon",
+     "en": "beach town near Saigon"},
+    {"name": "Phú Quốc", "aliases": ("phu quoc", "phuquoc"),
+     "fr": "île du golfe de Thaïlande — plages, snorkeling, couchers de soleil",
+     "en": "island in the Gulf of Thailand — beaches, snorkeling, sunsets"},
+    {"name": "Côn Đảo", "aliases": ("con dao",),
+     "fr": "archipel sauvage du Sud — plages préservées, histoire",
+     "en": "wild southern archipelago — pristine beaches, history"},
+    {"name": "Mũi Né", "aliases": ("mui ne", "phan thiet"),
+     "fr": "Sud-Est — dunes de sable, kitesurf",
+     "en": "Southeast — sand dunes, kitesurfing"},
+    {"name": "Củ Chi", "aliases": ("cu chi",),
+     "fr": "tunnels de guerre près de Saigon",
+     "en": "war tunnels near Saigon"},
+)
+
+
+def _mentioned_cities(text: str) -> list[dict]:
+    hay = _fold(text)
+    return [
+        city for city in _KNOWN_CITIES
+        if any(_contains_word(hay, a) for a in city["aliases"])
+    ]
+
+
+def _cities_block(text: str, lang: str) -> str:
+    """Bloc « VILLES MENTIONNÉES » injecté dans le prompt : ancre le modèle sur
+    les bonnes villes (jamais de confusion Đà Lạt/Huế) et lui dit honnêtement
+    si le site a, ou non, une page dédiée."""
+    cities = _mentioned_cities(text)[:4]
+    if not cities:
+        return ""
+    lines = []
+    for c in cities:
+        desc = c.get(lang) or c["fr"]
+        covered = _detect_destination_slug(c["name"], lang)
+        if lang == "en":
+            note = (
+                " [dedicated destination page on the site]" if covered
+                else " [no dedicated page on the site yet: give honest general advice, do not invent links]"
+            )
+        else:
+            note = (
+                " [page destination dédiée sur le site]" if covered
+                else " [pas encore de page dédiée sur le site : donne des conseils généraux honnêtes, sans inventer de lien]"
+            )
+        lines.append(f"- {c['name']} : {desc}{note}")
+    header = (
+        "CITIES MENTIONED (factual anchors — NEVER mix these cities up):"
+        if lang == "en"
+        else "VILLES MENTIONNÉES (repères factuels — ne confonds JAMAIS ces villes entre elles) :"
+    )
+    return header + "\n" + "\n".join(lines)
+
+
 def _detect_destination_slug(text: str, lang: str) -> str | None:
     from admin.store import get_destinations_dict
 
-    hay = unicodedata.normalize("NFKD", (text or "").lower())
-    hay = "".join(c for c in hay if not unicodedata.combining(c))
+    hay = _fold(text)
     for slug, dest in get_destinations_dict(lang).items():
-        name = dest.get("name", "")
-        name_norm = unicodedata.normalize("NFKD", name.lower())
-        name_norm = "".join(c for c in name_norm if not unicodedata.combining(c))
-        if name_norm and name_norm in hay:
+        name_norm = _fold(dest.get("name", ""))
+        if name_norm and _contains_word(hay, name_norm):
             return slug
-        if slug.replace("-", " ") in hay:
+        if _contains_word(hay, slug.replace("-", " ")):
             return slug
     aliases = {
         "hanoi": ("hanoi", "hanoï"),
@@ -407,10 +531,10 @@ def _detect_destination_slug(text: str, lang: str) -> str | None:
         "delta-du-mekong": ("mekong", "delta du mekong"),
         "halong": ("ha long", "halong"),
         "sapa": ("sapa",),
-        "hue": ("hue", "huế"),
+        "hue": ("hue",),
     }
     for slug, keys in aliases.items():
-        if any(k in hay for k in keys):
+        if any(_contains_word(hay, k) for k in keys):
             return slug
     return None
 
@@ -431,8 +555,7 @@ _MAP_INTENT_WORDS = (
 
 def _wants_map(message: str) -> bool:
     """Carte interactive UNIQUEMENT quand la question s'y prête — pas à chaque message."""
-    hay = unicodedata.normalize("NFKD", (message or "").lower())
-    hay = "".join(c for c in hay if not unicodedata.combining(c))
+    hay = _fold(message)
     return any(w in hay for w in _MAP_INTENT_WORDS)
 
 
@@ -589,9 +712,19 @@ def _system_prompt(lang: str) -> str:
             "The site has dedicated guides: travel safety & scams, customs & etiquette, useful Vietnamese phrases, "
             "visa checker (evisa.gov.vn), weather planner by region/destination, useful apps (Grab), eSIM & insurance — "
             "recommend the matching page from CONTEXT when relevant. "
+            "CITIES — absolute rule: when a CITIES MENTIONED block is present, your answer is about THOSE exact "
+            "cities and matches their factual anchors. NEVER mix up two distinct cities (Đà Lạt, the highland city, "
+            "is NOT Huế, the imperial capital; Đà Nẵng is not Đà Lạt). If the site has no page for a requested "
+            "city, say so honestly and still give your best general advice. "
             "When a VISITOR PROFILE block is present, prioritize advice and links aligned with their "
             "travel style, cities, duration and pages already viewed — without mentioning tracking. "
-            "Tone: warm, enthusiastic, expert, with a few well-placed emojis — never cheesy. "
+            "PERSONALITY: warm, enthusiastic and expert, with a touch of light, friendly humor when the topic "
+            "lends itself to it — a witty aside, a cultural wink (egg coffee, the scooter ballet, crossing the "
+            "street like a local…), never at the expense of clarity and never on serious topics (visa, health, "
+            "safety). Congratulate sincerely when deserved: a great city or season pick, booked flights, a smart "
+            "itinerary (“Great choice!”, “Well done — that's the best time to go!”). Encourage the hesitant, "
+            "reassure the worried, and vary your wording from one answer to the next. "
+            "A few well-placed emojis — never cheesy. "
             "Highlight 2–5 key terms per answer with **double asterisks** (destinations, seasons, durations, practical tips). "
             "Write a COMPLETE message (never end with a colon or an unfinished list). "
             "Always answer in ENGLISH. Be honest: if the answer is not in CONTEXT, say so plainly — never invent prices or visa rules. "
@@ -613,9 +746,20 @@ def _system_prompt(lang: str) -> str:
         "Le site propose des guides dédiés : sécurité & arnaques, coutumes & étiquette, phrases utiles en vietnamien, "
         "test visa (evisa.gov.vn), météo par région/ville avec planificateur, apps utiles (Grab), eSIM & assurance — "
         "orientez vers la page correspondante du CONTEXTE quand c'est pertinent. "
+        "VILLES — règle absolue : quand un bloc VILLES MENTIONNÉES est présent, ta réponse porte sur CES villes "
+        "précises et respecte leurs repères factuels. Ne confonds JAMAIS deux villes distinctes (Đà Lạt, la ville "
+        "d'altitude des hauts plateaux, n'est PAS Huế, la capitale impériale ; Đà Nẵng n'est pas Đà Lạt). "
+        "Si le site n'a pas de page pour une ville demandée, dis-le honnêtement et donne quand même tes "
+        "meilleurs conseils généraux. "
         "Si un bloc VISITOR PROFILE est présent, priorisez conseils et liens alignés avec "
         "son style, ses villes, sa durée et les pages déjà consultées — sans parler de tracking. "
-        "Ton : chaleureux, enthousiaste, expert, quelques emojis bien placés — jamais lourd. "
+        "PERSONNALITÉ : chaleureuse, enthousiaste et experte, avec une pointe d'humour léger et complice quand le "
+        "sujet s'y prête — un trait d'esprit, un clin d'œil culturel (café à l'œuf, le ballet des scooters, "
+        "traverser la rue comme un local…), jamais au détriment de la clarté ni sur les sujets sérieux (visa, "
+        "santé, sécurité). Félicite sincèrement quand c'est mérité : bon choix de ville ou de saison, billets "
+        "réservés, itinéraire malin (« Excellent choix ! », « Bravo, c'est la meilleure période ! »). Encourage "
+        "les hésitants, rassure les inquiets, et varie tes formulations d'une réponse à l'autre. "
+        "Quelques emojis bien placés — jamais lourd. "
         "Mets en valeur 2 à 5 mots-clés par réponse avec **double astérisques** (destinations, saisons, durées, conseils pratiques). "
         "Rédige un message COMPLET (ne termine jamais par « : » ni une liste inachevée). "
         "Réponds TOUJOURS en FRANÇAIS. Reste honnête : si la réponse n'est pas dans le CONTEXTE, dis-le simplement — "
@@ -679,9 +823,14 @@ def chat_reply(
         if role in ("user", "assistant") and content:
             hist_lines.append(f"{role.upper()}: {content}")
 
+    # Ancres factuelles sur les villes citées (question + suivi) : Mai ne doit
+    # JAMAIS confondre deux villes (ex. Đà Lạt ≠ Huế), même sans page dédiée.
+    cities_block = _cities_block(retrieval_query, lang)
+
     user_block = (
         f"CONTEXTE SITE (pages & liens affiliés autorisés):\n{context}\n\n"
         + (f"{profile_block}\n\n" if profile_block else "")
+        + (f"{cities_block}\n\n" if cities_block else "")
         + f"HISTORIQUE:\n" + ("\n".join(hist_lines) if hist_lines else "(premier message)") + "\n\n"
         f"QUESTION:\n{message}"
     )

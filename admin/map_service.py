@@ -952,6 +952,37 @@ def build_chat_map_chunks(lang: str, track_url_fn: Callable[[str, str], str]) ->
     return chunks
 
 
+# Numéro de rue en tête d'adresse (« 12 », « Số 35A », « 35/7B »…).
+_HOUSE_NUMBER_RE = re.compile(
+    r"^\s*(?:s[ốo]\s*)?\d+[a-zA-Z]?(?:\s*[/-]\s*\d+[a-zA-Z]?)*[,\s]+", re.IGNORECASE
+)
+
+# Abréviations courantes des adresses vietnamiennes — Nominatim connaît les
+# formes longues (« Đường », « Phường », « Quận ») bien mieux que « Đ. P. Q. ».
+_ADDR_ABBREVIATIONS = (
+    (re.compile(r"(?i)(?<![\w.])(?:đ|d)\.\s*"), "Đường "),
+    (re.compile(r"(?i)(?<![\w.])p\.\s*"), "Phường "),
+    (re.compile(r"(?i)(?<![\w.])q\.\s*"), "Quận "),
+    (re.compile(r"(?i)(?<![\w.])tp\.?\s+"), ""),
+)
+
+
+def _expand_address_abbreviations(address: str) -> str:
+    out = address or ""
+    for rx, repl in _ADDR_ABBREVIATIONS:
+        out = rx.sub(repl, out)
+    return re.sub(r"\s+", " ", out).strip()
+
+
+def _city_display_name(city_or_slug: str) -> str:
+    """Nom géocodable d'une ville (« hoi-an » → « Hội An ») — valeur brute sinon."""
+    raw = (city_or_slug or "").strip()
+    slug = resolve_destination_slug(raw)
+    if slug:
+        return get_destinations_dict_safe().get(slug, {}).get("name", raw)
+    return raw.replace("-", " ").strip()
+
+
 def geocode_point_best_effort(title: str, address: str, city: str = "") -> dict | None:
     """Géocode un point en essayant plusieurs requêtes, de la plus précise à la
     plus large : les adresses dictées par l'IA ou copiées d'un site sont souvent
@@ -959,24 +990,35 @@ def geocode_point_best_effort(title: str, address: str, city: str = "") -> dict 
     queries: list[str] = []
 
     def push(query: str) -> None:
-        query = (query or "").strip(" ,")
+        query = re.sub(r"\s+", " ", (query or "")).strip(" ,")
         if query and all(query.lower() != q.lower() for q in queries):
             queries.append(query)
 
+    city_name = _city_display_name(city)
     parts = [p.strip() for p in (address or "").split(",") if p.strip()]
-    city_in_address = bool(city) and _normalize(city) in _normalize(address or "")
-    suffix = "" if city_in_address or not city else f", {city}"
-    push(address)
+    city_in_address = bool(city_name) and _normalize(city_name) in _normalize(address or "")
+    suffix = "" if city_in_address or not city_name else f", {city_name}"
     push(f"{address}{suffix}")
+    push(address)
+    expanded = _expand_address_abbreviations(address)
+    if expanded != address:
+        push(f"{expanded}{suffix}")
     # Rue sans le numéro : Nominatim connaît souvent la rue mais pas le n° exact.
-    no_number = re.sub(r"^\s*(?:s[ốo]\s*)?\d+[a-zA-Z]?(?:\s*[/-]\s*\d+[a-zA-Z]?)*[,\s]+", "", address, flags=re.IGNORECASE)
-    if no_number and no_number != address:
+    no_number = _HOUSE_NUMBER_RE.sub("", expanded)
+    if no_number and no_number != expanded:
         push(f"{no_number}{suffix}")
-    area = city or (parts[-1] if parts else "")
-    if title and area:
-        push(f"{title}, {area}")
+    # Rue seule + ville : les quartiers/arrondissements intermédiaires copiés
+    # d'un site (« Phường Minh An, TP. Hội An ») font souvent échouer OSM.
+    area = city_name or (parts[-1] if len(parts) > 1 else "")
+    street = _HOUSE_NUMBER_RE.sub("", expanded.split(",", 1)[0]).strip()
+    if street and area:
+        push(f"{street}, {area}")
+    # Le lieu lui-même : les restos/hôtels connus sont des POI nommés dans OSM.
+    poi_area = city_name or (parts[-1] if parts else "")
+    if title and poi_area:
+        push(f"{title}, {poi_area}")
 
-    for query in queries[:4]:
+    for query in queries[:6]:
         try:
             return geocode_address(query)
         except Exception:  # noqa: BLE001 — on tente la requête suivante

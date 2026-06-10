@@ -774,7 +774,17 @@ def execute_confirmation(token: str) -> dict:
             "message": "⏳ Mise à jour d'image en cours (téléchargement + optimisation WebP)…",
         }
     if action == "add_map_points":
-        return _exec_add_map_points(params)
+        # Géocodage OSM (≥1,1 s/requête) + photo Pixabay par point : plusieurs
+        # points dépassent le timeout routeur (~60 s) → job en arrière-plan.
+        job_token = start_action_job(
+            lambda report: _exec_add_map_points(params, report),
+            initial_phase="Géolocalisation des points (OpenStreetMap)…",
+        )
+        return {
+            "async": True,
+            "job_token": job_token,
+            "message": "⏳ Ajout des points sur la carte en cours (géocodage OpenStreetMap + photo de chaque lieu)…",
+        }
     if action == "update_map_images":
         return _exec_update_map_images(params)
     raise ValueError(f"Action inconnue : {action}")
@@ -1145,14 +1155,17 @@ def _exec_update_image(params: dict, report=None) -> dict:
     }
 
 
-def _exec_add_map_points(params: dict) -> dict:
+def _exec_add_map_points(params: dict, report=None) -> dict:
     from admin import map_service
 
     published: list[str] = []
     pending: list[str] = []
     approx: list[str] = []
     errors: list[str] = []
-    for point in params.get("points") or []:
+    points = params.get("points") or []
+    for i, point in enumerate(points, 1):
+        if report:
+            report(f"Point {i}/{len(points)} : {point.get('title', '?')}…")
         try:
             result = map_service.add_map_point(point)
             if result.get("approx"):
