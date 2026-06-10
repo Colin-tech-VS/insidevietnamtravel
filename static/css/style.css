@@ -1763,28 +1763,6 @@ body.is-nav-open { overflow: hidden; }
 .dest-card__tag { font-size: 0.85rem; opacity: 0.9; margin: 0.5rem 0 1rem; flex: 1; line-height: 1.5; }
 .dest-card__cta { font-size: 0.85rem; font-weight: 600; opacity: 0.95; }
 
-.page-hero--destination.page-hero--with-image {
-  position: relative;
-  min-height: 380px;
-  display: flex;
-  align-items: flex-end;
-  padding: 0;
-  overflow: hidden;
-  color: var(--white);
-}
-.page-hero--destination.page-hero--with-image .container {
-  position: relative;
-  z-index: 2;
-  padding-top: 6rem;
-  padding-bottom: 2.5rem;
-}
-.page-hero--destination.page-hero--with-image h1,
-.page-hero--destination.page-hero--with-image .page-hero__lead {
-  color: var(--white);
-}
-.page-hero--destination.page-hero--with-image .breadcrumb a {
-  color: rgba(255, 255, 255, 0.88);
-}
 .page-hero__media {
   position: absolute;
   inset: 0;
@@ -1802,13 +1780,68 @@ body.is-nav-open { overflow: hidden; }
   object-fit: cover;
 }
 
+.page-hero--itinerary.page-hero--with-image,
+.page-hero--destination.page-hero--with-image {
+  position: relative;
+  min-height: 380px;
+  display: flex;
+  align-items: flex-end;
+  padding: 0;
+  overflow: hidden;
+  color: var(--white);
+}
+.page-hero--itinerary.page-hero--with-image .container,
+.page-hero--destination.page-hero--with-image .container {
+  position: relative;
+  z-index: 2;
+  padding-top: 6rem;
+  padding-bottom: 2.5rem;
+}
+.page-hero--itinerary.page-hero--with-image h1,
+.page-hero--itinerary.page-hero--with-image .page-hero__lead,
+.page-hero--destination.page-hero--with-image h1,
+.page-hero--destination.page-hero--with-image .page-hero__lead {
+  color: var(--white);
+}
+.page-hero--itinerary.page-hero--with-image .breadcrumb a,
+.page-hero--destination.page-hero--with-image .breadcrumb a {
+  color: rgba(255, 255, 255, 0.88);
+}
+.page-hero--itinerary.page-hero--with-image .itin-highlights__chip {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: var(--white);
+}
+.page-hero--itinerary.page-hero--with-image .budget-badge,
+.page-hero--itinerary.page-hero--with-image .itin-meta-line {
+  color: rgba(255, 255, 255, 0.92);
+}
+.itin-meta-line { font-size: 0.9rem; margin-top: 0.5rem; color: var(--ink-soft); }
+
 .itin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
 .itin-card {
   background: var(--white);
   border: 1px solid var(--rice-dark);
   border-radius: var(--radius-lg);
   padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
 }
+.itin-card--with-image { padding-top: 0; overflow: hidden; }
+.itin-card__media {
+  display: block;
+  margin: 0 -1px;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+.itin-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+.itin-card--with-image:hover .itin-card__img { transform: scale(1.03); }
+.itin-card--with-image .itin-card__days { margin-top: 1rem; }
 .itin-card__days {
   display: inline-block;
   padding: 0.3rem 0.75rem;
@@ -1998,6 +2031,97 @@ body.is-nav-open { overflow: hidden; }
   margin: 0.65rem 0 0;
   color: var(--ink-soft);
   font-size: 0.95rem;
+}
+
+.itin-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+.itin-gallery__item {
+  margin: 0;
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+  background: var(--surface-alt, #f4f7f6);
+}
+.itin-gallery__img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+}
+.itin-gallery__item figcaption {
+  padding: 0.4rem 0.5rem;
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+.itin-day__figure {
+  margin: 0 0 1rem;
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+}
+.itin-day__img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+}
+.itin-day__narrative {
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+  line-height: 1.65;
+}
+.itin-day__transport { font-style: italic; }
+.itin-day__activities { margin-left: 1.25rem; }
+.itin-activity-item {
+  margin-bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.itin-activity-item__text { color: var(--ink-soft); }
+.itin-inline-booking {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  align-self: flex-start;
+  padding: 0.35rem 0.65rem;
+  background: rgba(13, 107, 92, 0.08);
+  border: 1px solid rgba(13, 107, 92, 0.2);
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--teal, #0d6b5c);
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s;
+}
+.itin-inline-booking:hover {
+  background: rgba(13, 107, 92, 0.14);
+  border-color: rgba(13, 107, 92, 0.35);
+}
+.itin-inline-booking__price {
+  font-weight: 500;
+  opacity: 0.85;
+}
+.itin-day__booking {
+  margin-top: 0.85rem;
+  padding: 0.65rem 0.85rem;
+  background: var(--surface-alt, #f4f7f6);
+  border-radius: var(--radius-sm, 6px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.itin-day__booking-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 /* Nav dropdown : styles déplacés plus haut (avant les media queries) pour que

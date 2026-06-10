@@ -23,6 +23,17 @@ ITINERARY_15_DAYS_FR = {
         "Budget indicatif hors vol international — réservations via nos liens affiliés ci-dessous.</p>"
     ),
     "budget_hint": "900–1 400 € sur place (hors vol international)",
+    "best_season": "Octobre à avril — mars/mai pour les rizières vertes à Sapa.",
+    "includes": [
+        "2 homestays (Bac Ha, delta Mékong)",
+        "Croisière Halong 2J/1N",
+        "Vols intérieurs Huế et Saigon",
+        "Trek Sapa et excursion Ninh Bình",
+    ],
+    "practical": (
+        "<p><strong>Train Sapa :</strong> couchette LC3/LC1 — réservez à l'avance. "
+        "<strong>Bagages :</strong> sac léger pour treks et croisière ; consigne hôtel à Hanoï.</p>"
+    ),
     "location_key": "hanoi",
     "highlights": [
         "Hanoï", "Sapa", "Ninh Bình", "Halong", "Huế", "Hội An", "Ho Chi Minh", "Delta Mékong",
@@ -209,179 +220,377 @@ ITINERARY_15_DAYS_FR = {
             "day": 1,
             "title": "Hanoï — arrivée & Vieux Quartier",
             "location": "Hanoï",
-            "activities": [
-                "Transfert aéroport → hôtel Vieux Quartier (chambre dès 14h)",
-                "Lac Hoàn Kiếm, temple Ngoc Son et pont Thê Húc",
-                "Balade 36 rues corporatives + maison ancienne type « tube »",
-                "Dîner street food : phở ou bún chả",
-            ],
+            "location_slug": "hanoi",
+            "transport": "Grab aéroport Noi Bai → Vieux Quartier (~15 €)",
             "stay": "Hanoï — Vieux Quartier",
+            "narrative": (
+                "<p>Première étape du grand circuit : le <strong>Vieux Quartier</strong> de Hanoï, "
+                "labyrinthe de ruelles où chaque rue portait autrefois le nom d'un métier. "
+                "Le lac <strong>Hoàn Kiếm</strong> et le pont Thê Húc rouge sont les symboles de la ville.</p>"
+            ),
+            "activities": [
+                "Transfert aéroport → hôtel (chambre dès 14h)",
+                "Lac Hoàn Kiếm, temple Ngoc Son, pont Thê Húc",
+                "Balade 36 rues corporatives",
+                {
+                    "text": "Dîner street food : phở ou bún chả",
+                    "booking": {
+                        "name": "Food tour Vieux Quartier",
+                        "search": "Hanoi old quarter food tour",
+                        "provider": "getyourguide",
+                        "location_key": "hanoi",
+                        "price_hint": "dès 35 €",
+                    },
+                },
+            ],
+            "hotel": {
+                "name": "Hanoi La Siesta Premium",
+                "search": "Hanoi La Siesta Premium",
+                "provider": "booking",
+                "location_key": "hanoi",
+                "price_hint": "dès 45 €/nuit",
+            },
             "tip": "Grab depuis l'aéroport Noi Bai — comptez 45 min hors heures de pointe.",
         },
         {
             "day": 2,
             "title": "Hanoï — culture & train de nuit",
             "location": "Hanoï",
+            "location_slug": "hanoi",
+            "stay": "Train couchette ou hôtel Hanoï",
+            "narrative": (
+                "<p>Journée patrimoine avant le nord montagneux : Temple de la Littérature, "
+                "Musée d'Ethnographie (indispensable avant Sapa) et spectacle de "
+                "<strong>marionnettes sur l'eau</strong>. Option train couchette vers Lao Cai.</p>"
+            ),
             "activities": [
-                "Temple de la Littérature (1000 ans d'histoire confucéenne)",
-                "Musée d'Ethnographie — 54 ethnies du Vietnam",
-                "Place Ba Dinh, maison sur pilotis de Hồ Chí Minh",
-                "Spectacle marionnettes sur l'eau (soir)",
+                "Temple de la Littérature",
+                "Musée d'Ethnographie — 54 ethnies",
+                "Place Ba Dinh, maison sur pilotis Hồ Chí Minh",
+                {
+                    "text": "Marionnettes sur l'eau (soir)",
+                    "booking": {
+                        "name": "Marionnettes Thang Long",
+                        "search": "Hanoi water puppet show",
+                        "provider": "viator",
+                        "location_key": "hanoi",
+                        "price_hint": "dès 8 €",
+                    },
+                },
                 "Train couchette Hanoï → Lao Cai (option Sapa)",
             ],
-            "stay": "Train couchette ou hôtel Hanoï",
             "tip": "Réservez le train LC3/LC1 à l'avance en haute saison (nov–fév).",
         },
         {
             "day": 3,
             "title": "Lao Cai — Bac Ha & minorités",
             "location": "Bac Ha / Sapa",
-            "activities": [
-                "Arrivée matinale Lao Cai, douche & petit-déjeuner",
-                "Route vers Bac Ha — randonnée villages Hmong & Phu La",
-                "Marché hebdomadaire (dimanche = le plus coloré)",
-                "Nuit chez l'habitant ethnie Tay",
-            ],
+            "location_slug": "sapa",
+            "transport": "Route Lao Cai → Bac Ha (1 h)",
             "stay": "Homestay Bac Ha",
+            "narrative": (
+                "<p>Arrivée matinale dans les <strong>Hauts plateaux du nord</strong>. "
+                "Bac Ha abrite l'un des marchés ethniques les plus colorés du Vietnam "
+                "(dimanche = jour idéal). Nuit chez l'habitant Tay.</p>"
+            ),
+            "activities": [
+                "Douche & petit-déjeuner à Lao Cai",
+                "Randonnée villages Hmong & Phu La",
+                "Marché hebdomadaire Bac Ha",
+                "Nuit homestay ethnie Tay",
+            ],
         },
         {
             "day": 4,
             "title": "Bac Ha — Sapa",
             "location": "Sapa",
-            "activities": [
-                "Transfert vers Sapa (3 h)",
-                "Villages Hang Da & Sa Seng — rizières en terrasses",
-                "Vue sur les sommets Fansipan (téléphérique optionnel)",
-                "Soirée libre marché Sapa",
-            ],
+            "location_slug": "sapa",
+            "transport": "Route Bac Ha → Sapa (3 h)",
             "stay": "Sapa",
+            "narrative": (
+                "<p><strong>Sapa</strong> domine des rizières en terrasses sculptées par les Hmong "
+                "et les Dzay. Villages Hang Da et Sa Seng offrent des panoramas spectaculaires ; "
+                "le téléphérique Fansipan est optionnel.</p>"
+            ),
+            "activities": [
+                "Transfert vers Sapa",
+                {
+                    "text": "Trek villages & rizières",
+                    "booking": {
+                        "name": "Trek rizières Sapa",
+                        "search": "Sapa rice terrace trek day tour",
+                        "provider": "getyourguide",
+                        "location_key": "sapa",
+                        "price_hint": "dès 25 €",
+                    },
+                },
+                "Vue Fansipan (téléphérique optionnel)",
+                "Marché nocturne Sapa",
+            ],
+            "hotel": {
+                "name": "Sapa Clay House",
+                "search": "Sapa Clay House",
+                "provider": "booking",
+                "location_key": "sapa",
+                "price_hint": "dès 55 €/nuit",
+            },
         },
         {
             "day": 5,
             "title": "Sapa — trek Muong Hoa → Hanoï",
             "location": "Sapa → Hanoï",
-            "activities": [
-                "Randonnée vallée Muong Hoa : Y Linh Ho, Lao Chai, Ta Van",
-                "Rencontre Hmong & Dzay au travail dans les rizières",
-                "Route retour Hanoï (5–6 h) ou train de nuit",
-            ],
+            "location_slug": "sapa",
+            "transport": "Route Sapa → Hanoï (5–6 h)",
             "stay": "Hanoï",
+            "narrative": (
+                "<p>Randonnée emblématique dans la <strong>vallée Muong Hoa</strong> : "
+                "Y Linh Ho, Lao Chai, Ta Van — rencontres avec les communautés Hmong et Dzay "
+                "dans les rizières. Retour Hanoï en fin de journée.</p>"
+            ),
+            "activities": [
+                {
+                    "text": "Trek Muong Hoa : Lao Chai, Ta Van",
+                    "booking": {
+                        "name": "Trek Muong Hoa Sapa",
+                        "search": "Sapa Muong Hoa valley trek",
+                        "provider": "getyourguide",
+                        "location_key": "sapa",
+                        "price_hint": "dès 30 €",
+                    },
+                },
+                "Déjeuner chez l'habitant",
+                "Route ou train retour Hanoï",
+            ],
         },
         {
             "day": 6,
             "title": "Ninh Bình — baie terrestre",
             "location": "Ninh Bình",
-            "activities": [
-                "Excursion journée Tam Coc / Trang An",
-                "Mont Mua — panorama 486 marches sur les pains de sucre",
-                "Balade vélo entre rizières et rivières",
-                "Barque sur la rivière Ngo Đồng (3 grottes)",
-            ],
+            "location_slug": "ninh-binh",
+            "transport": "Excursion journée depuis Hanoï (2 h)",
             "stay": "Hanoï",
+            "narrative": (
+                "<p>Surnommée la <strong>« baie d'Halong terrestre »</strong>, Ninh Bình mêle "
+                "pains de sucre karstiques, rizières et rivières. Tam Coc en barque ou "
+                "Trang An en sampan — le Mont Mua offre le meilleur panorama.</p>"
+            ),
+            "activities": [
+                "Excursion Tam Coc / Trang An",
+                "Mont Mua — 486 marches, vue 360°",
+                "Vélo entre rizières",
+                "Barque rivière Ngo Đồng (3 grottes)",
+            ],
             "tip": "Partez tôt (7h) pour éviter la foule à Tam Coc.",
         },
         {
             "day": 7,
             "title": "Baie d'Halong — croisière 2J/1N",
             "location": "Halong",
-            "activities": [
-                "Transfert 3–4 h, embarquement jonque",
-                "Croisière Bai Tu Long ou baie d'Halong",
-                "Kayak, grottes Thien Canh Son",
-                "Cours cuisine à bord (nems, rouleaux de printemps)",
-            ],
+            "location_slug": "halong",
+            "transport": "Transfert Hanoï → port (3–4 h)",
             "stay": "Nuit sur jonque",
+            "narrative": (
+                "<p>Classée UNESCO, la <strong>baie d'Halong</strong> compte près de 2 000 îlots. "
+                "Croisière 2J/1N : kayak, grottes et cours de cuisine à bord (nems, rouleaux).</p>"
+            ),
+            "activities": [
+                {
+                    "text": "Croisière 2J/1N jonque premium",
+                    "booking": {
+                        "name": "Croisière Halong 2J/1N",
+                        "search": "Halong Bay overnight cruise 2 days",
+                        "provider": "viator",
+                        "location_key": "hanoi",
+                        "price_hint": "dès 89 €",
+                    },
+                },
+                "Kayak & grottes Thien Canh Son",
+                "Dîner fruits de mer sur le pont",
+            ],
         },
         {
             "day": 8,
             "title": "Halong — Huế",
             "location": "Halong → Huế",
-            "activities": [
-                "Tai chi au lever du soleil sur la baie",
-                "Village flottant Vung Vieng (barque ou kayak)",
-                "Retour Hanoï, vol intérieur vers Huế",
-            ],
+            "location_slug": "hue",
+            "transport": "Vol HAN → Huế (1 h 15)",
             "stay": "Huế",
+            "narrative": (
+                "<p>Tai chi au lever du soleil, village flottant Vung Vieng, puis "
+                "<strong>vol vers Huế</strong> — ancienne capitale impériale des Nguyen.</p>"
+            ),
+            "activities": [
+                "Tai chi & brunch sur la baie",
+                "Village flottant Vung Vieng",
+                "Vol intérieur Hanoï → Huế",
+                "Installation, dîner spécialités impériales",
+            ],
+            "hotel": {
+                "name": "Pilgrimage Village Boutique Resort",
+                "search": "Pilgrimage Village Hue",
+                "provider": "booking",
+                "location_key": "hue",
+                "price_hint": "dès 70 €/nuit",
+            },
         },
         {
             "day": 9,
             "title": "Huế — cité impériale",
             "location": "Huế",
-            "activities": [
-                "Citadelle impériale Nguyen (1802–1945)",
-                "Tombeau de Minh Mang ou tombeau de Tu Duc",
-                "Pagode Thien Mu au bord de la Perfume River",
-                "Marché Dong Ba — spécialités et coniques",
-            ],
+            "location_slug": "hue",
             "stay": "Huế",
+            "narrative": (
+                "<p>La <strong>citadelle impériale</strong> (1802–1945) et les tombeaux des empereurs "
+                "Nguyen font de Huế un musée à ciel ouvert. Pagode Thien Mu et marché Dong Ba "
+                "complètent la journée.</p>"
+            ),
+            "activities": [
+                {
+                    "text": "Citadelle & tombeaux impériaux",
+                    "booking": {
+                        "name": "Visite citadelle Huế",
+                        "search": "Hue imperial city tomb tour",
+                        "provider": "getyourguide",
+                        "location_key": "hue",
+                        "price_hint": "dès 30 €",
+                    },
+                },
+                "Pagode Thien Mu, Perfume River",
+                "Marché Dong Ba — coniques et spécialités",
+            ],
         },
         {
             "day": 10,
             "title": "Huế — Hội An via Hai Van Pass",
             "location": "Huế → Hội An",
-            "activities": [
-                "Route côtière : plages Thuan An, lagune Lang Co",
-                "Col des Nuages (Hai Van Pass) — vue Da Nang",
-                "Installation Hội An, balade lanternes en soirée",
-            ],
+            "location_slug": "hoi-an",
+            "transport": "Route côtière 3–4 h (ou van privé)",
             "stay": "Hội An",
+            "narrative": (
+                "<p>La route côtière traverse plages Thuan An, lagune Lang Co et le mythique "
+                "<strong>col des Nuages (Hai Van Pass)</strong> — l'une des plus belles routes du Vietnam.</p>"
+            ),
+            "activities": [
+                "Route côtière & Hai Van Pass",
+                "Photo stop lagune Lang Co",
+                "Installation Hội An, lanternes en soirée",
+            ],
         },
         {
             "day": 11,
             "title": "Hội An — journée libre",
             "location": "Hội An",
-            "activities": [
-                "Pont japonais, temple Phuc Kien, vieilles maisons bois",
-                "Cours de cuisine ou atelier lanterne",
-                "Plage An Bàng ou Cửa Đại (vélo 15 min)",
-                "Tailleur sur mesure (24–48 h)",
-            ],
+            "location_slug": "hoi-an",
             "stay": "Hội An",
+            "narrative": (
+                "<p>Journée flexible dans la <strong>vieille ville UNESCO</strong> : pont japonais, "
+                "ateliers d'artisans, plage An Bàng ou cours de cuisine au marché.</p>"
+            ),
+            "activities": [
+                "Pont japonais, temple Phuc Kien, maisons bois",
+                {
+                    "text": "Cours de cuisine vietnamienne",
+                    "booking": {
+                        "name": "Cours cuisine Hội An",
+                        "search": "Hoi An cooking class market",
+                        "provider": "getyourguide",
+                        "location_key": "hoi-an",
+                        "price_hint": "dès 40 €",
+                    },
+                },
+                "Plage An Bàng ou tailleur sur mesure",
+            ],
+            "hotel": {
+                "name": "La Siesta Hoi An Resort",
+                "search": "La Siesta Hoi An Resort",
+                "provider": "agoda",
+                "location_key": "hoi-an",
+                "price_hint": "dès 65 €/nuit",
+            },
         },
         {
             "day": 12,
             "title": "Hội An — Ho Chi Minh-Ville",
             "location": "Ho Chi Minh-Ville",
-            "activities": [
-                "Vol Đà Nẵng → Ho Chi Minh-Ville (1 h)",
-                "Marché Bến Thành, cathédrale Notre-Dame",
-                "Poste centrale (Gustave Eiffel), quartier Cholon",
-            ],
+            "location_slug": "ho-chi-minh-city",
+            "transport": "Vol DAD → SGN (1 h)",
             "stay": "Ho Chi Minh-Ville",
+            "narrative": (
+                "<p>Vol vers le sud : <strong>Ho Chi Minh-Ville</strong> (ex-Saigon) — "
+                "énergie urbaine, War Museum et quartier colonial District 1.</p>"
+            ),
+            "activities": [
+                "Vol Đà Nẵng → Ho Chi Minh-Ville",
+                "Marché Bến Thành, Notre-Dame",
+                "Poste centrale, quartier Cholon",
+            ],
+            "hotel": {
+                "name": "La Siesta Premium Saigon",
+                "search": "La Siesta Premium Saigon",
+                "provider": "booking",
+                "location_key": "ho-chi-minh-city",
+                "price_hint": "dès 50 €/nuit",
+            },
         },
         {
             "day": 13,
             "title": "Delta Mékong — Ben Tre & homestay",
             "location": "Delta du Mékong",
-            "activities": [
-                "Route Ben Tre — rivières et cocoteraies",
-                "Vélo ou xe loi sous les palmiers",
-                "Fabrication bonbons de coco, dégustation fruits locaux",
-                "Nuit chez l'habitant île An Bình (Vinh Long)",
-            ],
+            "location_slug": "ho-chi-minh-city",
+            "transport": "Route SGN → Ben Tre (2 h)",
             "stay": "Homestay Mékong",
+            "narrative": (
+                "<p>Immersion dans le <strong>delta du Mékong</strong> : canaux, cocoteraies, "
+                "fabrication de bonbons de coco et nuit chez l'habitant sur l'île An Bình.</p>"
+            ),
+            "activities": [
+                {
+                    "text": "Excursion Ben Tre 2J/1N avec homestay",
+                    "booking": {
+                        "name": "Delta Mékong 2J/1N",
+                        "search": "Mekong Delta 2 days homestay Can Tho",
+                        "provider": "viator",
+                        "location_key": "ho-chi-minh-city",
+                        "price_hint": "dès 75 €",
+                    },
+                },
+                "Vélo sous les palmiers",
+                "Dégustation fruits tropicaux",
+            ],
         },
         {
             "day": 14,
             "title": "Can Tho — marché flottant → Saigon",
             "location": "Can Tho → HCMC",
+            "location_slug": "ho-chi-minh-city",
+            "transport": "Route Can Tho → SGN (4 h)",
+            "stay": "Ho Chi Minh-Ville",
+            "narrative": (
+                "<p>Lever à l'aube pour le <strong>marché flottant Cai Rang</strong> — "
+                "bateaux chargés de fruits, légumes et café. Retour Saigon pour une dernière soirée.</p>"
+            ),
             "activities": [
-                "Lever tôt : marché flottant Cai Rang",
-                "Comparaison marché terrestre vs flottant",
+                "Marché flottant Cai Rang (dès 6h)",
+                "Comparaison marché terrestre",
                 "Retour Ho Chi Minh-Ville, soirée libre",
             ],
-            "stay": "Ho Chi Minh-Ville",
             "tip": "Le marché flottant est actif dès 6h — partez à 5h30.",
         },
         {
             "day": 15,
             "title": "Ho Chi Minh-Ville — départ",
             "location": "Ho Chi Minh-Ville",
-            "activities": [
-                "Matinée libre : souvenirs, café rooftop",
-                "Transfert aéroport Tan Son Nhat (prévoir 3 h avant vol)",
-            ],
+            "location_slug": "ho-chi-minh-city",
+            "transport": "Taxi → Tan Son Nhat",
             "stay": "—",
+            "narrative": (
+                "<p>Fin du grand circuit : souvenirs, café rooftop et vol depuis "
+                "<strong>Tan Son Nhat</strong>. Vous avez parcouru le Vietnam de bout en bout.</p>"
+            ),
+            "activities": [
+                "Matinée libre — café, artisanat",
+                "Transfert aéroport (3 h avant vol international)",
+            ],
         },
     ],
 }

@@ -795,6 +795,7 @@ def itinerary(slug):
         meta_title=itin["meta_title"],
         meta_description=itin["meta_description"],
         meta_keywords=t("meta.itin.kw", lang, days=str(itin["duration"])),
+        og_image=itin.get("hero_image"),
     )
 
 

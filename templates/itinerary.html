@@ -1,6 +1,25 @@
 {% extends "base.html" %}
 {% from "macros/affiliates.html" import hotel_card, activity_card, sim_banner, insurance_banner, affiliate_disclosure with context %}
-{% from "macros/seo.html" import json_ld_graph with context %}
+{% from "macros/images.html" import responsive_img with context %}
+{% from "macros/itinerary.html" import itin_day_block with context %}
+{% from "macros/seo.html" import json_ld_graph, og_image_tags with context %}
+
+{% block og_type %}article{% endblock %}
+
+{% block og_image %}
+{% if itin.hero_image %}
+{{ og_image_tags(site.SITE_URL ~ itin.hero_image) }}
+{% else %}
+{{ super() }}
+{% endif %}
+{% endblock %}
+
+{% block head_preload %}
+{% if itin.hero_image %}
+{% set hero = responsive_image(itin.hero_image, card=false) %}
+<link rel="preload" as="image" href="{{ hero.src }}"{% if hero.srcset %} imagesrcset="{{ hero.srcset }}" imagesizes="100vw"{% endif %}>
+{% endif %}
+{% endblock %}
 
 {% block structured_data %}
 {% set day_items = [] %}
@@ -20,6 +39,9 @@
     "itemListElement": day_items
   }
 } %}
+{% if itin.hero_image %}
+{% set _ = trip_schema.update({"image": site.SITE_URL ~ itin.hero_image}) %}
+{% endif %}
 {{ json_ld_graph([
   trip_schema,
   seo_breadcrumb([
@@ -31,7 +53,20 @@
 {% endblock %}
 
 {% block content %}
-<header class="page-hero page-hero--itinerary">
+<header class="page-hero page-hero--itinerary{% if itin.hero_image %} page-hero--with-image{% endif %}">
+  {% if itin.hero_image %}
+  <div class="page-hero__media" aria-hidden="true">
+    {{ responsive_img(
+      itin.hero_image,
+      alt=itin.image_alt or itin.title,
+      width=1200,
+      height=675,
+      loading='eager',
+      fetchpriority='high',
+      sizes='100vw'
+    ) }}
+  </div>
+  {% endif %}
   <div class="container">
     <nav class="breadcrumb" aria-label="{{ t('breadcrumb.aria') }}">
       <ol>
@@ -43,6 +78,9 @@
     <h1>{{ itin.title }}</h1>
     <p class="page-hero__lead">{{ itin.summary }}</p>
     <p class="budget-badge">{{ t('itin.budget') }} : {{ itin.budget_hint }}</p>
+    {% if itin.best_season %}
+    <p class="itin-meta-line"><strong>{{ t('itin.best_season') }} :</strong> {{ itin.best_season }}</p>
+    {% endif %}
     {% if itin.highlights %}
     <ul class="itin-highlights" aria-label="{{ t('itin.highlights') }}">
       {% for city in itin.highlights %}
@@ -55,9 +93,34 @@
 
 <div class="container page-layout">
   <article class="page-content">
+    {% if itin.gallery %}
+    <section class="content-block itin-gallery-block">
+      <h2>{{ t('itin.gallery') }}</h2>
+      <div class="itin-gallery">
+        {% for item in itin.gallery %}
+        <figure class="itin-gallery__item">
+          {{ responsive_img(item.image, alt=item.alt, width=400, height=300, loading='lazy', class='itin-gallery__img', sizes='(max-width: 600px) 50vw, 200px') }}
+          {% if item.caption %}<figcaption>{{ item.caption }}</figcaption>{% endif %}
+        </figure>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
     {% if itin.overview %}
     <section class="content-block">
       <div class="prose">{{ itin.overview | safe }}</div>
+    </section>
+    {% endif %}
+
+    {% if itin.includes %}
+    <section class="content-block">
+      <h2>{{ t('itin.includes') }}</h2>
+      <ul class="itin-experiences">
+        {% for item in itin.includes %}
+        <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
     </section>
     {% endif %}
 
@@ -69,6 +132,13 @@
         <li>{{ exp }}</li>
         {% endfor %}
       </ul>
+    </section>
+    {% endif %}
+
+    {% if itin.practical %}
+    <section class="content-block">
+      <h2>{{ t('itin.practical') }}</h2>
+      <div class="prose">{{ itin.practical | safe }}</div>
     </section>
     {% endif %}
 
@@ -94,23 +164,7 @@
       <h2>{% if lang == 'en' %}Day-by-day programme{% else %}Programme jour par jour{% endif %}</h2>
       <ol class="timeline">
         {% for day in itin.days %}
-        <li class="timeline__item" id="jour-{{ day.day }}">
-          <div class="timeline__marker">
-            <span class="timeline__day">J{{ day.day }}</span>
-          </div>
-          <div class="timeline__body">
-            <h3>{{ day.title }}</h3>
-            <p class="timeline__location">{{ day.location }}{% if day.stay and day.stay != '—' %} · {% if lang == 'en' %}Overnight{% else %}Nuit{% endif %} : {{ day.stay }}{% endif %}</p>
-            <ul>
-              {% for act in day.activities %}
-              <li>{{ act }}</li>
-              {% endfor %}
-            </ul>
-            {% if day.tip %}
-            <p class="timeline__tip"><strong>{% if lang == 'en' %}Tip{% else %}Conseil{% endif %} :</strong> {{ day.tip }}</p>
-            {% endif %}
-          </div>
-        </li>
+        {{ itin_day_block(day) }}
         {% endfor %}
       </ol>
     </section>

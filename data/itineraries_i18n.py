@@ -10,8 +10,14 @@ ITINERARIES_EN = {
             "What to do in 3 days in Vietnam? Express itinerary for Hanoi or Ho Chi Minh City "
             "with hotels, activities and budget."
         ),
-        "summary": "Perfect for a first taste — choose Hanoi (north) or Saigon (south).",
-        "budget_hint": "€150–350 all-in (flights excluded)",
+        "summary": "Perfect for a first taste — intense city break in Hanoi or Saigon.",
+        "budget_hint": "€150–350 on the ground (international flights excluded)",
+        "best_season": "October to April — avoid torrential rain in July–August.",
+        "includes": [
+            "2 nights city-centre hotel",
+            "Recommended food tour on day 2",
+            "Halong or Củ Chi excursion on day 3",
+        ],
         "sample_hotel": {
             "desc": "Old Quarter boutique hotel — ideal for a Hanoi city break.",
             "price_hint": "from €45/night",
@@ -66,8 +72,14 @@ ITINERARIES_EN = {
             "7-day Vietnam circuit: Hanoi, Halong Bay, Hội An. Day-by-day plan "
             "with domestic flights and budget."
         ),
-        "summary": "Hanoi → Halong → Hội An — the most popular north-central combo.",
-        "budget_hint": "€450–800 (international flights excluded)",
+        "summary": "Hanoi → Halong → Hội An — ideal north-central triangle for a first week.",
+        "budget_hint": "€450–800 on the ground (international flights excluded)",
+        "best_season": "October to April — avoid typhoons on the bay (July–September).",
+        "includes": [
+            "City-centre hotels (Hanoi, Hội An)",
+            "Halong 2D/1N cruise with meals",
+            "Domestic flight Hanoi → Đà Nẵng",
+        ],
         "sample_hotel": {
             "desc": "Hanoi base for the first 2 nights of the circuit.",
             "price_hint": "from €40/night",
@@ -95,7 +107,13 @@ ITINERARIES_EN = {
             "Detailed day-by-day itinerary with transport tips."
         ),
         "summary": "The classic north → central → south route in 10 days.",
-        "budget_hint": "€700–1,200 (international flights excluded)",
+        "budget_hint": "€700–1,200 on the ground (international flights excluded)",
+        "best_season": "November to April — dry season across the S-shape.",
+        "includes": [
+            "Halong cruise with meals",
+            "Domestic flights HAN→DAD and DAD→SGN",
+            "1-day Mekong Delta excursion",
+        ],
         "sample_hotel": {
             "desc": "Central hotel for nights in Ho Chi Minh City.",
             "price_hint": "from €55/night",

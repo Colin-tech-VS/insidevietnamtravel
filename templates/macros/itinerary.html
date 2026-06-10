@@ -1,0 +1,76 @@
+{% from "macros/images.html" import responsive_img with context %}
+
+{% macro itin_inline_booking(booking) %}
+{% if booking and booking.name %}
+<a href="{{ tracked_affiliate_url(booking.provider, activity_affiliate_url(booking, booking.location_key or 'hanoi')) }}"
+   class="itin-inline-booking affiliate-link"
+   rel="sponsored noopener noreferrer"
+   target="_blank"
+   title="{{ booking.name }}">
+  {{ t('itin.book') }} — {{ booking.name }}{% if booking.price_hint %} <span class="itin-inline-booking__price">{{ booking.price_hint }}</span>{% endif %}
+</a>
+{% endif %}
+{% endmacro %}
+
+{% macro itin_activity_item(act) %}
+{% if act is string %}
+<li>{{ act }}</li>
+{% else %}
+<li class="itin-activity-item">
+  <span class="itin-activity-item__text">{{ act.text }}</span>
+  {% if act.booking %}{{ itin_inline_booking(act.booking) }}{% endif %}
+</li>
+{% endif %}
+{% endmacro %}
+
+{% macro itin_day_block(day) %}
+<li class="timeline__item itin-day" id="jour-{{ day.day }}">
+  <div class="timeline__marker">
+    <span class="timeline__day">J{{ day.day }}</span>
+  </div>
+  <div class="timeline__body">
+    {% if day.image %}
+    <figure class="itin-day__figure">
+      {{ responsive_img(day.image, alt=day.title, width=800, height=450, loading='lazy', class='itin-day__img', sizes='(max-width: 768px) 100vw, 720px') }}
+    </figure>
+    {% endif %}
+    <h3>{{ day.title }}</h3>
+    <p class="timeline__location">
+      {% if day.location_slug %}
+      <a href="{{ lang_url('destination_page', slug=day.location_slug) }}">{{ day.location }}</a>
+      {% else %}
+      {{ day.location }}
+      {% endif %}
+      {% if day.stay and day.stay != '—' %}
+      · {% if lang == 'en' %}Overnight{% else %}Nuit{% endif %} : {{ day.stay }}
+      {% endif %}
+      {% if day.transport %}
+      · <span class="itin-day__transport">{{ day.transport }}</span>
+      {% endif %}
+    </p>
+    {% if day.narrative %}
+    <div class="itin-day__narrative prose">{{ day.narrative | safe }}</div>
+    {% endif %}
+    {% if day.activities %}
+    <ul class="itin-day__activities">
+      {% for act in day.activities %}
+      {{ itin_activity_item(act) }}
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% if day.hotel %}
+    <div class="itin-day__booking itin-day__booking--hotel">
+      <span class="itin-day__booking-label">{{ t('itin.hotel') }}</span>
+      <a href="{{ tracked_affiliate_url(day.hotel.provider, hotel_affiliate_url(day.hotel, day.hotel.location_key or day.location_slug or 'hanoi')) }}"
+         class="itin-inline-booking affiliate-link"
+         rel="sponsored noopener noreferrer" target="_blank">
+        {{ day.hotel.name }} — {{ day.hotel.price_hint }}
+      </a>
+    </div>
+    {% endif %}
+    {% if day.tip %}
+    <p class="timeline__tip"><strong>{% if lang == 'en' %}Tip{% else %}Conseil{% endif %} :</strong> {{ day.tip }}</p>
+    {% endif %}
+  </div>
+</li>
+{% endmacro %}

@@ -163,6 +163,7 @@ def localize_itinerary(itin: dict, lang: str | None = None) -> dict:
         for key in (
             "sample_hotel", "sample_activity", "days", "overview",
             "highlights", "experiences", "faq", "affiliate_sections",
+            "best_season", "includes", "practical",
         ):
             if key in block:
                 if key in ("sample_hotel", "sample_activity") and isinstance(block[key], dict):

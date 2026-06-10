@@ -129,7 +129,12 @@
     </header>
     <div class="itin-grid">
       {% for slug, it in itineraries.items() %}
-      <article class="itin-card">
+      <article class="itin-card{% if it.hero_image %} itin-card--with-image{% endif %}">
+        {% if it.hero_image %}
+        <a href="{{ lang_url('itinerary', slug=slug) }}" class="itin-card__media" tabindex="-1" aria-hidden="true">
+          {{ responsive_img(it.hero_image, alt=it.image_alt or it.title, width=400, height=225, loading='lazy', class='itin-card__img', sizes='(max-width: 768px) 100vw, 33vw') }}
+        </a>
+        {% endif %}
         <span class="itin-card__days">{{ it.duration }} {{ t('nav.days') }}</span>
         <h3><a href="{{ lang_url('itinerary', slug=slug) }}">{{ it.title }}</a></h3>
         <p>{{ it.summary }}</p>
