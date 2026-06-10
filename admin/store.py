@@ -138,7 +138,11 @@ def ensure_builtin_articles() -> int:
 
 
 def _raw_articles() -> list:
-    stored = get_json("articles", None, file_name="articles.json")
+    try:
+        stored = get_json("articles", None, file_name="articles.json")
+    except Exception:
+        logger.exception("Lecture articles KV impossible — repli sur contenu embarqué")
+        return deepcopy([*EXPERIENCE_ARTICLES, *DEFAULT_ARTICLES])
     if stored is None:
         return deepcopy([*EXPERIENCE_ARTICLES, *DEFAULT_ARTICLES])
     overlay = _missing_experience_articles(stored)
