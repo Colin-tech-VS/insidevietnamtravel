@@ -334,7 +334,7 @@ ITINERARY_10_DAYS_FR = {
             "day": 9,
             "title": "Delta du Mékong — excursion",
             "location": "Delta du Mékong",
-            "location_slug": "ho-chi-minh-city",
+            "location_slug": "delta-du-mekong",
             "transport": "Minibus SGN → Ben Tre (2 h)",
             "stay": "Ho Chi Minh-Ville",
             "narrative": (

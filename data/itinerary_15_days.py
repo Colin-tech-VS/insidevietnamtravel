@@ -536,7 +536,7 @@ ITINERARY_15_DAYS_FR = {
             "day": 13,
             "title": "Delta Mékong — Ben Tre & homestay",
             "location": "Delta du Mékong",
-            "location_slug": "ho-chi-minh-city",
+            "location_slug": "delta-du-mekong",
             "transport": "Route SGN → Ben Tre (2 h)",
             "stay": "Homestay Mékong",
             "narrative": (
@@ -562,7 +562,7 @@ ITINERARY_15_DAYS_FR = {
             "day": 14,
             "title": "Can Tho — marché flottant → Saigon",
             "location": "Can Tho → HCMC",
-            "location_slug": "ho-chi-minh-city",
+            "location_slug": "delta-du-mekong",
             "transport": "Route Can Tho → SGN (4 h)",
             "stay": "Ho Chi Minh-Ville",
             "narrative": (

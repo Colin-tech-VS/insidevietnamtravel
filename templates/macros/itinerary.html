@@ -31,7 +31,7 @@
   <div class="timeline__body">
     {% if day.image %}
     <figure class="itin-day__figure">
-      {{ responsive_img(day.image, alt=day.title, width=800, height=450, loading='lazy', class='itin-day__img', sizes='(max-width: 768px) 100vw, 720px') }}
+      {{ responsive_img(day.image, alt=day.image_alt or day.title, width=800, height=450, loading='lazy', class='itin-day__img', sizes='(max-width: 768px) 100vw, 720px') }}
     </figure>
     {% endif %}
     <h3>{{ day.title }}</h3>
