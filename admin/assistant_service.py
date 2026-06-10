@@ -19,6 +19,7 @@ en attente côté serveur et n'est exécutée qu'après clic sur « Confirmer »
 
 from __future__ import annotations
 
+import json
 import re
 import secrets
 import threading
@@ -1525,31 +1526,39 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
         from admin import map_service
 
         raw_points = params.get("points") or []
+        if isinstance(raw_points, str):
+            # Liste encodée en JSON-chaîne par le modèle — on la décode.
+            try:
+                raw_points = json.loads(raw_points)
+            except ValueError:
+                raw_points = []
         if isinstance(raw_points, dict):
             raw_points = [raw_points]
-        default_city = (params.get("city") or "").strip()
+        if not isinstance(raw_points, list):
+            raw_points = []
+        default_city = _coerce_str(params.get("city"))
         points: list[dict] = []
         for p in raw_points[:10]:
             if not isinstance(p, dict):
                 continue
-            title = (p.get("title") or "").strip()
-            address = (p.get("address") or "").strip()
+            title = _coerce_str(p.get("title") or p.get("name"))
+            address = _coerce_str(p.get("address"))
             if not title or not address:
                 continue
             # On garde le libellé brut (accents, casse) : add_map_point normalise le
             # slug et mémorise ce libellé pour la légende des types personnalisés.
-            kind = (p.get("kind") or "poi").strip()
+            kind = _coerce_str(p.get("kind")) or "poi"
             points.append({
                 "title": title,
                 "address": address,
-                "city": (p.get("city") or default_city).strip(),
+                "city": _coerce_str(p.get("city")) or default_city,
                 "kind": kind,
-                "desc": (p.get("desc") or "").strip(),
-                "price_hint": (p.get("price_hint") or "").strip(),
-                "affiliate_provider": (p.get("affiliate_provider") or "custom").strip(),
-                "affiliate_search": (p.get("affiliate_search") or title).strip(),
-                "affiliate_url": (p.get("affiliate_url") or "").strip(),
-                "image_url": (p.get("image_url") or "").strip(),
+                "desc": _coerce_str(p.get("desc") or p.get("description")),
+                "price_hint": _coerce_str(p.get("price_hint")),
+                "affiliate_provider": _coerce_str(p.get("affiliate_provider")) or "custom",
+                "affiliate_search": _coerce_str(p.get("affiliate_search")) or title,
+                "affiliate_url": _coerce_str(p.get("affiliate_url")),
+                "image_url": _coerce_str(p.get("image_url")),
             })
         if not points:
             raise ValueError("Aucun point valide — chaque point doit avoir au minimum un title et une address.")
@@ -1638,6 +1647,104 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
 
 # ── Chat principal ───────────────────────────────────────────────────────────
 
+def _coerce_str(value) -> str:
+    """Texte sûr depuis une valeur IA : str/nombre acceptés, le reste → ''."""
+    if isinstance(value, str):
+        return value.strip()
+    if value is None or isinstance(value, bool):
+        return ""
+    if isinstance(value, (int, float)):
+        return str(value)
+    return ""
+
+
+def _normalize_tool(tool) -> dict | None:
+    """Champ tool → {"name": str, "params": dict} ou None, quel que soit le format.
+
+    Les modèles renvoient parfois "tool":"add_map_points" (chaîne), des params
+    encodés en JSON-chaîne, ou un objet sans params : sans normalisation, ces
+    variantes faisaient soit planter le chat ('str' object has no attribute
+    'get'), soit ignorer silencieusement l'action demandée.
+    """
+    if isinstance(tool, str):
+        name = tool.strip()
+        if not name or name.lower() in ("null", "none"):
+            return None
+        tool = {"name": name, "params": {}}
+    if not isinstance(tool, dict):
+        return None
+    name = tool.get("name")
+    if not isinstance(name, str) or not name.strip():
+        return None
+    params = tool.get("params") or tool.get("parameters") or tool.get("arguments")
+    if isinstance(params, str):
+        try:
+            params = json.loads(params)
+        except ValueError:
+            params = {}
+    if not isinstance(params, dict):
+        params = {}
+    # Nombres isolés (ex. price_hint: 50000) → texte, pour que les .strip()
+    # des handlers restent sûrs ; listes/dicts/bools conservés tels quels.
+    params = {
+        k: (str(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else v)
+        for k, v in params.items()
+    }
+    return {"name": name.strip(), "params": params}
+
+
+def _normalize_reply(data) -> dict:
+    """Réponse IA → dict {message, actions, tool} TOUJOURS exploitable.
+
+    Malgré le json_mode et le prompt, les modèles dévient parfois du schéma :
+    réponse = chaîne ou liste, actions en liste de chaînes, tool aplati au
+    niveau racine… On répare ici au lieu de laisser remonter une AttributeError
+    jusqu'au chat de l'admin.
+    """
+    if isinstance(data, list):
+        data = next((d for d in data if isinstance(d, dict)), None) or {
+            "message": "\n".join(x for x in data if isinstance(x, str)),
+        }
+    if isinstance(data, str):
+        data = {"message": data}
+    if not isinstance(data, dict):
+        data = {"message": _coerce_str(data)}
+
+    message = data.get("message")
+    if isinstance(message, list):
+        message = "\n".join(x for x in message if isinstance(x, str))
+    if not isinstance(message, str):
+        message = _coerce_str(message)
+
+    actions = data.get("actions")
+    if isinstance(actions, dict):
+        actions = [actions]
+    norm_actions: list[dict] = []
+    for a in actions if isinstance(actions, list) else []:
+        if isinstance(a, str):
+            a = {"label": a, "url": a}
+        if isinstance(a, dict):
+            norm_actions.append(a)
+
+    tool = _normalize_tool(data.get("tool"))
+    if tool is None and isinstance(data.get("name"), str) and (
+        "params" in data or data.get("name", "").strip() in _KNOWN_TOOLS
+    ):
+        # Outil aplati à la racine : {"message":…, "name":"web_search", "params":{…}}
+        tool = _normalize_tool({"name": data["name"], "params": data.get("params")})
+
+    return {**data, "message": message.strip(), "actions": norm_actions, "tool": tool}
+
+
+_KNOWN_TOOLS = {
+    "web_search", "audit_site", "generate_guide", "generate_destination",
+    "generate_newsletter", "generate_social_post", "set_destination_region",
+    "update_article", "add_category", "improve_article", "update_destination",
+    "improve_destination", "update_image", "add_map_points", "update_map_images",
+    "publish_draft", "publish_facebook", "send_newsletter",
+}
+
+
 def _ask_linh(user_block: str) -> dict:
     from admin import ai_client
 
@@ -1653,7 +1760,13 @@ def _ask_linh(user_block: str) -> dict:
         json_mode=True,
         deadline=90,
     )
-    return ai_client.parse_json(resp.choices[0].message.content)
+    raw = resp.choices[0].message.content
+    try:
+        data = ai_client.parse_json(raw)
+    except ValueError:
+        # JSON irrécupérable : on montre le texte brut plutôt que planter le chat.
+        data = {"message": (raw or "").strip(), "tool": None}
+    return _normalize_reply(data)
 
 
 def _web_search_round(user_block: str, params: dict, first: dict) -> dict:
@@ -1705,8 +1818,10 @@ def _build_context(message: str, history: list[dict]) -> tuple[dict, str]:
 
     hist_lines = []
     for turn in (history or [])[-8:]:
+        if not isinstance(turn, dict):
+            continue
         role = turn.get("role")
-        content = (turn.get("content") or "").strip()[:700]
+        content = _coerce_str(turn.get("content"))[:700]
         if role in ("user", "assistant") and content:
             hist_lines.append(f"{role.upper()}: {content}")
 
@@ -1727,9 +1842,13 @@ def _finalize(data: dict, snapshot: dict) -> dict:
 
     actions = []
     for link in (data.get("actions") or [])[:4]:
-        url = (link.get("url") or "").strip()
+        if isinstance(link, str):
+            link = {"label": link, "url": link}
+        if not isinstance(link, dict):
+            continue
+        url = _coerce_str(link.get("url"))
         if url.startswith("/") and not url.startswith("//"):
-            actions.append({"label": (link.get("label") or url)[:90], "url": url})
+            actions.append({"label": (_coerce_str(link.get("label")) or url)[:90], "url": url})
 
     result = {
         "ok": True,
@@ -1826,7 +1945,7 @@ def chat_reply(message: str, history: list[dict]) -> dict:
     # /api/assistant/search qui exécute la recherche et rédige la réponse finale.
     if _tool_name(data) == "web_search":
         tool = data.get("tool") or {}
-        query = ((tool.get("params") or {}).get("query") or message).strip()[:200]
+        query = (_coerce_str((tool.get("params") or {}).get("query")) or message)[:200]
         intro = (data.get("message") or "").strip() or f"Je lance une recherche sur internet : « {query} »…"
         return {"ok": True, "message": intro, "actions": [], "search": {"query": query}}
     if not _tool_name(data) and _SEARCH_CLAIM_RE.search(data.get("message") or ""):
