@@ -1035,6 +1035,14 @@ def api_assistant_search():
         return jsonify({"ok": False, "error": ai_client.friendly_error(exc)}), 502
 
 
+@admin_bp.route("/api/assistant/reset", methods=["POST"])
+@login_required
+def api_assistant_reset():
+    from admin import assistant_service
+
+    return jsonify(assistant_service.reset_conversation())
+
+
 @admin_bp.route("/api/assistant/insights")
 @login_required
 def api_assistant_insights():

@@ -24,6 +24,8 @@
   var jobUrlTpl = root.dataset.jobUrl;
   var actionJobUrlTpl = root.dataset.actionJobUrl;
   var confirmUrl = root.dataset.confirmUrl;
+  var resetUrl = root.dataset.resetUrl;
+  var newBtn = document.getElementById('linh-chat-new');
 
   var STORAGE_KEY = 'linhChatState';
 
@@ -491,6 +493,44 @@
     saveState();
   }
 
+  function newConversation() {
+    if (busy) {
+      if (!window.confirm('Une action Linh est en cours. Démarrer une nouvelle conversation quand même ?')) {
+        return;
+      }
+      if (jobTimer) window.clearTimeout(jobTimer);
+      jobTimer = 0;
+      busy = false;
+      removeTyping();
+    }
+
+    function applyReset() {
+      state.history = [];
+      state.items = [];
+      state.suggestions = [];
+      state.job = '';
+      history = state.history;
+      messagesEl.innerHTML = '';
+      if (suggestionsEl) suggestionsEl.innerHTML = '';
+      saveState();
+      loadInsights();
+    }
+
+    if (!resetUrl) {
+      applyReset();
+      return;
+    }
+
+    fetch(resetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      credentials: 'same-origin',
+      body: '{}',
+    })
+      .catch(function () { /* reset local même si le serveur ne répond pas */ })
+      .finally(applyReset);
+  }
+
   function loadInsights() {
     showTyping('Linh audite le site…');
     fetch(insightsUrl, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
@@ -637,6 +677,7 @@
     else openPanel();
   });
   if (closeBtn) closeBtn.addEventListener('click', closePanel);
+  if (newBtn) newBtn.addEventListener('click', newConversation);
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && isOpen()) closePanel();
   });

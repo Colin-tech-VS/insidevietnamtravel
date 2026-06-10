@@ -75,6 +75,14 @@
   color: rgba(244, 235, 221, 0.75);
 }
 
+.linh-chat__head-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.linh-chat__new,
 .linh-chat__close {
   border: none;
   background: rgba(244, 235, 221, 0.12);
@@ -85,8 +93,15 @@
   cursor: pointer;
   font-size: 0.85rem;
   flex: none;
+  line-height: 1;
 }
 
+.linh-chat__new {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.linh-chat__new:hover,
 .linh-chat__close:hover { background: rgba(244, 235, 221, 0.25); }
 
 .linh-chat__messages {

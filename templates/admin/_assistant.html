@@ -6,7 +6,8 @@
      data-insights-url="{{ url_for('admin.api_assistant_insights') }}"
      data-job-url="{{ url_for('admin.api_assistant_job', kind='KIND') }}"
      data-action-job-url="{{ url_for('admin.api_assistant_action_job', token='TOKEN') }}"
-     data-confirm-url="{{ url_for('admin.api_assistant_confirm') }}">
+     data-confirm-url="{{ url_for('admin.api_assistant_confirm') }}"
+     data-reset-url="{{ url_for('admin.api_assistant_reset') }}">
   <button type="button" class="linh-chat__fab" id="linh-chat-fab" aria-expanded="false"
           aria-controls="linh-chat-panel" aria-label="Ouvrir Linh, copilote IA du site">
     <span class="linh-chat__fab-icon" aria-hidden="true">🧭</span>
@@ -22,7 +23,12 @@
           <p class="linh-chat__subtitle">Développement, idées & SEO · admin uniquement</p>
         </div>
       </div>
-      <button type="button" class="linh-chat__close" id="linh-chat-close" aria-label="Fermer">✕</button>
+      <div class="linh-chat__head-actions">
+        <button type="button" class="linh-chat__new" id="linh-chat-new"
+                title="Nouvelle conversation — efface l'historique et le contexte Linh"
+                aria-label="Nouvelle conversation">+</button>
+        <button type="button" class="linh-chat__close" id="linh-chat-close" aria-label="Fermer">✕</button>
+      </div>
     </header>
 
     <div class="linh-chat__messages" id="linh-chat-messages" aria-live="polite"></div>

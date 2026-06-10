@@ -616,6 +616,25 @@ def cancel_confirmation(token: str) -> bool:
         return _PENDING.pop(token, None) is not None
 
 
+def reset_conversation() -> dict:
+    """Nouvelle conversation Linh : annule les confirmations en attente de la session.
+
+    L'historique de chat est géré côté navigateur (sessionStorage) ; ici on purge
+    uniquement la mémoire serveur (tokens « oui » / cartes de confirmation).
+    Les brouillons admin (guides, destinations…) ne sont pas touchés.
+    """
+    try:
+        tokens = list(session.get(_SESSION_PENDING_KEY) or [])
+    except Exception:  # noqa: BLE001
+        tokens = []
+    cancelled = sum(1 for t in tokens if cancel_confirmation(t))
+    try:
+        session[_SESSION_PENDING_KEY] = []
+    except Exception:  # noqa: BLE001
+        pass
+    return {"ok": True, "cancelled": cancelled}
+
+
 def _prune_action_jobs() -> None:
     now = time.time()
     stale = [k for k, v in _ACTION_JOBS.items() if now - v.get("ts", now) > _ACTION_JOB_TTL]
