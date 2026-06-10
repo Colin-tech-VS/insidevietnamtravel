@@ -63,9 +63,12 @@
       .replace(/"/g, '&quot;');
   }
 
-  function formatMessage(text) {
+  function formatMessage(text, streaming) {
     var html = escapeHtml(String(text || ''));
     html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="linh-chat__emph">$1</strong>');
+    if (streaming) {
+      html = html.replace(/\*\*([^*]*)$/, '$1');
+    }
     html = html
       .replace(/\n/g, '<br>')
       .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
@@ -119,6 +122,142 @@
   function removeTyping() {
     var el = messagesEl.querySelector('[data-typing="1"]');
     if (el) el.remove();
+  }
+
+  /* ── Effet « machine à écrire » — même rendu que Mai côté public ── */
+
+  var supportsUnicodeProps = (function () {
+    try {
+      return /\p{Extended_Pictographic}/u.test('🧭');
+    } catch (e) {
+      return false;
+    }
+  }());
+
+  function isEmojiChar(ch) {
+    if (supportsUnicodeProps) {
+      return /\p{Extended_Pictographic}/u.test(ch);
+    }
+    var code = ch.codePointAt(0) || 0;
+    return code > 0xFFFF;
+  }
+
+  function buildStreamUnits(text) {
+    var chars = Array.from(String(text || ''));
+    var units = [];
+    var i = 0;
+    while (i < chars.length) {
+      var ch = chars[i];
+      if (/\s/.test(ch)) {
+        units.push(ch);
+        i += 1;
+        continue;
+      }
+      if (isEmojiChar(ch) || /[.!?,;:…]/.test(ch)) {
+        units.push(ch);
+        i += 1;
+        continue;
+      }
+      var size = 1;
+      if (i + 1 < chars.length && !/\s/.test(chars[i + 1]) && !isEmojiChar(chars[i + 1])) {
+        size = 2;
+      }
+      units.push(chars.slice(i, i + size).join(''));
+      i += size;
+    }
+    return units;
+  }
+
+  function unitPause(unit, progress) {
+    if (/^\s+$/.test(unit)) return 10;
+    if (/[.!?…]/.test(unit)) return 52;
+    if (/[,;:]/.test(unit)) return 32;
+    if (isEmojiChar(unit)) return 28;
+    var ms = 16;
+    if (progress > 0.45) ms *= 0.78;
+    if (progress > 0.72) ms *= 0.68;
+    return ms;
+  }
+
+  /* Écrit la réponse progressivement (clic sur la bulle = tout afficher).
+     La bulle est mémorisée complète : après navigation, pas de re-animation. */
+  function streamSay(text, extraHtml) {
+    text = String(text || '');
+    extraHtml = extraHtml || '';
+    var fullHtml = formatMessage(text) + extraHtml;
+    state.items.push({ t: 'b', role: 'assistant', html: fullHtml, cls: '' });
+    saveState();
+
+    if (!text) {
+      appendBubble('assistant', fullHtml);
+      return Promise.resolve();
+    }
+
+    return new Promise(function (resolve) {
+      var wrap = appendBubble('assistant', '', 'linh-chat__bubble-wrap--streaming');
+      wrap.title = 'Cliquer pour afficher tout';
+      var bubble = wrap.querySelector('.linh-chat__bubble');
+      bubble.classList.add('linh-chat__bubble--streaming');
+      bubble.innerHTML = '<span class="linh-chat__stream-text"></span>'
+        + '<span class="linh-chat__cursor" aria-hidden="true"></span>';
+
+      var textEl = bubble.querySelector('.linh-chat__stream-text');
+      var units = buildStreamUnits(text);
+      var unitIndex = 0;
+      var acc = '';
+      var done = false;
+      var rafId = 0;
+      var carryMs = 0;
+      var lastTs = 0;
+
+      function finishInstant() {
+        if (done) return;
+        done = true;
+        if (rafId) window.cancelAnimationFrame(rafId);
+        bubble.classList.remove('linh-chat__bubble--streaming');
+        wrap.classList.remove('linh-chat__bubble-wrap--streaming');
+        wrap.removeAttribute('title');
+        bubble.innerHTML = fullHtml;
+        scrollBottom();
+        wrap.removeEventListener('click', onSkip);
+        resolve();
+      }
+
+      function onSkip(e) {
+        if (e.target.closest('a')) return;
+        finishInstant();
+      }
+
+      function tick(ts) {
+        if (done) return;
+        try {
+          if (!lastTs) lastTs = ts;
+          carryMs += ts - lastTs;
+          lastTs = ts;
+
+          while (unitIndex < units.length) {
+            var pause = unitPause(units[unitIndex], unitIndex / Math.max(units.length, 1));
+            if (carryMs < pause) break;
+            carryMs -= pause;
+            acc += units[unitIndex];
+            unitIndex += 1;
+            textEl.innerHTML = formatMessage(acc, true);
+          }
+          scrollBottom();
+
+          if (unitIndex >= units.length) {
+            finishInstant();
+            return;
+          }
+          rafId = window.requestAnimationFrame(tick);
+        } catch (err) {
+          finishInstant();
+        }
+      }
+
+      wrap.addEventListener('click', onSkip);
+      rafId = window.requestAnimationFrame(tick);
+    });
   }
 
   function renderActions(actions) {
@@ -207,8 +346,8 @@
       postConfirm(confirm.token, 'confirm').then(function (res) {
         removeTyping();
         if (res.ok) {
-          say('assistant', formatMessage(res.data.message || '✅ Fait.'));
           history.push({ role: 'assistant', content: res.data.message || 'Action confirmée et effectuée.' });
+          streamSay(res.data.message || '✅ Fait.');
         } else {
           say('assistant', formatMessage('⚠️ ' + (res.data.error || 'Échec de l\'action.')), 'linh-chat__bubble-wrap--error');
         }
@@ -223,9 +362,9 @@
       disable();
       markConfirmDone(confirm.token);
       postConfirm(confirm.token, 'cancel').finally(function () {
-        say('assistant', formatMessage('Très bien, **rien n\'a été publié**. Le brouillon reste disponible dans l\'admin.'));
         history.push({ role: 'assistant', content: 'Action annulée par l\'admin — rien n\'a été fait.' });
         saveState();
+        streamSay('Très bien, **rien n\'a été publié**. Le brouillon reste disponible dans l\'admin.');
       });
     });
   }
@@ -254,13 +393,13 @@
           }
           removeTyping();
           if (st.status === 'done') {
-            var html = formatMessage(st.summary || 'Brouillon prêt.');
-            if (st.preview_url) {
-              html += renderActions([{ label: 'Voir l\'aperçu dans l\'admin', url: st.preview_url }]);
-            }
-            say('assistant', html);
+            var extra = st.preview_url
+              ? renderActions([{ label: 'Voir l\'aperçu dans l\'admin', url: st.preview_url }])
+              : '';
             history.push({ role: 'assistant', content: st.summary || 'Brouillon prêt.' });
-            if (st.confirm) renderConfirmCard(st.confirm);
+            streamSay(st.summary || 'Brouillon prêt.', extra).then(function () {
+              if (st.confirm) renderConfirmCard(st.confirm);
+            });
           } else if (st.status === 'error') {
             say('assistant', formatMessage('⚠️ ' + (st.error || 'Échec de la génération.')), 'linh-chat__bubble-wrap--error');
           } else {
@@ -309,12 +448,9 @@
           return;
         }
         state.suggestions = data.suggestions || [];
-        var html = formatMessage(data.greeting || '');
-        html += renderFindings(data.findings);
-        say('assistant', html);
         history.push({ role: 'assistant', content: data.greeting || '' });
         saveState();
-        renderSuggestions();
+        streamSay(data.greeting || '', renderFindings(data.findings)).then(renderSuggestions);
       })
       .catch(function () {
         removeTyping();
@@ -348,26 +484,29 @@
         }
         var d = res.data;
         removeTyping();
-        var html = formatMessage(d.message || '');
+        var extra = '';
         if (d.post_preview) {
-          html += '<div class="linh-chat__post-preview">' + formatMessage(d.post_preview) + '</div>';
+          extra += '<div class="linh-chat__post-preview">' + formatMessage(d.post_preview) + '</div>';
         }
-        html += renderFindings(d.findings);
-        html += renderActions(d.actions);
-        if (d.message || d.findings || d.actions || d.post_preview) {
-          say('assistant', html);
-        }
+        extra += renderFindings(d.findings);
+        extra += renderActions(d.actions);
         history.push({ role: 'assistant', content: d.message || '' });
         saveState();
 
-        if (d.confirm) renderConfirmCard(d.confirm);
+        var streamed = (d.message || extra)
+          ? streamSay(d.message || '', extra)
+          : Promise.resolve();
 
-        if (d.job && d.job.kind) {
-          showTyping('Génération en cours…');
-          pollJob(d.job.kind); // busy reste true jusqu'à la fin du job
-        } else {
-          busy = false;
-        }
+        streamed.then(function () {
+          if (d.confirm) renderConfirmCard(d.confirm);
+
+          if (d.job && d.job.kind) {
+            showTyping('Génération en cours…');
+            pollJob(d.job.kind); // busy reste true jusqu'à la fin du job
+          } else {
+            busy = false;
+          }
+        });
       })
       .catch(function (err) {
         removeTyping();
