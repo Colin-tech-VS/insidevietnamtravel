@@ -186,6 +186,40 @@ PILLARS: dict[str, dict] = {
             "en": "How to get around Vietnam: north–south train, night buses, domestic "
                   "flights, Grab, scooter rental. Tips, prices and pitfalls.",
         },
+        "intro": {
+            "fr": (
+                "<p>Au Vietnam, trois modes dominent les longues distances : <strong>l'avion</strong> "
+                "(rapide, 35–70 € l'axe), le <strong>train</strong> (authentique, idéal Hanoï → Huế) "
+                "et le <strong>bus de nuit</strong> (économique). En ville, <strong>Grab</strong> remplace "
+                "presque tous les taxis de rue.</p>"
+                "<h2>Quel moyen pour quel trajet ?</h2>"
+                "<ul>"
+                "<li><strong>Hanoï → Đà Nẵng / Hội An</strong> : vol 1 h (recommandé si &lt; 12 jours) "
+                "ou train + route.</li>"
+                "<li><strong>Hanoï → Huế</strong> : train de nuit en couchette (13–14 h) — paysages garantis.</li>"
+                "<li><strong>Hanoï → Saigon</strong> : vol 2 h ou train Réunification 32 h (à découper en étapes).</li>"
+                "<li><strong>Hanoï → Sapa</strong> : minibus VIP ou train de nuit + transfert (pas d'aéroport local).</li>"
+                "<li><strong>En ville</strong> : Grab voiture ou moto ; scooter seulement hors grands centres.</li>"
+                "</ul>"
+                "<p>Les guides ci-dessous détaillent réservations, prix réels et pièges à éviter.</p>"
+            ),
+            "en": (
+                "<p>In Vietnam, three modes cover long distances: <strong>flights</strong> "
+                "(fast, €35–70 per leg), <strong>trains</strong> (authentic, ideal Hanoi → Huế) "
+                "and <strong>night buses</strong> (budget). In cities, <strong>Grab</strong> replaces "
+                "most street taxis.</p>"
+                "<h2>Which mode for which leg?</h2>"
+                "<ul>"
+                "<li><strong>Hanoi → Đà Nẵng / Hội An</strong>: 1 h flight (best if &lt; 12 days) "
+                "or train + road.</li>"
+                "<li><strong>Hanoi → Huế</strong>: overnight sleeper train (13–14 h) — scenery guaranteed.</li>"
+                "<li><strong>Hanoi → Saigon</strong>: 2 h flight or 32 h Reunification train (split into stops).</li>"
+                "<li><strong>Hanoi → Sapa</strong>: VIP minibus or night train + transfer (no local airport).</li>"
+                "<li><strong>In town</strong>: Grab car or bike; scooters only outside major city centres.</li>"
+                "</ul>"
+                "<p>The guides below cover booking, real prices and pitfalls to avoid.</p>"
+            ),
+        },
         "clusters": [
             {"title": {"fr": "Longue distance", "en": "Long distance"},
              "links": [
@@ -194,17 +228,28 @@ PILLARS: dict[str, dict] = {
                        "Comparatif temps/prix/confort pour chaque trajet.",
                        "Time/price/comfort comparison for each leg.",
                        slug="transport-vietnam-train-bus-vol"),
-                 _link(None, "Le train de la Réunification (Hanoï–Saïgon)",
-                       "The Reunification Express (Hanoi–Saigon)"),
-                 _link(None, "Vols intérieurs : compagnies & astuces",
-                       "Domestic flights: airlines & tips"),
+                 _link("article", "Le train de la Réunification (Hanoï–Saïgon)",
+                       "The Reunification Express (Hanoi–Saigon)",
+                       "Classes, réservation, étapes Huế — traversée complète.",
+                       "Classes, booking, Huế stops — the full crossing.",
+                       slug="train-reunification-hanoi-saigon"),
+                 _link("article", "Vols intérieurs : compagnies & astuces",
+                       "Domestic flights: airlines & tips",
+                       "VietJet, Vietnam Airlines, prix et axes utiles.",
+                       "VietJet, Vietnam Airlines, prices and key routes.",
+                       slug="vols-interieurs-vietnam"),
              ]},
             {"title": {"fr": "En ville & au quotidien", "en": "In town & day to day"},
              "links": [
-                 _link(None, "Grab, taxis & applications utiles",
-                       "Grab, taxis & useful apps"),
-                 _link(None, "Louer un scooter : permis & sécurité",
-                       "Renting a scooter: licence & safety"),
+                 _link("useful_apps", "Grab, taxis & applications utiles",
+                       "Grab, taxis & useful apps",
+                       "Grab, Maps, traduction, eSIM — se déplacer sans arnaque.",
+                       "Grab, Maps, translation, eSIM — get around scam-free."),
+                 _link("article", "Louer un scooter : permis & sécurité",
+                       "Renting a scooter: licence & safety",
+                       "Où louer, prix, permis international et villes adaptées.",
+                       "Where to rent, prices, IDP and suitable cities.",
+                       slug="location-scooter-vietnam"),
              ]},
             {"title": {"fr": "Relier vos étapes", "en": "Connect your stops"},
              "links": [
@@ -219,15 +264,29 @@ PILLARS: dict[str, dict] = {
                        slug="10-days-vietnam"),
              ]},
         ],
-        "related_destinations": ["hanoi", "sapa", "halong"],
+        "related_destinations": ["hanoi", "ho-chi-minh-city", "da-nang", "sapa", "hoi-an"],
         "related_pillars": ["itineraires", "preparer-son-voyage"],
         "faq": [
             {"q": {"fr": "Faut-il un permis pour conduire un scooter au Vietnam ?",
                    "en": "Do I need a licence to ride a scooter in Vietnam?"},
-             "a": {"fr": "En théorie un permis moto international est requis. Roulez "
-                         "casqué, assuré, et privilégiez les petites villes pour débuter.",
-                   "en": "An international motorcycle licence is technically required. "
-                         "Always wear a helmet, stay insured, and start in smaller towns."}},
+             "a": {"fr": "En théorie un permis moto international (catégorie A) est requis. "
+                         "Roulez casqué, vérifiez votre assurance voyage, et privilégiez Hội An "
+                         "ou Phú Quốc plutôt que Hanoï pour débuter.",
+                   "en": "An international motorcycle licence (class A) is technically required. "
+                         "Wear a helmet, check travel insurance, and start in Hội An or Phú Quốc "
+                         "rather than Hanoi."}},
+            {"q": {"fr": "Train ou avion entre Hanoï et Ho Chi Minh-Ville ?",
+                   "en": "Train or plane between Hanoi and Ho Chi Minh City?"},
+             "a": {"fr": "L'avion (~2 h, 50–70 €) si vous avez moins de 2 semaines. Le train "
+                         "(32 h) vaut le coup découpé en étapes Huế et Nha Trang pour l'expérience.",
+                   "en": "Fly (~2 h, €50–70) if you have under two weeks. The train (32 h) is worth "
+                         "it split at Huế and Nha Trang for the experience."}},
+            {"q": {"fr": "Comment réserver un train au Vietnam ?",
+                   "en": "How do I book a train in Vietnam?"},
+             "a": {"fr": "Sur dsvn.vn (officiel) ou via 12go.asia / Baolau (plus simple). "
+                         "Réservez les couchettes soft sleeper 7–14 jours avant en haute saison.",
+                   "en": "On dsvn.vn (official) or via 12go.asia / Baolau (easier). Book soft "
+                         "sleeper berths 7–14 days ahead in peak season."}},
         ],
     },
 
@@ -316,6 +375,33 @@ PILLARS: dict[str, dict] = {
             "en": "A guide to Vietnamese cuisine: must-try dishes, safe street food and "
                   "the best spots city by city.",
         },
+        "intro": {
+            "fr": (
+                "<p>La cuisine vietnamienne se découvre <strong>région par région</strong> : phở et bún chả "
+                "à Hanoï, cao lầu à Hội An, bánh mì et cơm tấm à Saigon. La street food reste le meilleur "
+                "rapport saveur/prix — comptez <strong>1,50–4 €</strong> par repas aux stands fréquentés.</p>"
+                "<h2>Par où commencer ?</h2>"
+                "<ul>"
+                "<li><strong>Nord (Hanoï)</strong> : phở matinal, bún chả au déjeuner, egg coffee en pause.</li>"
+                "<li><strong>Centre (Huế, Hội An)</strong> : bún bò Huế épicé, cao lầu et white rose.</li>"
+                "<li><strong>Sud (Saigon)</strong> : bánh mì, hủ tiếu et marchés de nuit (Bến Thành).</li>"
+                "</ul>"
+                "<p>Les guides ci-dessous listent les plats incontournables, les adresses testées et "
+                "les cafés à ne pas manquer.</p>"
+            ),
+            "en": (
+                "<p>Vietnamese cuisine unfolds <strong>region by region</strong>: phở and bún chả in Hanoi, "
+                "cao lầu in Hội An, bánh mì and cơm tấm in Saigon. Street food offers the best "
+                "flavour-to-price ratio — expect <strong>€1.50–4</strong> at busy stalls.</p>"
+                "<h2>Where to start?</h2>"
+                "<ul>"
+                "<li><strong>North (Hanoi)</strong>: morning phở, bún chả at lunch, egg coffee break.</li>"
+                "<li><strong>Central (Huế, Hội An)</strong>: spicy bún bò Huế, cao lầu and white rose.</li>"
+                "<li><strong>South (Saigon)</strong>: bánh mì, hủ tiếu and night markets (Bến Thành).</li>"
+                "</ul>"
+                "<p>The guides below list must-try dishes, tested addresses and unmissable cafés.</p>"
+            ),
+        },
         "clusters": [
             {"title": {"fr": "Les incontournables", "en": "The must-tries"},
              "links": [
@@ -324,10 +410,16 @@ PILLARS: dict[str, dict] = {
                        "Nos adresses testées dans la capitale.",
                        "Our tried-and-tested spots in the capital.",
                        slug="meilleurs-restaurants-hanoi"),
-                 _link(None, "Phở, bún chả & plats à goûter absolument",
-                       "Phở, bún chả & dishes you must try"),
-                 _link(None, "Café vietnamien : à l'œuf, à la noix de coco…",
-                       "Vietnamese coffee: egg, coconut and more"),
+                 _link("article", "Phở, bún chả & plats à goûter absolument",
+                       "Phở, bún chả & dishes you must try",
+                       "12 plats emblématiques, région par région.",
+                       "12 iconic dishes, region by region.",
+                       slug="plats-incontournables-vietnam"),
+                 _link("article", "Café vietnamien : à l'œuf, à la noix de coco…",
+                       "Vietnamese coffee: egg, coconut and more",
+                       "Phin, egg coffee, cà phê sữa đá — où boire.",
+                       "Phin, egg coffee, cà phê sữa đá — where to drink.",
+                       slug="cafe-vietnamien-guide"),
              ]},
             {"title": {"fr": "Manger par ville", "en": "Eat city by city"},
              "links": [
@@ -353,6 +445,22 @@ PILLARS: dict[str, dict] = {
                          "est cuite minute. Évitez les plats tièdes laissés à l'air libre.",
                    "en": "Yes, if you pick busy stalls where food is cooked to order. "
                          "Avoid lukewarm dishes left out in the open."}},
+            {"q": {"fr": "Combien coûte un repas au Vietnam ?",
+                   "en": "How much does a meal cost in Vietnam?"},
+             "a": {"fr": "Un bol de phở ou un bánh mì en street food : 1,50–3 €. "
+                         "Un restaurant local assis : 5–12 €. Les tables gastronomiques "
+                         "restent rares et plus chères (15–25 €).",
+                   "en": "A bowl of phở or bánh mì at a street stall: €1.50–3. "
+                         "A local sit-down restaurant: €5–12. Fine dining remains "
+                         "uncommon and pricier (€15–25)."}},
+            {"q": {"fr": "Peut-on manger végétarien au Vietnam ?",
+                   "en": "Can you eat vegetarian in Vietnam?"},
+             "a": {"fr": "Oui, surtout dans les temples et les restaurants chay (végétariens). "
+                         "Demandez « chay » ou montrez l'expression. Attention : le bouillon "
+                         "de phở contient souvent du bœuf — précisez « phở chay ».",
+                   "en": "Yes, especially at temples and chay (vegetarian) restaurants. "
+                         "Ask for « chay » or show the word. Note: phở broth often contains "
+                         "beef — specify « phở chay »."}},
         ],
     },
 
@@ -495,6 +603,7 @@ def localize_hub(key: str, raw: dict, lang: str, lang_url: Callable[..., str]) -
         "eyebrow": _pick(raw["eyebrow"], lang),
         "title": _pick(raw["title"], lang),
         "lede": _pick(raw["lede"], lang),
+        "intro": _pick(raw.get("intro", {}), lang) or None,
         "meta_title": _pick(raw.get("meta_title", raw["title"]), lang),
         "meta_description": _pick(raw.get("meta_description", raw["lede"]), lang),
         "clusters": clusters,

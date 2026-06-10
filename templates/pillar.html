@@ -51,7 +51,15 @@
   </div>
 </header>
 
+{% if pillar.intro %}
 <section class="section">
+  <div class="container container--narrow">
+    <div class="prose pillar-intro">{{ pillar.intro | safe }}</div>
+  </div>
+</section>
+{% endif %}
+
+<section class="section{% if pillar.intro %} section--alt{% endif %}">
   <div class="container">
     {% for cluster in pillar.clusters %}
     <div class="pillar-cluster">

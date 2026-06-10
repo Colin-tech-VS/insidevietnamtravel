@@ -250,13 +250,21 @@ TRIP_PROFILES: dict[str, dict] = {
         "article_slugs": [
             "visa-vietnam-guide-complet-francais",
             "transport-vietnam-train-bus-vol",
+            "train-reunification-hanoi-saigon",
+            "vols-interieurs-vietnam",
+            "location-scooter-vietnam",
         ],
         "categories": ["practical", "itinerary"],
     },
     "food": {
         "destination_slugs": ["hanoi", "hoi-an", "ho-chi-minh-city"],
         "itinerary_slugs": ["7-days-vietnam", "10-days-vietnam"],
-        "article_slugs": ["meilleurs-restaurants-hanoi", "budget-voyage-vietnam-2026"],
+        "article_slugs": [
+            "meilleurs-restaurants-hanoi",
+            "plats-incontournables-vietnam",
+            "cafe-vietnamien-guide",
+            "budget-voyage-vietnam-2026",
+        ],
         "categories": ["food", "practical"],
     },
     "adventure": {
@@ -265,6 +273,9 @@ TRIP_PROFILES: dict[str, dict] = {
         "article_slugs": [
             "securite-voyage-vietnam-conseils",
             "transport-vietnam-train-bus-vol",
+            "train-reunification-hanoi-saigon",
+            "vols-interieurs-vietnam",
+            "location-scooter-vietnam",
         ],
         "categories": ["practical", "itinerary"],
     },
@@ -279,6 +290,9 @@ TRIP_PROFILES: dict[str, dict] = {
         "itinerary_slugs": ["10-days-vietnam"],
         "article_slugs": [
             "transport-vietnam-train-bus-vol",
+            "train-reunification-hanoi-saigon",
+            "vols-interieurs-vietnam",
+            "location-scooter-vietnam",
             "budget-voyage-vietnam-2026",
             "carte-sim-esim-vietnam",
         ],
@@ -297,6 +311,9 @@ TRIP_PROFILES: dict[str, dict] = {
             "budget-voyage-vietnam-2026",
             "carte-sim-esim-vietnam",
             "transport-vietnam-train-bus-vol",
+            "train-reunification-hanoi-saigon",
+            "vols-interieurs-vietnam",
+            "location-scooter-vietnam",
         ],
         "categories": ["practical", "budget"],
     },

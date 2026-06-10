@@ -150,6 +150,11 @@ SLUG_PHOTO_MAP: dict[str, str] = {
     "carte-sim-esim-vietnam": "1583417319070-4a69db38a482",
     "securite-voyage-vietnam-conseils": "1528127269322-539801943592",
     "transport-vietnam-train-bus-vol": "1555921015-5532091f6026",
+    "train-reunification-hanoi-saigon": "1555921015-5532091f6026",
+    "vols-interieurs-vietnam": "1603852452378-a4e8d84324a2",
+    "location-scooter-vietnam": "1521993117367-b7f70ccd029d",
+    "plats-incontournables-vietnam": "1526139334526-f591a54b477c",
+    "cafe-vietnamien-guide": "1559592413-7cec4d0cae2b",
     "meilleurs-restaurants-hanoi": "1521993117367-b7f70ccd029d",
     "decouvrez-hanoi-en-7-jours-itineraire-ideal-pour-les-debutants-au-vietnam": "1772867342647-6e6d87a0b014",
 }
