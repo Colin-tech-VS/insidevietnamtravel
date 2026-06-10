@@ -1,6 +1,8 @@
 """Store contenu & réglages — Supabase (JSONB) ou fichiers JSON locaux."""
 
+import logging
 import re
+import threading
 from copy import deepcopy
 from datetime import date
 
@@ -96,41 +98,51 @@ def is_configured(value: str) -> bool:
 
 
 _BUILTIN_ARTICLES_SYNCED = False
+_builtin_sync_lock = threading.Lock()
+logger = logging.getLogger(__name__)
+
+
+def _missing_experience_articles(stored: list) -> list:
+    known = {a.get("slug") for a in stored if a.get("slug")}
+    return [deepcopy(a) for a in EXPERIENCE_ARTICLES if a.get("slug") and a["slug"] not in known]
 
 
 def ensure_builtin_articles() -> int:
-    """Injecte les articles embarqués manquants (ex. guides expérience) dans le store KV.
+    """Persiste en arrière-plan les guides expérience manquants dans le store KV.
 
-    En production Scalingo le contenu vit dans Postgres (app_kv), pas dans le JSON git :
-    sans cette synchro, les nouveaux slugs référencés par les piliers renvoient 404.
+    Ne doit pas être appelé sur le chemin HTTP : l'écriture Postgres du tableau
+    articles complet peut dépasser le timeout Scalingo (~30 s).
     """
     global _BUILTIN_ARTICLES_SYNCED
-    if _BUILTIN_ARTICLES_SYNCED:
-        return 0
+    with _builtin_sync_lock:
+        if _BUILTIN_ARTICLES_SYNCED:
+            return 0
+        try:
+            builtins = [*EXPERIENCE_ARTICLES, *DEFAULT_ARTICLES]
+            stored = get_json("articles", None, file_name="articles.json")
+            if stored is None:
+                set_json("articles", builtins, file_name="articles.json")
+                _BUILTIN_ARTICLES_SYNCED = True
+                return len(builtins)
 
-    builtins = [*EXPERIENCE_ARTICLES, *DEFAULT_ARTICLES]
-    stored = get_json("articles", None, file_name="articles.json")
-    if stored is None:
-        merged = builtins
-        set_json("articles", merged, file_name="articles.json")
-        _BUILTIN_ARTICLES_SYNCED = True
-        return len(merged)
-
-    known = {a.get("slug") for a in stored if a.get("slug")}
-    to_add = [a for a in builtins if a.get("slug") and a["slug"] not in known]
-    if to_add:
-        set_json("articles", [*to_add, *stored], file_name="articles.json")
-    _BUILTIN_ARTICLES_SYNCED = True
-    return len(to_add)
+            known = {a.get("slug") for a in stored if a.get("slug")}
+            to_add = [a for a in builtins if a.get("slug") and a["slug"] not in known]
+            if to_add:
+                set_json("articles", [*to_add, *stored], file_name="articles.json")
+            _BUILTIN_ARTICLES_SYNCED = True
+            return len(to_add)
+        except Exception:
+            logger.exception("Échec synchronisation articles embarqués")
+            _BUILTIN_ARTICLES_SYNCED = True
+            return 0
 
 
 def _raw_articles() -> list:
-    ensure_builtin_articles()
     stored = get_json("articles", None, file_name="articles.json")
     if stored is None:
-        set_json("articles", [*EXPERIENCE_ARTICLES, *DEFAULT_ARTICLES], file_name="articles.json")
         return deepcopy([*EXPERIENCE_ARTICLES, *DEFAULT_ARTICLES])
-    return stored
+    overlay = _missing_experience_articles(stored)
+    return [*overlay, *stored] if overlay else stored
 
 
 def get_articles(lang: str | None = None) -> list:
