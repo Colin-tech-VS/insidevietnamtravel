@@ -2,6 +2,7 @@
    Distinct de Mai (widget public voyageurs) : visible uniquement connecté. #}
 <div class="linh-chat" id="linh-chat"
      data-api-url="{{ url_for('admin.api_assistant') }}"
+     data-search-url="{{ url_for('admin.api_assistant_search') }}"
      data-insights-url="{{ url_for('admin.api_assistant_insights') }}"
      data-job-url="{{ url_for('admin.api_assistant_job', kind='KIND') }}"
      data-confirm-url="{{ url_for('admin.api_assistant_confirm') }}">

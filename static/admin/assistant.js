@@ -19,6 +19,7 @@
   var input = document.getElementById('linh-chat-input');
 
   var apiUrl = root.dataset.apiUrl;
+  var searchUrl = root.dataset.searchUrl;
   var insightsUrl = root.dataset.insightsUrl;
   var jobUrlTpl = root.dataset.jobUrl;
   var confirmUrl = root.dataset.confirmUrl;
@@ -458,6 +459,63 @@
       });
   }
 
+  /* Affiche une réponse de Linh (message, aperçus, actions, confirmation),
+     puis enchaîne : recherche web (loader + 2e appel automatique), job de
+     génération, ou rend la main. */
+  function handleReply(d, originalText) {
+    var extra = '';
+    if (d.post_preview) {
+      extra += '<div class="linh-chat__post-preview">' + formatMessage(d.post_preview) + '</div>';
+    }
+    extra += renderFindings(d.findings);
+    extra += renderActions(d.actions);
+    history.push({ role: 'assistant', content: d.message || '' });
+    saveState();
+
+    var streamed = (d.message || extra)
+      ? streamSay(d.message || '', extra)
+      : Promise.resolve();
+
+    streamed.then(function () {
+      if (d.confirm) renderConfirmCard(d.confirm);
+
+      if (d.search && d.search.query) {
+        runWebSearch(d.search.query, originalText); // busy reste true pendant la recherche
+      } else if (d.job && d.job.kind) {
+        showTyping('Génération en cours…');
+        pollJob(d.job.kind); // busy reste true jusqu'à la fin du job
+      } else {
+        busy = false;
+      }
+    });
+  }
+
+  /* Recherche web en deux temps : Linh a annoncé sa recherche, on affiche un
+     loader dédié, le serveur interroge DuckDuckGo puis Linh revient toute
+     seule avec sa réponse sourcée (résultats réels). */
+  function runWebSearch(query, originalText) {
+    showTyping('🔍 Recherche sur internet…');
+    fetch(searchUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ query: query, message: originalText || '', history: history.slice(-10) }),
+    })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+      .then(function (res) {
+        removeTyping();
+        if (!res.ok || !res.data.ok) {
+          throw new Error((res.data && res.data.error) || 'Recherche web indisponible.');
+        }
+        handleReply(res.data, originalText);
+      })
+      .catch(function (err) {
+        removeTyping();
+        say('assistant', formatMessage('⚠️ ' + (err.message || 'Recherche web indisponible.')), 'linh-chat__bubble-wrap--error');
+        busy = false;
+      });
+  }
+
   function sendMessage(text) {
     text = (text || '').trim();
     if (!text || busy) return;
@@ -482,31 +540,8 @@
           removeTyping();
           throw new Error((res.data && res.data.error) || 'Erreur.');
         }
-        var d = res.data;
         removeTyping();
-        var extra = '';
-        if (d.post_preview) {
-          extra += '<div class="linh-chat__post-preview">' + formatMessage(d.post_preview) + '</div>';
-        }
-        extra += renderFindings(d.findings);
-        extra += renderActions(d.actions);
-        history.push({ role: 'assistant', content: d.message || '' });
-        saveState();
-
-        var streamed = (d.message || extra)
-          ? streamSay(d.message || '', extra)
-          : Promise.resolve();
-
-        streamed.then(function () {
-          if (d.confirm) renderConfirmCard(d.confirm);
-
-          if (d.job && d.job.kind) {
-            showTyping('Génération en cours…');
-            pollJob(d.job.kind); // busy reste true jusqu'à la fin du job
-          } else {
-            busy = false;
-          }
-        });
+        handleReply(res.data, text);
       })
       .catch(function (err) {
         removeTyping();

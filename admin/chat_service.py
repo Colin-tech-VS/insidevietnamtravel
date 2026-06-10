@@ -415,6 +415,27 @@ def _detect_destination_slug(text: str, lang: str) -> str | None:
     return None
 
 
+# Mots (sans accents, minuscules) qui rendent la carte pertinente : se loger,
+# manger, se repérer, organiser sur place. Sans eux, pas de carte dans la bulle.
+_MAP_INTENT_WORDS = (
+    "carte", "map", "itinerair", "dormir", "loger", "heberg", "hotel", "hostel",
+    "auberge", "guesthouse", "quartier", "localis", "emplacement", "se reperer",
+    "ou dormir", "ou loger", "ou manger", "ou sortir", "ou aller", "ou se trouve",
+    "ou est", "que faire", "quoi faire", "a faire", "activit", "visiter", "a voir",
+    "restaurant", "manger",
+    "stay", "sleep", "neighborhood", "neighbourhood", "district", "where",
+    "located", "location", "what to do", "things to do", "to visit", "itinerary",
+    "eat",
+)
+
+
+def _wants_map(message: str) -> bool:
+    """Carte interactive UNIQUEMENT quand la question s'y prête — pas à chaque message."""
+    hay = unicodedata.normalize("NFKD", (message or "").lower())
+    hay = "".join(c for c in hay if not unicodedata.combining(c))
+    return any(w in hay for w in _MAP_INTENT_WORDS)
+
+
 def _slug_from_map_url(url: str) -> str | None:
     """Extrait le slug destination depuis une URL page carte (#dest-map)."""
     if not url:
@@ -556,11 +577,15 @@ def _system_prompt(lang: str) -> str:
         return (
             "You are Mai 🌸, the friendly AI travel advisor for Inside Vietnam Travel — "
             "an independent Vietnam travel guide (not a travel agency). "
-            "Your mission: inspire people to travel to Vietnam, give concrete practical advice, "
-            "and recommend relevant pages from the site CONTEXT plus affiliate partner links "
-            "when they genuinely help (eSIM, insurance, hotels, activities). "
-            "Each destination page has an interactive map (#dest-map) with affiliate pins — recommend it when "
-            "the user asks where to stay, what to do, or wants a visual plan. "
+            "GOLDEN RULE: answer the user's QUESTION first, directly and precisely, from the very first sentence. "
+            "Match the length to the question: simple or factual question → 1–3 sentences; itinerary or advice "
+            "request → a richer but focused answer. Never pad with generic Vietnam talk and never repeat what was "
+            "already said — use HISTORY to understand follow-up questions and stay on topic. "
+            "You know the whole site through CONTEXT: recommend its pages plus affiliate partner links "
+            "ONLY when they genuinely help the current question (eSIM, insurance, hotels, activities). "
+            "When the user asks where to stay, what to do or how to find their way, name 2–3 concrete picks and "
+            "put Booking/map links in affiliate_links and site_links using EXACT URLs from CONTEXT — each "
+            "destination page has an interactive map (#dest-map); do NOT push the map otherwise. "
             "The site has dedicated guides: travel safety & scams, customs & etiquette, useful Vietnamese phrases, "
             "visa checker (evisa.gov.vn), weather planner by region/destination, useful apps (Grab), eSIM & insurance — "
             "recommend the matching page from CONTEXT when relevant. "
@@ -569,20 +594,22 @@ def _system_prompt(lang: str) -> str:
             "Tone: warm, enthusiastic, expert, with a few well-placed emojis — never cheesy. "
             "Highlight 2–5 key terms per answer with **double asterisks** (destinations, seasons, durations, practical tips). "
             "Write a COMPLETE message (never end with a colon or an unfinished list). "
-            "Name 2–3 concrete picks in the message; put Booking/map links in affiliate_links and site_links using EXACT URLs from CONTEXT. "
-            "Always answer in ENGLISH. Be honest about limits; never invent prices or visas rules. "
+            "Always answer in ENGLISH. Be honest: if the answer is not in CONTEXT, say so plainly — never invent prices or visa rules. "
             "ONLY use URLs from CONTEXT for site_links and affiliate_links. "
             'Reply in JSON: {"message":"...","site_links":[{"title","url"}],"affiliate_links":[{"label","url","teaser"}]}'
         )
     return (
         "Tu es Mai 🌸, la conseillère voyage IA d'Inside Vietnam Travel — "
         "guide indépendant Vietnam (pas une agence). "
-        "Ta mission : donner envie de voyager au Vietnam, conseiller concrètement quoi faire, "
-        "quand y aller, comment s'organiser, et orienter vers les pages du site (CONTEXTE) "
-        "ainsi que les liens affiliés pertinents (eSIM, assurance, hôtels, activités) quand "
-        "cela aide vraiment le voyageur. "
-        "Chaque page destination a une carte interactive (#dest-map) avec pins affiliés — recommandez-la quand "
-        "l'utilisateur demande où dormir, quoi faire ou un plan visuel. "
+        "RÈGLE D'OR : réponds D'ABORD, DIRECTEMENT et précisément à la QUESTION posée, dès la première phrase. "
+        "Adapte la longueur : question simple ou factuelle → 1 à 3 phrases ; demande de conseils ou d'itinéraire → "
+        "réponse plus riche mais ciblée. Jamais de remplissage générique sur le Vietnam, jamais de répétition de "
+        "ce qui a déjà été dit — utilise l'HISTORIQUE pour comprendre les questions de suivi et rester dans le sujet. "
+        "Tu connais tout le site via le CONTEXTE : oriente vers ses pages et les liens affiliés "
+        "UNIQUEMENT quand cela aide vraiment la question en cours (eSIM, assurance, hôtels, activités). "
+        "Quand l'utilisateur demande où dormir, quoi faire ou comment se repérer, cite 2–3 options concrètes et "
+        "mets les liens Booking/carte dans affiliate_links et site_links avec les URL EXACTES du CONTEXTE — chaque "
+        "page destination a une carte interactive (#dest-map) ; ne mets PAS la carte en avant sinon. "
         "Le site propose des guides dédiés : sécurité & arnaques, coutumes & étiquette, phrases utiles en vietnamien, "
         "test visa (evisa.gov.vn), météo par région/ville avec planificateur, apps utiles (Grab), eSIM & assurance — "
         "orientez vers la page correspondante du CONTEXTE quand c'est pertinent. "
@@ -591,8 +618,8 @@ def _system_prompt(lang: str) -> str:
         "Ton : chaleureux, enthousiaste, expert, quelques emojis bien placés — jamais lourd. "
         "Mets en valeur 2 à 5 mots-clés par réponse avec **double astérisques** (destinations, saisons, durées, conseils pratiques). "
         "Rédige un message COMPLET (ne termine jamais par « : » ni une liste inachevée). "
-        "Cite 2–3 hébergements ou activités concrètes dans le message ; mets les liens Booking/carte dans affiliate_links et site_links avec les URL EXACTES du CONTEXTE. "
-        "Réponds TOUJOURS en FRANÇAIS. Reste honnête ; n'invente pas de prix ni de règles visa. "
+        "Réponds TOUJOURS en FRANÇAIS. Reste honnête : si la réponse n'est pas dans le CONTEXTE, dis-le simplement — "
+        "n'invente jamais de prix ni de règles visa. "
         "Utilise UNIQUEMENT les URL du CONTEXTE pour site_links et affiliate_links. "
         'Réponds en JSON : {"message":"...","site_links":[{"title","url"}],"affiliate_links":[{"label","url","teaser"}]}'
     )
@@ -623,7 +650,17 @@ def chat_reply(
         raise ValueError(rate_err)
 
     lang = "en" if lang == "en" else "fr"
-    chunks = retrieve(message, lang, track_url_fn, visitor_profile=visitor_profile)
+    user_question = message
+
+    # Les questions de suivi (« et en décembre ? ») n'ont souvent aucun mot-clé :
+    # on enrichit la requête de récupération avec les derniers messages utilisateur.
+    prev_user = [
+        (turn.get("content") or "").strip()
+        for turn in (history or [])
+        if turn.get("role") == "user" and (turn.get("content") or "").strip()
+    ]
+    retrieval_query = " ".join(prev_user[-2:] + [message])
+    chunks = retrieve(retrieval_query, lang, track_url_fn, visitor_profile=visitor_profile)
     context = _format_context(chunks)
 
     profile_block = ""
@@ -715,13 +752,17 @@ def chat_reply(
         site_links=site_links,
         affiliate_links=affiliate_links,
     )
-    map_cards, site_links, affiliate_links = _build_map_cards_for_response(
-        site_links,
-        affiliate_links,
-        slug,
-        lang,
-        track_url_fn,
-    )
+    # Carte intégrée seulement si la QUESTION de l'utilisateur s'y prête
+    # (où dormir, quoi faire, se repérer…) — sinon simples liens.
+    map_cards: list[dict] = []
+    if _wants_map(user_question):
+        map_cards, site_links, affiliate_links = _build_map_cards_for_response(
+            site_links,
+            affiliate_links,
+            slug,
+            lang,
+            track_url_fn,
+        )
     if _message_incomplete(message):
         message = _repair_message(
             message,

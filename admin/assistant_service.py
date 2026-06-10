@@ -32,7 +32,84 @@ _PENDING_LOCK = threading.Lock()
 _PENDING: dict[str, dict] = {}
 _PENDING_TTL = 900  # 15 min pour confirmer, sinon l'action expire
 
+# Tokens de confirmation mémorisés en session : un simple « oui » dans le chat
+# exécute la dernière action en attente, sans repasser par le modèle.
+_SESSION_PENDING_KEY = "linh_pending_tokens"
+
 ASSISTANT_NAME = "Linh"
+
+_AFFIRM_STARTS = (
+    "oui", "ouais", "yes", "yep", "ok", "okay", "d'accord", "daccord",
+    "parfait", "nickel", "tres bien", "très bien", "c'est bon", "cest bon",
+    "go", "vas-y", "vas y", "vasy", "allez-y", "allez y", "allons-y", "fonce",
+    "lance", "valide", "je valide", "confirme", "je confirme", "confirmé",
+    "fais-le", "fais le", "fais-la", "fais la", "do it", "envoie", "applique",
+    "publie", "execute", "exécute", "c'est parti", "cest parti", "banco",
+    "carrément", "carrement",
+)
+_NEGATION_WORDS = {
+    "pas", "non", "mais", "sauf", "annule", "attends", "attend", "stop",
+    "plutot", "plutôt", "cancel", "finalement", "jamais",
+}
+_CANCEL_STARTS = (
+    "non", "annule", "annuler", "cancel", "stop", "laisse tomber",
+    "abandonne", "surtout pas", "n'envoie pas", "ne publie pas", "pas maintenant",
+)
+
+
+def _is_affirmation(message: str) -> bool:
+    """« oui », « ok vas-y », « je confirme »… : l'admin valide la proposition."""
+    msg = (message or "").strip().lower().rstrip(" !.👍✅🚀")
+    if not msg or len(msg) > 80:
+        return False
+    words = set(re.findall(r"[a-zà-ÿ']+", msg))
+    if words & _NEGATION_WORDS:
+        return False
+    return any(
+        msg == s or msg.startswith(s + " ") or msg.startswith(s + ",")
+        for s in _AFFIRM_STARTS
+    )
+
+
+def _is_cancellation(message: str) -> bool:
+    msg = (message or "").strip().lower().rstrip(" !.")
+    if not msg or len(msg) > 60:
+        return False
+    return any(
+        msg == s or msg.startswith(s + " ") or msg.startswith(s + ",")
+        for s in _CANCEL_STARTS
+    )
+
+
+def _remember_pending(token: str) -> None:
+    try:
+        tokens = list(session.get(_SESSION_PENDING_KEY) or [])
+        tokens.append(token)
+        session[_SESSION_PENDING_KEY] = tokens[-5:]
+    except Exception:  # noqa: BLE001 — hors contexte requête (tests, jobs)
+        pass
+
+
+def _pop_session_pending() -> str | None:
+    """Dernier token de confirmation encore valide mémorisé en session."""
+    try:
+        tokens = list(session.get(_SESSION_PENDING_KEY) or [])
+    except Exception:  # noqa: BLE001
+        return None
+    if not tokens:
+        return None
+    found = None
+    with _PENDING_LOCK:
+        _prune_pending()
+        for token in reversed(tokens):
+            if token in _PENDING:
+                found = token
+                break
+    try:
+        session[_SESSION_PENDING_KEY] = [t for t in tokens if t != found] if found else []
+    except Exception:  # noqa: BLE001
+        pass
+    return found
 
 SUGGESTIONS = [
     "Fais un audit complet du site",
@@ -453,15 +530,21 @@ def _system_prompt() -> str:
         "pas cette donnée » en proposant comment l'obtenir. "
         "4) Si la question est ambiguë, pose UNE question de clarification au lieu de "
         "deviner. "
-        "Tu peux AGIR à la place de l'admin via le champ \"tool\" : générer un guide, une "
-        "destination, une newsletter, un post Facebook, puis publier/envoyer. "
-        "RÈGLE ABSOLUE : toute publication (site, newsletter, Facebook) passe par une "
-        "confirmation explicite de l'admin — le système s'en charge quand tu utilises un "
-        "outil de publication ; n'affirme jamais avoir publié sans confirmation. "
-        "N'utilise un outil QUE si l'admin demande une action ; pour une question, réponds sans outil. "
-        "MAIS si l'admin ACCEPTE une action que tu viens de proposer (« oui », « ok », « vas-y », "
-        "« fais-le », « ajoute-les »), tu DOIS appeler IMMÉDIATEMENT l'outil correspondant dans "
-        "cette réponse — ne dis JAMAIS que c'est fait ou en cours si le champ \"tool\" est null. "
+        "Tu peux AGIR à la place de l'admin via le champ \"tool\" : tu sais faire TOUT ce "
+        "que l'admin peut faire dans /admin — générer un guide, une destination, une "
+        "newsletter, un post Facebook, modifier une destination, ajouter des points carte, "
+        "publier/envoyer. Si l'admin demande une action couverte par un outil, appelle "
+        "l'outil SANS tergiverser ; s'il n'existe pas d'outil, donne le lien admin prefill. "
+        "CONFIRMATIONS — règles strictes : "
+        "1) Ne demande JAMAIS toi-même de confirmation dans le texte (« veux-tu que je… ? », "
+        "« es-tu sûr ? ») : appelle directement l'outil, le SYSTÈME affiche lui-même UNE carte "
+        "de confirmation unique. UNE SEULE confirmation suffit, ne redemande jamais. "
+        "2) Quand l'admin confirme une action en attente (carte ou simple « oui »), le système "
+        "l'exécute automatiquement — toi, si l'admin ACCEPTE une action que tu viens de proposer "
+        "(« oui », « ok », « vas-y », « fais-le », « ajoute-les »), tu DOIS appeler IMMÉDIATEMENT "
+        "l'outil correspondant dans cette réponse. "
+        "3) Ne dis JAMAIS qu'une action est faite ou en cours si le champ \"tool\" est null, "
+        "et n'affirme jamais avoir publié sans confirmation. "
         "Après une recherche web, tu peux enchaîner directement un outil d'action (ex. "
         "add_map_points avec les restaurants trouvés et leurs adresses). "
         f"VILLES autorisées pour generate_guide/generate_destination : {cities}. "
@@ -469,8 +552,11 @@ def _system_prompt() -> str:
         '- {"name":"web_search","params":{"query":"…"}} — rechercher sur internet (DuckDuckGo) : '
         "actualités/réglementation Vietnam (visa, prix, événements), concurrence, tendances SEO, "
         "vérification de faits. Utilise-le SPONTANÉMENT dès qu'une réponse fiable exige une info "
-        "absente de ton contexte, au lieu de deviner ; les résultats te seront fournis dans un "
-        "bloc RÉSULTATS WEB et tu rédigeras alors ta réponse en citant les URLs sources\n"
+        "absente de ton contexte, au lieu de deviner. Quand tu appelles web_search, mets dans "
+        "\"message\" UNE phrase courte annonçant ta recherche (le système affiche un indicateur "
+        "de chargement, exécute la recherche et te rappelle avec un bloc RÉSULTATS WEB) ; tu "
+        "rédigeras alors ta réponse finale en citant les URLs sources. Ne dis JAMAIS que tu "
+        "recherches sans appeler l'outil web_search\n"
         '- {"name":"audit_site","params":{}} — relancer l\'audit complet et présenter les résultats\n'
         '- {"name":"generate_guide","params":{"city":"…","topic":"…","guide_type":"article blog"}} — guide SEO (job en arrière-plan)\n'
         '- {"name":"generate_destination","params":{"city":"…","notes":"…"}} — page destination (job en arrière-plan)\n'
@@ -509,6 +595,7 @@ def create_confirmation(action_type: str, params: dict, title: str, summary: str
     with _PENDING_LOCK:
         _prune_pending()
         _PENDING[token] = {"type": action_type, "params": params, "ts": time.time()}
+    _remember_pending(token)
     return {"token": token, "title": title, "summary": summary, "type": action_type}
 
 
@@ -1040,18 +1127,17 @@ def _web_search_round(user_block: str, params: dict, first: dict) -> dict:
     return data
 
 
-def chat_reply(message: str, history: list[dict]) -> dict:
-    from admin import ai_client
+# Linh dit « je recherche… » sans appeler web_search : on force la recherche
+# plutôt que de laisser l'admin attendre un résultat qui ne viendra jamais.
+_SEARCH_CLAIM_RE = re.compile(
+    r"(je (?:vais |re)?cherche|je vais v[ée]rifier|laissez?[- ]moi (?:chercher|v[ée]rifier)|"
+    r"recherche en cours|je recherche sur internet|un instant[^.]{0,40}(?:cherche|recherche)|"
+    r"i(?:'|’)?ll (?:search|look)|let me (?:search|check)|searching the web)",
+    re.I,
+)
 
-    if not is_enabled():
-        raise ValueError("Aucune clé IA configurée (GROQ_API_KEY ou MISTRAL_API_KEY).")
 
-    message = (message or "").strip()
-    if len(message) < 2:
-        raise ValueError("Message trop court.")
-    if len(message) > 1500:
-        raise ValueError("Message trop long (1500 caractères max).")
-
+def _build_context(message: str, history: list[dict]) -> tuple[dict, str]:
     snapshot = build_site_snapshot()
     inventory = build_admin_inventory()
     findings = run_audit(snapshot)
@@ -1071,14 +1157,12 @@ def chat_reply(message: str, history: list[dict]) -> dict:
         "HISTORIQUE:\n" + ("\n".join(hist_lines) if hist_lines else "(premier message)") + "\n\n"
         f"MESSAGE DE L'ADMIN:\n{message}"
     )
+    return snapshot, user_block
 
-    data = _ask_linh(user_block)
 
-    # Recherche internet : exécutée tout de suite (aller-retour serveur), les
-    # autres outils suivent le circuit habituel via _handle_tool plus bas.
-    tool = data.get("tool")
-    if isinstance(tool, dict) and (tool.get("name") or "").strip() == "web_search":
-        data = _web_search_round(user_block, tool.get("params") or {}, data)
+def _finalize(data: dict, snapshot: dict) -> dict:
+    """Actions (liens internes) + exécution de l'outil demandé par Linh."""
+    from admin import ai_client
 
     actions = []
     for link in (data.get("actions") or [])[:4]:
@@ -1102,6 +1186,107 @@ def chat_reply(message: str, history: list[dict]) -> dict:
             result["message"] = (result["message"] + f"\n\n⚠️ Échec de l'action : {ai_client.friendly_error(exc)}").strip()
 
     return result
+
+
+def _tool_name(data: dict) -> str:
+    tool = data.get("tool")
+    if isinstance(tool, dict):
+        return (tool.get("name") or "").strip()
+    return ""
+
+
+def chat_reply(message: str, history: list[dict]) -> dict:
+    if not is_enabled():
+        raise ValueError("Aucune clé IA configurée (GROQ_API_KEY ou MISTRAL_API_KEY).")
+
+    message = (message or "").strip()
+    if len(message) < 2:
+        raise ValueError("Message trop court.")
+    if len(message) > 1500:
+        raise ValueError("Message trop long (1500 caractères max).")
+
+    # Confirmation / annulation textuelle : exécutée DIRECTEMENT, sans repasser
+    # par le modèle — une seule confirmation suffit (clic sur la carte OU « oui »).
+    if _is_cancellation(message):
+        token = _pop_session_pending()
+        if token:
+            cancel_confirmation(token)
+            return {
+                "ok": True,
+                "message": "C'est annulé — **rien n'a été publié**. Le brouillon éventuel reste disponible dans l'admin.",
+                "actions": [],
+            }
+    affirmed = _is_affirmation(message)
+    if affirmed:
+        token = _pop_session_pending()
+        if token:
+            try:
+                result = execute_confirmation(token)
+            except ValueError as exc:
+                return {"ok": True, "message": f"⚠️ {exc}", "actions": []}
+            actions = []
+            url = (result.get("url") or "").strip()
+            if url.startswith("/") and not url.startswith("//"):
+                actions.append({"label": "Ouvrir", "url": url})
+            return {"ok": True, "message": result.get("message") or "✅ Fait.", "actions": actions}
+
+    snapshot, user_block = _build_context(message, history)
+
+    if affirmed:
+        # L'admin valide une proposition de Linh (aucune action serveur en
+        # attente) : on exige l'appel d'outil au lieu d'un « c'est fait » vide.
+        user_block += (
+            "\n\nNOTE SYSTÈME : le MESSAGE DE L'ADMIN est une CONFIRMATION de ta dernière "
+            "proposition (voir HISTORIQUE). Appelle MAINTENANT l'outil correspondant "
+            "(champ \"tool\" non null) — ne repose pas de question, ne redemande pas "
+            "confirmation, ne dis pas que c'est fait sans outil."
+        )
+
+    data = _ask_linh(user_block)
+
+    if affirmed and not _tool_name(data):
+        # Linh « comprend mais n'applique pas » : une relance stricte, une seule.
+        data = _ask_linh(
+            user_block
+            + "\n\nRAPPEL SYSTÈME : ta réponse précédente n'a déclenché AUCUN outil alors que "
+            "l'admin a confirmé. Réponds à nouveau avec le champ \"tool\" rempli pour exécuter "
+            "l'action confirmée, ou explique en une phrase quel paramètre exact te manque."
+        )
+
+    # Recherche internet : flux en deux temps — on renvoie tout de suite
+    # l'annonce + un marqueur "search", le widget affiche un loader et rappelle
+    # /api/assistant/search qui exécute la recherche et rédige la réponse finale.
+    if _tool_name(data) == "web_search":
+        tool = data.get("tool") or {}
+        query = ((tool.get("params") or {}).get("query") or message).strip()[:200]
+        intro = (data.get("message") or "").strip() or f"Je lance une recherche sur internet : « {query} »…"
+        return {"ok": True, "message": intro, "actions": [], "search": {"query": query}}
+    if not _tool_name(data) and _SEARCH_CLAIM_RE.search(data.get("message") or ""):
+        return {
+            "ok": True,
+            "message": (data.get("message") or "").strip(),
+            "actions": [],
+            "search": {"query": message[:200]},
+        }
+
+    return _finalize(data, snapshot)
+
+
+def search_reply(query: str, message: str, history: list[dict]) -> dict:
+    """Deuxième temps de la recherche web : exécute la recherche DuckDuckGo puis
+    Linh rédige sa réponse finale sourcée (le widget affiche un loader entre les
+    deux temps et revient seul avec les résultats réels)."""
+    if not is_enabled():
+        raise ValueError("Aucune clé IA configurée (GROQ_API_KEY ou MISTRAL_API_KEY).")
+
+    query = re.sub(r"\s+", " ", (query or "")).strip()[:200]
+    if len(query) < 2:
+        raise ValueError("Requête de recherche vide.")
+    message = (message or "").strip() or query
+
+    snapshot, user_block = _build_context(message, history)
+    data = _web_search_round(user_block, {"query": query}, {"message": "", "tool": None})
+    return _finalize(data, snapshot)
 
 
 def build_insights() -> dict:
