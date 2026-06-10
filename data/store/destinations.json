@@ -1,7 +1,7 @@
 {
   "hanoi": {
     "slug": "hanoi",
-    "image": "/static/images/destinations/hanoi.webp",
+    "image": "/static/images/pool/1555921015-5532091f6026.webp",
     "image_photo_id": "1555921015-5532091f6026",
     "i18n": {
       "fr": {
@@ -165,7 +165,7 @@
   },
   "ho-chi-minh-city": {
     "slug": "ho-chi-minh-city",
-    "image": "/static/images/destinations/ho-chi-minh-city.webp",
+    "image": "/static/images/pool/1583417319070-4a69db38a482.webp",
     "image_photo_id": "1583417319070-4a69db38a482",
     "i18n": {
       "fr": {
@@ -329,7 +329,7 @@
   },
   "hoi-an": {
     "slug": "hoi-an",
-    "image": "/static/images/destinations/hoi-an.webp",
+    "image": "/static/images/pool/1528127269322-539801943592.webp",
     "image_photo_id": "1528127269322-539801943592",
     "i18n": {
       "fr": {
@@ -493,7 +493,7 @@
   },
   "da-nang": {
     "slug": "da-nang",
-    "image": "/static/images/destinations/da-nang.webp",
+    "image": "/static/images/pool/1555979864-7a8f9b4fddf8.webp",
     "image_photo_id": "1555979864-7a8f9b4fddf8",
     "i18n": {
       "fr": {
@@ -824,7 +824,7 @@
         "provider": "getyourguide"
       }
     ],
-    "image": "/static/images/destinations/halong.webp",
+    "image": "/static/images/pool/1521993117367-b7f70ccd029d.webp",
     "image_alt": "Guide voyage Baie d'Halong, Vietnam",
     "image_photo_id": "1521993117367-b7f70ccd029d"
   },
@@ -997,7 +997,7 @@
         "provider": "viator"
       }
     ],
-    "image": "/static/images/destinations/sapa.webp",
+    "image": "/static/images/pool/1545172538-171a802bd867.webp",
     "image_alt": "Guide voyage Sapa, Vietnam",
     "image_photo_id": "1545172538-171a802bd867"
   },
@@ -1348,7 +1348,7 @@
         "provider": "getyourguide"
       }
     ],
-    "image": "/static/images/destinations/hue.webp",
+    "image": "/static/images/pool/1772867342647-6e6d87a0b014.webp",
     "image_alt": "Guide voyage Huế, Vietnam",
     "image_photo_id": "1772867342647-6e6d87a0b014"
   },
@@ -1521,7 +1521,7 @@
         "provider": "viator"
       }
     ],
-    "image": "/static/images/destinations/phu-quoc.webp",
+    "image": "/static/images/pool/1480996408299-fc0e830b5db1.webp",
     "image_alt": "Guide voyage Phú Quốc, Vietnam",
     "image_photo_id": "1480996408299-fc0e830b5db1"
   }

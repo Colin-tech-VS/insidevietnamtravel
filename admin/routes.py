@@ -18,7 +18,7 @@ from admin import draft_store
 from admin.image_service import (
     attach_image_to_article,
     attach_image_to_destination,
-    ensure_all_destination_images,
+    sync_destination_images,
     read_uploaded_image_bytes,
     set_uploaded_image_for_article,
     set_uploaded_image_for_destination,
@@ -557,7 +557,7 @@ def destinations_admin():
             flash(f"Erreur : {e}", "error")
         return redirect(url_for("admin.destinations_admin"))
 
-    ensure_all_destination_images()
+    sync_destination_images(allow_network=True)
     dest_list = []
     for slug, d in get_destinations_dict().items():
         d["region_key"] = resolve_region(slug, d)

@@ -342,8 +342,26 @@ def find_destination_slug(hint: str) -> str | None:
 
 
 def add_or_update_destination(dest: dict):
+    from admin.image_service import (
+        _local_pool_path,
+        attach_image_to_destination,
+        destination_image_resolves,
+        pool_image_url,
+    )
+
+    dest = wrap_destination_i18n(dest)
+    if not destination_image_resolves(dest):
+        photo_id = (dest.get("image_photo_id") or "").strip()
+        if photo_id and _local_pool_path(photo_id).exists():
+            dest["image"] = pool_image_url(photo_id)
+        else:
+            dest.update(attach_image_to_destination(
+                dest,
+                dest.get("image_prompt"),
+                image_nonce=abs(hash(dest["slug"])) % 9999,
+            ))
     data = _raw_destinations()
-    data[dest["slug"]] = wrap_destination_i18n(dest)
+    data[dest["slug"]] = dest
     save_destinations(data)
     try:
         from admin.map_service import defer_sync_destination

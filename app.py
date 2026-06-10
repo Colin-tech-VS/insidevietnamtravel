@@ -41,7 +41,7 @@ from seo_utils import (
 )
 from admin import admin_bp
 from admin import db as analytics_db
-from admin.image_service import destination_image_url, persistent_image_url
+from admin.image_service import persistent_image_url
 from admin.store import get_articles, get_article_by_slug, get_categories, get_settings, get_destinations_dict
 from data.trip_planner import destinations_by_region
 from data.affiliate_urls import (
@@ -128,12 +128,8 @@ def _categories(lang=None):
 
 
 def _destinations(lang=None):
-    dests = get_destinations_dict(lang or get_lang())
-    for d in dests.values():
-        d["image"] = destination_image_url(
-            d.get("image"), d.get("image_photo_id"), d.get("image_source_url")
-        )
-    return dests
+    """Destinations publiques — le champ `image` du store admin est utilisé tel quel."""
+    return get_destinations_dict(lang or get_lang())
 
 
 def _itineraries(lang=None):
@@ -1323,9 +1319,13 @@ def not_found(e):
 
 
 def _startup_tasks():
-    from admin.image_service import ensure_responsive_variants
+    from admin.image_service import ensure_responsive_variants, sync_destination_images
 
     ensure_responsive_variants()
+    try:
+        sync_destination_images(allow_network=False)
+    except Exception:
+        pass
     try:
         from admin import map_service
         if not map_service.get_map_store().get("points"):

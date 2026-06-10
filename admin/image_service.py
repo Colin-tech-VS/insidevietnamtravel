@@ -446,39 +446,81 @@ def persistent_image_url(
     return image_url
 
 
-def destination_image_url(
-    image_url: str | None,
-    photo_id: str | None,
-    source_url: str | None = None,
-) -> str | None:
-    """URL d'image destination — fidèle au choix enregistré en admin (champ `image`).
+def _is_remote_image_url(url: str | None) -> bool:
+    return bool(url) and url.startswith(("http://", "https://"))
 
-    Contrairement à `persistent_image_url`, on ne remplace pas une image déjà choisie
-    par une autre photo du pool via `image_photo_id` (souvent un reliquat auto-généré).
-    Repli autorisé : fichier local manquant → `image_source_url` (image internet importée).
-    Le pool n'est utilisé que si aucune image n'a été définie en admin.
+
+def _static_image_exists(image_url: str | None) -> bool:
+    if not image_url or not image_url.startswith("/static/"):
+        return False
+    rel = image_url.removeprefix("/static/")
+    return (_STATIC_ROOT / rel).is_file()
+
+
+def destination_image_resolves(dest: dict) -> bool:
+    """True si le champ `image` enregistré en admin pointe vers un fichier ou une URL valide."""
+    return _is_remote_image_url(dest.get("image")) or _static_image_exists(dest.get("image"))
+
+
+def pool_image_url(photo_id: str) -> str:
+    return f"/static/images/pool/{photo_id}.webp"
+
+
+def sync_destination_images(*, allow_network: bool = True) -> int:
+    """Aligne le store sur des URLs d'image réellement servables (même rendu admin + public).
+
+    - Image déjà valide → conservée telle quelle (choix admin).
+    - Fichier destinations/ manquant + `image_source_url` → re-télécharge (si allow_network).
+    - `image_photo_id` + pool local → met à jour `image` vers /static/images/pool/….
+    - Sinon → génère via attach_image_to_destination (référence pool par défaut).
     """
-    def _is_remote(u: str | None) -> bool:
-        return bool(u) and u.startswith(("http://", "https://"))
+    from admin.store import get_destinations_dict, save_destinations
 
-    if _is_remote(image_url):
-        return image_url
+    dests = get_destinations_dict()
+    updated = 0
+    for slug, dest in dests.items():
+        if destination_image_resolves(dest):
+            continue
 
-    if image_url:
-        if image_url.startswith("/static/"):
-            rel = image_url.removeprefix("/static/")
-            if (_STATIC_ROOT / rel).is_file():
-                return image_url
-            if _is_remote(source_url):
-                return source_url
-            return image_url
-        return image_url
+        image = (dest.get("image") or "").strip()
+        source = (dest.get("image_source_url") or "").strip()
+        photo_id = (dest.get("image_photo_id") or "").strip()
 
-    if _is_remote(source_url):
-        return source_url
-    if photo_id and _local_pool_path(photo_id).exists():
-        return f"/static/images/pool/{photo_id}.webp"
-    return image_url
+        if (
+            allow_network
+            and source
+            and _is_remote_image_url(source)
+            and image.startswith("/static/images/destinations/")
+        ):
+            try:
+                _write_remote_webp(source, DEST_IMAGES_DIR / f"{slug}.webp")
+                continue
+            except Exception:
+                pass
+
+        if photo_id and _local_pool_path(photo_id).exists():
+            pool_url = pool_image_url(photo_id)
+            if image != pool_url:
+                dests[slug] = {**dest, "image": pool_url}
+                updated += 1
+            continue
+
+        meta = attach_image_to_destination(
+            dest,
+            dest.get("image_prompt"),
+            image_nonce=abs(hash(slug)) % 9999,
+        )
+        dests[slug] = {**dest, **meta}
+        updated += 1
+
+    if updated:
+        save_destinations(dests)
+    return updated
+
+
+def ensure_all_destination_images() -> int:
+    """Alias historique — synchronise les images destination (admin = public)."""
+    return sync_destination_images(allow_network=True)
 
 
 def _article_image_meta(article: dict, slug: str, photo_id: str, placeholder: bool,
@@ -1037,19 +1079,3 @@ def set_uploaded_image_for_destination(dest: dict, raw: bytes, alt: str | None =
     }
 
 
-def ensure_all_destination_images() -> int:
-    """Génère les images manquantes pour toutes les destinations."""
-    from admin.store import get_destinations_dict, save_destinations
-
-    dests = get_destinations_dict()
-    updated = 0
-    for slug, dest in dests.items():
-        path = DEST_IMAGES_DIR / f"{slug}.webp"
-        if dest.get("image") and path.exists():
-            continue
-        meta = attach_image_to_destination(dest, dest.get("image_prompt"), image_nonce=abs(hash(slug)) % 9999)
-        dests[slug] = {**dest, **meta}
-        updated += 1
-    if updated:
-        save_destinations(dests)
-    return updated
