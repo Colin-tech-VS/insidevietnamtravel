@@ -22,10 +22,16 @@
             <label for="map-kind">Type</label>
             <select id="map-kind" name="kind">
               {% for k in kind_options %}
-              <option value="{{ k }}">{% if k == 'hotel' %}Hôtel{% elif k == 'activity' %}Activité{% elif k == 'food' %}Resto / bar{% else %}À voir{% endif %}</option>
+              <option value="{{ k }}">{{ kind_meta[k].label }}</option>
               {% endfor %}
+              <option value="__custom__">➕ Nouveau type…</option>
             </select>
           </div>
+        </div>
+        <div class="form-field" id="map-kind-custom-wrap" hidden>
+          <label for="map-kind-custom">Nom du nouveau type</label>
+          <input type="text" id="map-kind-custom" name="kind_custom" placeholder="Ex: Spa, Marché nocturne, Musée…">
+          <p class="field-hint">Le type est créé automatiquement avec sa couleur et apparaît dans la légende des cartes.</p>
         </div>
         <div class="form-field">
           <label for="map-address">Adresse complète <span class="required">*</span></label>
@@ -98,7 +104,7 @@
             <tr>
               <td>{{ p.destination_name or p.destination_slug }}</td>
               <td>{{ p.title }}<br><small class="muted">{{ p.address[:60] }}{% if p.address|length > 60 %}…{% endif %}</small></td>
-              <td>{{ p.kind }}</td>
+              <td>{{ kind_meta[p.kind].label if p.kind in kind_meta else p.kind }}</td>
               <td>{{ p.affiliate_provider }}</td>
               <td>
                 <form method="post" class="inline-form" onsubmit="return confirm('Supprimer ce point ?');">
@@ -165,6 +171,7 @@
     <section class="panel">
       <h2>Aperçu carte</h2>
       <div id="admin-map-preview" class="admin-map-preview" aria-label="Aperçu carte"></div>
+      <div id="admin-map-legend" class="admin-map-legend" aria-label="Légende de la carte"></div>
     </section>
   </aside>
 </div>
@@ -175,6 +182,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
   window.__MAP_ADMIN_POINTS__ = {{ points | tojson }};
+  window.__MAP_KIND_META__ = {{ kind_meta | tojson }};
 </script>
 <script src="{{ url_for('static', filename='admin/map.js') }}" defer></script>
 {% endblock %}

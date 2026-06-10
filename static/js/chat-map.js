@@ -66,7 +66,7 @@
     var bounds = [];
     points.forEach(function (p) {
       if (p.lat == null || p.lng == null) return;
-      var color = KIND_COLORS[p.kind] || KIND_COLORS.poi;
+      var color = p.color || KIND_COLORS[p.kind] || KIND_COLORS.poi;
       var radius = p.highlight ? 10 : 7;
       global.L.circleMarker([p.lat, p.lng], {
         radius: radius,

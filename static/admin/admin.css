@@ -1839,6 +1839,7 @@ select optgroup { font-weight: 700; color: var(--teal); }
 
 /* ── Tables responsive (scroll horizontal sur mobile) ── */
 .admin-table-wrap,
+.table-scroll-x,
 .table-scroll {
   width: 100%;
   overflow-x: auto;
@@ -2627,6 +2628,31 @@ body.is-admin-nav-open { overflow: hidden; }
   border-radius: var(--radius-md);
   border: 1px solid var(--rice-dark);
   overflow: hidden;
+}
+.admin-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+.admin-map-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.admin-map-legend__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--white);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+  flex-shrink: 0;
+}
+@media (max-width: 640px) {
+  .admin-map-preview { height: 280px; }
+  .map-pending-form select { max-width: 100%; }
 }
 .panel--warn { border-left: 3px solid var(--warn, #c4a053); }
 .panel__head-row {

@@ -33,6 +33,20 @@
       .replace(/"/g, '&quot;');
   }
 
+  function renderLegend(legend) {
+    if (!legend || !legend.length) return;
+    var box = document.getElementById('dest-map-legend');
+    if (!box) return;
+    box.innerHTML = '';
+    legend.forEach(function (entry) {
+      var item = document.createElement('span');
+      item.className = 'dest-map-legend__item';
+      item.style.setProperty('--legend-dot', entry.color || colors.poi);
+      item.textContent = entry.label || entry.kind;
+      box.appendChild(item);
+    });
+  }
+
   function popupHtml(p) {
     var html = '<div class="dest-map-popup">';
     html += '<strong>' + escapeHtml(p.title) + '</strong>';
@@ -64,10 +78,12 @@
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
         }).addTo(map);
 
+        renderLegend(data.legend);
+
         var bounds = [];
         points.forEach(function (p) {
           if (p.lat == null || p.lng == null) return;
-          var c = colors[p.kind] || colors.poi;
+          var c = p.color || colors[p.kind] || colors.poi;
           var marker = L.circleMarker([p.lat, p.lng], {
             radius: 9,
             color: '#fff',

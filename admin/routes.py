@@ -1172,13 +1172,20 @@ def map_admin():
         return redirect(url_for("admin.map_admin"))
 
     store = map_service.get_map_store()
+    points = store.get("points", [])
+    all_kinds = list(map_service.KIND_LABELS) + [p.get("kind", "poi") for p in points]
+    kind_meta = {
+        item["kind"]: {"label": item["label"], "color": item["color"]}
+        for item in map_service.legend_for_kinds(all_kinds, "fr")
+    }
     return render_template(
         "admin/map.html",
-        points=store.get("points", []),
+        points=points,
         pending=store.get("pending", []),
         dest_options=map_service.destination_options(),
         city_options=[c for c in ALL_CITY_VALUES if c != "Tout le Vietnam"],
         kind_options=list(map_service.KIND_LABELS.keys()),
+        kind_meta=kind_meta,
         provider_options=list(map_service.PROVIDER_LABELS.keys()),
     )
 

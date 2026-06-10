@@ -10,7 +10,7 @@
          data-lang="{{ lang }}"
          role="region"
          aria-label="{% if lang == 'en' %}Interactive map{% else %}Carte interactive{% endif %}"></div>
-    <div class="dest-map-legend" aria-hidden="true">
+    <div id="dest-map-legend" class="dest-map-legend" aria-hidden="true">
       <span class="dest-map-legend__item dest-map-legend__item--hotel">{% if lang == 'en' %}Hotels{% else %}Hôtels{% endif %}</span>
       <span class="dest-map-legend__item dest-map-legend__item--activity">{% if lang == 'en' %}Activities{% else %}Activités{% endif %}</span>
       <span class="dest-map-legend__item dest-map-legend__item--service">{% if lang == 'en' %}Services{% else %}Services{% endif %}</span>

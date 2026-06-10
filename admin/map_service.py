@@ -29,10 +29,82 @@ CITY_VALUE_TO_SLUG: dict[str, str] = {
 KIND_LABELS = {
     "hotel": {"fr": "Hôtel", "en": "Hotel"},
     "activity": {"fr": "Activité", "en": "Activity"},
+    "restaurant": {"fr": "Restaurant", "en": "Restaurant"},
+    "bar": {"fr": "Bar", "en": "Bar"},
     "food": {"fr": "Resto / bar", "en": "Food & drink"},
     "poi": {"fr": "À voir", "en": "Sights"},
     "service": {"fr": "Service voyage", "en": "Travel service"},
 }
+
+KIND_COLORS = {
+    "hotel": "#1B4D4A",
+    "activity": "#C4A053",
+    "restaurant": "#C4654A",
+    "bar": "#8E5BA6",
+    "food": "#C4654A",
+    "poi": "#3D6B5E",
+    "service": "#5B6B8C",
+}
+
+# Palette pour les types personnalisés (couleur stable par type, cohérente avec la charte).
+_CUSTOM_KIND_PALETTE = (
+    "#B0413E", "#2E6E8E", "#7A8A3A", "#A66A2C", "#5E548E",
+    "#3E7C59", "#9C5060", "#4A6FA5", "#8A6D3B", "#6B7F5E",
+)
+
+_KIND_SYNONYMS = {
+    "resto": "restaurant", "restos": "restaurant", "restaurants": "restaurant",
+    "bars": "bar", "hotels": "hotel", "hôtel": "hotel",
+    "activite": "activity", "activites": "activity", "activities": "activity",
+    "lieu": "poi", "lieux": "poi", "sight": "poi", "sights": "poi", "a-voir": "poi",
+    "services": "service",
+}
+
+
+def normalize_kind(raw: str) -> str:
+    """Slug stable depuis n'importe quel libellé (« Marché nocturne » → marche-nocturne)."""
+    kind = _normalize(raw or "")
+    kind = re.sub(r"[^a-z0-9]+", "-", kind).strip("-")
+    if not kind:
+        return "poi"
+    return _KIND_SYNONYMS.get(kind, kind)
+
+
+def _custom_kind_labels() -> dict:
+    try:
+        return get_map_store().get("custom_kinds", {})
+    except Exception:  # noqa: BLE001 — store indisponible : on retombe sur le slug
+        return {}
+
+
+def kind_label(kind: str, lang: str = "fr", custom_labels: dict | None = None) -> str:
+    known = KIND_LABELS.get(kind)
+    if known:
+        return known.get(lang) or known.get("fr") or kind
+    custom = (custom_labels if custom_labels is not None else _custom_kind_labels()).get(kind)
+    if custom:
+        return custom
+    return kind.replace("-", " ").strip().capitalize() or kind
+
+
+def kind_color(kind: str) -> str:
+    known = KIND_COLORS.get(kind)
+    if known:
+        return known
+    digest = hashlib.md5(kind.encode("utf-8")).digest()
+    return _CUSTOM_KIND_PALETTE[digest[0] % len(_CUSTOM_KIND_PALETTE)]
+
+
+def legend_for_kinds(kinds, lang: str = "fr") -> list[dict]:
+    """Légende auto : types connus dans l'ordre de référence, puis types personnalisés."""
+    present = {normalize_kind(k) for k in kinds if k}
+    ordered = [k for k in KIND_LABELS if k in present]
+    custom = sorted(present - set(KIND_LABELS))
+    custom_labels = _custom_kind_labels() if custom else {}
+    return [
+        {"kind": k, "label": kind_label(k, lang, custom_labels), "color": kind_color(k)}
+        for k in ordered + custom
+    ]
 
 PROVIDER_LABELS = {
     "booking": "Booking",
@@ -590,7 +662,12 @@ def build_point_affiliate_url(point: dict, track_url_fn: Callable[[str, str], st
     return ""
 
 
-def serialize_point_for_public(point: dict, lang: str, track_url_fn: Callable[[str, str], str]) -> dict:
+def serialize_point_for_public(
+    point: dict,
+    lang: str,
+    track_url_fn: Callable[[str, str], str],
+    custom_kind_labels: dict | None = None,
+) -> dict:
     kind = point.get("kind") or "poi"
     provider = point.get("affiliate_provider") or ""
     affiliate_url = build_point_affiliate_url(point, track_url_fn)
@@ -602,7 +679,8 @@ def serialize_point_for_public(point: dict, lang: str, track_url_fn: Callable[[s
         "lat": point.get("lat"),
         "lng": point.get("lng"),
         "kind": kind,
-        "kind_label": KIND_LABELS.get(kind, {}).get(lang, kind),
+        "kind_label": kind_label(kind, lang, custom_kind_labels),
+        "color": kind_color(kind),
         "price_hint": point.get("price_hint", ""),
         "provider": provider,
         "provider_label": PROVIDER_LABELS.get(provider, provider),
@@ -640,13 +718,14 @@ def _affiliate_cta(provider: str, lang: str) -> str:
 def get_public_map_points(destination_slug: str, lang: str, track_url_fn) -> list[dict]:
     ensure_map_for_destination(destination_slug)
     store = get_map_store()
+    custom_labels = store.get("custom_kinds", {})
     out = []
     for p in store.get("points", []):
         if p.get("destination_slug") != destination_slug:
             continue
         if p.get("lat") is None or p.get("lng") is None:
             continue
-        out.append(serialize_point_for_public(p, lang, track_url_fn))
+        out.append(serialize_point_for_public(p, lang, track_url_fn, custom_labels))
     return out
 
 
@@ -779,7 +858,12 @@ def add_map_point(form: dict) -> dict:
     title = (form.get("title") or "").strip()
     address = (form.get("address") or "").strip()
     city = (form.get("city") or form.get("destination_slug") or "").strip()
-    kind = (form.get("kind") or "poi").strip()
+    kind_raw = (form.get("kind") or "poi").strip()
+    if kind_raw == "__custom__":
+        kind_raw = (form.get("kind_custom") or "").strip()
+        if not kind_raw:
+            raise ValueError("Indiquez le nom du nouveau type (ex : Spa, Marché nocturne).")
+    kind = normalize_kind(kind_raw)
     provider = (form.get("affiliate_provider") or "custom").strip()
     affiliate_search = (form.get("affiliate_search") or title).strip()
     affiliate_url = (form.get("affiliate_url") or "").strip()
@@ -790,11 +874,12 @@ def add_map_point(form: dict) -> dict:
         raise ValueError("Titre obligatoire.")
     if not address:
         raise ValueError("Adresse obligatoire.")
-    if kind not in KIND_LABELS:
-        raise ValueError("Type de point invalide.")
 
     slug = resolve_destination_slug(city)
     store = get_map_store()
+    if kind not in KIND_LABELS:
+        # Type personnalisé : on garde le libellé d'origine (accents, casse) pour la légende.
+        store.setdefault("custom_kinds", {})[kind] = kind_raw[:1].upper() + kind_raw[1:]
     geo = geocode_point_best_effort(title, address, city)
     approx = False
     if geo is None:

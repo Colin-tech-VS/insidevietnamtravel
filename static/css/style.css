@@ -4498,6 +4498,7 @@ body.mai-chat-open .mai-chat__fab {
   vertical-align: middle;
   border: 2px solid var(--white);
   box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
+  background: var(--legend-dot, #3D6B5E);
 }
 .dest-map-legend__item--hotel::before { background: #1B4D4A; }
 .dest-map-legend__item--activity::before { background: #C4A053; }

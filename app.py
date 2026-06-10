@@ -528,7 +528,8 @@ def api_map_points(slug):
     if not dest:
         return jsonify({"ok": False, "error": "Not found"}), 404
     points = map_service.get_public_map_points(slug, lang, tracked_affiliate_url)
-    return jsonify({"ok": True, "destination": slug, "name": dest.get("name", slug), "points": points})
+    legend = map_service.legend_for_kinds([p["kind"] for p in points], lang)
+    return jsonify({"ok": True, "destination": slug, "name": dest.get("name", slug), "points": points, "legend": legend})
 
 
 # ── Homepage ──────────────────────────────────────────────────────────

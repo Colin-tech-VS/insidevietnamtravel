@@ -583,7 +583,7 @@ def _system_prompt() -> str:
         '- {"name":"update_destination","params":{"slug":"…","tagline":"…","meta_title":"…","meta_description":"…","overview":"…","tips":["…"],"things_to_do":[{"title":"…","desc":"…"}],"region":"…"}} — modifier une page destination publiée ; champs optionnels (confirmation auto). slug = slug ÉTAT DU SITE (ex. delta-du-mekong)\n'
         '- {"name":"improve_destination","params":{"slug":"…","instructions":"…"}} — réécrire/améliorer une destination publiée par IA selon tes instructions ; job en arrière-plan après confirmation\n'
         '- {"name":"update_image","params":{"target":"article|destination","slug":"…","image_url":"https://…","query":"…","alt":"…"}} — mettre à jour l\'image d\'un article ou d\'une destination publiée. slug = slug ÉTAT DU SITE (ex. hue pour Huế, delta-du-mekong). Préfère query (mots-clés Pixabay, ex. « Hue imperial citadel Vietnam ») : fiable et sans URL cassée. image_url seulement si lien DIRECT (.jpg/.webp) ou page Wikimedia Commons /wiki/File:… — pas une page galerie HTML (pixnio, shutterstock…). alt facultatif. Job WebP après confirmation\n'
-        '- {"name":"add_map_points","params":{"city":"slug ou nom de la ville","points":[{"title":"…","address":"adresse complète","kind":"food","desc":"…","price_hint":"…"}]}} — ajouter des points sur la carte interactive : restaurants, hôtels, activités, lieux. kind ∈ hotel|activity|food|poi|service ; address = adresse la plus précise possible (géocodée via OpenStreetMap), sinon « Nom, Ville » (confirmation auto)\n'
+        '- {"name":"add_map_points","params":{"city":"slug ou nom de la ville","points":[{"title":"…","address":"adresse complète","kind":"restaurant","desc":"…","price_hint":"…"}]}} — ajouter des points sur la carte interactive : restaurants, bars, hôtels, activités, lieux… kind de préférence ∈ hotel|activity|restaurant|bar|poi|service, mais tout autre type est accepté (ex. « spa », « marché nocturne ») : il est créé automatiquement avec sa couleur et sa légende ; address = adresse la plus précise possible (géocodée via OpenStreetMap), sinon « Nom, Ville » (confirmation auto)\n'
         '- {"name":"publish_draft","params":{"kind":"article"}} ou {"kind":"destination"} — publier le brouillon en attente (confirmation auto)\n'
         '- {"name":"publish_facebook","params":{}} — publier le dernier post généré (confirmation auto)\n'
         '- {"name":"send_newsletter","params":{"scope":"test","email":"…"}} ou {"scope":"all"} — envoyer la newsletter (confirmation auto)\n'
@@ -1499,9 +1499,9 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
             address = (p.get("address") or "").strip()
             if not title or not address:
                 continue
-            kind = (p.get("kind") or "poi").strip().lower()
-            if kind not in map_service.KIND_LABELS:
-                kind = "poi"
+            # On garde le libellé brut (accents, casse) : add_map_point normalise le
+            # slug et mémorise ce libellé pour la légende des types personnalisés.
+            kind = (p.get("kind") or "poi").strip()
             points.append({
                 "title": title,
                 "address": address,
@@ -1525,9 +1525,9 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
                 f"pour « {points[0]['city'] or 'ville non précisée'} » (pas de page destination publiée : "
                 "les points iront en attente dans /admin/map)"
             )
-        kinds = map_service.KIND_LABELS
         listing = "\n".join(
-            f"• {p['title']} ({kinds[p['kind']]['fr']}) — {p['address']}" for p in points
+            f"• {p['title']} ({map_service.kind_label(map_service.normalize_kind(p['kind']), 'fr')}) — {p['address']}"
+            for p in points
         )
         return {"confirm": create_confirmation(
             "add_map_points", {"points": points},
