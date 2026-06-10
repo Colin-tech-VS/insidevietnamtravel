@@ -68,6 +68,24 @@ def build_catalog(exclude_slug: str | None = None) -> list[dict]:
     except Exception:
         pass
 
+    try:
+        from admin.store import get_destinations_dict
+        for slug, d in get_destinations_dict("fr").items():
+            title = (d.get("name") or "").strip()
+            if slug and title:
+                catalog.append({"url": f"/{slug}", "title": title})
+    except Exception:
+        pass
+
+    try:
+        from data.itineraries import ITINERARIES
+        for slug, itin in ITINERARIES.items():
+            title = (itin.get("title") or "").strip()
+            if slug and title:
+                catalog.append({"url": f"/itineraries/{slug}", "title": title})
+    except Exception:
+        pass
+
     # Dédoublonnage par URL.
     seen: set[str] = set()
     out: list[dict] = []

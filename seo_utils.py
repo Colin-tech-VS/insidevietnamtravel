@@ -7,6 +7,15 @@ from html import unescape
 
 import config
 
+_LEGACY_DEST_LINK = re.compile(r'href="/destinations/([^"/]+)"', re.IGNORECASE)
+
+
+def fix_legacy_article_links(html: str) -> str:
+    """Réécrit les anciens liens /destinations/<slug> vers /<slug> (routes réelles)."""
+    if not html:
+        return html
+    return _LEGACY_DEST_LINK.sub(r'href="/\1"', html)
+
 
 def truncate_text(text: str, max_len: int = 160) -> str:
     text = re.sub(r"\s+", " ", (text or "").strip())

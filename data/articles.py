@@ -319,9 +319,9 @@ Le Sud en fait une religion — Bánh mì Huỳnh Hoa est la référence.</li>
 </ul>
 <p>Pour des adresses testées à Hanoï, voir notre guide
 <a href="/blog/meilleurs-restaurants-hanoi">meilleurs restaurants de Hanoï</a>.
-Les pages destinations <a href="/destinations/hanoi">Hanoï</a>,
-<a href="/destinations/hoi-an">Hội An</a> et
-<a href="/destinations/ho-chi-minh-city">Ho Chi Minh-Ville</a> détaillent aussi la street food locale.</p>
+Les pages destinations <a href="/hanoi">Hanoï</a>,
+<a href="/hoi-an">Hội An</a> et
+<a href="/ho-chi-minh-city">Ho Chi Minh-Ville</a> détaillent aussi la street food locale.</p>
 """,
     },
     {

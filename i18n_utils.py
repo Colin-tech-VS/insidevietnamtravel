@@ -118,9 +118,13 @@ def _localize_list_items(items: list, lang: str, keys: tuple[str, ...]) -> list:
 
 
 def localize_article(article: dict, lang: str | None = None) -> dict:
+    from seo_utils import fix_legacy_article_links
+
     lang = lang or get_lang()
     result = copy.deepcopy(article)
     result.update(_pick_i18n_block(article, lang, ARTICLE_I18N_FIELDS))
+    if result.get("content"):
+        result["content"] = fix_legacy_article_links(result["content"])
     return result
 
 

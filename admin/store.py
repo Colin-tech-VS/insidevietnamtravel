@@ -111,12 +111,32 @@ logger = logging.getLogger(__name__)
 
 
 _EXPERIENCE_SLUGS = {a.get("slug") for a in EXPERIENCE_ARTICLES if a.get("slug")}
+_DEFAULT_SLUGS = {a.get("slug") for a in DEFAULT_ARTICLES if a.get("slug")}
+_BUILTIN_SLUGS = _EXPERIENCE_SLUGS | _DEFAULT_SLUGS
+
+_IMAGE_META_KEYS = (
+    "image", "image_photo_id", "image_placeholder", "image_alt", "image_source_url",
+)
 
 
-def _overlay_experience_articles(stored: list) -> list:
-    """Fusionne les guides expérience embarqués (sauf si modifiés manuellement en admin)."""
+def _preserve_image_meta(builtin: dict, existing: dict | None) -> dict:
+    """Garde les métadonnées image / traduction EN du store lors d'un overlay embarqué."""
+    if not existing:
+        return builtin
+    for key in _IMAGE_META_KEYS:
+        if existing.get(key) is not None:
+            builtin[key] = existing[key]
+    en = (existing.get("i18n") or {}).get("en") or {}
+    if en.get("content"):
+        builtin.setdefault("i18n", {})["en"] = en
+    return builtin
+
+
+def _overlay_builtin_articles(stored: list) -> list:
+    """Fusionne guides expérience + articles embarqués (sauf édition manuelle admin)."""
     by_slug = {a.get("slug"): a for a in stored if a.get("slug")}
     merged: list = []
+
     for builtin in EXPERIENCE_ARTICLES:
         slug = builtin.get("slug")
         if not slug:
@@ -125,10 +145,21 @@ def _overlay_experience_articles(stored: list) -> list:
         if existing and existing.get("admin_edited"):
             merged.append(existing)
         elif not existing or existing.get("builtin_version") != builtin.get("builtin_version"):
-            merged.append(deepcopy(builtin))
+            merged.append(_preserve_image_meta(deepcopy(builtin), existing))
         else:
             merged.append(existing)
-    rest = [a for a in stored if a.get("slug") not in _EXPERIENCE_SLUGS]
+
+    for builtin in DEFAULT_ARTICLES:
+        slug = builtin.get("slug")
+        if not slug or slug in _EXPERIENCE_SLUGS:
+            continue
+        existing = by_slug.get(slug)
+        if existing and existing.get("admin_edited"):
+            merged.append(existing)
+        else:
+            merged.append(_preserve_image_meta(wrap_article_i18n(deepcopy(builtin)), existing))
+
+    rest = [a for a in stored if a.get("slug") not in _BUILTIN_SLUGS]
     return merged + rest
 
 
@@ -191,7 +222,7 @@ def _raw_articles() -> list:
         return deepcopy([*EXPERIENCE_ARTICLES, *DEFAULT_ARTICLES])
     if stored is None:
         return deepcopy([*EXPERIENCE_ARTICLES, *DEFAULT_ARTICLES])
-    return _overlay_experience_articles(stored)
+    return _overlay_builtin_articles(stored)
 
 
 def get_articles(lang: str | None = None) -> list:
