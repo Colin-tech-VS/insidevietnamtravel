@@ -228,4 +228,7 @@ def build_manual_destination(form) -> dict:
         "manual": True,
         "updated_at": date.today().isoformat(),
     }
+    region = (form.get("region") or "").strip().lower()
+    if region in ("north", "central", "south"):
+        shared["region"] = region
     return merge_bilingual_destination(fr_data, en_data, shared)

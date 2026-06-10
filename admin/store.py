@@ -221,6 +221,76 @@ def delete_destination(slug: str):
     save_destinations(data)
 
 
+# Champs texte FR modifiables sur une destination publiée (admin & Linh).
+DESTINATION_EDITABLE_FIELDS = ("name", "tagline", "meta_title", "meta_description", "overview")
+
+
+def set_destination_region(slug: str, region: str) -> dict:
+    """Place une destination publiée dans la section Nord / Centre / Sud."""
+    from data.trip_planner import REGION_ORDER
+
+    region = (region or "").strip().lower()
+    if region not in REGION_ORDER:
+        raise ValueError("Région invalide — choisir north (Nord), central (Centre) ou south (Sud).")
+    data = _raw_destinations()
+    dest = data.get(slug)
+    if not dest:
+        raise ValueError(f"Destination introuvable : {slug}")
+    dest["region"] = region
+    save_destinations(data)
+    return wrap_destination_i18n(dest)
+
+
+def update_destination_fields(slug: str, fields: dict) -> dict:
+    """Met à jour une destination publiée : textes FR, conseils et/ou région.
+
+    Les champs FR modifiés sont aussi écrits dans i18n.fr, et le bloc EN est
+    vidé pour être retraduit automatiquement à l'enregistrement.
+    """
+    data = _raw_destinations()
+    raw = data.get(slug)
+    if not raw:
+        raise ValueError(f"Destination introuvable : {slug}")
+    dest = wrap_destination_i18n(raw)
+
+    changed_fr = False
+    for key in DESTINATION_EDITABLE_FIELDS:
+        value = fields.get(key)
+        if value is None or not str(value).strip():
+            continue
+        value = str(value).strip()
+        if key == "meta_description":
+            value = value[:160]
+        dest[key] = value
+        dest["i18n"]["fr"][key] = value
+        changed_fr = True
+
+    tips = fields.get("tips")
+    if isinstance(tips, str):
+        tips = [ln.strip() for ln in tips.splitlines() if ln.strip()]
+    if isinstance(tips, list):
+        tips = [str(t).strip() for t in tips if str(t).strip()]
+        if tips:
+            dest["tips"] = tips
+            dest["i18n"]["fr"]["tips"] = tips
+            changed_fr = True
+
+    region = (fields.get("region") or "").strip().lower()
+    if region:
+        from data.trip_planner import REGION_ORDER
+        if region not in REGION_ORDER:
+            raise ValueError("Région invalide — choisir north, central ou south.")
+        dest["region"] = region
+
+    if changed_fr:
+        dest["i18n"]["en"] = {}
+        dest["updated_at"] = date.today().isoformat()
+
+    data[slug] = dest
+    save_destinations(data)
+    return dest
+
+
 def slugify(text: str) -> str:
     text = text.lower()
     text = re.sub(r"[àâä]", "a", text)

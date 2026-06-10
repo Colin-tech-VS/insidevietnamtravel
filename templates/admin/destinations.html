@@ -118,9 +118,17 @@
 
       <div id="tab-manual" class="content-panel" role="tabpanel" {% if not draft_is_manual %}hidden{% endif %}>
 
-        <h2>✎ Rédiger manuellement</h2>
+        <h2>{% if draft and draft.editing_slug %}✎ Modifier « {{ draft.name }} »{% else %}✎ Rédiger manuellement{% endif %}</h2>
 
         <form method="post" id="dest-form-manual" class="guide-form">
+
+          {% if draft and draft.manual and draft.editing_slug %}
+
+          <input type="hidden" name="editing_slug" value="{{ draft.editing_slug }}">
+
+          <p class="field-hint">Vous modifiez la page publiée <code>/{{ draft.editing_slug }}</code> — image, hôtels et activités existants sont conservés.</p>
+
+          {% endif %}
 
           <div class="form-row form-row--2">
 
@@ -167,6 +175,28 @@
               {% endfor %}
 
             </select>
+
+          </div>
+
+
+
+          <div class="form-field">
+
+            <label for="manual-region">Région (menu Nord / Centre / Sud)</label>
+
+            <select id="manual-region" name="region">
+
+              <option value="" {% if not draft or not draft.region %}selected{% endif %}>Automatique (selon la ville)</option>
+
+              {% for key, label in region_options %}
+
+              <option value="{{ key }}" {% if draft and draft.region == key %}selected{% endif %}>{{ label }}</option>
+
+              {% endfor %}
+
+            </select>
+
+            <p class="field-hint">Détermine la colonne où la destination apparaît dans le menu « Destinations » du site.</p>
 
           </div>
 
@@ -374,21 +404,55 @@
 
               <a href="{{ url_for('destination_page', slug=d.slug) }}" target="_blank" rel="noopener"><strong>{{ d.name }}</strong></a>
 
-              <span class="published-list__date">/{{ d.slug }}</span>
+              <span class="published-list__date">/{{ d.slug }} · {{ d.region_label }}</span>
 
             </div>
 
           </div>
 
-          <form method="post" class="dest-admin-item__delete" onsubmit="return confirm('Supprimer {{ d.name }} ?')">
+          <div class="dest-admin-item__actions">
 
-            <input type="hidden" name="action" value="delete">
+            <form method="post" class="dest-admin-item__region">
 
-            <input type="hidden" name="slug" value="{{ d.slug }}">
+              <input type="hidden" name="action" value="set_region">
 
-            <button type="submit" class="btn btn-secondary btn-sm">Supprimer</button>
+              <input type="hidden" name="slug" value="{{ d.slug }}">
 
-          </form>
+              <select name="region" aria-label="Région de {{ d.name }}">
+
+                {% for key, label in region_options %}
+
+                <option value="{{ key }}" {% if d.region_key == key %}selected{% endif %}>{{ label }}</option>
+
+                {% endfor %}
+
+              </select>
+
+              <button type="submit" class="btn btn-secondary btn-sm">Déplacer</button>
+
+            </form>
+
+            <form method="post" class="dest-admin-item__edit">
+
+              <input type="hidden" name="action" value="edit">
+
+              <input type="hidden" name="slug" value="{{ d.slug }}">
+
+              <button type="submit" class="btn btn-secondary btn-sm">Modifier</button>
+
+            </form>
+
+            <form method="post" class="dest-admin-item__delete" onsubmit="return confirm('Supprimer {{ d.name }} ?')">
+
+              <input type="hidden" name="action" value="delete">
+
+              <input type="hidden" name="slug" value="{{ d.slug }}">
+
+              <button type="submit" class="btn btn-secondary btn-sm">Supprimer</button>
+
+            </form>
+
+          </div>
 
         </li>
 
