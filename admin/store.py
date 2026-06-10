@@ -102,9 +102,13 @@ _builtin_sync_lock = threading.Lock()
 logger = logging.getLogger(__name__)
 
 
-def _missing_experience_articles(stored: list) -> list:
-    known = {a.get("slug") for a in stored if a.get("slug")}
-    return [deepcopy(a) for a in EXPERIENCE_ARTICLES if a.get("slug") and a["slug"] not in known]
+_EXPERIENCE_SLUGS = {a.get("slug") for a in EXPERIENCE_ARTICLES if a.get("slug")}
+
+
+def _overlay_experience_articles(stored: list) -> list:
+    """Remplace toujours les guides expérience par la version embarquée (contenu à jour)."""
+    rest = [a for a in stored if a.get("slug") not in _EXPERIENCE_SLUGS]
+    return [deepcopy(a) for a in EXPERIENCE_ARTICLES] + rest
 
 
 def ensure_builtin_articles() -> int:
@@ -145,8 +149,7 @@ def _raw_articles() -> list:
         return deepcopy([*EXPERIENCE_ARTICLES, *DEFAULT_ARTICLES])
     if stored is None:
         return deepcopy([*EXPERIENCE_ARTICLES, *DEFAULT_ARTICLES])
-    overlay = _missing_experience_articles(stored)
-    return [*overlay, *stored] if overlay else stored
+    return _overlay_experience_articles(stored)
 
 
 def get_articles(lang: str | None = None) -> list:

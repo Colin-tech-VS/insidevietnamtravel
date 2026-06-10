@@ -1062,6 +1062,14 @@ body.is-nav-open { overflow: hidden; }
 
 .prose h2:first-child { margin-top: 0; }
 
+.prose h3 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 1.75rem 0 0.75rem;
+  color: var(--ink);
+}
+
 .prose p { margin-bottom: 1.25rem; }
 
 .prose ul, .prose ol {
