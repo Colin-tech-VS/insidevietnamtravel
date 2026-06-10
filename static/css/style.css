@@ -308,6 +308,7 @@ a:hover { color: var(--terracotta); }
   z-index: 50;
   flex-direction: column;
   gap: 0.15rem;
+  white-space: normal;
 }
 .nav-dropdown.is-open .nav-dropdown__menu { display: flex; }
 .nav-dropdown__menu a {
@@ -325,6 +326,9 @@ a:hover { color: var(--terracotta); }
 .nav-mega {
   display: none;
   list-style: none;
+  /* .main-nav > ul force white-space: nowrap ; sans ce reset, les taglines
+     débordent de leur colonne (desktop) ou sont tronquées (mobile). */
+  white-space: normal;
 }
 
 .nav-mega__panel { width: 100%; }
@@ -1406,9 +1410,6 @@ body.is-nav-open { overflow: hidden; }
   }
 
   .nav-mega__heading {
-    position: sticky;
-    top: 0;
-    z-index: 1;
     padding-top: 0.15rem;
     background: var(--white);
   }

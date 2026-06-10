@@ -1894,7 +1894,21 @@ body.is-admin-nav-open { overflow: hidden; }
 @media (max-width: 900px) {
   .admin-backdrop { display: block; }
 
-  .admin-sidebar-toggle { display: flex; }
+  /* Bouton flottant : accessible sans remonter en haut de page. En haut à
+     droite (la sidebar s'ouvre à gauche), il reste visible et sert de
+     bouton de fermeture quand le menu est ouvert (z-index > sidebar). */
+  .admin-sidebar-toggle {
+    display: flex;
+    position: fixed;
+    top: calc(0.75rem + env(safe-area-inset-top, 0px));
+    right: 0.85rem;
+    z-index: 210;
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Le bouton est sorti du flux : on réserve sa place pour que le titre
+     ne passe pas dessous. */
+  .admin-topbar__row { padding-right: 3.25rem; }
 
   .admin-shell { flex-direction: column; }
 

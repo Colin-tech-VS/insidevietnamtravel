@@ -590,23 +590,6 @@
   font-size: 0.8rem;
 }
 
-/* ── Responsive ─────────────────────────────────────────────────────── */
-@media (max-width: 860px) {
-  .budget-tool { grid-template-columns: 1fr; }
-  .budget-field--row-3 { grid-template-columns: 1fr 1fr; }
-  .budget-select-grid { grid-template-columns: 1fr; }
-}
-@media (max-width: 560px) {
-  .budget-field--row { grid-template-columns: 1fr; }
-  .budget-field--row-3 { grid-template-columns: 1fr; }
-  .visa-form__row { grid-template-columns: 1fr; }
-  .budget-bar { grid-template-columns: 7rem 1fr 3rem; }
-  .budget-total__value { font-size: 2.1rem; }
-  .tool-callout { flex-direction: column; }
-  .season-planner__controls { grid-template-columns: 1fr; }
-  .travel-guide__grid { grid-template-columns: 1fr; }
-}
-
 /* ── Guides pratiques (sécurité, coutumes, visa sections) ─────────── */
 .travel-guide__section { padding: 3rem 0; }
 .travel-guide__grid {
@@ -743,11 +726,12 @@
   white-space: nowrap;
   padding-right: 0.75rem;
 }
+/* Les cellules restent des table-cells : un display inline-block sur un <td>
+   casse la disposition du tableau (les 12 mois s'empilent verticalement). */
 .season-planner__matrix .season-cell {
-  width: 1.4rem;
+  min-width: 1.4rem;
   height: 1.4rem;
   border-radius: 3px;
-  display: inline-block;
 }
 .season-card--compact .season-card__head h3 { font-size: 1.1rem; }
 .season-card__cities { font-size: 0.85rem; color: var(--ink-muted); margin-top: 0.15rem; }
@@ -757,7 +741,32 @@
   gap: 3px;
   margin-top: 0.75rem;
 }
+/* min-height (et non height) : les cartes régions affichent l'initiale du mois
+   dans chaque cellule, une hauteur fixe coupait les lettres en deux. */
 .season-strip__cell {
-  height: 0.55rem;
+  min-height: 0.55rem;
+  line-height: 1;
   border-radius: 2px;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────
+   Bloc gardé en FIN de fichier : à spécificité égale, c'est l'ordre qui
+   décide, et ces overrides doivent l'emporter sur les styles composants
+   ci-dessus (.season-planner, .travel-guide…). */
+@media (max-width: 860px) {
+  .budget-tool { grid-template-columns: 1fr; }
+  .budget-field--row-3 { grid-template-columns: 1fr 1fr; }
+  .budget-select-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 700px) {
+  .season-planner__controls { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .budget-field--row { grid-template-columns: 1fr; }
+  .budget-field--row-3 { grid-template-columns: 1fr; }
+  .visa-form__row { grid-template-columns: 1fr; }
+  .budget-bar { grid-template-columns: 7rem 1fr 3rem; }
+  .budget-total__value { font-size: 2.1rem; }
+  .tool-callout { flex-direction: column; }
+  .travel-guide__grid { grid-template-columns: 1fr; }
 }
