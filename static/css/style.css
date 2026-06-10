@@ -1812,7 +1812,11 @@ body.is-nav-open { overflow: hidden; }
   border-color: rgba(255, 255, 255, 0.3);
   color: var(--white);
 }
-.page-hero--itinerary.page-hero--with-image .budget-badge,
+.page-hero--itinerary.page-hero--with-image .budget-badge {
+  background: rgba(15, 51, 48, 0.88);
+  color: var(--white);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
 .page-hero--itinerary.page-hero--with-image .itin-meta-line {
   color: rgba(255, 255, 255, 0.92);
 }
