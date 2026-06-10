@@ -74,7 +74,7 @@ def page_inventory(lang: str = "fr") -> list[dict]:
             "id": f"dest:{slug}", "group": "Destinations",
             "label": d.get("name", slug), "url": _abs(lang_url("destination_page", lang, slug=slug)),
             "title": d.get("name", slug), "summary": d.get("tagline", ""),
-            "image": _img(persistent_image_url(d.get("image"), d.get("image_photo_id"))),
+            "image": _img(persistent_image_url(d.get("image"), d.get("image_photo_id"), d.get("image_source_url"))),
         })
 
     # Itinéraires
@@ -94,7 +94,7 @@ def page_inventory(lang: str = "fr") -> list[dict]:
             "id": f"article:{a['slug']}", "group": "Articles de blog",
             "label": a.get("title", a["slug"]), "url": _abs(lang_url("article", lang, slug=a["slug"])),
             "title": a.get("title", ""), "summary": a.get("excerpt", ""),
-            "image": _img(persistent_image_url(a.get("image"), a.get("image_photo_id"))),
+            "image": _img(persistent_image_url(a.get("image"), a.get("image_photo_id"), a.get("image_source_url"))),
         })
 
     # Outils & guides pratiques

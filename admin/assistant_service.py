@@ -532,7 +532,9 @@ def _system_prompt() -> str:
         "deviner. "
         "Tu peux AGIR à la place de l'admin via le champ \"tool\" : tu sais faire TOUT ce "
         "que l'admin peut faire dans /admin — générer un guide, une destination, une "
-        "newsletter, un post Facebook, modifier une destination, ajouter des points carte, "
+        "newsletter, un post Facebook, modifier une destination, mettre à jour l'image "
+        "d'un article/d'une destination (y compris depuis une image trouvée sur internet), "
+        "ajouter des points carte, "
         "publier/envoyer. Si l'admin demande une action couverte par un outil, appelle "
         "l'outil SANS tergiverser ; s'il n'existe pas d'outil, donne le lien admin prefill. "
         "CONFIRMATIONS — règles strictes : "
@@ -564,6 +566,7 @@ def _system_prompt() -> str:
         '- {"name":"generate_social_post","params":{"page_id":"…","brief":"…"}} — post Facebook (page_id du bloc PAGES PUBLIQUES, ou brief libre)\n'
         '- {"name":"set_destination_region","params":{"slug":"…","region":"north|central|south"}} — déplacer une destination publiée dans la colonne Nord/Centre/Sud du menu Destinations (confirmation auto)\n'
         '- {"name":"update_destination","params":{"slug":"…","tagline":"…","meta_title":"…","meta_description":"…","overview":"…","region":"…"}} — modifier une page destination publiée ; tous les champs sont optionnels, ne passe que ceux à changer (confirmation auto)\n'
+        '- {"name":"update_image","params":{"target":"article|destination","slug":"…","image_url":"https://…","query":"…","alt":"…"}} — mettre à jour l\'image d\'un article ou d\'une destination publié(e). Donne SOIT image_url (URL directe d\'une image trouvée sur internet, ex. via web_search), SOIT query (mots-clés → recherche d\'image). alt facultatif (texte alternatif SEO). L\'image est téléchargée et optimisée en WebP (confirmation auto)\n'
         '- {"name":"add_map_points","params":{"city":"slug ou nom de la ville","points":[{"title":"…","address":"adresse complète","kind":"food","desc":"…","price_hint":"…"}]}} — ajouter des points sur la carte interactive : restaurants, hôtels, activités, lieux. kind ∈ hotel|activity|food|poi|service ; address = adresse la plus précise possible (géocodée via OpenStreetMap), sinon « Nom, Ville » (confirmation auto)\n'
         '- {"name":"publish_draft","params":{"kind":"article"}} ou {"kind":"destination"} — publier le brouillon en attente (confirmation auto)\n'
         '- {"name":"publish_facebook","params":{}} — publier le dernier post généré (confirmation auto)\n'
@@ -627,6 +630,8 @@ def execute_confirmation(token: str) -> dict:
         return _exec_set_destination_region(params)
     if action == "update_destination":
         return _exec_update_destination(params)
+    if action == "update_image":
+        return _exec_update_image(params)
     if action == "add_map_points":
         return _exec_add_map_points(params)
     raise ValueError(f"Action inconnue : {action}")
@@ -782,6 +787,54 @@ def _exec_update_destination(params: dict) -> dict:
         "message": f"✅ Page destination mise à jour : « {dest.get('name', slug)} » (/{slug}).",
         "url": f"/{slug}",
     }
+
+
+def _resolve_image_url(params: dict) -> str:
+    """URL d'image à utiliser : image_url directe, sinon recherche Pixabay via query."""
+    image_url = (params.get("image_url") or "").strip()
+    if image_url:
+        return image_url
+    query = (params.get("query") or "").strip()
+    if not query:
+        raise ValueError("Indique une URL d'image (image_url) ou des mots-clés (query).")
+    from admin.image_service import pixabay_image_url
+    return pixabay_image_url(query)
+
+
+def _exec_update_image(params: dict) -> dict:
+    from admin.image_service import (
+        set_remote_image_for_article,
+        set_remote_image_for_destination,
+    )
+    from admin.store import (
+        get_article_by_slug,
+        get_destination_by_slug,
+        update_article_image,
+        update_destination_image,
+    )
+
+    target = (params.get("target") or "article").strip().lower()
+    slug = (params.get("slug") or "").strip()
+    alt = (params.get("alt") or "").strip() or None
+    if not slug:
+        raise ValueError("Slug manquant pour la mise à jour d'image.")
+
+    image_url = _resolve_image_url(params)
+
+    if target == "destination":
+        dest = get_destination_by_slug(slug)
+        if not dest:
+            raise ValueError(f"Destination introuvable : « {slug} ».")
+        meta = set_remote_image_for_destination(dest, image_url, alt)
+        update_destination_image(slug, meta)
+        return {"message": f"✅ Image mise à jour pour la destination « {dest.get('name', slug)} ».", "url": f"/{slug}"}
+
+    article = get_article_by_slug(slug)
+    if not article:
+        raise ValueError(f"Article introuvable : « {slug} ».")
+    meta = set_remote_image_for_article(article, image_url, alt)
+    update_article_image(slug, meta)
+    return {"message": f"✅ Image mise à jour pour l'article « {article.get('title', slug)} ».", "url": f"/blog/{slug}"}
 
 
 def _exec_add_map_points(params: dict) -> dict:
@@ -984,6 +1037,41 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
             "update_destination", params,
             f"Modifier la page « {dest.get('name', slug)} » ?",
             f"/{slug} — champs modifiés : {', '.join(changed)}. La version EN sera retraduite automatiquement si le texte FR change.",
+        )}
+
+    if name == "update_image":
+        from admin.store import get_article_by_slug, get_destination_by_slug
+
+        target = (params.get("target") or "article").strip().lower()
+        slug = (params.get("slug") or "").strip()
+        image_url = (params.get("image_url") or "").strip()
+        query = (params.get("query") or "").strip()
+        if target not in ("article", "destination"):
+            raise ValueError("Cible invalide — utilise target=article ou target=destination.")
+        if not slug:
+            raise ValueError("Indique le slug de l'article ou de la destination.")
+        if not image_url and not query:
+            raise ValueError("Donne une URL d'image (image_url) ou des mots-clés (query).")
+
+        if target == "destination":
+            item = get_destination_by_slug(slug)
+            if not item:
+                raise ValueError(f"Destination introuvable : « {slug} » — vérifie le slug.")
+            label = item.get("name", slug)
+            where = f"la destination « {label} » (/{slug})"
+        else:
+            item = get_article_by_slug(slug)
+            if not item:
+                raise ValueError(f"Article introuvable : « {slug} » — vérifie le slug.")
+            label = item.get("title", slug)
+            where = f"l'article « {label} » (/blog/{slug})"
+
+        src = image_url if image_url else f"recherche d'image « {query} »"
+        return {"confirm": create_confirmation(
+            "update_image",
+            {"target": target, "slug": slug, "image_url": image_url, "query": query, "alt": params.get("alt", "")},
+            f"Mettre à jour l'image de {where} ?",
+            f"Nouvelle image : {src}\nElle sera téléchargée, optimisée en WebP puis appliquée.",
         )}
 
     if name == "add_map_points":

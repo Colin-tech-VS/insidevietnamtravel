@@ -291,6 +291,49 @@ def update_destination_fields(slug: str, fields: dict) -> dict:
     return dest
 
 
+# Champs image stockés au niveau racine (hors i18n) d'un article/destination.
+_IMAGE_META_FIELDS = ("image", "image_photo_id", "image_source_url", "image_placeholder")
+
+
+def _apply_image_meta(item: dict, meta: dict) -> None:
+    """Applique les champs image d'un `meta` sur un item i18n (image_alt → fr+en)."""
+    for key in _IMAGE_META_FIELDS:
+        if key in meta:
+            item[key] = meta[key]
+    alt = meta.get("image_alt")
+    if alt:
+        item["image_alt"] = alt
+        item.setdefault("i18n", {}).setdefault("fr", {})["image_alt"] = alt
+        item.setdefault("i18n", {}).setdefault("en", {})["image_alt"] = alt
+
+
+def update_article_image(slug: str, meta: dict) -> dict:
+    """Met à jour l'image (et l'alt) d'un article publié, sans toucher au contenu."""
+    data = _raw_articles()
+    for i, raw in enumerate(data):
+        if raw.get("slug") != slug:
+            continue
+        article = wrap_article_i18n(raw)
+        _apply_image_meta(article, meta)
+        data[i] = article
+        save_articles(data)
+        return article
+    raise ValueError(f"Article introuvable : {slug}")
+
+
+def update_destination_image(slug: str, meta: dict) -> dict:
+    """Met à jour l'image (et l'alt) d'une destination publiée."""
+    data = _raw_destinations()
+    raw = data.get(slug)
+    if not raw:
+        raise ValueError(f"Destination introuvable : {slug}")
+    dest = wrap_destination_i18n(raw)
+    _apply_image_meta(dest, meta)
+    data[slug] = dest
+    save_destinations(data)
+    return dest
+
+
 def slugify(text: str) -> str:
     text = text.lower()
     text = re.sub(r"[àâä]", "a", text)

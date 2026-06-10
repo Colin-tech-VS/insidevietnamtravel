@@ -412,21 +412,37 @@ def _local_pool_path(photo_id: str) -> Path:
 _STATIC_ROOT = Path(__file__).parent.parent / "static"
 
 
-def persistent_image_url(image_url: str | None, photo_id: str | None) -> str | None:
+def persistent_image_url(
+    image_url: str | None,
+    photo_id: str | None,
+    source_url: str | None = None,
+) -> str | None:
     """Garantit une URL d'image présente au rendu.
 
     Les images écrites au runtime (static/images/blog|destinations/) vivent sur le FS
     éphémère de Scalingo : après un redéploiement elles disparaissent, alors que l'article
-    (en base Supabase) garde son URL → image cassée. Si le fichier pointé n'existe pas, on
-    bascule sur la photo du POOL (commitée dans git, donc toujours là) via image_photo_id.
-    Corrige donc d'un coup tous les articles générés AVANT le passage en référence pool.
+    (en base Supabase) garde son URL → image cassée. Plan de repli, dans l'ordre :
+    1) le fichier /static pointé existe → on le sert (cas normal, optimisé) ;
+    2) `source_url` (image internet d'origine choisie via Linh) → on la sert directement,
+       toujours disponible même après un redéploiement ;
+    3) la photo du POOL (commitée dans git) via `image_photo_id` ;
+    4) à défaut, l'URL telle quelle (ex. image déjà externe en http).
     """
+    def _is_remote(u: str | None) -> bool:
+        return bool(u) and u.startswith(("http://", "https://"))
+
     if image_url and image_url.startswith("/static/"):
         rel = image_url.removeprefix("/static/")
         if (_STATIC_ROOT / rel).is_file():
             return image_url
+        if _is_remote(source_url):
+            return source_url
+    if _is_remote(image_url):
+        return image_url
     if photo_id and _local_pool_path(photo_id).exists():
         return f"/static/images/pool/{photo_id}.webp"
+    if _is_remote(source_url):
+        return source_url
     return image_url
 
 
@@ -815,6 +831,116 @@ def attach_image_to_destination(
         _write_webp_fast(raw, out_path)
 
     return _meta(photo_id, placeholder)
+
+
+# ── Image fournie / trouvée sur internet (Linh) ─────────────────────────────
+
+# Taille max d'une image téléchargée depuis le web (octets) — garde-fou mémoire/abus.
+MAX_DOWNLOAD_BYTES = 12 * 1024 * 1024
+_IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp")
+
+
+def _download_image_bytes(url: str) -> bytes:
+    """Télécharge une image depuis une URL http(s) publique (validations + plafond).
+
+    Refuse tout ce qui n'est pas http/https et ce qui ne ressemble pas à une image
+    (Content-Type ou extension), borne la taille, et lit en flux pour ne pas charger
+    un fichier géant en mémoire. PIL validera ensuite que les octets sont décodables.
+    """
+    if not url or not url.lower().startswith(("http://", "https://")):
+        raise ValueError("URL d'image invalide — fournis une adresse http(s) directe vers une image.")
+
+    resp = requests.get(
+        url,
+        timeout=(REMOTE_IMAGE_CONNECT_TIMEOUT, REMOTE_IMAGE_READ_TIMEOUT),
+        headers={"User-Agent": "InsideVietnamTravel/1.0"},
+        stream=True,
+    )
+    resp.raise_for_status()
+
+    ctype = (resp.headers.get("Content-Type") or "").lower()
+    path_lower = urllib.parse.urlparse(url).path.lower()
+    looks_image = ctype.startswith("image/") or path_lower.endswith(_IMAGE_EXTS)
+    if not looks_image:
+        raise ValueError(f"L'URL ne renvoie pas une image (type : {ctype or 'inconnu'}).")
+
+    data = bytearray()
+    for chunk in resp.iter_content(8192):
+        if not chunk:
+            continue
+        data.extend(chunk)
+        if len(data) > MAX_DOWNLOAD_BYTES:
+            raise ValueError("Image trop volumineuse (> 12 Mo).")
+    if len(data) < 1000:
+        raise ValueError("Image trop petite ou vide.")
+    return bytes(data)
+
+
+def pixabay_image_url(query: str, seed: int = 0) -> str:
+    """Renvoie l'URL d'une photo Pixabay pour `query` (clé gratuite requise)."""
+    key = _pixabay_api_key()
+    if not key:
+        raise ValueError(
+            "Recherche d'image par mot-clé indisponible (PIXABAY_API_KEY absente) — "
+            "fournis plutôt une URL d'image directe."
+        )
+    resp = requests.get(
+        PIXABAY_API_URL,
+        params={
+            "key": key, "q": query, "image_type": "photo",
+            "orientation": "horizontal", "safesearch": "true", "per_page": 16, "lang": "en",
+        },
+        timeout=(PIXABAY_CONNECT_TIMEOUT, PIXABAY_READ_TIMEOUT),
+        headers={"User-Agent": "InsideVietnamTravel/1.0"},
+    )
+    resp.raise_for_status()
+    hits = resp.json().get("hits", [])
+    if not hits:
+        raise ValueError(f"Aucune image trouvée pour « {query} ».")
+    hit = hits[seed % len(hits)]
+    img_url = hit.get("largeImageURL") or hit.get("webformatURL")
+    if not img_url:
+        raise ValueError("URL d'image Pixabay manquante.")
+    return img_url
+
+
+def _write_remote_webp(image_url: str, out_path: Path) -> None:
+    """Télécharge `image_url` puis l'encode en WebP 1200×675 (chemins bornés)."""
+    raw = _run_with_deadline(_download_image_bytes, IMAGE_STEP_HARD_DEADLINE, image_url)
+    try:
+        _run_with_deadline(_to_webp, IMAGE_ENCODE_DEADLINE, raw, out_path)
+    except Exception:  # noqa: BLE001 — encodage soigné trop lent : version rapide garantie
+        _write_webp_fast(raw, out_path)
+
+
+def set_remote_image_for_article(article: dict, image_url: str, alt: str | None = None) -> dict:
+    """Remplace l'image d'un article par une image internet (téléchargée + WebP).
+
+    On conserve l'URL source (`image_source_url`) : si le fichier local disparaît au
+    redéploiement (FS éphémère), le rendu retombe dessus (cf. persistent_image_url).
+    """
+    slug = article["slug"]
+    _write_remote_webp(image_url, BLOG_IMAGES_DIR / f"{slug}.webp")
+    meta = _article_image_meta(article, slug, "", placeholder=False)
+    meta["image_photo_id"] = ""  # plus une photo du pool → repli sur la source internet
+    meta["image_source_url"] = image_url
+    if alt and alt.strip():
+        meta["image_alt"] = alt.strip()[:140]
+    return meta
+
+
+def set_remote_image_for_destination(dest: dict, image_url: str, alt: str | None = None) -> dict:
+    """Remplace l'image d'une destination par une image internet (téléchargée + WebP)."""
+    slug = dest["slug"]
+    _write_remote_webp(image_url, DEST_IMAGES_DIR / f"{slug}.webp")
+    name = dest.get("name", dest.get("city", "Vietnam"))
+    return {
+        "image": f"/static/images/destinations/{slug}.webp",
+        "image_alt": (alt.strip() if alt and alt.strip() else f"Guide voyage {name}, Vietnam")[:140],
+        "image_photo_id": "",
+        "image_placeholder": False,
+        "image_source_url": image_url,
+    }
 
 
 def ensure_all_destination_images() -> int:

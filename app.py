@@ -118,7 +118,7 @@ def healthz():
 def _articles(lang=None):
     articles = get_articles(lang or get_lang())
     for a in articles:
-        a["image"] = persistent_image_url(a.get("image"), a.get("image_photo_id"))
+        a["image"] = persistent_image_url(a.get("image"), a.get("image_photo_id"), a.get("image_source_url"))
     return articles
 
 
@@ -129,7 +129,7 @@ def _categories(lang=None):
 def _destinations(lang=None):
     dests = get_destinations_dict(lang or get_lang())
     for d in dests.values():
-        d["image"] = persistent_image_url(d.get("image"), d.get("image_photo_id"))
+        d["image"] = persistent_image_url(d.get("image"), d.get("image_photo_id"), d.get("image_source_url"))
     return dests
 
 
@@ -722,7 +722,7 @@ def article(slug):
         abort(404)
     # Repli image : si le fichier (FS éphémère) a disparu après un redéploiement, on
     # bascule sur la photo du pool (commitée) — corrige les articles générés avant le fix.
-    post["image"] = persistent_image_url(post.get("image"), post.get("image_photo_id"))
+    post["image"] = persistent_image_url(post.get("image"), post.get("image_photo_id"), post.get("image_source_url"))
     articles = _articles(lang)
     related = [a for a in articles if a["category"] == post["category"] and a["slug"] != slug][:3]
     return render_template(
@@ -1047,7 +1047,7 @@ def destination_page(slug):
     dest = _destinations(lang).get(slug)
     if not dest:
         abort(404)
-    dest = {**dest, "image": persistent_image_url(dest.get("image"), dest.get("image_photo_id"))}
+    dest = {**dest, "image": persistent_image_url(dest.get("image"), dest.get("image_photo_id"), dest.get("image_source_url"))}
     return render_template(
         "destination.html",
         dest=dest,
