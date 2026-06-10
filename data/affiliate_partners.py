@@ -106,17 +106,21 @@ BUILTIN_PARTNERS = [
     },
     {
         "id": "travel_insurance",
-        "id_key": "worldnomads_affiliate",
-        "name": "World Nomads",
+        "id_key": "heymondo_ref",
+        "name": "Heymondo",
         "category": "Assurance",
         "icon": "🛡️",
-        "description": "Assurance voyage pour le Vietnam.",
-        "what_you_earn": "~5 à 20 € par police d'assurance vendue.",
+        "description": "Assurance voyage (France & international) — rapatriement, frais médicaux, annulation.",
+        "what_you_earn": "~8 à 25 € par police vendue (commission variable selon formule).",
         "avg_per_click": 5.0,
-        "signup_url": "https://www.worldnomads.com/affiliates",
-        "dashboard_url": "https://www.worldnomads.com/affiliates/login",
-        "id_label": "Affiliate code",
-        "id_placeholder": "ex: votre-code",
+        "signup_url": "https://heymondo.fr/programme-affiliation/",
+        "dashboard_url": "https://heymondo.fr/programme-affiliation/",
+        "signup_note": (
+            "Inscription sur heymondo.fr/programme-affiliation — une fois accepté, collez ici "
+            "votre lien d'affiliation complet (recommandé, ex. lien Impact/CJ) ou votre code partenaire."
+        ),
+        "id_label": "Lien d'affiliation ou code partenaire",
+        "id_placeholder": "ex: https://… (lien complet) ou code cod=",
     },
     {
         "id": "pdf",

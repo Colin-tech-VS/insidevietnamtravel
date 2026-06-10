@@ -48,7 +48,7 @@ def _common_footer(*, dest_href: str, dest_label: str, loc_slug: str) -> str:
         + _aff_box(
             "Préparer le voyage",
             [
-                ("Assurance voyage Vietnam (World Nomads)", _go("travel_insurance", travel_insurance())),
+                ("Assurance voyage Vietnam (Heymondo)", _go("travel_insurance", travel_insurance())),
                 ("eSIM Vietnam — internet dès l'atterrissage (Airalo)", _go("esim_airalo", esim_airalo())),
                 (f"Hôtels à {dest_label} (Booking)", aff["booking"]),
                 (f"Hôtels à {dest_label} (Agoda)", aff["agoda"]),

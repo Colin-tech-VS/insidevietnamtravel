@@ -174,13 +174,13 @@ def esim_holafly() -> str:
 
 
 def travel_insurance() -> str:
-    return (
-        "https://www.worldnomads.com/travel-insurance/?"
-        + urlencode({
-            "affiliate": _ids()["worldnomads_affiliate"],
-            "destination": "Vietnam",
-        })
-    )
+    """Heymondo — lien d'affiliation complet (dashboard) ou code partenaire."""
+    ref = str(_ids().get("heymondo_ref", "")).strip()
+    if ref.lower().startswith("http"):
+        return ref
+    if ref and ref.upper() != "PLACEHOLDER":
+        return f"https://heymondo.fr/?cod={ref}"
+    return "https://heymondo.fr/"
 
 
 def pdf_checkout() -> str:

@@ -41,7 +41,7 @@ PROVIDER_LABELS = {
     "viator": "Viator",
     "esim_airalo": "Airalo",
     "esim_holafly": "Holafly",
-    "travel_insurance": "World Nomads",
+    "travel_insurance": "Heymondo",
     "custom": "Partenaire",
 }
 

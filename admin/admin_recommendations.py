@@ -157,7 +157,7 @@ def get_affiliate_recommendations(summary: dict) -> list[dict]:
     if len(unconfigured) <= 2:
         recos.append(_reco(
             "Partenaires à ajouter",
-            "Klook, 12Go.asia ou SafetyWing complètent bien un site Vietnam (activités, bus, assurance).",
+            "Klook, 12Go.asia ou Heymondo complètent bien un site Vietnam (activités, bus, assurance).",
             priority="moyenne",
             icon="➕",
         ))

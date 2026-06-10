@@ -63,7 +63,15 @@ def get_affiliate_ids() -> dict:
     stored = get_json("affiliate_ids", {}, file_name="affiliate_ids.json")
     if stored is None:
         stored = {}
-    return {**DEFAULT_AFFILIATE_IDS, **stored}
+    merged = {**DEFAULT_AFFILIATE_IDS, **stored}
+    # Migration World Nomads → Heymondo (ancienne clé)
+    legacy = (merged.pop("worldnomads_affiliate", None) or "").strip()
+    if legacy and legacy.upper() != "PLACEHOLDER":
+        if legacy.lower().startswith("http"):
+            merged.setdefault("heymondo_ref", legacy)
+        elif not merged.get("heymondo_ref") or merged.get("heymondo_ref") == "PLACEHOLDER":
+            merged["heymondo_ref"] = legacy
+    return merged
 
 
 def save_affiliate_ids(data: dict):

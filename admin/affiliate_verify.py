@@ -16,7 +16,7 @@ _TRACKING = {
     "viator_widget_ref": ("widget", r"^W-[a-f0-9-]{20,40}$"),
     "airalo_ref": ("ref", None),
     "holafly_ref": ("ref", None),
-    "worldnomads_affiliate": ("affiliate", None),
+    "heymondo_ref": ("cod", None),
 }
 
 _EXTRACT = {
@@ -31,7 +31,7 @@ _EXTRACT = {
     "viator_widget_ref": [r'data-vi-widget-ref=["\']([^"\']+)["\']', r"(W-[a-f0-9-]{20,40})"],
     "airalo_ref": [r"[?&]ref=([^&\s]+)"],
     "holafly_ref": [r"[?&]ref=([^&\s]+)"],
-    "worldnomads_affiliate": [r"[?&]affiliate=([^&\s]+)"],
+    "heymondo_ref": [r"[?&]cod=([^&\s]+)", r"[?&]iu=([^&\s]+)"],
 }
 
 
@@ -99,9 +99,10 @@ def _sample_url(id_key: str, value: str) -> str:
         if value.lower().startswith("http"):
             return value
         return f"https://esim.holafly.com/data-plans/vietnam/?ref={value}"
-    if id_key == "worldnomads_affiliate":
-        q = urlencode({"affiliate": value, "destination": "Vietnam"})
-        return f"https://www.worldnomads.com/travel-insurance/?{q}"
+    if id_key == "heymondo_ref":
+        if value.lower().startswith("http"):
+            return value
+        return f"https://heymondo.fr/?cod={value}"
     if id_key == "pdf_checkout_url":
         return value if value.startswith("http") else "#pdf-guide"
     return ""

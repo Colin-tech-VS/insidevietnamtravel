@@ -11,7 +11,7 @@ AFFILIATE_IDS = {
     "viator_widget_ref": "W-e126cc1a-6762-441f-bb32-090f8348566f",
     "airalo_ref": "PLACEHOLDER",
     "holafly_ref": "PLACEHOLDER",
-    "worldnomads_affiliate": "PLACEHOLDER",
+    "heymondo_ref": "PLACEHOLDER",
     "pdf_checkout_url": "#pdf-guide",
 }
 
