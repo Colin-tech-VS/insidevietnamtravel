@@ -160,11 +160,15 @@ def localize_itinerary(itin: dict, lang: str | None = None) -> dict:
     i18n = itin.get("i18n", {})
     block = i18n.get(lang) or (i18n.get(DEFAULT_LANG) if lang != DEFAULT_LANG else {})
     if block:
-        for key in ("sample_hotel", "sample_activity"):
+        for key in (
+            "sample_hotel", "sample_activity", "days", "overview",
+            "highlights", "experiences", "faq", "affiliate_sections",
+        ):
             if key in block:
-                result[key] = {**result.get(key, {}), **block[key]}
-        if "days" in block:
-            result["days"] = block["days"]
+                if key in ("sample_hotel", "sample_activity") and isinstance(block[key], dict):
+                    result[key] = {**result.get(key, {}), **block[key]}
+                else:
+                    result[key] = block[key]
     return result
 
 
@@ -263,6 +267,14 @@ ROUTE_PATHS: dict[str, dict[str, str]] = {
     "category": {"fr": "/categorie/{category}", "en": "/en/category/{category}"},
     "article": {"fr": "/blog/{slug}", "en": "/en/blog/{slug}"},
     "itinerary": {"fr": "/itineraries/{slug}", "en": "/en/itineraries/{slug}"},
+    "itinerary_guide_subscribe": {
+        "fr": "/itineraries/{slug}/guide",
+        "en": "/en/itineraries/{slug}/guide",
+    },
+    "itinerary_guide_download": {
+        "fr": "/itineraries/{slug}/guide/{token}",
+        "en": "/en/itineraries/{slug}/guide/{token}",
+    },
     "pillar": {"fr": "/guide/{slug}", "en": "/en/guide/{slug}"},
     "pdf_checkout": {"fr": "/guide-pdf/checkout", "en": "/en/guide-pdf/checkout"},
     "pdf_success": {"fr": "/guide-pdf/merci", "en": "/en/guide-pdf/success"},
@@ -317,6 +329,13 @@ def switch_lang_url() -> str:
         return lang_url("article", alt, slug=view_args.get("slug", ""))
     if base_endpoint == "itinerary":
         return lang_url("itinerary", alt, slug=view_args.get("slug", ""))
+    if base_endpoint == "itinerary_guide_download":
+        return lang_url(
+            "itinerary_guide_download",
+            alt,
+            slug=view_args.get("slug", ""),
+            token=view_args.get("token", ""),
+        )
     if base_endpoint == "destination_page":
         return lang_url("destination_page", alt, slug=view_args.get("slug", ""))
     if base_endpoint == "pillar":

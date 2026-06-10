@@ -798,6 +798,65 @@ def itinerary(slug):
     )
 
 
+@app.route("/itineraries/<slug>/guide", methods=["POST"])
+@app.route("/en/itineraries/<slug>/guide", methods=["POST"])
+def itinerary_guide_subscribe(slug):
+    """Inscription newsletter → lien de téléchargement PDF itinéraire."""
+    from urllib.parse import quote
+
+    from admin.itinerary_download_tokens import make_itinerary_download_token
+    from admin.newsletter_service import add_newsletter_subscriber
+
+    lang = get_lang()
+    if slug not in ITINERARIES:
+        abort(404)
+    back = lang_url("itinerary", lang, slug=slug) + "#guide-pdf"
+
+    if not request.form.get("consent_rgpd"):
+        flash(t("flash.consent", lang), "error")
+        return redirect(back)
+
+    email = (request.form.get("email") or "").strip().lower()
+    if not email or "@" not in email:
+        flash(t("flash.invalid_email", lang), "error")
+        return redirect(back)
+
+    add_newsletter_subscriber(email)
+    token = make_itinerary_download_token(email, slug)
+    download_path = lang_url("itinerary_guide_download", lang, slug=slug, token=token)
+    flash(t("itin.guide.success", lang), "success")
+    return redirect(f"{download_path}?email={quote(email)}")
+
+
+@app.route("/itineraries/<slug>/guide/<token>")
+@app.route("/en/itineraries/<slug>/guide/<token>")
+def itinerary_guide_download(slug, token):
+    from flask import Response
+
+    from admin.itinerary_download_tokens import verify_itinerary_download_token
+    from admin.itinerary_pdf_service import generate_itinerary_pdf_bytes, itinerary_pdf_filename
+
+    lang = get_lang()
+    if slug not in ITINERARIES:
+        abort(404)
+
+    email = (request.args.get("email") or "").strip().lower()
+    if not verify_itinerary_download_token(email, slug, token):
+        abort(403)
+
+    try:
+        pdf_bytes = generate_itinerary_pdf_bytes(slug, lang)
+    except ValueError:
+        abort(404)
+
+    filename = itinerary_pdf_filename(slug, lang)
+    return Response(
+        pdf_bytes,
+        mimetype="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 # ── Static pages ──────────────────────────────────────────────────────
 
 @app.route("/politique-confidentialite")

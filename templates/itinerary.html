@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros/affiliates.html" import hotel_card, activity_card, sim_banner, pdf_banner, insurance_banner, affiliate_disclosure with context %}
+{% from "macros/affiliates.html" import hotel_card, activity_card, sim_banner, insurance_banner, affiliate_disclosure with context %}
 {% from "macros/seo.html" import json_ld_graph with context %}
 
 {% block structured_data %}
@@ -43,11 +43,53 @@
     <h1>{{ itin.title }}</h1>
     <p class="page-hero__lead">{{ itin.summary }}</p>
     <p class="budget-badge">{{ t('itin.budget') }} : {{ itin.budget_hint }}</p>
+    {% if itin.highlights %}
+    <ul class="itin-highlights" aria-label="{{ t('itin.highlights') }}">
+      {% for city in itin.highlights %}
+      <li class="itin-highlights__chip">{{ city }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
   </div>
 </header>
 
 <div class="container page-layout">
   <article class="page-content">
+    {% if itin.overview %}
+    <section class="content-block">
+      <div class="prose">{{ itin.overview | safe }}</div>
+    </section>
+    {% endif %}
+
+    {% if itin.experiences %}
+    <section class="content-block">
+      <h2>{{ t('itin.experiences') }}</h2>
+      <ul class="itin-experiences">
+        {% for exp in itin.experiences %}
+        <li>{{ exp }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    <section class="content-block" id="guide-pdf">
+      <aside class="itin-guide-gate" aria-labelledby="itin-guide-title">
+        <h2 id="itin-guide-title">{{ t('itin.guide.title') }}</h2>
+        <p>{{ t('itin.guide.sub') }}</p>
+        <form class="itin-guide-gate__form" action="{{ lang_url('itinerary_guide_subscribe', slug=slug) }}" method="post" novalidate>
+          <label for="itin-guide-email" class="sr-only">Email</label>
+          <input type="email" id="itin-guide-email" name="email" required
+                 placeholder="{{ newsletter.NEWSLETTER.placeholder }}"
+                 autocomplete="email" class="itin-guide-gate__input">
+          <button type="submit" class="btn btn-primary">{{ t('itin.guide.cta') }}</button>
+          <label class="itin-guide-gate__consent">
+            <input type="checkbox" name="consent_rgpd" value="1" required>
+            <span>{{ t('newsletter.consent') }} <a href="{{ lang_url('privacy') }}" target="_blank" rel="noopener">{{ t('newsletter.privacy_link') }}</a>.</span>
+          </label>
+        </form>
+      </aside>
+    </section>
+
     <section class="content-block">
       <h2>{% if lang == 'en' %}Day-by-day programme{% else %}Programme jour par jour{% endif %}</h2>
       <ol class="timeline">
@@ -64,12 +106,34 @@
               <li>{{ act }}</li>
               {% endfor %}
             </ul>
+            {% if day.tip %}
+            <p class="timeline__tip"><strong>{% if lang == 'en' %}Tip{% else %}Conseil{% endif %} :</strong> {{ day.tip }}</p>
+            {% endif %}
           </div>
         </li>
         {% endfor %}
       </ol>
     </section>
 
+    {% if itin.affiliate_sections %}
+    <section class="content-block">
+      <h2>{{ t('itin.bookings') }}</h2>
+      <p class="section-intro">{% if lang == 'en' %}Affiliate links — hotels and activities to book for this route.{% else %}Liens affiliés — hôtels et activités à réserver pour ce circuit.{% endif %}</p>
+      {% for section in itin.affiliate_sections %}
+      <div class="itin-aff-section">
+        <h3 class="itin-aff-section__title">{{ section.title }}</h3>
+        <div class="affiliate-grid">
+          {% for hotel in section.get('hotels', []) %}
+          {{ hotel_card(hotel, section.location_key) }}
+          {% endfor %}
+          {% for activity in section.get('activities', []) %}
+          {{ activity_card(activity, section.location_key) }}
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </section>
+    {% else %}
     <section class="content-block">
       <h2>{% if lang == 'en' %}Recommended bookings{% else %}Réservations recommandées{% endif %}</h2>
       <p class="section-intro">{% if lang == 'en' %}Affiliate links — sample hotels and activities for this itinerary.{% else %}Liens affiliés — hôtels et activités types pour cet itinéraire.{% endif %}</p>
@@ -78,19 +142,33 @@
         {{ activity_card(itin.sample_activity, itin.get('activity_location_key', itin.location_key)) }}
       </div>
     </section>
+    {% endif %}
+
+    {% if itin.faq %}
+    <section class="content-block">
+      <h2>{{ t('itin.faq') }}</h2>
+      <div class="itin-faq">
+        {% for item in itin.faq %}
+        <details class="itin-faq__item">
+          <summary>{{ item.q }}</summary>
+          <p>{{ item.a }}</p>
+        </details>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
 
     {{ affiliate_disclosure() }}
   </article>
 
   <aside class="page-sidebar">
-    {{ pdf_banner() }}
     {{ sim_banner() }}
     {{ insurance_banner() }}
     <div class="sidebar-card">
       <h3>{% if lang == 'en' %}City guides{% else %}Guides par ville{% endif %}</h3>
       <ul>
-        {% for slug, d in destinations.items() %}
-        <li><a href="{{ lang_url('destination_page', slug=slug) }}">{{ d.name }}</a></li>
+        {% for slug_dest, d in destinations.items() %}
+        <li><a href="{{ lang_url('destination_page', slug=slug_dest) }}">{{ d.name }}</a></li>
         {% endfor %}
       </ul>
     </div>

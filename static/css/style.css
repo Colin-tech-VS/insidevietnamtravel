@@ -1909,6 +1909,96 @@ body.is-nav-open { overflow: hidden; }
 .timeline__location { font-size: 0.85rem; color: var(--ink-muted); margin-bottom: 0.75rem; }
 .timeline__body ul { margin-left: 1.25rem; color: var(--ink-soft); }
 .timeline__body li { margin-bottom: 0.35rem; }
+.timeline__tip {
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  background: var(--surface-alt, #f4f7f6);
+  border-left: 3px solid var(--teal, #0d6b5c);
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.itin-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0;
+  list-style: none;
+}
+.itin-highlights__chip {
+  padding: 0.35rem 0.75rem;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  font-size: 0.82rem;
+}
+.page-hero--itinerary .itin-highlights__chip {
+  background: rgba(13, 107, 92, 0.08);
+  border-color: rgba(13, 107, 92, 0.2);
+  color: var(--ink);
+}
+
+.itin-experiences {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--ink-soft);
+}
+.itin-experiences li { margin-bottom: 0.5rem; }
+
+.itin-guide-gate {
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f0f9f7 0%, #e8f4f1 100%);
+  border: 1px solid rgba(13, 107, 92, 0.15);
+  border-radius: var(--radius-lg, 12px);
+}
+.itin-guide-gate h2 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+.itin-guide-gate__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 1rem;
+}
+.itin-guide-gate__input {
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--border, #d8e0de);
+  border-radius: var(--radius-md, 8px);
+}
+.itin-guide-gate__consent {
+  flex: 1 1 100%;
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+.itin-aff-section { margin-bottom: 2rem; }
+.itin-aff-section__title {
+  font-size: 1.05rem;
+  margin-bottom: 1rem;
+  color: var(--teal, #0d6b5c);
+}
+
+.itin-faq__item {
+  border-bottom: 1px solid var(--border, #e8ecea);
+  padding: 0.75rem 0;
+}
+.itin-faq__item summary {
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+}
+.itin-faq__item summary::-webkit-details-marker { display: none; }
+.itin-faq__item p {
+  margin: 0.65rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
 
 /* Nav dropdown : styles déplacés plus haut (avant les media queries) pour que
    le menu accordéon mobile ne soit pas écrasé par ces règles desktop. */

@@ -3,6 +3,7 @@
 from copy import deepcopy
 
 from data.itineraries_i18n import ITINERARIES_EN
+from data.itinerary_15_days import ITINERARY_15_DAYS_FR
 
 
 def _build_itineraries() -> dict:
@@ -99,13 +100,71 @@ def _build_itineraries() -> dict:
         },
         "activity_location_key": "hanoi",
         "days": [
-            {"day": 1, "title": "Hanoï — Vieux Quartier", "location": "Hanoï", "activities": ["Arrivée, balade lac Hoàn Kiếm", "Phở matinal jour 2", "Dîner street food"], "stay": "Vieux Quartier"},
-            {"day": 2, "title": "Hanoï — Culture", "location": "Hanoï", "activities": ["Temple Littérature", "Musée Ethnographie", "Train street"], "stay": "Vieux Quartier"},
-            {"day": 3, "title": "Baie d'Halong", "location": "Halong", "activities": ["Transfert 3h", "Croisière départ midi", "Kayak & grottes"], "stay": "Bateau croisière"},
-            {"day": 4, "title": "Halong → Hội An", "location": "Transit", "activities": ["Lever soleil sur la baie", "Vol Hanoï → Đà Nẵng", "Transfert Hội An"], "stay": "Hội An"},
-            {"day": 5, "title": "Hội An — Vieille ville", "location": "Hội An", "activities": ["Pont japonais & temples", "Cours cuisine", "Lanternes le soir"], "stay": "Hội An"},
-            {"day": 6, "title": "Hội An — Plage & vélo", "location": "Hội An", "activities": ["Vélo An Bàng", "Tailleur ou spa", "Marché nocturne"], "stay": "Hội An"},
-            {"day": 7, "title": "Départ", "location": "Đà Nẵng", "activities": ["Petit-déjeuner local", "Vol retour depuis Đà Nẵng"], "stay": "—"},
+            {
+                "day": 1, "title": "Hanoï — Vieux Quartier", "location": "Hanoï",
+                "activities": [
+                    "Arrivée & installation Vieux Quartier",
+                    "Lac Hoàn Kiếm et temple Ngoc Son",
+                    "Balade 36 rues corporatives",
+                    "Dîner phở ou bún chả",
+                ],
+                "stay": "Vieux Quartier",
+            },
+            {
+                "day": 2, "title": "Hanoï — Culture", "location": "Hanoï",
+                "activities": [
+                    "Food tour matinal (recommandé)",
+                    "Temple de la Littérature",
+                    "Musée d'Ethnographie",
+                    "Train street ou spectacle marionnettes",
+                ],
+                "stay": "Vieux Quartier",
+            },
+            {
+                "day": 3, "title": "Baie d'Halong 2J/1N", "location": "Halong",
+                "activities": [
+                    "Transfert matinal (3 h)",
+                    "Embarquement croisière",
+                    "Kayak & grottes",
+                    "Nuit à bord",
+                ],
+                "stay": "Bateau croisière",
+            },
+            {
+                "day": 4, "title": "Halong → Hội An", "location": "Transit",
+                "activities": [
+                    "Tai chi / lever de soleil sur la baie",
+                    "Vol Hanoï → Đà Nẵng",
+                    "Transfert & lanternes Hội An",
+                ],
+                "stay": "Hội An",
+            },
+            {
+                "day": 5, "title": "Hội An — Vieille ville", "location": "Hội An",
+                "activities": [
+                    "Pont japonais & temples UNESCO",
+                    "Cours de cuisine",
+                    "Lanternes le soir",
+                ],
+                "stay": "Hội An",
+            },
+            {
+                "day": 6, "title": "Hội An — Plage & vélo", "location": "Hội An",
+                "activities": [
+                    "Vélo vers An Bàng",
+                    "Tailleur ou spa",
+                    "Marché nocturne",
+                ],
+                "stay": "Hội An",
+            },
+            {
+                "day": 7, "title": "Départ", "location": "Đà Nẵng",
+                "activities": [
+                    "Petit-déjeuner local",
+                    "Vol retour depuis Đà Nẵng (prévoir 3 h avant)",
+                ],
+                "stay": "—",
+            },
         ],
     },
     "10-days-vietnam": {
@@ -148,12 +207,14 @@ def _build_itineraries() -> dict:
             {"day": 10, "title": "Départ", "location": "HCMC", "activities": ["Shopping dernier moment", "Vol retour"], "stay": "—"},
         ],
     },
+    "15-days-vietnam": ITINERARY_15_DAYS_FR,
     }
     for slug, itin in base.items():
         fr_block = {
             k: itin[k]
             for k in (
                 "title", "meta_title", "meta_description", "summary", "budget_hint",
+                "overview", "highlights", "experiences", "faq", "affiliate_sections",
                 "sample_hotel", "sample_activity", "days",
             )
             if k in itin

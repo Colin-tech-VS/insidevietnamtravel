@@ -84,7 +84,7 @@ MARGIN_T = 2.4 * cm
 MARGIN_B = 2.2 * cm
 CONTENT_W = PAGE_W - MARGIN_L - MARGIN_R
 
-ITINERARY_SLUGS = ("7-days-vietnam", "10-days-vietnam")
+ITINERARY_SLUGS = ("7-days-vietnam", "10-days-vietnam", "15-days-vietnam")
 
 ITINERARY_14_DAYS = {
     "fr": {

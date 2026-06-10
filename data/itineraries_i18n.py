@@ -1,5 +1,7 @@
 """Traductions EN des itinéraires — fusionnées au chargement."""
 
+from data.itinerary_15_days_en import ITINERARY_15_DAYS_EN
+
 ITINERARIES_EN = {
     "3-days-vietnam": {
         "title": "3-day Vietnam itinerary",
@@ -116,4 +118,5 @@ ITINERARIES_EN = {
             {"day": 10, "title": "Departure", "location": "HCMC", "activities": ["Last-minute shopping", "Return flight"], "stay": "—"},
         ],
     },
+    "15-days-vietnam": ITINERARY_15_DAYS_EN,
 }

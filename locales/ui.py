@@ -256,6 +256,23 @@ UI: dict[str, dict[str, str]] = {
     "itin.hotel": {"fr": "Hôtel recommandé", "en": "Recommended hotel"},
     "itin.activity": {"fr": "Activité recommandée", "en": "Recommended activity"},
     "itin.stay": {"fr": "Nuit", "en": "Overnight"},
+    "itin.highlights": {"fr": "Étapes du circuit", "en": "Route highlights"},
+    "itin.experiences": {"fr": "Expériences du voyage", "en": "Trip highlights"},
+    "itin.faq": {"fr": "Questions fréquentes", "en": "Frequently asked questions"},
+    "itin.bookings": {"fr": "Réservations par région", "en": "Bookings by region"},
+    "itin.guide.title": {
+        "fr": "Télécharger le guide PDF complet",
+        "en": "Download the full PDF guide",
+    },
+    "itin.guide.sub": {
+        "fr": "Programme jour par jour imprimable — inscription newsletter gratuite (pas de compte).",
+        "en": "Printable day-by-day programme — free newsletter signup (no account).",
+    },
+    "itin.guide.cta": {"fr": "Recevoir le PDF", "en": "Get the PDF"},
+    "itin.guide.success": {
+        "fr": "Merci ! Votre guide PDF se télécharge — vous êtes inscrit(e) à la newsletter.",
+        "en": "Thanks! Your PDF guide is downloading — you're subscribed to the newsletter.",
+    },
 
     # About
     "about.title": {"fr": "À propos", "en": "About us"},
