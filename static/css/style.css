@@ -4046,11 +4046,11 @@ body.mai-chat-resizing * {
 
 .mai-chat__bubble--assistant .mai-chat__emph {
   font-weight: 700;
-  color: var(--teal-deep);
-  background: linear-gradient(to top, rgba(196, 160, 83, 0.38) 0%, rgba(196, 160, 83, 0.38) 42%, transparent 42%);
+  color: var(--gold);
+  background: linear-gradient(to top, rgba(27, 77, 74, 0.42) 0%, rgba(27, 77, 74, 0.42) 40%, transparent 40%);
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
-  padding: 0 0.08em;
+  padding: 0 0.1em;
   border-radius: 2px;
 }
 

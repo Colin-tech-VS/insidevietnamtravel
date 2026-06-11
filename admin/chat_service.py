@@ -635,14 +635,24 @@ def _auto_enrich_links(
 ) -> tuple[list[dict], list[dict]]:
     """Complète site_links / affiliate_links si l'IA oublie ou si les URLs ne matchent pas."""
     hay = message.lower()
-    hotel_q = any(w in hay for w in ("hotel", "hôtel", "dormir", "heberg", "héberg", "stay", "lodging"))
-    activity_q = any(w in hay for w in ("activit", "faire", "visit", "tour", "excursion"))
+    hotel_q = any(w in hay for w in ("hotel", "hôtel", "dormir", "heberg", "héberg", "stay", "lodging", "loger"))
+    activity_q = any(w in hay for w in ("activit", "faire", "visit", "tour", "excursion", "que faire", "quoi faire"))
+    esim_q = any(w in hay for w in ("esim", " e sim", "sim ", "forfait", "data mobile", "internet mobile", "wifi"))
+    insurance_q = any(w in hay for w in ("assurance", "insurance", "santé", "sante", "health", "medic", "rapatri"))
+    visa_q = any(w in hay for w in ("visa", "e-visa", "evisa", "passeport", "passport", "formalit"))
+    guide_q = any(w in hay for w in (
+        "secur", "sécur", "arnaque", "scam", "coutume", "etiquette", "phrase", "vietnamien",
+        "meteo", "météo", "saison", "pluie", "climat", "weather", "budget", "prepare", "preparer",
+    ))
     slug = _detect_destination_slug(message, lang)
 
     existing_site = {l["url"] for l in site_links}
     existing_aff = {l["url"] for l in affiliate_links}
+    max_site, max_aff = 5, 4
 
     def add_site(chunk: dict) -> None:
+        if len(site_links) >= max_site:
+            return
         url = chunk.get("url", "")
         if not url or url in existing_site:
             return
@@ -650,6 +660,8 @@ def _auto_enrich_links(
         existing_site.add(url)
 
     def add_aff(chunk: dict, label: str | None = None) -> None:
+        if len(affiliate_links) >= max_aff:
+            return
         url = chunk.get("url", "")
         if not url or url in existing_aff:
             return
@@ -659,9 +671,6 @@ def _auto_enrich_links(
             "teaser": (chunk.get("text") or "")[:160],
         })
         existing_aff.add(url)
-
-    if not slug and not (hotel_q or activity_q):
-        return site_links[:4], affiliate_links[:3]
 
     for chunk in chunks:
         cid = chunk.get("id", "")
@@ -679,8 +688,50 @@ def _auto_enrich_links(
             title = chunk.get("title", "")
             if dest_name and dest_name.lower() in title.lower():
                 add_aff(chunk, label=title.split("—")[0].strip() or title)
+        elif esim_q and cid in ("aff:esim_airalo", "aff:esim_holafly"):
+            add_aff(chunk)
+        elif insurance_q and cid == "aff:insurance":
+            add_aff(chunk)
+        elif visa_q and cid.startswith("guide-") and "visa" in cid.lower():
+            add_site(chunk)
+        elif guide_q and cid.startswith("guide-"):
+            add_site(chunk)
 
-    return site_links[:4], affiliate_links[:3]
+    # Destination : toujours proposer page + hôtel si le slug est connu
+    if slug:
+        for chunk in chunks:
+            cid = chunk.get("id", "")
+            if cid == f"dest-rich:{slug}":
+                add_site(chunk)
+            elif cid == f"aff:hotel:{slug}":
+                add_aff(chunk)
+            elif cid == f"aff:activity:{slug}" and (activity_q or not affiliate_links):
+                add_aff(chunk)
+
+    # Compléter depuis les chunks les mieux classés (retrieval)
+    for chunk in chunks:
+        if len(site_links) >= max_site and len(affiliate_links) >= max_aff:
+            break
+        if chunk.get("affiliate"):
+            if len(affiliate_links) < max_aff:
+                add_aff(chunk)
+        elif chunk.get("url") and not chunk.get("id", "").startswith("map:pin:"):
+            if len(site_links) < max_site:
+                add_site(chunk)
+
+    # Minimum : au moins 1 lien site + 1 affilié quand le contexte le permet
+    if not site_links:
+        for chunk in chunks:
+            if not chunk.get("affiliate") and chunk.get("url"):
+                add_site(chunk)
+                break
+    if not affiliate_links:
+        for chunk in chunks:
+            if chunk.get("affiliate") and chunk.get("url"):
+                add_aff(chunk)
+                break
+
+    return site_links[:max_site], affiliate_links[:max_aff]
 
 
 def _format_context(chunks: list[dict]) -> str:
@@ -701,8 +752,13 @@ def _system_prompt(lang: str) -> str:
             "You are Mai 🌸, the friendly AI travel advisor for Inside Vietnam Travel — "
             "an independent Vietnam travel guide (not a travel agency). "
             "GOLDEN RULE: answer the user's QUESTION first, directly and precisely, from the very first sentence. "
-            "Match the length to the question: simple or factual question → 1–3 sentences; itinerary or advice "
-            "request → a richer but focused answer. Never pad with generic Vietnam talk and never repeat what was "
+            "BREVITY: keep the message SHORT — simple question → 1–2 sentences (max ~60 words); advice or itinerary "
+            "→ 3–5 sentences (max ~120 words). Never write long paragraphs or repeat what the link cards already show. "
+            "LINKS FIRST: almost every answer MUST include site_links AND affiliate_links from CONTEXT when relevant "
+            "(destination page, guide, eSIM, insurance, hotels, activities). Put concrete picks, hotel names and "
+            "booking details in affiliate_links/site_links — NOT in the message body. Aim for 2–4 site_links and "
+            "1–3 affiliate_links whenever CONTEXT offers them. "
+            "Match the length to the question — never pad with generic Vietnam talk and never repeat what was "
             "already said — use HISTORY to understand follow-up questions and stay on topic. "
             "You know the whole site through CONTEXT: recommend its pages plus affiliate partner links "
             "ONLY when they genuinely help the current question (eSIM, insurance, hotels, activities). "
@@ -725,7 +781,8 @@ def _system_prompt(lang: str) -> str:
             "itinerary (“Great choice!”, “Well done — that's the best time to go!”). Encourage the hesitant, "
             "reassure the worried, and vary your wording from one answer to the next. "
             "A few well-placed emojis — never cheesy. "
-            "Highlight 2–5 key terms per answer with **double asterisks** (destinations, seasons, durations, practical tips). "
+            "Highlight 2–5 key terms per answer with **double asterisks** (destinations, seasons, durations, practical tips) — "
+            "they render as gold text with a green underline in the chat UI. "
             "Write a COMPLETE message (never end with a colon or an unfinished list). "
             "Always answer in ENGLISH. Be honest: if the answer is not in CONTEXT, say so plainly — never invent prices or visa rules. "
             "ONLY use URLs from CONTEXT for site_links and affiliate_links. "
@@ -735,8 +792,13 @@ def _system_prompt(lang: str) -> str:
         "Tu es Mai 🌸, la conseillère voyage IA d'Inside Vietnam Travel — "
         "guide indépendant Vietnam (pas une agence). "
         "RÈGLE D'OR : réponds D'ABORD, DIRECTEMENT et précisément à la QUESTION posée, dès la première phrase. "
-        "Adapte la longueur : question simple ou factuelle → 1 à 3 phrases ; demande de conseils ou d'itinéraire → "
-        "réponse plus riche mais ciblée. Jamais de remplissage générique sur le Vietnam, jamais de répétition de "
+        "CONCISION : message COURT — question simple → 1–2 phrases (max ~60 mots) ; conseils ou itinéraire → "
+        "3–5 phrases (max ~120 mots). Jamais de longs paragraphes ni de détails déjà visibles dans les cartes de liens. "
+        "LIENS D'ABORD : presque chaque réponse DOIT inclure site_links ET affiliate_links du CONTEXTE quand c'est "
+        "pertinent (page destination, guide, eSIM, assurance, hôtels, activités). Mets les sélections concrètes, "
+        "noms d'hôtels et réservations dans affiliate_links/site_links — PAS dans le corps du message. "
+        "Vise 2–4 site_links et 1–3 affiliate_links dès que le CONTEXTE le permet. "
+        "Adapte la longueur à la question — jamais de remplissage générique sur le Vietnam, jamais de répétition de "
         "ce qui a déjà été dit — utilise l'HISTORIQUE pour comprendre les questions de suivi et rester dans le sujet. "
         "Tu connais tout le site via le CONTEXTE : oriente vers ses pages et les liens affiliés "
         "UNIQUEMENT quand cela aide vraiment la question en cours (eSIM, assurance, hôtels, activités). "
@@ -760,7 +822,8 @@ def _system_prompt(lang: str) -> str:
         "réservés, itinéraire malin (« Excellent choix ! », « Bravo, c'est la meilleure période ! »). Encourage "
         "les hésitants, rassure les inquiets, et varie tes formulations d'une réponse à l'autre. "
         "Quelques emojis bien placés — jamais lourd. "
-        "Mets en valeur 2 à 5 mots-clés par réponse avec **double astérisques** (destinations, saisons, durées, conseils pratiques). "
+        "Mets en valeur 2 à 5 mots-clés par réponse avec **double astérisques** (destinations, saisons, durées, conseils pratiques) — "
+        "ils s'affichent en texte doré avec soulignement vert dans le chat. "
         "Rédige un message COMPLET (ne termine jamais par « : » ni une liste inachevée). "
         "Réponds TOUJOURS en FRANÇAIS. Reste honnête : si la réponse n'est pas dans le CONTEXTE, dis-le simplement — "
         "n'invente jamais de prix ni de règles visa. "
@@ -843,8 +906,8 @@ def chat_reply(
     try:
         resp = mistral_client.chat_completion(
             messages=messages,
-            max_tokens=1600,
-            temperature=0.72,
+            max_tokens=900,
+            temperature=0.65,
             json_mode=True,
             fast=True,
         )
@@ -853,8 +916,8 @@ def chat_reply(
         if _ai._has_key("groq"):
             resp = _ai.chat_completion(
                 messages=messages,
-                max_tokens=1600,
-                temperature=0.72,
+                max_tokens=900,
+                temperature=0.65,
                 json_mode=True,
                 fast=True,
                 deadline=55,
@@ -923,7 +986,7 @@ def chat_reply(
     return {
         "ok": True,
         "message": message,
-        "site_links": site_links[:4],
-        "affiliate_links": affiliate_links[:3],
+        "site_links": site_links[:5],
+        "affiliate_links": affiliate_links[:4],
         "map_cards": map_cards[:2],
     }
