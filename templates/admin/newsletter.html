@@ -336,6 +336,51 @@
 
     </section>
 
+    <section class="panel guides-stats-panel">
+
+      <h2>🤝 Partenaires</h2>
+
+      {% if partners_to_contact %}
+
+      <p class="guides-stats-count"><strong>{{ partners_to_contact|length }}</strong> contact(s) avec email</p>
+
+      <ul class="subscriber-list">
+        {% for p in partners_to_contact %}
+        <li class="subscriber-item">
+          <div class="subscriber-item__info">
+            <strong>{{ p.name }}</strong>
+            <span class="published-list__date">{{ partner_status_labels.get(p.status, p.status) }} · {{ p.email }}</span>
+          </div>
+          <div class="subscriber-item__actions">
+            <a class="btn btn-secondary btn-sm"
+               href="{{ url_for('admin.newsletter_admin', prefill=1, email_type='partenariat', topic='Partenariat avec ' ~ p.name ~ (' (' ~ p.topics ~ ')' if p.topics else '')) }}"
+               title="Préparer un email de partenariat IA pour {{ p.name }}">✦ Email IA</a>
+            {% if draft and smtp_ok %}
+            <form method="post" class="subscriber-item__send"
+                  onsubmit="return confirm('Envoyer le brouillon « {{ draft.subject|e }} » à {{ p.name|e }} ({{ p.email }}) ?')">
+              <input type="hidden" name="action" value="send_one">
+              <input type="hidden" name="email" value="{{ p.email }}">
+              <input type="hidden" name="partner_id" value="{{ p.id }}">
+              <button type="submit" class="btn btn-secondary btn-sm" title="Envoyer le brouillon à {{ p.email }} (statut passera à « contacté »)">Envoyer</button>
+            </form>
+            {% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+
+      <p class="muted">L'envoi à un partenaire passe son statut à « contacté ». Gestion complète :
+      <a href="{{ url_for('admin.partnerships') }}">Partenariats</a>.</p>
+
+      {% else %}
+
+      <p class="muted">Aucun partenaire avec email — trouvez-en sur la page
+      <a href="{{ url_for('admin.partnerships') }}">Partenariats</a> (recherche IA) ou via Linh.</p>
+
+      {% endif %}
+
+    </section>
+
   </aside>
 
 </div>

@@ -691,6 +691,10 @@ def newsletter_admin():
                 )
                 if result["sent"]:
                     flash(f"Email envoyé à {email}.", "success")
+                    partner_id = (request.form.get("partner_id") or "").strip()
+                    if partner_id:
+                        from admin.partners_service import mark_contacted
+                        mark_contacted(partner_id)
                 else:
                     flash(f"Échec d'envoi vers {email}.", "error")
             elif action == "send_all":
@@ -727,6 +731,8 @@ def newsletter_admin():
     subscribers = get_newsletter_subscribers()
     draft = _get_draft("newsletter")
     preview_html = render_newsletter_preview(draft) if draft else ""
+    from admin import partners_service as ps
+    partners_to_contact = [p for p in ps.get_partnerships() if p.get("email")]
     return render_template(
         "admin/newsletter.html",
         subscribers=subscribers,
@@ -738,6 +744,8 @@ def newsletter_admin():
         email_types=groq_newsletter.EMAIL_TYPES,
         draft_is_manual=bool(draft and draft.get("manual")),
         test_email_default=os.environ.get("LEGAL_CONTACT_EMAIL", ""),
+        partners_to_contact=partners_to_contact,
+        partner_status_labels=ps.PARTNER_STATUS_LABELS,
     )
 
 
@@ -1198,6 +1206,100 @@ def social_publish():
         friendly = fb.friendly_error(exc) if network == "facebook" else str(exc)
         flash(f"Échec de la publication : {friendly}", "error")
     return redirect(url_for("admin.social"))
+
+
+# ── Partenariats (influenceurs, guides, blogueurs, agences…) ──────────
+@admin_bp.route("/partnerships", methods=["GET", "POST"])
+@login_required
+def partnerships():
+    from admin import partners_service as ps
+
+    if request.method == "POST":
+        action = request.form.get("action")
+        try:
+            if action == "add":
+                partner = ps.add_partnership({
+                    "name": request.form.get("name", ""),
+                    "type": request.form.get("type", "influenceur"),
+                    "email": request.form.get("email", ""),
+                    "links": request.form.get("links", ""),
+                    "topics": request.form.get("topics", ""),
+                    "followers": request.form.get("followers", ""),
+                    "notes": request.form.get("notes", ""),
+                    "source": "manuel",
+                })
+                flash(f"Partenaire « {partner['name']} » ajouté.", "success")
+            elif action == "update":
+                ps.update_partnership(request.form.get("partner_id", ""), {
+                    "type": request.form.get("type"),
+                    "email": request.form.get("email"),
+                    "status": request.form.get("status"),
+                    "topics": request.form.get("topics"),
+                    "notes": request.form.get("notes"),
+                    "links": request.form.get("links"),
+                })
+                flash("Partenaire mis à jour.", "success")
+            elif action == "delete":
+                ps.delete_partnership(request.form.get("partner_id", ""))
+                flash("Partenaire supprimé.", "success")
+        except ValueError as e:
+            flash(str(e), "error")
+        except Exception as e:  # noqa: BLE001
+            flash(f"Erreur : {e}", "error")
+        return redirect(url_for("admin.partnerships"))
+
+    status_filter = request.args.get("status", "")
+    type_filter = request.args.get("type", "")
+    items = ps.get_partnerships()
+    if status_filter:
+        items = [p for p in items if p.get("status") == status_filter]
+    if type_filter:
+        items = [p for p in items if p.get("type") == type_filter]
+
+    return render_template(
+        "admin/partnerships.html",
+        partners=items,
+        stats=ps.partnership_stats(),
+        types=ps.PARTNER_TYPES,
+        statuses=ps.PARTNER_STATUSES,
+        type_labels=ps.PARTNER_TYPE_LABELS,
+        status_labels=ps.PARTNER_STATUS_LABELS,
+        status_filter=status_filter,
+        type_filter=type_filter,
+        ai_ready=ai_client.is_configured(),
+        smtp_ok=is_smtp_configured(),
+    )
+
+
+@admin_bp.route("/api/partnerships/search", methods=["POST"])
+@login_required
+def api_partnerships_search():
+    from admin import assistant_service
+    from admin import partners_service as ps
+
+    payload = request.get_json(silent=True) or {}
+    brief = (payload.get("brief") or "").strip()
+    if not brief:
+        return jsonify({"ok": False, "error": "Décrivez la recherche (ex. « influenceurs francophones voyage Vietnam »)."}), 400
+    if not ai_client.is_configured():
+        return jsonify({"ok": False, "error": "Aucune clé IA configurée — la recherche IA est indisponible."}), 400
+
+    token = assistant_service.start_action_job(
+        lambda report: _search_partners_result(ps, brief, report),
+        initial_phase="Recherche web des influenceurs…",
+    )
+    return jsonify({"ok": True, "job_token": token})
+
+
+def _search_partners_result(ps, brief: str, report) -> dict:
+    result = ps.search_and_save_influencers(brief, progress=report)
+    saved = result["saved"]
+    return {
+        "saved": len(saved),
+        "skipped": result["skipped"],
+        "names": [f"{p['name']}" + (f" ({p['email']})" if p.get("email") else "") for p in saved],
+        "message": f"{len(saved)} contact(s) enregistré(s), {result['skipped']} doublon(s) ignoré(s).",
+    }
 
 
 @admin_bp.route("/map", methods=["GET", "POST"])

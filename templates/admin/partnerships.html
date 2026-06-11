@@ -1,0 +1,179 @@
+{% extends "admin/layout.html" %}
+{% block title %}Partenariats{% endblock %}
+{% block page_title %}Partenariats{% endblock %}
+
+{% block content %}
+<div class="partners-page">
+
+  <p class="social-intro">Influenceurs, blogueurs, guides locaux, agences… Cherchez des partenaires
+  potentiels sur internet avec l'IA (email extrait quand il est public), suivez vos contacts par statut,
+  puis écrivez-leur depuis la page <a href="{{ url_for('admin.newsletter_admin') }}">Newsletter</a>
+  (email IA « Proposition de partenariat » ou manuel).</p>
+
+  <!-- Stats -->
+  <div class="partners-stats">
+    <span class="partners-stat"><strong>{{ stats.total }}</strong> partenaire(s)</span>
+    <span class="partners-stat"><strong>{{ stats.with_email }}</strong> avec email</span>
+    {% for key, label in statuses %}
+    {% if stats.by_status.get(key) %}
+    <a class="partners-stat partners-stat--{{ key }}{% if status_filter == key %} is-active{% endif %}"
+       href="{{ url_for('admin.partnerships', status=(('' if status_filter == key else key)) or None) }}">
+      {{ label }} : <strong>{{ stats.by_status.get(key) }}</strong>
+    </a>
+    {% endif %}
+    {% endfor %}
+    {% if status_filter or type_filter %}
+    <a class="partners-stat" href="{{ url_for('admin.partnerships') }}">✕ Réinitialiser les filtres</a>
+    {% endif %}
+  </div>
+
+  <!-- Recherche IA d'influenceurs -->
+  <section class="social-card">
+    <div class="social-card__head">
+      <div class="social-card__title">
+        <span class="social-card__icon" aria-hidden="true">🔍</span>
+        <h2>Trouver des influenceurs sur internet (IA)</h2>
+      </div>
+    </div>
+    <p class="social-hint">L'IA cherche sur le web (DuckDuckGo) des créateurs voyage Vietnam ouverts
+    aux collaborations, lit les pages trouvées pour en extraire les <strong>emails publics</strong>,
+    puis enregistre les contacts pertinents ci-dessous au statut « à contacter ».
+    Vous pouvez aussi demander la même chose à <strong>Linh</strong> dans le chat admin.</p>
+    <div class="partners-search">
+      <input type="text" id="partner-search-brief" class="social-input"
+             placeholder="Ex. « influenceurs francophones backpacking Vietnam », « food bloggers Hanoi »…">
+      <button type="button" id="partner-search-btn" class="btn btn-primary"{% if not ai_ready %} disabled{% endif %}>
+        ✦ Rechercher et enregistrer
+      </button>
+    </div>
+    <p id="partner-search-status" class="social-hint" aria-live="polite" hidden></p>
+    {% if not ai_ready %}<p class="social-hint social-hint--warn">⚠ Aucune clé IA configurée — la recherche IA est indisponible.</p>{% endif %}
+  </section>
+
+  <!-- Ajout manuel -->
+  <section class="social-card">
+    <details class="partners-add">
+      <summary><span class="social-card__icon" aria-hidden="true">＋</span> Ajouter un partenaire manuellement</summary>
+      <form method="post" class="partners-add__form">
+        <input type="hidden" name="action" value="add">
+        <div class="social-field">
+          <label for="p-name">Nom <span class="social-req">obligatoire</span></label>
+          <input type="text" id="p-name" name="name" required placeholder="Nom de la personne, du blog ou de l'agence">
+        </div>
+        <div class="social-field">
+          <label for="p-type">Type</label>
+          <select id="p-type" name="type" class="social-select">
+            {% for key, label in types %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="social-field">
+          <label for="p-email">Email</label>
+          <input type="email" id="p-email" name="email" placeholder="contact@…">
+        </div>
+        <div class="social-field">
+          <label for="p-followers">Audience</label>
+          <input type="text" id="p-followers" name="followers" placeholder="ex. 25k Instagram">
+        </div>
+        <div class="social-field partners-add__wide">
+          <label for="p-links">Liens (profils, site) — séparés par espaces ou virgules</label>
+          <input type="text" id="p-links" name="links" placeholder="https://instagram.com/… https://blog…">
+        </div>
+        <div class="social-field">
+          <label for="p-topics">Niche / sujets</label>
+          <input type="text" id="p-topics" name="topics" placeholder="ex. backpacking, food, photo">
+        </div>
+        <div class="social-field">
+          <label for="p-notes">Notes</label>
+          <input type="text" id="p-notes" name="notes" placeholder="contexte, idée de collab…">
+        </div>
+        <div class="social-config__actions partners-add__wide">
+          <button type="submit" class="btn btn-primary">Ajouter</button>
+        </div>
+      </form>
+    </details>
+  </section>
+
+  <!-- Liste -->
+  <section class="social-card">
+    <div class="social-card__head">
+      <div class="social-card__title">
+        <span class="social-card__icon" aria-hidden="true">🤝</span>
+        <h2>Partenaires <span class="social-card__sub">{{ partners|length }} affiché(s)</span></h2>
+      </div>
+      <form method="get" class="partners-filter">
+        <select name="type" class="social-select" onchange="this.form.submit()">
+          <option value="">Tous les types</option>
+          {% for key, label in types %}
+          <option value="{{ key }}"{% if type_filter == key %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+      </form>
+    </div>
+
+    {% if partners %}
+    <div class="partners-list">
+      {% for p in partners %}
+      <article class="partner-row partner-row--{{ p.status }}">
+        <form method="post" class="partner-row__form">
+          <input type="hidden" name="partner_id" value="{{ p.id }}">
+
+          <div class="partner-row__main">
+            <div class="partner-row__id">
+              <strong class="partner-row__name">{{ p.name }}</strong>
+              <span class="partner-row__meta">{{ type_labels.get(p.type, p.type) }}
+                {% if p.followers %} · {{ p.followers }}{% endif %}
+                {% if p.source and p.source != 'manuel' %} · <em title="Trouvé par la recherche IA">🔍 {{ p.source }}</em>{% endif %}
+              </span>
+              {% if p.links %}
+              <span class="partner-row__links">
+                {% for l in p.links[:4] %}<a href="{{ l }}" target="_blank" rel="noopener" class="partner-row__link">{{ l.split('//')[-1].split('/')[0] }} ↗</a>{% endfor %}
+              </span>
+              {% endif %}
+            </div>
+
+            <div class="partner-row__fields">
+              <input type="email" name="email" value="{{ p.email }}" placeholder="email à trouver…" class="social-input partner-row__email">
+              <select name="status" class="social-select partner-row__status">
+                {% for key, label in statuses %}
+                <option value="{{ key }}"{% if p.status == key %} selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              <input type="text" name="topics" value="{{ p.topics }}" placeholder="niche / sujets" class="social-input">
+              <input type="text" name="notes" value="{{ p.notes }}" placeholder="notes…" class="social-input partner-row__notes">
+            </div>
+          </div>
+
+          <div class="partner-row__actions">
+            {% if p.last_contacted_at %}<span class="partner-row__contacted" title="Dernier contact">📧 {{ p.last_contacted_at }}</span>{% endif %}
+            <button type="submit" name="action" value="update" class="btn btn-secondary btn-sm">Enregistrer</button>
+            {% if p.email %}
+            <a class="btn btn-primary btn-sm"
+               href="{{ url_for('admin.newsletter_admin', prefill=1, email_type='partenariat', topic='Partenariat avec ' ~ p.name ~ (' (' ~ p.topics ~ ')' if p.topics else ''), notes='Type : ' ~ type_labels.get(p.type, p.type) ~ (' · Audience : ' ~ p.followers if p.followers else '')) }}"
+               title="Préparer un email de partenariat IA pour {{ p.name }}">📧 Contacter</a>
+            {% else %}
+            <span class="social-hint" title="Ajoutez un email pour pouvoir contacter ce partenaire">sans email</span>
+            {% endif %}
+            <button type="submit" name="action" value="delete" class="btn btn-secondary btn-sm partner-row__delete"
+                    title="Supprimer" formnovalidate
+                    onclick="return confirm('Supprimer {{ p.name|e }} ?')">×</button>
+          </div>
+        </form>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="social-hint">Aucun partenaire{% if status_filter or type_filter %} pour ces filtres{% endif %} —
+    lancez une recherche IA ci-dessus, demandez à Linh (« trouve-moi des influenceurs voyage Vietnam »)
+    ou ajoutez un contact manuellement.</p>
+    {% endif %}
+  </section>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>window.PARTNER_SEARCH_URL = "{{ url_for('admin.api_partnerships_search') }}";
+window.PARTNER_JOB_URL = "{{ url_for('admin.api_assistant_action_job', token='__TOKEN__') }}";</script>
+<script src="{{ url_for('static', filename='admin/partnerships.js') }}" defer></script>
+{% endblock %}

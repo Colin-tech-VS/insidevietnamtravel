@@ -133,8 +133,9 @@ _ADMIN_PAGE_NOTES = {
     "admin.guides": ("Guides IA", "Génération d'articles SEO par IA (ville + sujet + type), amélioration IA, rédaction manuelle, publication sur /blog."),
     "admin.destinations_admin": ("Destinations", "Création/édition des pages destinations (IA ou manuel), images WebP, choix de la section Nord/Centre/Sud, publication sur /<slug>."),
     "admin.map_admin": ("Carte", "Points d'intérêt et pins affiliés (hôtels, activités) sur les cartes interactives des destinations."),
-    "admin.newsletter_admin": ("Newsletter", "Composition d'emails (IA ou manuel), envoi test / abonné / tous, gestion des abonnés."),
-    "admin.social": ("Réseaux sociaux", "Génération IA et publication de posts Facebook (lien UTM ou photo), configuration page/token."),
+    "admin.newsletter_admin": ("Newsletter", "Composition d'emails (IA ou manuel), envoi test / abonné / tous, gestion des abonnés, contact direct des partenaires."),
+    "admin.social": ("Réseaux sociaux", "Publication multi-réseaux avec rédaction IA adaptée et suivi UTM : Facebook, Pinterest, Reddit, Telegram, X (Twitter), Threads, Instagram (TikTok : audit API requis). Configuration des connexions API de chaque réseau."),
+    "admin.partnerships": ("Partenariats", "Gestion des partenaires (influenceurs, blogueurs, guides, agences) : recherche IA d'influenceurs voyage Vietnam avec extraction d'email, statuts de contact (à contacter → actif), envoi d'emails via la page Newsletter."),
     "admin.contact_admin": ("Contact", "Messages reçus via le formulaire de contact public (lu / suppression)."),
     "admin.reviews_admin": ("Avis", "Gestion des témoignages voyageurs affichés sur le site."),
     "admin.affiliates": ("Affiliation", "IDs partenaires (Booking, Agoda, GetYourGuide, eSIM…), vérification du tracking, stats de clics."),
@@ -264,10 +265,12 @@ def build_site_snapshot() -> dict:
             "count": len(reviews),
             "avg": round(sum(r.get("rating", 0) for r in reviews) / len(reviews), 1) if reviews else 0,
         },
+        "partnerships": _safe(_partnership_stats, {}),
         "config": {
             "ai_provider": _safe(ai_client.provider, "?"),
             "ai_status": _safe(ai_client.provider_status, {}),
             "facebook_ok": _safe(_facebook_ok, False),
+            "social_networks": _safe(_connected_networks, []),
         },
     }
     return snapshot
@@ -291,6 +294,17 @@ def _contact_unread() -> int:
 def _facebook_ok() -> bool:
     from admin import facebook_service as fb
     return fb.is_configured()
+
+
+def _connected_networks() -> list[str]:
+    from admin import social_networks as sn
+    return [n["key"] for n in sn.NETWORKS
+            if n.get("publishable") and sn.is_network_configured(n["key"])]
+
+
+def _partnership_stats() -> dict:
+    from admin.partners_service import partnership_stats
+    return partnership_stats()
 
 
 # ── Audit déterministe (bugs / manques / SEO) ────────────────────────────────
@@ -466,7 +480,14 @@ def _format_snapshot(snap: dict) -> str:
         f"Revenus: {snap.get('revenue', {}).get('total_eur', 0)} € total, {snap.get('revenue', {}).get('month_eur', 0)} € ce mois",
         f"Newsletter: {snap.get('newsletter', {}).get('subscribers', 0)} abonné(s), SMTP {'OK' if snap.get('newsletter', {}).get('smtp_ok') else 'NON configuré'}",
         f"Avis: {snap.get('reviews', {}).get('count', 0)} (moyenne {snap.get('reviews', {}).get('avg', 0)}/5) — Contact non lus: {snap.get('contact_unread', 0)}",
-        f"Config: moteur IA {snap.get('config', {}).get('ai_provider')}, Facebook {'connecté' if snap.get('config', {}).get('facebook_ok') else 'NON connecté'}",
+        f"Config: moteur IA {snap.get('config', {}).get('ai_provider')}, Facebook {'connecté' if snap.get('config', {}).get('facebook_ok') else 'NON connecté'}"
+        + ", réseaux sociaux connectés: "
+        + (", ".join(snap.get("config", {}).get("social_networks") or []) or "aucun (voir /admin/social)"),
+        "Partenariats: "
+        + (f"{snap.get('partnerships', {}).get('total', 0)} partenaire(s) "
+           f"({snap.get('partnerships', {}).get('with_email', 0)} avec email) — "
+           + ", ".join(f"{k}:{v}" for k, v in (snap.get('partnerships', {}).get('by_status') or {}).items() if v)
+           if snap.get("partnerships", {}).get("total") else "aucun partenaire enregistré (/admin/partnerships)"),
     ]
     arts = snap.get("articles", [])
     lines.append(f"Articles publiés ({len(arts)}):")
@@ -563,6 +584,22 @@ def _system_prompt() -> str:
         "add_map_points avec les restaurants trouvés et leurs adresses). "
         f"VILLES autorisées pour generate_guide/generate_destination : {cities}. "
         f"CATÉGORIES blog existantes (clé du champ category) : {blog_categories}. "
+        "RÉSEAUX SOCIAUX (/admin/social) — tu les connais tous : publication multi-réseaux "
+        "avec rédaction IA adaptée aux codes de chaque plateforme et suivi UTM "
+        "(utm_source = réseau). Réseaux disponibles (clé network) : facebook (page existante), "
+        "pinterest (n°1 planification voyage, image obligatoire), reddit (r/VietnamTravel — "
+        "voyageurs très qualifiés, autopromo limitée, titre honnête sans emoji), telegram "
+        "(canaux voyageurs/expats Asie SE), x (conseils rapides, 280 car.), threads "
+        "(conversationnel), instagram (image obligatoire, lien non cliquable → « lien en "
+        "bio »). tiktok est listé mais non publiable par API (audit TikTok 2-4 semaines). "
+        "Les réseaux connectés sont dans ÉTAT DU SITE (Config) ; la connexion (clés API) se "
+        "fait sur /admin/social. "
+        "PARTENARIATS (/admin/partnerships) : base des partenaires potentiels (influenceurs, "
+        "blogueurs, guides, agences) avec email, statut (à contacter → contacté → en "
+        "discussion → actif) et notes. Tu peux en CHERCHER sur internet (find_influencers) "
+        "et en ENREGISTRER (add_partner). Le contact se fait depuis /admin/newsletter "
+        "(email IA type « partenariat » ou manuel) — propose le lien prefill "
+        "/admin/newsletter?prefill=1&topic=…&email_type=partenariat quand l'admin veut écrire à un partenaire. "
         "OUTILS disponibles (champ \"tool\", sinon null) :\n"
         '- {"name":"web_search","params":{"query":"…"}} — rechercher sur internet (DuckDuckGo) : '
         "actualités/réglementation Vietnam (visa, prix, événements), concurrence, tendances SEO, "
@@ -576,7 +613,7 @@ def _system_prompt() -> str:
         '- {"name":"generate_guide","params":{"city":"…","topic":"…","guide_type":"article blog"}} — guide SEO (job en arrière-plan)\n'
         '- {"name":"generate_destination","params":{"city":"…","notes":"…"}} — page destination (job en arrière-plan)\n'
         '- {"name":"generate_newsletter","params":{"topic":"…","email_type":"actualite","notes":"…"}} — email newsletter (job en arrière-plan)\n'
-        '- {"name":"generate_social_post","params":{"page_id":"…","brief":"…"}} — post Facebook (page_id du bloc PAGES PUBLIQUES, ou brief libre)\n'
+        '- {"name":"generate_social_post","params":{"page_id":"…","brief":"…","network":"facebook|pinterest|reddit|telegram|x|threads|instagram"}} — post réseau social rédigé selon les codes du réseau choisi (network optionnel, facebook par défaut ; page_id du bloc PAGES PUBLIQUES, ou brief libre)\n'
         '- {"name":"set_destination_region","params":{"slug":"…","region":"north|central|south"}} — déplacer une destination publiée dans la colonne Nord/Centre/Sud du menu Destinations (confirmation auto)\n'
         '- {"name":"update_article","params":{"slug":"…","title":"…","meta_title":"…","meta_description":"…","excerpt":"…","content":"…","tags":["…"],"focus_keyword":"…","category":"…"}} — modifier un guide/article publié (/blog/slug) ; champs optionnels, ne passe que ceux à changer. category = clé d\'une CATÉGORIE existante (sinon crée-la d\'abord avec add_category) (confirmation auto)\n'
         '- {"name":"add_category","params":{"label_fr":"…","label_en":"…","description_fr":"…","description_en":"…","key":"…"}} — créer une catégorie de blog : page /categorie/<key> FR+EN, ajoutée automatiquement au menu du blog et au sitemap. key optionnelle (slug auto depuis label_fr) (confirmation auto)\n'
@@ -587,8 +624,11 @@ def _system_prompt() -> str:
         '- {"name":"add_map_points","params":{"city":"slug ou nom de la ville","points":[{"title":"…","address":"adresse complète","kind":"restaurant","desc":"…","price_hint":"…","image_url":"https://…"}]}} — ajouter des points sur la carte interactive : restaurants, bars, hôtels, activités, lieux… kind de préférence ∈ hotel|activity|restaurant|bar|poi|service, mais tout autre type est accepté (ex. « spa », « marché nocturne ») : il est créé automatiquement avec sa couleur et sa légende ; address = adresse la plus précise possible (géocodée via OpenStreetMap), sinon « Nom, Ville » ; image_url facultative (lien DIRECT vers une photo du lieu) — sans elle une photo est cherchée automatiquement sur Pixabay (confirmation auto)\n'
         '- {"name":"update_map_images","params":{"title":"nom du point","city":"ville","image_url":"https://… ou mots-clés"}} ou {"all_missing":true} — mettre à jour la photo d\'un point existant de la carte (URL directe, mots-clés Pixabay, ou vide = recherche auto), ou trouver une photo pour TOUS les points sans image (job en arrière-plan) (confirmation auto)\n'
         '- {"name":"publish_draft","params":{"kind":"article"}} ou {"kind":"destination"} — publier le brouillon en attente (confirmation auto)\n'
-        '- {"name":"publish_facebook","params":{}} — publier le dernier post généré (confirmation auto)\n'
+        '- {"name":"publish_facebook","params":{}} — publier le dernier post généré sur Facebook (confirmation auto)\n'
+        '- {"name":"publish_social","params":{"network":"…"}} — publier le dernier post généré sur le réseau indiqué (doit être connecté sur /admin/social ; confirmation auto)\n'
         '- {"name":"send_newsletter","params":{"scope":"test","email":"…"}} ou {"scope":"all"} — envoyer la newsletter (confirmation auto)\n'
+        '- {"name":"find_influencers","params":{"brief":"…"}} — chercher sur internet des influenceurs/blogueurs/créateurs voyage Vietnam ouverts aux partenariats (recherche web + lecture des pages pour extraire les EMAILS), puis les enregistrer dans /admin/partnerships au statut « à contacter » (job en arrière-plan après confirmation). brief = niche/angle souhaité (ex. « influenceurs francophones backpacking Vietnam »)\n'
+        '- {"name":"add_partner","params":{"name":"…","type":"influenceur|blogueur|guide|agence|hotel|autre","email":"…","links":["https://…"],"topics":"…","notes":"…"}} — enregistrer manuellement un partenaire dans /admin/partnerships (confirmation auto)\n'
         "Ton : direct, structuré, orienté impact — un consultant produit/SEO senior. "
         "Mets en avant 2 à 5 points clés avec **double astérisques**. Termine toujours ta réponse. "
         "Les \"actions\" sont des liens internes UNIQUEMENT (URLs commençant par « / », "
@@ -733,9 +773,23 @@ def execute_confirmation(token: str) -> dict:
     if action == "publish_destination":
         return _exec_publish_destination()
     if action == "publish_facebook":
-        return _exec_publish_facebook()
+        return _exec_publish_social({"network": "facebook"})
+    if action == "publish_social":
+        return _exec_publish_social(params)
     if action == "send_newsletter":
         return _exec_send_newsletter(params)
+    if action == "add_partner":
+        return _exec_add_partner(params)
+    if action == "find_influencers":
+        job_token = start_action_job(
+            lambda report: _exec_find_influencers(params, report),
+            initial_phase="Recherche web des influenceurs…",
+        )
+        return {
+            "async": True,
+            "job_token": job_token,
+            "message": "⏳ Recherche d'influenceurs en cours (web + extraction des emails + tri IA)…",
+        }
     if action == "set_destination_region":
         return _exec_set_destination_region(params)
     if action == "update_article":
@@ -856,12 +910,16 @@ def _describe_draft(kind: str, draft: dict) -> dict:
             ),
         }
     if kind == "social":
+        from admin import social_networks as sn
+
         msg = (draft.get("message") or "")[:220]
+        network = (draft.get("network") or "facebook").strip().lower()
+        net_name = sn.NETWORK_KEYS.get(network, {}).get("name", network.title())
         return {
-            "summary": "Post Facebook prêt :\n" + msg,
+            "summary": f"Post {net_name} prêt :\n" + msg,
             "preview_url": "/admin/social",
             "confirm": create_confirmation(
-                "publish_facebook", {}, "Publier ce post sur Facebook ?",
+                "publish_social", {"network": network}, f"Publier ce post sur {net_name} ?",
                 msg + ("…" if len(draft.get("message") or "") > 220 else ""),
             ),
         }
@@ -897,25 +955,70 @@ def _exec_publish_destination() -> dict:
     return {"message": f"✅ Destination publiée : /{dest['slug']}", "url": f"/{dest['slug']}"}
 
 
-def _exec_publish_facebook() -> dict:
+def _exec_publish_social(params: dict) -> dict:
     from admin import draft_store
     from admin import facebook_service as fb
+    from admin import social_networks as sn
 
     post = _get_draft("social")
     if not post:
-        raise ValueError("Aucun post Facebook en attente — demandez d'abord une génération.")
-    if not fb.is_configured():
-        raise ValueError("Facebook non configuré (ID de page + token) — voir /admin/social.")
-    link = post.get("link") or ""
-    if link:
-        result = fb.publish_link(post.get("message", ""), link)
-    elif post.get("image"):
-        result = fb.publish_photo(post.get("message", ""), post["image"])
+        raise ValueError("Aucun post en attente — demandez d'abord une génération.")
+    network = (params.get("network") or post.get("network") or "facebook").strip().lower()
+    net_name = sn.NETWORK_KEYS.get(network, {}).get("name", network.title())
+
+    if network == "facebook":
+        if not fb.is_configured():
+            raise ValueError("Facebook non configuré (ID de page + token) — voir /admin/social.")
+        link = post.get("link") or ""
+        if link:
+            result = fb.publish_link(post.get("message", ""), link)
+        elif post.get("image"):
+            result = fb.publish_photo(post.get("message", ""), post["image"])
+        else:
+            result = fb.publish_link(post.get("message", ""), _site_url())
+        permalink = fb.post_permalink(result)
     else:
-        result = fb.publish_link(post.get("message", ""), _site_url())
+        permalink = sn.publish(
+            network,
+            message=post.get("message", ""),
+            link=post.get("link") or "",
+            image_url=post.get("image") or "",
+        )
     draft_store.clear(session.pop(_draft_token_key("social"), None))
-    permalink = fb.post_permalink(result)
-    return {"message": f"✅ Publié sur Facebook. {permalink}".strip(), "url": permalink}
+    return {"message": f"✅ Publié sur {net_name}. {permalink}".strip(), "url": permalink}
+
+
+def _exec_add_partner(params: dict) -> dict:
+    from admin.partners_service import add_partnership
+
+    partner = add_partnership({**params, "source": "linh"})
+    return {
+        "message": f"✅ Partenaire « {partner['name']} » enregistré (statut : à contacter)"
+                   + (f" — email : {partner['email']}" if partner.get("email") else " — sans email pour l'instant")
+                   + ".",
+        "url": "/admin/partnerships",
+    }
+
+
+def _exec_find_influencers(params: dict, report) -> dict:
+    from admin.partners_service import search_and_save_influencers
+
+    result = search_and_save_influencers((params.get("brief") or "").strip(), progress=report)
+    saved = result["saved"]
+    if not saved and not result["candidates"]:
+        return {"message": "Aucun candidat pertinent trouvé — reformulez le brief (niche, langue, plateforme).",
+                "url": "/admin/partnerships"}
+    lines = [
+        f"• {p['name']} ({p.get('type', '?')})" + (f" — {p['email']}" if p.get("email") else " — email à trouver")
+        for p in saved[:8]
+    ]
+    msg = (
+        f"✅ {len(saved)} contact(s) enregistré(s) dans Partenariats (statut « à contacter »)"
+        + (f", {result['skipped']} doublon(s) ignoré(s)" if result["skipped"] else "") + ".\n"
+        + "\n".join(lines)
+        + "\n\nContactez-les depuis /admin/newsletter (email IA « partenariat » ou manuel)."
+    )
+    return {"message": msg, "url": "/admin/partnerships"}
 
 
 def _exec_set_destination_region(params: dict) -> dict:
@@ -1322,20 +1425,28 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
 
     if name == "generate_social_post":
         from admin import draft_store
-        from admin import facebook_service as fb
+        from admin import social_networks as sn
         from admin.social_ai import default_campaign, find_page, generate_post
 
+        network = (params.get("network") or "facebook").strip().lower()
+        net = sn.NETWORK_KEYS.get(network)
+        if not net or not net.get("publishable"):
+            raise ValueError(
+                f"Réseau inconnu ou non publiable : « {network} » — choisis parmi "
+                "facebook, pinterest, reddit, telegram, x, threads, instagram."
+            )
         page = find_page((params.get("page_id") or "").strip(), "fr")
         brief = (params.get("brief") or "").strip()
         if not page and not brief:
             raise ValueError("Indique une page du site (page_id) ou un brief libre.")
-        message = generate_post(page=page, brief=brief, lang="fr")
-        campaign = default_campaign(page, brief)
+        message = generate_post(page=page, brief=brief, lang="fr", network=network)
+        campaign = default_campaign(page, brief, network)
         post = {
             "message": message,
-            "link": fb.add_utm(page["url"], campaign) if page else "",
+            "link": sn.add_utm(page["url"], campaign, network) if page else "",
             "image": page["image"] if page else "",
             "campaign": campaign,
+            "network": network,
         }
         token = draft_store.new_token()
         draft_store.set_draft(token, post)
@@ -1343,10 +1454,46 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
         return {
             "post_preview": message,
             "confirm": create_confirmation(
-                "publish_facebook", {}, "Publier ce post sur Facebook ?",
+                "publish_social", {"network": network},
+                f"Publier ce post sur {net['name']} ?",
                 message[:220] + ("…" if len(message) > 220 else ""),
             ),
         }
+
+    if name == "find_influencers":
+        brief = (params.get("brief") or params.get("query") or "").strip()
+        if not brief:
+            raise ValueError("Précise le brief de recherche (ex. « influenceurs francophones voyage Vietnam »).")
+        return {"confirm": create_confirmation(
+            "find_influencers", {"brief": brief},
+            "Lancer la recherche d'influenceurs ?",
+            f"Recherche web « {brief} » + lecture des pages trouvées pour extraire les "
+            "emails ; les contacts pertinents seront enregistrés dans Partenariats "
+            "(statut « à contacter »).",
+        )}
+
+    if name == "add_partner":
+        from admin.partners_service import PARTNER_TYPE_KEYS
+
+        pname = (params.get("name") or "").strip()
+        if not pname:
+            raise ValueError("Le nom du partenaire est obligatoire.")
+        ptype = (params.get("type") or "influenceur").strip().lower()
+        if ptype not in PARTNER_TYPE_KEYS:
+            ptype = "autre"
+        email = (params.get("email") or "").strip()
+        clean = {
+            "name": pname, "type": ptype, "email": email,
+            "links": params.get("links") or [],
+            "topics": _coerce_str(params.get("topics")),
+            "notes": _coerce_str(params.get("notes")),
+        }
+        return {"confirm": create_confirmation(
+            "add_partner", clean,
+            f"Enregistrer « {pname} » dans les partenariats ?",
+            f"Type : {ptype} · Email : {email or '(aucun)'} — statut « à contacter », "
+            "visible sur /admin/partnerships.",
+        )}
 
     if name == "set_destination_region":
         from data.trip_planner import REGION_LABELS_FR, REGION_ORDER
@@ -1617,12 +1764,22 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
         desc = _describe_draft(kind, draft)
         return {"confirm": desc.get("confirm"), "summary": desc.get("summary")}
 
-    if name == "publish_facebook":
+    if name in ("publish_facebook", "publish_social"):
+        from admin import social_networks as sn
+
         post = _get_draft("social")
         if not post:
-            raise ValueError("Aucun post Facebook en attente — lance d'abord generate_social_post.")
-        desc = _describe_draft("social", post)
-        return {"confirm": desc.get("confirm")}
+            raise ValueError("Aucun post en attente — lance d'abord generate_social_post.")
+        network = (params.get("network") or post.get("network") or "facebook").strip().lower()
+        net = sn.NETWORK_KEYS.get(network)
+        if not net or not net.get("publishable"):
+            raise ValueError(f"Réseau inconnu ou non publiable : « {network} ».")
+        msg = (post.get("message") or "")[:220]
+        return {"confirm": create_confirmation(
+            "publish_social", {"network": network},
+            f"Publier ce post sur {net['name']} ?",
+            msg + ("…" if len(post.get("message") or "") > 220 else ""),
+        )}
 
     if name == "send_newsletter":
         draft = _get_draft("newsletter")
@@ -1741,7 +1898,8 @@ _KNOWN_TOOLS = {
     "generate_newsletter", "generate_social_post", "set_destination_region",
     "update_article", "add_category", "improve_article", "update_destination",
     "improve_destination", "update_image", "add_map_points", "update_map_images",
-    "publish_draft", "publish_facebook", "send_newsletter",
+    "publish_draft", "publish_facebook", "publish_social", "send_newsletter",
+    "find_influencers", "add_partner",
 }
 
 
