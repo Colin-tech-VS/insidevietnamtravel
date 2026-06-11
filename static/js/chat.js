@@ -253,13 +253,15 @@
   }
 
   function formatMessage(text, streaming) {
-    var escaped = escapeHtml(String(text || ''));
+    var raw = String(text || '');
+    raw = raw.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+    raw = raw.replace(/<\s*(https?:\/\/[^>]+)\s*>/g, '$1');
+    raw = raw.replace(/\bhttps?:\/\/[^\s\]\)<>«»;,]+/g, '');
+    raw = raw.replace(/\b(?:www\.)?[a-z0-9][-a-z0-9]*\.(?:gov(?:t)?\.vn|go\.vn|gov\.vn)[^\s,;]*/gi, '');
+    raw = raw.replace(/\s{2,}/g, ' ').trim();
+    var escaped = escapeHtml(raw);
     escaped = applyEmphasis(escaped, !!streaming);
-    escaped = escaped
-      .replace(/\n/g, '<br>')
-      .replace(/(https?:\/\/[^\s<]+?)([.,;:!?)\]»]*)(?=\s|<|$)/g, function (m, url, tail) {
-        return inlineLinkChip(url) + tail;
-      });
+    escaped = escaped.replace(/\n/g, '<br>');
     return escaped;
   }
 

@@ -13,6 +13,12 @@ from i18n_utils import lang_url
 # Cache mémoire des chunks (invalidé toutes les 5 min — nouvelles pages/articles incluses).
 _CHUNK_CACHE: dict[str, tuple[float, list[dict]]] = {}
 _CACHE_TTL = 300.0
+_PLACE_CORRECTIONS: dict[str, list[tuple[re.Pattern[str], str]]] = {}
+
+# Chat public — modèle principal Mistral (qualité), pas le modèle « fast ».
+CHAT_MAX_TOKENS = 1100
+CHAT_TEMPERATURE = 0.62
+CHAT_RETRIEVE_TOP_N = 14
 
 # Rate limit simple par IP (best-effort, par processus).
 _RATE: dict[str, list[float]] = {}
@@ -205,6 +211,118 @@ def build_knowledge_chunks(lang: str, track_url_fn) -> list[dict]:
     except Exception:
         pass
 
+    for chunk in _extended_knowledge_chunks(lang, track_url_fn):
+        add(chunk)
+
+    return chunks
+
+
+def _extended_knowledge_chunks(lang: str, track_url_fn) -> list[dict]:
+    """Pages statiques, itinéraires détaillés, guides expérience, outils budget/eSIM."""
+    from data.itineraries import ITINERARIES
+    from locales.ui import t as ui_t
+
+    lang = "en" if lang == "en" else "fr"
+    chunks: list[dict] = []
+
+    static_pages = (
+        ("about", "meta.about.title", "meta.about.desc", "À propos"),
+        ("contact", "contact.title", "contact.lead", "Contact"),
+        ("privacy", "meta.privacy.title", "meta.privacy.desc", "Confidentialité"),
+        ("legal_notices", "meta.legal.title", "meta.legal.desc", "Mentions légales"),
+        ("blog_index", "blog.title", "blog.sub", "Blog"),
+        ("prepare_trip", "nav.prepare", "prepare.sub", "Préparer son voyage"),
+    )
+    for endpoint, title_key, lead_key, group in static_pages:
+        title = ui_t(title_key, lang)
+        lead = ui_t(lead_key, lang)
+        chunks.append({
+            "id": f"page:{endpoint}",
+            "title": title,
+            "url": _abs(lang_url(endpoint, lang)),
+            "group": group,
+            "text": f"{title}. {lead}"[:900],
+        })
+
+    for slug, itin in ITINERARIES.items():
+        block = (itin.get("i18n") or {}).get(lang) or itin
+        highlights = block.get("highlights") or []
+        if isinstance(highlights, list):
+            highlights_txt = " · ".join(str(h) for h in highlights[:8])
+        else:
+            highlights_txt = str(highlights)
+        days = block.get("days") or []
+        day_cities = []
+        for day in days[:10]:
+            if isinstance(day, dict):
+                day_cities.append(day.get("title") or day.get("city") or "")
+        overview = _strip_html(block.get("overview", ""), 500)
+        chunks.append({
+            "id": f"itin-rich:{slug}",
+            "title": block.get("title") or slug,
+            "url": _abs(lang_url("itinerary", lang, slug=slug)),
+            "group": "Itinéraires",
+            "text": " ".join(filter(None, [
+                block.get("summary", ""),
+                block.get("meta_description", ""),
+                overview,
+                highlights_txt,
+                block.get("budget_hint", ""),
+                " → ".join(c for c in day_cities if c),
+            ]))[:900],
+        })
+
+    try:
+        from data.experience_articles import EXPERIENCE_ARTICLES
+        for art in EXPERIENCE_ARTICLES:
+            block = (art.get("i18n") or {}).get(lang) or art
+            chunks.append({
+                "id": f"experience:{art.get('slug', '')}",
+                "title": block.get("title") or art.get("title", ""),
+                "url": _abs(lang_url("article", lang, slug=art["slug"])),
+                "group": "Guides expérience",
+                "text": " ".join(filter(None, [
+                    block.get("excerpt", ""),
+                    _strip_html(block.get("content", ""), 700),
+                ]))[:900],
+            })
+    except Exception:
+        pass
+
+    try:
+        from data.travel_tools import build_budget, build_comparators
+        budget = build_budget(lang)
+        chunks.append({
+            "id": "tool-rich:budget",
+            "title": ui_t("tools.budget", lang),
+            "url": _abs(lang_url("budget_tool", lang)),
+            "group": "Outils",
+            "text": ui_t("budget.lead", lang) + " " + _strip_html(
+                " ".join(
+                    f"{s.get('title', '')}: {' '.join(str(i) for i in (s.get('items') or [])[:4])}"
+                    for s in (budget.get("sections") or [])[:6]
+                    if isinstance(s, dict)
+                ),
+                600,
+            ),
+        })
+        compare = build_comparators(lang)
+        esim_txt = " ".join(
+            f"{c.get('name', '')}: {c.get('best', '')} {c.get('price', '')}"
+            for c in (compare.get("esim") or [])[:4]
+            if isinstance(c, dict)
+        )
+        ins_txt = " ".join(str(p) for p in (compare.get("insurance_points") or [])[:4])
+        chunks.append({
+            "id": "tool-rich:essentials",
+            "title": ui_t("compare.title", lang),
+            "url": _abs(lang_url("essentials_tool", lang)),
+            "group": "Outils",
+            "text": (ui_t("compare.lead", lang) + " " + esim_txt + " " + ins_txt)[:900],
+        })
+    except Exception:
+        pass
+
     return chunks
 
 
@@ -221,9 +339,138 @@ def get_chunks(lang: str, track_url_fn) -> list[dict]:
 
 def invalidate_cache() -> None:
     _CHUNK_CACHE.clear()
+    _PLACE_CORRECTIONS.clear()
 
 
-def retrieve(query: str, lang: str, track_url_fn, top_n: int = 8, visitor_profile: dict | None = None) -> list[dict]:
+def _place_corrections(lang: str) -> list[tuple[re.Pattern[str], str]]:
+    """Motifs erronés → orthographe canonique des lieux (accents vietnamiens)."""
+    if lang in _PLACE_CORRECTIONS:
+        return _PLACE_CORRECTIONS[lang]
+
+    pairs: list[tuple[str, str]] = []
+    from admin.store import get_destinations_dict
+
+    for slug, d in get_destinations_dict(lang).items():
+        canon = (d.get("name") or "").strip()
+        if not canon:
+            continue
+        slug_sp = slug.replace("-", " ")
+        for wrong in (slug_sp, _fold(canon)):
+            if wrong and _fold(wrong) != _fold(canon):
+                pairs.append((wrong, canon))
+
+    for city in _KNOWN_CITIES:
+        canon = city["name"]
+        for alias in city["aliases"]:
+            pairs.append((alias, canon))
+
+    static_ascii = (
+        ("da lat", "Đà Lạt"), ("dalat", "Đà Lạt"),
+        ("da nang", "Đà Nẵng"), ("danang", "Đà Nẵng"),
+        ("hoi an", "Hội An"), ("hoian", "Hội An"),
+        ("phu quoc", "Phú Quốc"), ("phuquoc", "Phú Quốc"),
+        ("ninh binh", "Ninh Bình"),
+        ("can tho", "Cần Thơ"),
+        ("vung tau", "Vũng Tàu"),
+        ("con dao", "Côn Đảo"),
+        ("mui ne", "Mũi Né"),
+        ("cu chi", "Củ Chi"),
+        ("cat ba", "Cát Bà"),
+        ("mai chau", "Mai Châu"),
+        ("quy nhon", "Quy Nhơn"),
+        ("my son", "Mỹ Sơn"),
+        ("ha long", "Baie d'Ha Long"),
+        ("halong", "Baie d'Ha Long"),
+    )
+    for wrong, canon in static_ascii:
+        pairs.append((wrong, canon))
+    if lang == "fr":
+        pairs.append(("hue", "Huế"))
+
+    seen: set[tuple[str, str]] = set()
+    compiled: list[tuple[re.Pattern[str], str]] = []
+    for wrong, canon in sorted(pairs, key=lambda x: -len(x[0])):
+        key = (wrong.lower(), canon)
+        if key in seen:
+            continue
+        seen.add(key)
+        try:
+            pat = re.compile(rf"(?<![\wÀ-ỹ]){re.escape(wrong)}(?![\wÀ-ỹ])", re.IGNORECASE)
+            compiled.append((pat, canon))
+        except re.error:
+            pass
+
+    _PLACE_CORRECTIONS[lang] = compiled
+    return compiled
+
+
+def _fix_place_names(message: str, lang: str) -> str:
+    msg = message or ""
+    for pat, canon in _place_corrections(lang):
+        msg = pat.sub(canon, msg)
+    return msg
+
+
+def _orthography_block(lang: str) -> str:
+    from admin.store import get_destinations_dict
+
+    names: list[str] = []
+    seen: set[str] = set()
+    for d in get_destinations_dict(lang).values():
+        n = (d.get("name") or "").strip()
+        if n and n not in seen:
+            seen.add(n)
+            names.append(n)
+    for city in _KNOWN_CITIES:
+        n = city["name"]
+        if n not in seen:
+            seen.add(n)
+            names.append(n)
+    sample = ", ".join(names[:28])
+    if lang == "en":
+        return (
+            "PLACE NAME SPELLING (mandatory — copy EXACTLY from this list or CONTEXT):\n"
+            f"{sample}\n"
+            "Never strip Vietnamese diacritics (write Đà Lạt, Huế, Hội An, Phú Quốc, not Da Lat/Hue/Hoi An). "
+            "Use the destination name from CONTEXT for the reply language."
+        )
+    return (
+        "ORTHOGRAPHE DES LIEUX (obligatoire — copie EXACTEMENT depuis cette liste ou le CONTEXTE) :\n"
+        f"{sample}\n"
+        "Ne supprime JAMAIS les accents vietnamiens (Đà Lạt, Huế, Hội An, Phú Quốc… — pas « Da Lat », « Hue », « Hoi An »). "
+        "Utilise le nom exact de la page destination du CONTEXTE."
+    )
+
+
+def _site_map_block(lang: str) -> str:
+    """Vue d'ensemble du site public — aide Mai à orienter vers la bonne page."""
+    from admin.social_ai import page_inventory
+
+    by_group: dict[str, list[str]] = {}
+    for page in page_inventory(lang):
+        by_group.setdefault(page["group"], []).append(page["title"])
+    header = (
+        "PUBLIC SITE MAP (all sections Mai can link to — pick from CONTEXT URLs):"
+        if lang == "en"
+        else "PLAN DU SITE PUBLIC (toutes les rubriques — choisir les URL du CONTEXTE) :"
+    )
+    lines = [header]
+    for group, titles in sorted(by_group.items()):
+        preview = ", ".join(titles[:6])
+        if len(titles) > 6:
+            preview += f" (+{len(titles) - 6})"
+        lines.append(f"- {group}: {preview}")
+    lines.append(
+        "Also: practical guides (safety, customs, phrases, visa, weather, budget, apps, eSIM), "
+        "experience guides, blog articles, ready-made itineraries, destination pages with maps."
+        if lang == "en"
+        else "Aussi : guides pratiques (sécurité, coutumes, phrases, visa, météo, budget, apps, eSIM), "
+        "guides expérience, articles blog, itinéraires clés en main, pages destinations avec cartes."
+    )
+    return "\n".join(lines)
+
+
+def retrieve(query: str, lang: str, track_url_fn, top_n: int = CHAT_RETRIEVE_TOP_N, visitor_profile: dict | None = None) -> list[dict]:
     q_tokens = _tokenize(query, lang)
     profile_tags = set()
     if visitor_profile:
@@ -235,15 +482,21 @@ def retrieve(query: str, lang: str, track_url_fn, top_n: int = 8, visitor_profil
             pass
     hay = query.lower()
     if any(w in hay for w in ("hotel", "hôtel", "dormir", "heberg", "héberg", "stay", "carte", "map")):
-        top_n = max(top_n, 12)
+        top_n = max(top_n, 16)
     if any(w in hay for w in (
         "visa", "e-visa", "evisa", "passeport", "formalit",
         "meteo", "météo", "saison", "pluie", "climat", "weather", "when", "partir", "visit",
         "secur", "sécur", "arnaque", "scam", "sant", "vaccin", "assurance", "urgence",
         "coutume", "etiquette", "respect", "temple", "politesse",
         "phrase", "vietnamien", "vietnamese", "xin chao", "cam on",
+        "budget", "prepare", "preparer", "organiser", "itinera", "circuit", "blog",
     )):
-        top_n = max(top_n, 14)
+        top_n = max(top_n, 18)
+
+    mentioned_cities = _mentioned_cities(query)
+    mentioned_slugs = {_detect_destination_slug(c["name"], lang) for c in mentioned_cities}
+    mentioned_slugs.discard(None)
+
     chunks = get_chunks(lang, track_url_fn)
     if not q_tokens:
         return chunks[:top_n]
@@ -266,6 +519,31 @@ def retrieve(query: str, lang: str, track_url_fn, top_n: int = 8, visitor_profil
             score += 1
         if chunk.get("id", "").startswith("guide-") and any(
             t in q_tokens for t in _tokenize("visa meteo securite coutume phrase arnaque vaccin", lang)
+        ):
+            score += 2
+        if mentioned_slugs:
+            cid = chunk.get("id", "")
+            for slug in mentioned_slugs:
+                if slug in cid or slug in (chunk.get("url") or ""):
+                    score += 4
+                if chunk.get("group") == "Destinations" and slug in _fold(chunk.get("title", "")):
+                    score += 3
+        if chunk.get("group") == "Itinéraires" and any(
+            w in hay for w in ("itinera", "circuit", "jour", "days", "week", "semaine", "trip")
+        ):
+            score += 3
+        if chunk.get("id", "").startswith("itin-rich:"):
+            score += 1
+        if chunk.get("id", "").startswith("tool-rich:budget") and any(
+            w in hay for w in ("budget", "cout", "cost", "prix", "euro", "dong")
+        ):
+            score += 3
+        if chunk.get("id") in ("tool:prepare_trip", "page:prepare_trip") and any(
+            w in hay for w in ("partir", "prepare", "preparer", "organiser", "faut faire", "checklist")
+        ):
+            score += 4
+        if chunk.get("group") in ("Articles de blog", "Guides expérience") and any(
+            w in hay for w in ("blog", "article", "guide", "lire")
         ):
             score += 2
         if profile_tags and chunk.get("group") in (
@@ -644,6 +922,10 @@ def _auto_enrich_links(
         "secur", "sécur", "arnaque", "scam", "coutume", "etiquette", "phrase", "vietnamien",
         "meteo", "météo", "saison", "pluie", "climat", "weather", "budget", "prepare", "preparer",
     ))
+    prepare_q = any(w in hay for w in (
+        "partir", "preparer", "préparer", "organiser", "faut faire", "quoi faire avant",
+        "comment partir", "premiers pas", "before you go", "what do i need",
+    ))
     slug = _detect_destination_slug(message, lang)
 
     existing_site = {l["url"] for l in site_links}
@@ -696,6 +978,10 @@ def _auto_enrich_links(
             add_site(chunk)
         elif guide_q and cid.startswith("guide-"):
             add_site(chunk)
+        elif prepare_q and cid in ("tool:prepare_trip", "tool:visa_checker"):
+            add_site(chunk)
+        elif prepare_q and cid.startswith("guide-"):
+            add_site(chunk)
 
     # Destination : toujours proposer page + hôtel si le slug est connu
     if slug:
@@ -734,6 +1020,142 @@ def _auto_enrich_links(
     return site_links[:max_site], affiliate_links[:max_aff]
 
 
+def _emph_count(message: str) -> int:
+    return len(re.findall(r"\*\*[^*]+\*\*", message or ""))
+
+
+def _wrap_highlight_once(message: str, pattern: str) -> str:
+    """Entoure la première occurrence d'un motif avec ** si pas déjà mis en valeur."""
+
+    def repl(m: re.Match) -> str:
+        start, end = m.start(), m.end()
+        before = message[max(0, start - 2): start]
+        after = message[end: end + 2]
+        if before.endswith("**") or after.startswith("**"):
+            return m.group(0)
+        return f"**{m.group(0)}**"
+
+    return re.sub(pattern, repl, message, count=1, flags=re.IGNORECASE)
+
+
+def _highlight_phrases_for_intent(message: str, user_question: str, lang: str) -> str:
+    """Applique des surlignages contextuels si le modèle oublie les **."""
+    if _emph_count(message) >= 4:
+        return message
+
+    hay = _fold(f"{user_question} {message}")
+    phrases: list[str] = []
+
+    prepare_q = any(
+        w in hay for w in (
+            "partir", "preparer", "prepare", "organiser", "checklist", "before you go",
+            "what do i need", "what to do", "faire pour", "faut faire", "quoi faire avant",
+            "comment partir", "premiers pas", "getting ready",
+        )
+    )
+    visa_q = any(w in hay for w in ("visa", "evisa", "e-visa", "passeport", "passport", "formalit"))
+    hotel_q = any(w in hay for w in ("hotel", "dormir", "heberg", "loger", "stay", "lodging"))
+    activity_q = any(w in hay for w in ("activit", "faire", "visit", "excursion", "things to do"))
+    weather_q = any(w in hay for w in ("meteo", "saison", "pluie", "climat", "when to go", "quand partir"))
+    safety_q = any(w in hay for w in ("secur", "arnaque", "scam", "sant", "urgence"))
+    esim_q = any(w in hay for w in ("esim", "sim", "forfait", "data mobile", "internet"))
+
+    if lang == "en":
+        if prepare_q or visa_q:
+            phrases.extend([
+                r"obtain(?:ing)? a visa",
+                r"apply(?:ing)? (?:for a visa )?online",
+                r"e-?visa",
+                r"visa(?:-free| exemption)",
+                r"travel insurance",
+                r"(?:get|buy) travel insurance",
+                r"valid passport",
+                r"entry requirements",
+                r"health and safety",
+            ])
+        if hotel_q:
+            phrases.extend([r"book(?:ing)? (?:a )?hotel", r"where to stay", r"Old Quarter"])
+        if activity_q:
+            phrases.extend([r"things to do", r"must-?see", r"day trip"])
+        if weather_q:
+            phrases.extend([r"dry season", r"best time to go", r"November to April"])
+        if safety_q:
+            phrases.extend([r"travel safety", r"common scams", r"emergency"])
+        if esim_q:
+            phrases.extend([r"eSIM", r"mobile data"])
+    else:
+        if prepare_q or visa_q:
+            phrases.extend([
+                r"obtenir (?:un |le )?visa",
+                r"demander (?:un |le )?visa",
+                r"visa en ligne",
+                r"e-?visa",
+                r"exemption(?:s)? de visa",
+                r"souscrire (?:à )?(?:une )?assurance(?: voyage)?",
+                r"assurance voyage",
+                r"passeport(?: valide)?",
+                r"formalités(?: d['']entrée)?",
+                r"conditions d['']entrée",
+                r"santé et sécurité",
+            ])
+        if hotel_q:
+            phrases.extend([r"où dormir", r"réserver (?:un )?hôtel", r"quartier des 36"])
+        if activity_q:
+            phrases.extend([r"que faire", r"quoi faire", r"incontournables"])
+        if weather_q:
+            phrases.extend([r"saison sèche", r"meilleure période", r"novembre à avril", r"mousson"])
+        if safety_q:
+            phrases.extend([r"sécurité", r"arnaques", r"numéros d['']urgence"])
+        if esim_q:
+            phrases.extend([r"eSIM", r"forfait mobile", r"carte SIM"])
+
+    msg = message
+    target = 5 if _emph_count(msg) < 2 else 3
+    for pat in phrases:
+        if _emph_count(msg) >= target:
+            break
+        if not re.search(pat, msg, flags=re.IGNORECASE):
+            continue
+        new_msg = _wrap_highlight_once(msg, pat)
+        if new_msg != msg:
+            msg = new_msg
+
+    return msg
+
+
+def _clean_message_body(message: str, lang: str) -> str:
+    """Retire les URL brutes du corps — elles sont dans les cartes de liens."""
+    msg = (message or "").strip()
+    if not msg:
+        return msg
+
+    msg = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", msg)
+    msg = re.sub(r"<\s*(https?://[^>]+)\s*>", r"\1", msg)
+    msg = re.sub(r"https?://[^\s\]\)<>«»;,]+", "", msg)
+    msg = re.sub(
+        r"\b(?:www\.)?[a-z0-9][-a-z0-9]*\.(?:gov(?:t)?\.vn|go\.vn|gov\.vn|evisa\.gov\.vn)[^\s,;]*",
+        "",
+        msg,
+        flags=re.IGNORECASE,
+    )
+    below = "voir les liens ci-dessous" if lang != "en" else "see links below"
+    msg = re.sub(
+        r"(?:via|sur|on|at)\s+(?:le\s+)?site\s+officiel\s*(?:<)?\s*",
+        f"({below}). ",
+        msg,
+        flags=re.IGNORECASE,
+    )
+    msg = re.sub(r"\(\s*\)", "", msg)
+    msg = re.sub(r"\s{2,}", " ", msg)
+    msg = re.sub(r"\s+([.,;:!?])", r"\1", msg)
+    msg = re.sub(r";\s*;", ";", msg)
+    return msg.strip()
+
+
+def _ensure_context_highlights(message: str, user_question: str, lang: str) -> str:
+    return _highlight_phrases_for_intent(message, user_question, lang)
+
+
 def _format_context(chunks: list[dict]) -> str:
     lines = []
     for i, c in enumerate(chunks, 1):
@@ -747,10 +1169,28 @@ def _format_context(chunks: list[dict]) -> str:
 
 
 def _system_prompt(lang: str) -> str:
+    site_scope_en = (
+        "SCOPE: you are the public travel assistant for the entire Inside Vietnam Travel website "
+        "(FR + EN). You know ALL public pages: home, prepare-your-trip hub, destinations with interactive maps, "
+        "ready-made itineraries (3/7/10/15 days), blog & experience guides, practical tools (visa, weather, "
+        "budget calculator, safety, customs, phrases, apps, eSIM & insurance), about & contact. "
+        "You do NOT manage /admin (that is Linh, the internal admin copilot) — for site ownership or "
+        "partnerships, point to the contact page."
+    )
+    site_scope_fr = (
+        "PÉRIMÈTRE : tu es l'assistante voyage du site public Inside Vietnam Travel (FR + EN). "
+        "Tu connais TOUTES les pages publiques : accueil, hub préparer son voyage, destinations avec cartes "
+        "interactives, itinéraires clés en main (3/7/10/15 jours), blog & guides expérience, outils pratiques "
+        "(visa, météo, calculateur budget, sécurité, coutumes, phrases, apps, eSIM & assurance), à propos & contact. "
+        "Tu ne gères PAS /admin (c'est Linh, copilote interne) — pour la rédaction du site ou un partenariat, "
+        "oriente vers la page contact."
+    )
     if lang == "en":
         return (
-            "You are Mai 🌸, the friendly AI travel advisor for Inside Vietnam Travel — "
-            "an independent Vietnam travel guide (not a travel agency). "
+            site_scope_en + " "
+            "You are Mai 🌸, the friendly AI travel advisor — an independent Vietnam travel guide (not a travel agency). "
+            "LANGUAGE: always reply in ENGLISH on /en pages; never mix French in the message body. "
+            "KNOWLEDGE: use ONLY facts and URLs from CONTEXT + SITE MAP. If missing, say so honestly — never invent. "
             "GOLDEN RULE: answer the user's QUESTION first, directly and precisely, from the very first sentence. "
             "BREVITY: keep the message SHORT — simple question → 1–2 sentences (max ~60 words); advice or itinerary "
             "→ 3–5 sentences (max ~120 words). Never write long paragraphs or repeat what the link cards already show. "
@@ -772,6 +1212,8 @@ def _system_prompt(lang: str) -> str:
             "cities and matches their factual anchors. NEVER mix up two distinct cities (Đà Lạt, the highland city, "
             "is NOT Huế, the imperial capital; Đà Nẵng is not Đà Lạt). If the site has no page for a requested "
             "city, say so honestly and still give your best general advice. "
+            "SPELLING: copy Vietnamese place names EXACTLY as in ORTHOGRAPHY block / CONTEXT (Đà Lạt, Huế, Hội An, "
+            "Phú Quốc, Ninh Bình…) — never strip diacritics. "
             "When a VISITOR PROFILE block is present, prioritize advice and links aligned with their "
             "travel style, cities, duration and pages already viewed — without mentioning tracking. "
             "PERSONALITY: warm, enthusiastic and expert, with a touch of light, friendly humor when the topic "
@@ -781,16 +1223,25 @@ def _system_prompt(lang: str) -> str:
             "itinerary (“Great choice!”, “Well done — that's the best time to go!”). Encourage the hesitant, "
             "reassure the worried, and vary your wording from one answer to the next. "
             "A few well-placed emojis — never cheesy. "
-            "Highlight 2–5 key terms per answer with **double asterisks** (destinations, seasons, durations, practical tips) — "
-            "they render as gold text with a green underline in the chat UI. "
+            "HIGHLIGHTS (MANDATORY): wrap 3–6 key phrases per answer in **double asterisks** — they render as "
+            "gold text with a green underline. Highlight what matters FOR THIS QUESTION: the essential actions, "
+            "decisions and facts — NOT filler words. Examples by topic: "
+            "trip prep → **obtain a visa**, **apply online**, **visa exemption**, **travel insurance**, **valid passport**; "
+            "where to stay → **Old Quarter**, **book ahead**; when to go → **dry season**, **November to April**. "
+            "Example: « To **travel to Vietnam**, start by **obtaining a visa** (or check **visa exemption**). "
+            "Also **get travel insurance**. » "
+            "Never paste raw URLs in message — put them in site_links/affiliate_links only. "
             "Write a COMPLETE message (never end with a colon or an unfinished list). "
             "Always answer in ENGLISH. Be honest: if the answer is not in CONTEXT, say so plainly — never invent prices or visa rules. "
             "ONLY use URLs from CONTEXT for site_links and affiliate_links. "
             'Reply in JSON: {"message":"...","site_links":[{"title","url"}],"affiliate_links":[{"label","url","teaser"}]}'
         )
     return (
-        "Tu es Mai 🌸, la conseillère voyage IA d'Inside Vietnam Travel — "
-        "guide indépendant Vietnam (pas une agence). "
+        site_scope_fr + " "
+        "Tu es Mai 🌸, la conseillère voyage IA — guide indépendant Vietnam (pas une agence). "
+        "LANGUE : réponds TOUJOURS en FRANÇAIS sur les pages FR ; ne mélange jamais l'anglais dans le message. "
+        "CONNAISSANCE : utilise UNIQUEMENT les faits et URL du CONTEXTE + PLAN DU SITE. Si l'info manque, dis-le "
+        "honnêtement — n'invente jamais. "
         "RÈGLE D'OR : réponds D'ABORD, DIRECTEMENT et précisément à la QUESTION posée, dès la première phrase. "
         "CONCISION : message COURT — question simple → 1–2 phrases (max ~60 mots) ; conseils ou itinéraire → "
         "3–5 phrases (max ~120 mots). Jamais de longs paragraphes ni de détails déjà visibles dans les cartes de liens. "
@@ -813,6 +1264,8 @@ def _system_prompt(lang: str) -> str:
         "d'altitude des hauts plateaux, n'est PAS Huế, la capitale impériale ; Đà Nẵng n'est pas Đà Lạt). "
         "Si le site n'a pas de page pour une ville demandée, dis-le honnêtement et donne quand même tes "
         "meilleurs conseils généraux. "
+        "ORTHOGRAPHE : copie les noms de lieux EXACTEMENT comme dans le bloc ORTHOGRAPHE / CONTEXTE (Đà Lạt, Huế, "
+        "Hội An, Phú Quốc, Ninh Bình…) — ne supprime jamais les accents. "
         "Si un bloc VISITOR PROFILE est présent, priorisez conseils et liens alignés avec "
         "son style, ses villes, sa durée et les pages déjà consultées — sans parler de tracking. "
         "PERSONNALITÉ : chaleureuse, enthousiaste et experte, avec une pointe d'humour léger et complice quand le "
@@ -822,8 +1275,15 @@ def _system_prompt(lang: str) -> str:
         "réservés, itinéraire malin (« Excellent choix ! », « Bravo, c'est la meilleure période ! »). Encourage "
         "les hésitants, rassure les inquiets, et varie tes formulations d'une réponse à l'autre. "
         "Quelques emojis bien placés — jamais lourd. "
-        "Mets en valeur 2 à 5 mots-clés par réponse avec **double astérisques** (destinations, saisons, durées, conseils pratiques) — "
-        "ils s'affichent en texte doré avec soulignement vert dans le chat. "
+        "MISE EN VALEUR (OBLIGATOIRE) : entoure 3 à 6 expressions clés avec **double astérisques** — "
+        "texte doré et barre verte dans le chat. Surligne ce qui compte POUR CETTE QUESTION : actions essentielles, "
+        "décisions et infos concrètes — pas des mots vides. Exemples selon le sujet : "
+        "préparer son départ → **obtenir un visa**, **visa en ligne**, **exemption de visa**, **assurance voyage**, "
+        "**souscrire une assurance**, **passeport valide** ; où dormir → **quartier des 36 rues**, **réserver à l'avance** ; "
+        "quand partir → **saison sèche**, **novembre à avril**. "
+        "Exemple : « Pour **partir au Vietnam**, commencez par **obtenir un visa** (ou vérifiez l'**exemption de visa**). "
+        "Pensez aussi à **souscrire une assurance voyage**. » "
+        "Ne mets JAMAIS d'URL brute dans message — uniquement dans site_links/affiliate_links. "
         "Rédige un message COMPLET (ne termine jamais par « : » ni une liste inachevée). "
         "Réponds TOUJOURS en FRANÇAIS. Reste honnête : si la réponse n'est pas dans le CONTEXTE, dis-le simplement — "
         "n'invente jamais de prix ni de règles visa. "
@@ -889,8 +1349,12 @@ def chat_reply(
     # Ancres factuelles sur les villes citées (question + suivi) : Mai ne doit
     # JAMAIS confondre deux villes (ex. Đà Lạt ≠ Huế), même sans page dédiée.
     cities_block = _cities_block(retrieval_query, lang)
+    ortho_block = _orthography_block(lang)
+    site_map = _site_map_block(lang)
 
     user_block = (
+        f"{site_map}\n\n"
+        f"{ortho_block}\n\n"
         f"CONTEXTE SITE (pages & liens affiliés autorisés):\n{context}\n\n"
         + (f"{profile_block}\n\n" if profile_block else "")
         + (f"{cities_block}\n\n" if cities_block else "")
@@ -904,26 +1368,16 @@ def chat_reply(
     ]
 
     try:
-        resp = mistral_client.chat_completion(
+        resp = ai_client.chat_completion(
             messages=messages,
-            max_tokens=900,
-            temperature=0.65,
+            max_tokens=CHAT_MAX_TOKENS,
+            temperature=CHAT_TEMPERATURE,
             json_mode=True,
-            fast=True,
+            fast=False,
+            deadline=55,
         )
     except Exception as exc:
-        from admin import ai_client as _ai
-        if _ai._has_key("groq"):
-            resp = _ai.chat_completion(
-                messages=messages,
-                max_tokens=900,
-                temperature=0.65,
-                json_mode=True,
-                fast=True,
-                deadline=55,
-            )
-        else:
-            raise ValueError(mistral_client.friendly_error(exc)) from exc
+        raise ValueError(mistral_client.friendly_error(exc)) from exc
 
     raw = resp.choices[0].message.content
     data = ai_client.parse_json(raw)
@@ -948,6 +1402,9 @@ def chat_reply(
             })
 
     message = (data.get("message") or "").strip()
+    message = _clean_message_body(message, lang)
+    message = _ensure_context_highlights(message, user_question, lang)
+    message = _fix_place_names(message, lang)
     enrich_text = message + "\n" + message + "\n" + "\n".join(
         (turn.get("content") or "") for turn in (history or [])[-4:]
     )
