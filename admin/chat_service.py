@@ -1254,8 +1254,9 @@ def _system_prompt(lang: str) -> str:
             "reassure the worried, and vary your wording from one answer to the next. "
             "A few well-placed emojis — never cheesy. "
             "HIGHLIGHTS: wrap 2–3 key phrases in **double asterisks** — sparingly, for names and essentials only. "
-            "PHOTOS: when the user asks for photos/images, answer briefly — the system attaches site or web "
-            "images automatically; never invent image URLs. "
+            "PHOTOS: the system automatically attaches a beautiful photo of the place you talk about "
+            "(several when the user asks for photos/images — then answer briefly); never invent image URLs "
+            "and never describe the attached photos. "
             "Write a COMPLETE message (never end with a colon or an unfinished list). "
             "Always answer in ENGLISH. Be honest: if the answer is not in CONTEXT, say so plainly — never invent prices or visa rules. "
             "ONLY use URLs from CONTEXT for site_links and affiliate_links. "
@@ -1299,8 +1300,9 @@ def _system_prompt(lang: str) -> str:
         "MISE EN VALEUR : entoure 2 à 3 expressions clés avec **double astérisques** — avec parcimonie (noms, dates, "
         "conseils essentiels). "
         "Ne mets JAMAIS d'URL brute dans message. "
-        "PHOTOS : si l'utilisateur demande des photos/images, réponds brièvement dans message — "
-        "le système joint automatiquement des visuels du site ou du web ; n'invente pas d'URL d'image. "
+        "PHOTOS : le système joint automatiquement une belle photo du lieu dont tu parles "
+        "(plusieurs si l'utilisateur demande des photos/images — réponds alors brièvement) ; "
+        "n'invente pas d'URL d'image et ne décris pas les photos jointes. "
         "Rédige un message COMPLET (ne termine jamais par « : » ni une liste inachevée). "
         "Réponds TOUJOURS en FRANÇAIS. Reste honnête : si la réponse n'est pas dans le CONTEXTE, dis-le simplement — "
         "n'invente jamais de prix ni de règles visa. "
@@ -1317,6 +1319,7 @@ def chat_reply(
     client_ip: str = "",
     track_url_fn,
     visitor_profile: dict | None = None,
+    seen_photo_urls: list[str] | None = None,
 ) -> dict:
     from admin import ai_client, mistral_client
 
@@ -1455,6 +1458,7 @@ def chat_reply(
             lang,
             slug,
             detect_slug_fn=_detect_destination_slug,
+            exclude_urls=seen_photo_urls,
         )
     except Exception:
         pass

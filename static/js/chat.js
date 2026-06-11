@@ -17,6 +17,7 @@
   var apiUrl = root.dataset.apiUrl;
   var lang = root.dataset.lang || 'fr';
   var history = [];
+  var seenPhotos = []; // URLs déjà affichées — renvoyées au serveur pour ne jamais répéter une image
   var busy = false;
   var opened = false;
 
@@ -581,6 +582,7 @@
         history: history.slice(-8),
         lang: lang,
         profile: window.ivtProfile ? window.ivtProfile.toJSON() : null,
+        seen_photos: seenPhotos.slice(-50),
       }),
     })
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
@@ -592,6 +594,9 @@
         var msg = res.data.message || '';
         var linksHtml = renderLinks(res.data.site_links, res.data.affiliate_links, res.data.map_cards);
         var photosHtml = renderPhotos(res.data.photos);
+        (res.data.photos || []).forEach(function (p) {
+          if (p && p.url && seenPhotos.indexOf(p.url) === -1) seenPhotos.push(p.url);
+        });
         return streamAssistantMessage(msg, linksHtml, photosHtml).then(function () {
           history.push({ role: 'assistant', content: msg });
         });

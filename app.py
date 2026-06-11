@@ -1311,6 +1311,12 @@ def api_chat():
     message = (payload.get("message") or "").strip()
     lang = "en" if payload.get("lang") == "en" else get_lang()
     history = payload.get("history") if isinstance(payload.get("history"), list) else []
+    # Photos déjà affichées dans la conversation (le front les renvoie) :
+    # Mai ne montre jamais deux fois la même image.
+    raw_seen = payload.get("seen_photos")
+    seen_photos = [
+        u.strip()[:500] for u in raw_seen if isinstance(u, str) and u.strip()
+    ][:60] if isinstance(raw_seen, list) else []
 
     from data.visitor_profile import PROFILE_COOKIE, parse_cookie
     visitor_profile = parse_cookie(request.cookies.get(PROFILE_COOKIE))
@@ -1326,6 +1332,7 @@ def api_chat():
             client_ip=(request.remote_addr or "").strip(),
             track_url_fn=tracked_affiliate_url,
             visitor_profile=visitor_profile,
+            seen_photo_urls=seen_photos,
         )
     except ValueError as exc:
         return jsonify({"ok": False, "error": str(exc)}), 400
