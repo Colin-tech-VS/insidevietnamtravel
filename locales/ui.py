@@ -669,6 +669,8 @@ UI: dict[str, dict[str, str]] = {
         "en": "Sorry, I couldn't reply. Please try again in a moment.",
     },
     "chat.affiliate_badge": {"fr": "Partenaire", "en": "Partner"},
+    "chat.links_site": {"fr": "À lire sur le site", "en": "Read on the site"},
+    "chat.links_partner": {"fr": "Bons plans partenaires", "en": "Partner picks"},
     "chat.map_subtitle": {"fr": "Carte interactive", "en": "Interactive map"},
     "chat.map_cta": {"fr": "Voir la carte complète", "en": "View full map"},
     "chat.map_on": {"fr": "Sur la carte", "en": "On the map"},

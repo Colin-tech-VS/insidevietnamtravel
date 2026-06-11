@@ -24,6 +24,8 @@
     typing: root.dataset.typing || '…',
     error: root.dataset.error || 'Error',
     affiliate: root.dataset.affiliateBadge || 'Partner',
+    linksSite: root.dataset.linksSite || (lang === 'en' ? 'Read on the site' : 'À lire sur le site'),
+    linksPartner: root.dataset.linksPartner || (lang === 'en' ? 'Partner picks' : 'Bons plans partenaires'),
     greeting: root.dataset.greeting || '',
     mapSubtitle: root.dataset.mapSubtitle || 'Interactive map',
     mapCta: root.dataset.mapCta || 'View full map',
@@ -214,12 +216,50 @@
     return html;
   }
 
+  function urlDomain(url) {
+    var m = /^https?:\/\/([^/?#]+)/i.exec(String(url || ''));
+    var host = m ? m[1] : String(url || '');
+    return host.replace(/^www\./i, '').split(':')[0];
+  }
+
+  var BRANDS = [
+    ['booking.', { icon: '🏨', cls: 'hotel', name: 'Booking.com' }],
+    ['agoda.', { icon: '🏨', cls: 'hotel', name: 'Agoda' }],
+    ['getyourguide', { icon: '🎟️', cls: 'activity', name: 'GetYourGuide' }],
+    ['viator.', { icon: '🎟️', cls: 'activity', name: 'Viator' }],
+    ['klook.', { icon: '🎟️', cls: 'activity', name: 'Klook' }],
+    ['airalo.', { icon: '📶', cls: 'esim', name: 'Airalo' }],
+    ['holafly', { icon: '📶', cls: 'esim', name: 'Holafly' }],
+    ['heymondo', { icon: '🛡️', cls: 'insurance', name: 'Heymondo' }],
+    ['12go.', { icon: '🚌', cls: 'transport', name: '12Go' }],
+  ];
+
+  function brandFor(url) {
+    var host = urlDomain(url).toLowerCase();
+    for (var i = 0; i < BRANDS.length; i++) {
+      if (host.indexOf(BRANDS[i][0]) !== -1) return BRANDS[i][1];
+    }
+    var here = (window.location.hostname || '').replace(/^www\./i, '');
+    if (here && host === here) return { icon: '📖', cls: 'site', name: host };
+    return { icon: '🔗', cls: 'ext', name: host };
+  }
+
+  function inlineLinkChip(url) {
+    var brand = brandFor(url);
+    return '<a class="mai-chat__inline-link" href="' + url + '" target="_blank" rel="noopener">'
+      + '<span class="mai-chat__inline-link-ico" aria-hidden="true">' + brand.icon + '</span>'
+      + '<span class="mai-chat__inline-link-text">' + brand.name + '</span>'
+      + '<span class="mai-chat__inline-link-arrow" aria-hidden="true">↗</span></a>';
+  }
+
   function formatMessage(text, streaming) {
     var escaped = escapeHtml(String(text || ''));
     escaped = applyEmphasis(escaped, !!streaming);
     escaped = escaped
       .replace(/\n/g, '<br>')
-      .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+      .replace(/(https?:\/\/[^\s<]+?)([.,;:!?)\]»]*)(?=\s|<|$)/g, function (m, url, tail) {
+        return inlineLinkChip(url) + tail;
+      });
     return escaped;
   }
 
@@ -295,23 +335,36 @@
       html += renderMapCard(card);
     });
 
-    (siteLinks || []).forEach(function (l) {
-      html += '<a class="mai-chat__link-card mai-chat__link-card--site" href="' + escapeHtml(l.url) + '" target="_blank" rel="noopener">'
-        + '<span class="mai-chat__link-card-icon" aria-hidden="true">📖</span>'
-        + '<span class="mai-chat__link-card-body"><strong>' + escapeHtml(l.title) + '</strong></span>'
-        + '<span class="mai-chat__link-card-arrow" aria-hidden="true">→</span></a>';
-    });
+    if (siteLinks && siteLinks.length) {
+      html += '<p class="mai-chat__links-label"><span aria-hidden="true">📖</span> ' + escapeHtml(i18n.linksSite) + '</p>';
+      siteLinks.forEach(function (l) {
+        html += '<a class="mai-chat__link-card mai-chat__link-card--site" href="' + escapeHtml(l.url) + '" target="_blank" rel="noopener">'
+          + '<span class="mai-chat__link-card-ico mai-chat__link-card-ico--site" aria-hidden="true">📖</span>'
+          + '<span class="mai-chat__link-card-body">'
+          + '<strong class="mai-chat__link-card-title">' + escapeHtml(l.title) + '</strong>'
+          + '<span class="mai-chat__link-card-domain">' + escapeHtml(urlDomain(l.url)) + '</span>'
+          + '</span>'
+          + '<span class="mai-chat__link-card-arrow" aria-hidden="true">→</span></a>';
+      });
+    }
 
-    (affiliateLinks || []).forEach(function (l) {
-      html += '<a class="mai-chat__link-card mai-chat__link-card--aff" href="' + escapeHtml(l.url) + '" target="_blank" rel="noopener sponsored">'
-        + '<span class="mai-chat__link-card-icon" aria-hidden="true">✦</span>'
-        + '<span class="mai-chat__link-card-body">'
-        + '<span class="mai-chat__link-badge">' + escapeHtml(i18n.affiliate) + '</span> '
-        + '<strong>' + escapeHtml(l.label) + '</strong>'
-        + (l.teaser ? '<small>' + escapeHtml(l.teaser) + '</small>' : '')
-        + '</span>'
-        + '<span class="mai-chat__link-card-arrow" aria-hidden="true">↗</span></a>';
-    });
+    if (affiliateLinks && affiliateLinks.length) {
+      html += '<p class="mai-chat__links-label mai-chat__links-label--aff"><span aria-hidden="true">✦</span> ' + escapeHtml(i18n.linksPartner) + '</p>';
+      affiliateLinks.forEach(function (l) {
+        var brand = brandFor(l.url);
+        html += '<a class="mai-chat__link-card mai-chat__link-card--aff" href="' + escapeHtml(l.url) + '" target="_blank" rel="noopener sponsored">'
+          + '<span class="mai-chat__link-card-ico mai-chat__link-card-ico--' + brand.cls + '" aria-hidden="true">' + brand.icon + '</span>'
+          + '<span class="mai-chat__link-card-body">'
+          + '<span class="mai-chat__link-card-top">'
+          + '<strong class="mai-chat__link-card-title">' + escapeHtml(l.label) + '</strong>'
+          + '<span class="mai-chat__link-badge">' + escapeHtml(i18n.affiliate) + '</span>'
+          + '</span>'
+          + (l.teaser ? '<small class="mai-chat__link-card-teaser">' + escapeHtml(l.teaser) + '</small>' : '')
+          + '<span class="mai-chat__link-card-domain">' + escapeHtml(brand.name) + '</span>'
+          + '</span>'
+          + '<span class="mai-chat__link-card-arrow" aria-hidden="true">↗</span></a>';
+      });
+    }
 
     html += '</div>';
     return html;

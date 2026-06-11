@@ -126,13 +126,21 @@ def find_page(page_id: str, lang: str = "fr") -> dict | None:
     return next((p for p in page_inventory(lang) if p["id"] == page_id), None)
 
 
-def default_campaign(page: dict | None, brief: str | None) -> str:
+# Préfixe de campagne UTM par réseau (lisible dans Analytics).
+CAMPAIGN_PREFIX = {
+    "facebook": "fb", "pinterest": "pin", "instagram": "ig", "threads": "thr",
+    "x": "x", "telegram": "tg", "reddit": "rdt", "tiktok": "tt",
+}
+
+
+def default_campaign(page: dict | None, brief: str | None, network: str = "facebook") -> str:
     """Nomenclature de campagne par défaut, cohérente et stable."""
     from admin.facebook_service import sanitize_campaign
+    prefix = CAMPAIGN_PREFIX.get(network, network or "post")
     if page:
-        return sanitize_campaign("fb-" + page["id"].replace(":", "-"))
+        return sanitize_campaign(f"{prefix}-" + page["id"].replace(":", "-"))
     base = (brief or "post")[:40]
-    return sanitize_campaign(f"fb-{date.today():%Y%m}-{base}")
+    return sanitize_campaign(f"{prefix}-{date.today():%Y%m}-{base}")
 
 
 # ── Rédaction IA ──────────────────────────────────────────────────────────
@@ -143,13 +151,70 @@ def _compose(message: str, hashtags: list[str]) -> str:
     return f"{message}\n\n{tags}".strip() if tags else message
 
 
+# Contraintes de rédaction propres à chaque réseau (codes et usages différents).
+_NETWORK_CONSTRAINTS = {
+    "facebook": (
+        "Plateforme : FACEBOOK.\n"
+        "- Une accroche forte en 1re ligne (emoji possible).\n"
+        "- 2 à 4 lignes courtes, concrètes, sans clickbait ni promesse exagérée.\n"
+        "- Un appel à l'action clair en fin (ex. « Lien en commentaire » ou « Découvrez le guide »).\n"
+        "- 3 à 6 hashtags pertinents (Vietnam, voyage, thème).\n"
+        "- Quelques emojis bien placés, ton chaleureux et expert."
+    ),
+    "pinterest": (
+        "Plateforme : PINTEREST (épingle).\n"
+        "- 1re ligne = TITRE de l'épingle (max 90 caractères, riche en mots-clés de recherche).\n"
+        "- Puis une description de 2 à 4 phrases optimisée pour la recherche Pinterest "
+        "(mots-clés naturels : itinéraire, budget, saison, Vietnam…).\n"
+        "- 2 à 4 hashtags maximum, pas d'appel « lien en commentaire » (le lien est sur l'épingle).\n"
+        "- Peu ou pas d'emojis."
+    ),
+    "instagram": (
+        "Plateforme : INSTAGRAM (légende de photo).\n"
+        "- Accroche courte et visuelle en 1re ligne.\n"
+        "- 3 à 5 lignes inspirantes mais concrètes.\n"
+        "- Appel à l'action « lien en bio » (les liens ne sont pas cliquables en légende).\n"
+        "- 8 à 12 hashtags pertinents (#vietnamtravel, #voyagevietnam, thème).\n"
+        "- Emojis bienvenus."
+    ),
+    "threads": (
+        "Plateforme : THREADS.\n"
+        "- Post COURT (350 caractères max), ton conversationnel, comme une bonne anecdote "
+        "ou un conseil d'ami qui connaît le Vietnam.\n"
+        "- 0 à 2 hashtags maximum.\n"
+        "- 1 ou 2 emojis maximum."
+    ),
+    "x": (
+        "Plateforme : X (Twitter).\n"
+        "- 220 caractères MAXIMUM au total (le lien est ajouté à part).\n"
+        "- Percutant, un seul conseil ou fait marquant.\n"
+        "- 1 à 3 hashtags courts (#Vietnam, #Travel).\n"
+        "- 0 ou 1 emoji."
+    ),
+    "telegram": (
+        "Plateforme : TELEGRAM (canal voyage).\n"
+        "- Message informatif de 3 à 6 lignes, structuré, façon mini-brief utile.\n"
+        "- Pas de hashtags.\n"
+        "- Quelques emojis pour rythmer (✈️ 💡 ⚠️…), le lien est ajouté à la fin du message."
+    ),
+    "reddit": (
+        "Plateforme : REDDIT.\n"
+        "- 1re ligne = TITRE du post : descriptif, honnête, SANS clickbait et SANS emoji.\n"
+        "- Puis 2 à 5 phrases réellement utiles (conseils concrets, chiffres, saison…), "
+        "ton authentique de voyageur qui partage, PAS promotionnel (Reddit déteste la pub).\n"
+        "- AUCUN hashtag, AUCUN emoji."
+    ),
+}
+
+
 def generate_post(*, page: dict | None = None, brief: str | None = None,
-                  lang: str = "fr") -> str:
-    """Rédige le texte d'un post Facebook (≈ 3-5 lignes + hashtags + emojis)."""
+                  lang: str = "fr", network: str = "facebook") -> str:
+    """Rédige le texte d'un post adapté au réseau choisi (Facebook par défaut)."""
     from admin import ai_client
 
     ai_client.require_api_key()
     is_fr = lang != "en"
+    constraints = _NETWORK_CONSTRAINTS.get(network, _NETWORK_CONSTRAINTS["facebook"])
 
     if page:
         subject = (
@@ -166,17 +231,14 @@ def generate_post(*, page: dict | None = None, brief: str | None = None,
     lang_line = ("Rédige en FRANÇAIS." if is_fr else "Write in ENGLISH.")
     system = (
         "Tu es community manager pour « Inside Vietnam Travel », un site de voyage au "
-        "Vietnam. Tu écris des posts Facebook engageants, authentiques et utiles."
+        "Vietnam. Tu écris des posts engageants, authentiques et utiles, en respectant "
+        "scrupuleusement les codes de la plateforme demandée."
     )
     user = (
         f"{subject}\n\n{lang_line}\n"
-        "Contraintes du post :\n"
-        "- Une accroche forte en 1re ligne (emoji possible).\n"
-        "- 2 à 4 lignes courtes, concrètes, sans clickbait ni promesse exagérée.\n"
-        "- Un appel à l'action clair en fin (ex. « Lien en commentaire » ou « Découvrez le guide »).\n"
-        "- 3 à 6 hashtags pertinents (Vietnam, voyage, thème).\n"
-        "- Quelques emojis bien placés, ton chaleureux et expert.\n"
-        'Réponds STRICTEMENT en JSON : {"message": "...", "hashtags": ["#...", "..."]}'
+        f"Contraintes du post :\n{constraints}\n"
+        'Réponds STRICTEMENT en JSON : {"message": "...", "hashtags": ["#...", "..."]} '
+        "(hashtags: liste vide si la plateforme n'en utilise pas)"
     )
 
     resp = ai_client.chat_completion(

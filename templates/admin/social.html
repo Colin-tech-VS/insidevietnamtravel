@@ -5,8 +5,9 @@
 {% block content %}
 <div class="social-page">
 
-  <p class="social-intro">Publiez n'importe quelle page du site (ou un contenu inédit) sur votre page Facebook,
-  avec rédaction IA et suivi UTM automatique.</p>
+  <p class="social-intro">Publiez n'importe quelle page du site (ou un contenu inédit) sur Facebook
+  et sur les réseaux où se trouvent les voyageurs (Pinterest, Reddit, Telegram, X, Threads, Instagram),
+  avec rédaction IA adaptée à chaque réseau et suivi UTM automatique.</p>
 
   <!-- Connexion Facebook -->
   <section class="social-card">
@@ -36,6 +37,67 @@
     </form>
   </section>
 
+  <!-- Réseaux voyageurs (hors Facebook) -->
+  <section class="social-card">
+    <div class="social-card__head">
+      <div class="social-card__title">
+        <span class="social-card__icon" aria-hidden="true">🌏</span>
+        <h2>Où trouver des voyageurs — autres réseaux</h2>
+      </div>
+    </div>
+    <p class="social-hint">Connectez un réseau ci-dessous (clés API) pour publier dessus directement
+    depuis le composer, avec rédaction IA adaptée à ses codes et suivi UTM
+    (<code>utm_source</code> = nom du réseau). Les réseaux marqués 🎯 sont les plus qualifiés
+    pour trouver des voyageurs qui préparent un séjour au Vietnam.</p>
+
+    <div class="social-networks">
+      {% for net in networks if not net.managed_elsewhere %}
+      <article class="social-net{% if not net.publishable %} social-net--info{% endif %}" id="net-{{ net.key }}">
+        <header class="social-net__head">
+          <span class="social-net__icon" style="--net-color: {{ net.color }}" aria-hidden="true">{{ net.icon }}</span>
+          <div class="social-net__name">
+            <h3>{{ net.name }}</h3>
+            {% if net.specialized %}<span class="social-net__chip">🎯 Voyageurs qualifiés</span>{% endif %}
+          </div>
+          {% if not net.publishable %}<span class="social-status social-status--soon">Audit API requis</span>
+          {% elif net.configured %}<span class="social-status social-status--ok">● Connecté</span>
+          {% else %}<span class="social-status social-status--off">● Non configuré</span>{% endif %}
+        </header>
+
+        <p class="social-net__audience">{{ net.audience }}</p>
+
+        <details class="social-net__details">
+          <summary>Comment connecter &amp; publier</summary>
+          <ol class="social-net__steps">
+            {% for step in net.connect_steps %}<li>{{ step }}</li>{% endfor %}
+          </ol>
+          <p class="social-net__docs"><a href="{{ net.docs_url }}" target="_blank" rel="noopener">Documentation officielle ↗</a></p>
+        </details>
+
+        {% if net.fields %}
+        <form method="post" action="{{ url_for('admin.social_network_settings', key=net.key) }}" class="social-net__config">
+          {% for f in net.fields %}
+          <div class="social-field">
+            <label for="{{ net.key }}-{{ f.key }}">{{ f.label }}{% if f.hint %} <span class="social-field__hint">({{ f.hint }})</span>{% endif %}</label>
+            {% if f.secret %}
+            <input id="{{ net.key }}-{{ f.key }}" type="password" name="{{ f.key }}" autocomplete="off"
+                   placeholder="{{ f.masked or 'Collez la valeur' }}">
+            {% else %}
+            <input id="{{ net.key }}-{{ f.key }}" type="text" name="{{ f.key }}" value="{{ f.value }}">
+            {% endif %}
+          </div>
+          {% endfor %}
+          <div class="social-config__actions">
+            <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+            <button type="submit" formaction="{{ url_for('admin.social_network_test', key=net.key) }}" class="btn btn-secondary btn-sm">Tester la connexion</button>
+          </div>
+        </form>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
   <!-- Composer -->
   <section class="social-card">
     <div class="social-card__head">
@@ -51,12 +113,28 @@
 
     <form id="social-form" method="post" action="{{ url_for('admin.social_publish') }}">
       <input type="hidden" name="mode" id="f-mode" value="page">
+      <input type="hidden" name="network" id="f-network" value="facebook">
       <input type="hidden" name="image_url" id="f-image-url" value="">
       <input type="hidden" name="message" id="f-message">
 
       <div class="social-grid">
         <!-- Colonne gauche : contrôles -->
         <div class="social-grid__controls">
+
+          <label class="form-label">Publier sur</label>
+          <div class="social-netpick" role="radiogroup" aria-label="Réseau de publication">
+            {% for net in networks if net.publishable %}
+            <label class="social-netpick__opt{% if not net.configured %} is-off{% endif %}" title="{{ net.name }}{% if not net.configured %} — non connecté{% endif %}">
+              <input type="radio" name="network_choice" value="{{ net.key }}"
+                     data-name="{{ net.name }}"
+                     data-needs-image="{{ 1 if net.needs_image else 0 }}"
+                     data-configured="{{ 1 if net.configured else 0 }}"
+                     {% if net.key == 'facebook' %}checked{% endif %}>
+              <span><span class="social-netpick__icon" aria-hidden="true">{{ net.icon }}</span>{{ net.name }}</span>
+            </label>
+            {% endfor %}
+          </div>
+          <p class="social-hint social-netpick__hint" id="network-hint" hidden>⚠ Ce réseau n'est pas encore connecté — configurez-le dans la section ci-dessus.</p>
 
           <div class="social-mode" role="tablist" aria-label="Type de publication">
             <label class="social-mode__opt"><input type="radio" name="mode_choice" value="page" checked> <span>📄 Page du site</span></label>
@@ -100,9 +178,18 @@
             <input type="url" id="custom-link" name="link" class="social-input" placeholder="https://www.insidevietnamtravel.fr/…">
           </div>
 
+          <!-- Subreddit (Reddit uniquement) -->
+          <div class="social-block" data-block="reddit" hidden>
+            <label class="form-label" for="subreddit">Subreddit <span class="social-field__hint">(sans « r/ »)</span></label>
+            <input type="text" id="subreddit" name="subreddit" class="social-input"
+                   value="{{ reddit_default_sub }}" placeholder="VietnamTravel">
+            <p class="social-hint">⚠ Lisez les règles du subreddit avant de publier : flair parfois obligatoire,
+            autopromo limitée (~1 lien pour 10 contributions).</p>
+          </div>
+
           <div class="social-utm">
             <span class="social-utm__tag">UTM</span>
-            <code>utm_source=<b>facebook</b> · utm_medium=<b>social</b> · utm_campaign=</code>
+            <code>utm_source=<b id="utm-source">facebook</b> · utm_medium=<b>social</b> · utm_campaign=</code>
             <input type="text" name="campaign" id="f-campaign" class="social-input social-input--inline" value="">
           </div>
 
@@ -118,9 +205,9 @@
 
           <div class="social-actions">
             <button type="submit" class="btn btn-primary social-publish"{% if not fb_configured %} disabled{% endif %}>
-              <span aria-hidden="true">📣</span> Publier sur Facebook
+              <span aria-hidden="true">📣</span> <span id="publish-label">Publier sur Facebook</span>
             </button>
-            {% if not fb_configured %}<span class="social-hint">Configurez la connexion ci-dessus pour publier.</span>{% endif %}
+            <span class="social-hint" id="publish-hint"{% if fb_configured %} hidden{% endif %}>Configurez la connexion du réseau choisi pour publier.</span>
           </div>
         </div>
 
