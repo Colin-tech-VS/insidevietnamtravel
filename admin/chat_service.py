@@ -647,20 +647,82 @@ def _repair_message(message: str, lang: str, *, has_links: bool, city: str = "")
     if not _message_incomplete(msg):
         return msg
     msg = re.sub(r"[\s:—\-•…]+$", "", msg).strip()
-    place = city or ("Hanoï" if lang != "en" else "Hanoi")
     if lang == "en":
-        suffix = (
-            " See the links below for our picks and the interactive map."
-            if has_links
-            else f" Browse our {place} destination guide for hotel ideas."
-        )
+        suffix = "."
     else:
-        suffix = (
-            " Retrouvez nos sélections et la carte interactive juste en dessous."
-            if has_links
-            else f" Consultez notre guide {place} pour des idées d'hébergement."
-        )
+        suffix = "."
     return msg + suffix
+
+
+def _link_intent(text: str) -> dict[str, bool]:
+    hay = _fold(text)
+    return {
+        "booking": any(w in hay for w in ("hotel", "dormir", "reserv", "book", "heberg", "loger", "stay", "lodging")),
+        "activity": any(w in hay for w in ("activit", "tour", "excursion", "visite", "things to do")),
+        "esim": any(w in hay for w in ("esim", "sim", "forfait", "data mobile", "internet mobile")),
+        "insurance": any(w in hay for w in ("assurance", "insurance", "sante", "santé", "health", "medic")),
+        "visa": any(w in hay for w in ("visa", "evisa", "e-visa", "passeport", "passport", "formalit")),
+        "guide_page": any(w in hay for w in (
+            "guide", "page", "lien", "link", "lire", "read", "outil", "article", "blog", "itinera",
+        )),
+        "prepare": any(w in hay for w in (
+            "partir", "prepare", "preparer", "préparer", "organiser", "faut faire", "checklist",
+            "before you go", "what do i need",
+        )),
+        "map": _wants_map(text),
+    }
+
+
+def _curate_links(
+    user_question: str,
+    site_links: list[dict],
+    affiliate_links: list[dict],
+    lang: str,
+) -> tuple[list[dict], list[dict]]:
+    """Garde 0–1 lien site et 0–1 affilié, seulement si la question le justifie."""
+    intent = _link_intent(user_question)
+    wants_site = intent["visa"] or intent["prepare"] or intent["guide_page"] or intent["map"]
+    wants_aff = intent["booking"] or intent["activity"] or intent["esim"] or intent["insurance"]
+
+    if not wants_site and not wants_aff:
+        return [], []
+
+    out_site: list[dict] = []
+    out_aff: list[dict] = []
+
+    if wants_site and site_links:
+        if intent["visa"]:
+            visa_first = next(
+                (l for l in site_links if "visa" in l.get("title", "").lower() or "visa" in l.get("url", "")),
+                site_links[0],
+            )
+            out_site = [visa_first]
+        elif intent["prepare"]:
+            prep = next(
+                (l for l in site_links if "prepare" in l.get("url", "").lower() or "plan" in l.get("url", "")),
+                site_links[0],
+            )
+            out_site = [prep]
+        else:
+            out_site = [site_links[0]]
+
+    if wants_aff and affiliate_links:
+        if intent["esim"]:
+            esim = next(
+                (l for l in affiliate_links if "esim" in l.get("label", "").lower() or "airalo" in l.get("url", "").lower() or "holafly" in l.get("url", "").lower()),
+                affiliate_links[0],
+            )
+            out_aff = [esim]
+        elif intent["insurance"]:
+            ins = next(
+                (l for l in affiliate_links if "assur" in l.get("label", "").lower() or "insur" in l.get("label", "").lower()),
+                affiliate_links[0],
+            )
+            out_aff = [ins]
+        else:
+            out_aff = [affiliate_links[0]]
+
+    return out_site[:1], out_aff[:1]
 
 
 def _fold(text: str) -> str:
@@ -911,29 +973,17 @@ def _auto_enrich_links(
     site_links: list[dict],
     affiliate_links: list[dict],
 ) -> tuple[list[dict], list[dict]]:
-    """Complète site_links / affiliate_links si l'IA oublie ou si les URLs ne matchent pas."""
-    hay = message.lower()
-    hotel_q = any(w in hay for w in ("hotel", "hôtel", "dormir", "heberg", "héberg", "stay", "lodging", "loger"))
-    activity_q = any(w in hay for w in ("activit", "faire", "visit", "tour", "excursion", "que faire", "quoi faire"))
-    esim_q = any(w in hay for w in ("esim", " e sim", "sim ", "forfait", "data mobile", "internet mobile", "wifi"))
-    insurance_q = any(w in hay for w in ("assurance", "insurance", "santé", "sante", "health", "medic", "rapatri"))
-    visa_q = any(w in hay for w in ("visa", "e-visa", "evisa", "passeport", "passport", "formalit"))
-    guide_q = any(w in hay for w in (
-        "secur", "sécur", "arnaque", "scam", "coutume", "etiquette", "phrase", "vietnamien",
-        "meteo", "météo", "saison", "pluie", "climat", "weather", "budget", "prepare", "preparer",
-    ))
-    prepare_q = any(w in hay for w in (
-        "partir", "preparer", "préparer", "organiser", "faut faire", "quoi faire avant",
-        "comment partir", "premiers pas", "before you go", "what do i need",
-    ))
-    slug = _detect_destination_slug(message, lang)
+    """Complète au plus 1 lien site + 1 affilié, uniquement si la question le demande."""
+    intent = _link_intent(message)
+    if not any(intent[k] for k in ("booking", "activity", "esim", "insurance", "visa", "prepare", "guide_page", "map")):
+        return [], []
 
+    slug = _detect_destination_slug(message, lang)
     existing_site = {l["url"] for l in site_links}
     existing_aff = {l["url"] for l in affiliate_links}
-    max_site, max_aff = 5, 4
 
     def add_site(chunk: dict) -> None:
-        if len(site_links) >= max_site:
+        if len(site_links) >= 1:
             return
         url = chunk.get("url", "")
         if not url or url in existing_site:
@@ -942,7 +992,7 @@ def _auto_enrich_links(
         existing_site.add(url)
 
     def add_aff(chunk: dict, label: str | None = None) -> None:
-        if len(affiliate_links) >= max_aff:
+        if len(affiliate_links) >= 1:
             return
         url = chunk.get("url", "")
         if not url or url in existing_aff:
@@ -950,74 +1000,30 @@ def _auto_enrich_links(
         affiliate_links.append({
             "label": (label or chunk.get("title") or url)[:100],
             "url": url,
-            "teaser": (chunk.get("text") or "")[:160],
+            "teaser": "",
         })
         existing_aff.add(url)
 
     for chunk in chunks:
-        cid = chunk.get("id", "")
-        if slug and cid == f"map:page:{slug}":
-            add_site(chunk)
-        elif slug and cid == f"dest-rich:{slug}":
-            add_site(chunk)
-        elif slug and hotel_q and cid == f"aff:hotel:{slug}":
-            add_aff(chunk)
-        elif slug and activity_q and cid == f"aff:activity:{slug}":
-            add_aff(chunk)
-        elif slug and hotel_q and cid.startswith("map:pin:") and chunk.get("affiliate"):
-            from admin.store import get_destinations_dict
-            dest_name = get_destinations_dict(lang).get(slug, {}).get("name", "")
-            title = chunk.get("title", "")
-            if dest_name and dest_name.lower() in title.lower():
-                add_aff(chunk, label=title.split("—")[0].strip() or title)
-        elif esim_q and cid in ("aff:esim_airalo", "aff:esim_holafly"):
-            add_aff(chunk)
-        elif insurance_q and cid == "aff:insurance":
-            add_aff(chunk)
-        elif visa_q and cid.startswith("guide-") and "visa" in cid.lower():
-            add_site(chunk)
-        elif guide_q and cid.startswith("guide-"):
-            add_site(chunk)
-        elif prepare_q and cid in ("tool:prepare_trip", "tool:visa_checker"):
-            add_site(chunk)
-        elif prepare_q and cid.startswith("guide-"):
-            add_site(chunk)
-
-    # Destination : toujours proposer page + hôtel si le slug est connu
-    if slug:
-        for chunk in chunks:
-            cid = chunk.get("id", "")
-            if cid == f"dest-rich:{slug}":
-                add_site(chunk)
-            elif cid == f"aff:hotel:{slug}":
-                add_aff(chunk)
-            elif cid == f"aff:activity:{slug}" and (activity_q or not affiliate_links):
-                add_aff(chunk)
-
-    # Compléter depuis les chunks les mieux classés (retrieval)
-    for chunk in chunks:
-        if len(site_links) >= max_site and len(affiliate_links) >= max_aff:
+        if len(site_links) >= 1 and len(affiliate_links) >= 1:
             break
-        if chunk.get("affiliate"):
-            if len(affiliate_links) < max_aff:
-                add_aff(chunk)
-        elif chunk.get("url") and not chunk.get("id", "").startswith("map:pin:"):
-            if len(site_links) < max_site:
-                add_site(chunk)
+        cid = chunk.get("id", "")
+        if intent["visa"] and cid.startswith("guide-visa"):
+            add_site(chunk)
+        elif intent["prepare"] and cid in ("tool:prepare_trip", "page:prepare_trip"):
+            add_site(chunk)
+        elif intent["map"] and slug and cid == f"dest-rich:{slug}":
+            add_site(chunk)
+        elif intent["booking"] and slug and cid == f"aff:hotel:{slug}":
+            add_aff(chunk)
+        elif intent["activity"] and slug and cid == f"aff:activity:{slug}":
+            add_aff(chunk)
+        elif intent["esim"] and cid in ("aff:esim_airalo", "aff:esim_holafly"):
+            add_aff(chunk)
+        elif intent["insurance"] and cid == "aff:insurance":
+            add_aff(chunk)
 
-    # Minimum : au moins 1 lien site + 1 affilié quand le contexte le permet
-    if not site_links:
-        for chunk in chunks:
-            if not chunk.get("affiliate") and chunk.get("url"):
-                add_site(chunk)
-                break
-    if not affiliate_links:
-        for chunk in chunks:
-            if chunk.get("affiliate") and chunk.get("url"):
-                add_aff(chunk)
-                break
-
-    return site_links[:max_site], affiliate_links[:max_aff]
+    return site_links[:1], affiliate_links[:1]
 
 
 def _emph_count(message: str) -> int:
@@ -1192,19 +1198,13 @@ def _system_prompt(lang: str) -> str:
             "LANGUAGE: always reply in ENGLISH on /en pages; never mix French in the message body. "
             "KNOWLEDGE: use ONLY facts and URLs from CONTEXT + SITE MAP. If missing, say so honestly — never invent. "
             "GOLDEN RULE: answer the user's QUESTION first, directly and precisely, from the very first sentence. "
-            "BREVITY: keep the message SHORT — simple question → 1–2 sentences (max ~60 words); advice or itinerary "
-            "→ 3–5 sentences (max ~120 words). Never write long paragraphs or repeat what the link cards already show. "
-            "LINKS FIRST: almost every answer MUST include site_links AND affiliate_links from CONTEXT when relevant "
-            "(destination page, guide, eSIM, insurance, hotels, activities). Put concrete picks, hotel names and "
-            "booking details in affiliate_links/site_links — NOT in the message body. Aim for 2–4 site_links and "
-            "1–3 affiliate_links whenever CONTEXT offers them. "
-            "Match the length to the question — never pad with generic Vietnam talk and never repeat what was "
-            "already said — use HISTORY to understand follow-up questions and stay on topic. "
-            "You know the whole site through CONTEXT: recommend its pages plus affiliate partner links "
-            "ONLY when they genuinely help the current question (eSIM, insurance, hotels, activities). "
-            "When the user asks where to stay, what to do or how to find their way, name 2–3 concrete picks and "
-            "put Booking/map links in affiliate_links and site_links using EXACT URLs from CONTEXT — each "
-            "destination page has an interactive map (#dest-map); do NOT push the map otherwise. "
+            "STYLE (ChatGPT-like): natural conversation, clear and precise — short paragraphs, no filler, no "
+            "link lists in the message. Answer like a smart travel friend, not a brochure. "
+            "BREVITY: simple question → 1–2 sentences (~60 words); advice → 3–5 sentences (~120 words max). "
+            "LINKS (sparse): in MOST replies set site_links=[] and affiliate_links=[]. Add AT MOST 1 site_link "
+            "OR 1 affiliate_link only when the user clearly needs it (visa page, prepare trip, book a hotel, "
+            "eSIM, insurance, activity). Never both unless they explicitly asked for two things. "
+            "Never add links to casual or follow-up questions. "
             "The site has dedicated guides: travel safety & scams, customs & etiquette, useful Vietnamese phrases, "
             "visa checker (evisa.gov.vn), weather planner by region/destination, useful apps (Grab), eSIM & insurance — "
             "recommend the matching page from CONTEXT when relevant. "
@@ -1223,14 +1223,7 @@ def _system_prompt(lang: str) -> str:
             "itinerary (“Great choice!”, “Well done — that's the best time to go!”). Encourage the hesitant, "
             "reassure the worried, and vary your wording from one answer to the next. "
             "A few well-placed emojis — never cheesy. "
-            "HIGHLIGHTS (MANDATORY): wrap 3–6 key phrases per answer in **double asterisks** — they render as "
-            "gold text with a green underline. Highlight what matters FOR THIS QUESTION: the essential actions, "
-            "decisions and facts — NOT filler words. Examples by topic: "
-            "trip prep → **obtain a visa**, **apply online**, **visa exemption**, **travel insurance**, **valid passport**; "
-            "where to stay → **Old Quarter**, **book ahead**; when to go → **dry season**, **November to April**. "
-            "Example: « To **travel to Vietnam**, start by **obtaining a visa** (or check **visa exemption**). "
-            "Also **get travel insurance**. » "
-            "Never paste raw URLs in message — put them in site_links/affiliate_links only. "
+            "HIGHLIGHTS: wrap 2–4 key phrases in **double asterisks** (gold + green underline in UI). "
             "Write a COMPLETE message (never end with a colon or an unfinished list). "
             "Always answer in ENGLISH. Be honest: if the answer is not in CONTEXT, say so plainly — never invent prices or visa rules. "
             "ONLY use URLs from CONTEXT for site_links and affiliate_links. "
@@ -1243,19 +1236,14 @@ def _system_prompt(lang: str) -> str:
         "CONNAISSANCE : utilise UNIQUEMENT les faits et URL du CONTEXTE + PLAN DU SITE. Si l'info manque, dis-le "
         "honnêtement — n'invente jamais. "
         "RÈGLE D'OR : réponds D'ABORD, DIRECTEMENT et précisément à la QUESTION posée, dès la première phrase. "
-        "CONCISION : message COURT — question simple → 1–2 phrases (max ~60 mots) ; conseils ou itinéraire → "
-        "3–5 phrases (max ~120 mots). Jamais de longs paragraphes ni de détails déjà visibles dans les cartes de liens. "
-        "LIENS D'ABORD : presque chaque réponse DOIT inclure site_links ET affiliate_links du CONTEXTE quand c'est "
-        "pertinent (page destination, guide, eSIM, assurance, hôtels, activités). Mets les sélections concrètes, "
-        "noms d'hôtels et réservations dans affiliate_links/site_links — PAS dans le corps du message. "
-        "Vise 2–4 site_links et 1–3 affiliate_links dès que le CONTEXTE le permet. "
-        "Adapte la longueur à la question — jamais de remplissage générique sur le Vietnam, jamais de répétition de "
-        "ce qui a déjà été dit — utilise l'HISTORIQUE pour comprendre les questions de suivi et rester dans le sujet. "
-        "Tu connais tout le site via le CONTEXTE : oriente vers ses pages et les liens affiliés "
-        "UNIQUEMENT quand cela aide vraiment la question en cours (eSIM, assurance, hôtels, activités). "
-        "Quand l'utilisateur demande où dormir, quoi faire ou comment se repérer, cite 2–3 options concrètes et "
-        "mets les liens Booking/carte dans affiliate_links et site_links avec les URL EXACTES du CONTEXTE — chaque "
-        "page destination a une carte interactive (#dest-map) ; ne mets PAS la carte en avant sinon. "
+        "STYLE (type ChatGPT) : conversation naturelle, claire et précise — pas de remplissage, pas de liste de "
+        "liens dans le message. Tu parles comme une amie experte, pas comme une brochure. "
+        "CONCISION : question simple → 1–2 phrases (~60 mots) ; conseils → 3–5 phrases (~120 mots max). "
+        "LIENS (rares) : dans la PLUPART des réponses site_links=[] et affiliate_links=[]. Ajoute AU PLUS "
+        "1 site_link OU 1 affiliate_link seulement si le voyageur en a clairement besoin (page visa, préparer "
+        "son voyage, réserver un hôtel, eSIM, assurance, activité). Jamais les deux sauf demande explicite. "
+        "Pas de lien sur les questions bavardes ou de suivi. "
+        "Adapte la longueur à la question — utilise l'HISTORIQUE pour les relances. "
         "Le site propose des guides dédiés : sécurité & arnaques, coutumes & étiquette, phrases utiles en vietnamien, "
         "test visa (evisa.gov.vn), météo par région/ville avec planificateur, apps utiles (Grab), eSIM & assurance — "
         "orientez vers la page correspondante du CONTEXTE quand c'est pertinent. "
@@ -1275,15 +1263,8 @@ def _system_prompt(lang: str) -> str:
         "réservés, itinéraire malin (« Excellent choix ! », « Bravo, c'est la meilleure période ! »). Encourage "
         "les hésitants, rassure les inquiets, et varie tes formulations d'une réponse à l'autre. "
         "Quelques emojis bien placés — jamais lourd. "
-        "MISE EN VALEUR (OBLIGATOIRE) : entoure 3 à 6 expressions clés avec **double astérisques** — "
-        "texte doré et barre verte dans le chat. Surligne ce qui compte POUR CETTE QUESTION : actions essentielles, "
-        "décisions et infos concrètes — pas des mots vides. Exemples selon le sujet : "
-        "préparer son départ → **obtenir un visa**, **visa en ligne**, **exemption de visa**, **assurance voyage**, "
-        "**souscrire une assurance**, **passeport valide** ; où dormir → **quartier des 36 rues**, **réserver à l'avance** ; "
-        "quand partir → **saison sèche**, **novembre à avril**. "
-        "Exemple : « Pour **partir au Vietnam**, commencez par **obtenir un visa** (ou vérifiez l'**exemption de visa**). "
-        "Pensez aussi à **souscrire une assurance voyage**. » "
-        "Ne mets JAMAIS d'URL brute dans message — uniquement dans site_links/affiliate_links. "
+        "MISE EN VALEUR : entoure 2 à 4 expressions clés avec **double astérisques** (doré + barre verte). "
+        "Ne mets JAMAIS d'URL brute dans message. "
         "Rédige un message COMPLET (ne termine jamais par « : » ni une liste inachevée). "
         "Réponds TOUJOURS en FRANÇAIS. Reste honnête : si la réponse n'est pas dans le CONTEXTE, dis-le simplement — "
         "n'invente jamais de prix ni de règles visa. "
@@ -1421,17 +1402,14 @@ def chat_reply(
         site_links=site_links,
         affiliate_links=affiliate_links,
     )
-    # Carte intégrée seulement si la QUESTION de l'utilisateur s'y prête
-    # (où dormir, quoi faire, se repérer…) — sinon simples liens.
+    site_links, affiliate_links = _curate_links(
+        user_question,
+        site_links,
+        affiliate_links,
+        lang,
+    )
+    # Pas de carte Leaflet lourde dans le chat — lien discret vers la page destination si besoin.
     map_cards: list[dict] = []
-    if _wants_map(user_question):
-        map_cards, site_links, affiliate_links = _build_map_cards_for_response(
-            site_links,
-            affiliate_links,
-            slug,
-            lang,
-            track_url_fn,
-        )
     if _message_incomplete(message):
         message = _repair_message(
             message,
@@ -1443,7 +1421,7 @@ def chat_reply(
     return {
         "ok": True,
         "message": message,
-        "site_links": site_links[:5],
-        "affiliate_links": affiliate_links[:4],
-        "map_cards": map_cards[:2],
+        "site_links": site_links[:1],
+        "affiliate_links": affiliate_links[:1],
+        "map_cards": map_cards,
     }

@@ -274,11 +274,35 @@
     });
   }
 
-  function appendBubble(role, html, extraClass) {
+  function createAssistantRow(extraClass) {
     var wrap = document.createElement('div');
-    wrap.className = 'mai-chat__bubble-wrap mai-chat__bubble-wrap--' + role + (extraClass ? ' ' + extraClass : '');
+    wrap.className = 'mai-chat__row mai-chat__row--assistant' + (extraClass ? ' ' + extraClass : '');
+    var av = document.createElement('span');
+    av.className = 'mai-chat__row-avatar';
+    av.setAttribute('aria-hidden', 'true');
+    av.textContent = '🌸';
+    var body = document.createElement('div');
+    body.className = 'mai-chat__row-body';
+    wrap.appendChild(av);
+    wrap.appendChild(body);
+    messagesEl.appendChild(wrap);
+    scrollBottom();
+    return { wrap: wrap, body: body };
+  }
+
+  function appendBubble(role, html, extraClass) {
+    if (role === 'assistant') {
+      var row = createAssistantRow(extraClass);
+      var bubble = document.createElement('div');
+      bubble.className = 'mai-chat__bubble mai-chat__bubble--assistant';
+      bubble.innerHTML = html;
+      row.body.appendChild(bubble);
+      return row.wrap;
+    }
+    var wrap = document.createElement('div');
+    wrap.className = 'mai-chat__bubble-wrap mai-chat__bubble-wrap--user' + (extraClass ? ' ' + extraClass : '');
     var bubble = document.createElement('div');
-    bubble.className = 'mai-chat__bubble mai-chat__bubble--' + role;
+    bubble.className = 'mai-chat__bubble mai-chat__bubble--user';
     bubble.innerHTML = html;
     wrap.appendChild(bubble);
     messagesEl.appendChild(wrap);
@@ -286,107 +310,35 @@
     return wrap;
   }
 
-  function renderMapCard(card) {
-    var mapId = (window.maiChatMaps && window.maiChatMaps.nextId)
-      ? window.maiChatMaps.nextId()
-      : ('mai-map-' + Math.random().toString(36).slice(2, 8));
-    var pointsJson = escapeHtml(JSON.stringify(card.points || []));
-    var html = '<article class="mai-chat__map-card">';
-    html += '<header class="mai-chat__map-head">';
-    html += '<span class="mai-chat__map-icon" aria-hidden="true">🗺️</span>';
-    html += '<div class="mai-chat__map-head-text">';
-    html += '<strong class="mai-chat__map-title">' + escapeHtml(card.name || card.slug) + '</strong>';
-    html += '<span class="mai-chat__map-sub">' + escapeHtml(i18n.mapSubtitle) + '</span>';
-    html += '</div></header>';
-    html += '<div class="mai-chat__map-canvas" id="' + mapId + '" data-points="' + pointsJson + '" data-error="' + escapeHtml(i18n.mapError) + '" role="img" aria-label="' + escapeHtml(card.name || '') + '"></div>';
-
-    if (card.points && card.points.length) {
-      html += '<p class="mai-chat__map-pins-label">' + escapeHtml(i18n.mapOn) + '</p>';
-      html += '<ul class="mai-chat__map-pins">';
-      card.points.forEach(function (p) {
-        var kindClass = 'mai-chat__pin-kind--' + escapeHtml(p.kind || 'poi');
-        html += '<li class="mai-chat__map-pin' + (p.highlight ? ' mai-chat__map-pin--highlight' : '') + '">';
-        html += '<span class="mai-chat__pin-kind ' + kindClass + '" aria-hidden="true"></span>';
-        html += '<div class="mai-chat__pin-body">';
-        html += '<strong>' + escapeHtml(p.title) + '</strong>';
-        if (p.kind_label) html += '<span class="mai-chat__pin-meta">' + escapeHtml(p.kind_label) + '</span>';
-        if (p.price_hint) html += '<span class="mai-chat__pin-price">' + escapeHtml(p.price_hint) + '</span>';
-        if (p.affiliate_url) {
-          html += '<a class="mai-chat__pin-cta" href="' + escapeHtml(p.affiliate_url) + '" target="_blank" rel="noopener sponsored">'
-            + escapeHtml(p.affiliate_cta || (lang === 'en' ? 'Book' : 'Réserver')) + ' ↗</a>';
-        }
-        html += '</div></li>';
-      });
-      html += '</ul>';
-    }
-
-    if (card.map_url) {
-      html += '<a class="mai-chat__map-cta" href="' + escapeHtml(card.map_url) + '" target="_blank" rel="noopener">'
-        + escapeHtml(i18n.mapCta) + ' →</a>';
-    }
-    html += '</article>';
-    return html;
+  function renderRefLink(url, label, isAff) {
+    return '<a class="mai-chat__ref' + (isAff ? ' mai-chat__ref--aff' : '') + '" href="' + escapeHtml(url) + '" target="_blank" rel="' + (isAff ? 'noopener sponsored' : 'noopener') + '">'
+      + escapeHtml(label) + '</a>';
   }
 
   function renderLinks(siteLinks, affiliateLinks, mapCards) {
-    if ((!siteLinks || !siteLinks.length) && (!affiliateLinks || !affiliateLinks.length)
-        && (!mapCards || !mapCards.length)) return '';
-    var html = '<div class="mai-chat__links">';
-
-    (mapCards || []).forEach(function (card) {
-      html += renderMapCard(card);
+    var refs = [];
+    (siteLinks || []).slice(0, 1).forEach(function (l) {
+      refs.push(renderRefLink(l.url, l.title, false));
     });
-
-    if (siteLinks && siteLinks.length) {
-      html += '<p class="mai-chat__links-label"><span aria-hidden="true">📖</span> ' + escapeHtml(i18n.linksSite) + '</p>';
-      siteLinks.forEach(function (l) {
-        html += '<a class="mai-chat__link-card mai-chat__link-card--site" href="' + escapeHtml(l.url) + '" target="_blank" rel="noopener">'
-          + '<span class="mai-chat__link-card-ico mai-chat__link-card-ico--site" aria-hidden="true">📖</span>'
-          + '<span class="mai-chat__link-card-body">'
-          + '<strong class="mai-chat__link-card-title">' + escapeHtml(l.title) + '</strong>'
-          + '<span class="mai-chat__link-card-domain">' + escapeHtml(urlDomain(l.url)) + '</span>'
-          + '</span>'
-          + '<span class="mai-chat__link-card-arrow" aria-hidden="true">→</span></a>';
-      });
-    }
-
-    if (affiliateLinks && affiliateLinks.length) {
-      html += '<p class="mai-chat__links-label mai-chat__links-label--aff"><span aria-hidden="true">✦</span> ' + escapeHtml(i18n.linksPartner) + '</p>';
-      affiliateLinks.forEach(function (l) {
-        var brand = brandFor(l.url);
-        html += '<a class="mai-chat__link-card mai-chat__link-card--aff" href="' + escapeHtml(l.url) + '" target="_blank" rel="noopener sponsored">'
-          + '<span class="mai-chat__link-card-ico mai-chat__link-card-ico--' + brand.cls + '" aria-hidden="true">' + brand.icon + '</span>'
-          + '<span class="mai-chat__link-card-body">'
-          + '<span class="mai-chat__link-card-top">'
-          + '<strong class="mai-chat__link-card-title">' + escapeHtml(l.label) + '</strong>'
-          + '<span class="mai-chat__link-badge">' + escapeHtml(i18n.affiliate) + '</span>'
-          + '</span>'
-          + (l.teaser ? '<small class="mai-chat__link-card-teaser">' + escapeHtml(l.teaser) + '</small>' : '')
-          + '<span class="mai-chat__link-card-domain">' + escapeHtml(brand.name) + '</span>'
-          + '</span>'
-          + '<span class="mai-chat__link-card-arrow" aria-hidden="true">↗</span></a>';
-      });
-    }
-
-    html += '</div>';
-    return html;
-  }
-
-  function initMapsInLinks(linksEl) {
-    if (window.maiChatMaps && linksEl) {
-      window.maiChatMaps.initIn(linksEl);
-    }
+    (affiliateLinks || []).slice(0, 1).forEach(function (l) {
+      refs.push(renderRefLink(l.url, l.label, true));
+    });
+    (mapCards || []).slice(0, 1).forEach(function (card) {
+      if (card.map_url) {
+        refs.push(renderRefLink(card.map_url, (card.name || '') + ' — ' + i18n.mapCta, false));
+      }
+    });
+    if (!refs.length) return '';
+    return '<div class="mai-chat__refs">' + refs.join('') + '</div>';
   }
 
   function showTyping() {
-    var html = '<span class="mai-chat__typing">'
-      + '<span class="mai-chat__typing-avatar" aria-hidden="true">🌸</span>'
+    var row = createAssistantRow('mai-chat__row--typing');
+    row.body.innerHTML = '<div class="mai-chat__bubble mai-chat__bubble--assistant mai-chat__bubble--typing">'
       + '<span class="mai-chat__typing-dots" aria-hidden="true"><span></span><span></span><span></span></span>'
-      + '<span class="mai-chat__typing-label">' + escapeHtml(i18n.typing) + '</span>'
-      + '</span>';
-    var wrap = appendBubble('assistant', html, 'mai-chat__bubble-wrap--typing');
-    wrap.dataset.typing = '1';
-    return wrap;
+      + '</div>';
+    row.wrap.dataset.typing = '1';
+    return row.wrap;
   }
 
   var supportsUnicodeProps = (function () {
@@ -406,39 +358,17 @@
   }
 
   function buildStreamUnits(text) {
-    var chars = Array.from(String(text || ''));
-    var units = [];
-    var i = 0;
-    while (i < chars.length) {
-      var ch = chars[i];
-      if (/\s/.test(ch)) {
-        units.push(ch);
-        i += 1;
-        continue;
-      }
-      if (isEmojiChar(ch) || /[.!?,;:…]/.test(ch)) {
-        units.push(ch);
-        i += 1;
-        continue;
-      }
-      var size = 1;
-      if (i + 1 < chars.length && !/\s/.test(chars[i + 1]) && !isEmojiChar(chars[i + 1])) {
-        size = 2;
-      }
-      units.push(chars.slice(i, i + size).join(''));
-      i += size;
-    }
-    return units;
+    return Array.from(String(text || ''));
   }
 
   function unitPause(unit, progress) {
-    if (/^\s+$/.test(unit)) return 10;
-    if (/[.!?…]/.test(unit)) return 52;
-    if (/[,;:]/.test(unit)) return 32;
-    if (isEmojiChar(unit)) return 28;
-    var ms = 16;
-    if (progress > 0.45) ms *= 0.78;
-    if (progress > 0.72) ms *= 0.68;
+    if (/\s/.test(unit)) return 3;
+    if (/[.!?…]/.test(unit)) return 14;
+    if (/[,;:]/.test(unit)) return 8;
+    if (isEmojiChar(unit)) return 12;
+    var ms = 7;
+    if (progress > 0.5) ms *= 0.75;
+    if (progress > 0.8) ms *= 0.65;
     return ms;
   }
 
@@ -446,20 +376,14 @@
     return new Promise(function (resolve) {
       removeTyping();
 
-      var wrap = document.createElement('div');
-      wrap.className = 'mai-chat__bubble-wrap mai-chat__bubble-wrap--assistant mai-chat__bubble-wrap--streaming';
-      wrap.title = lang === 'en' ? 'Click to show full message' : 'Cliquer pour afficher tout';
-
+      var row = createAssistantRow('mai-chat__row--streaming');
       var bubble = document.createElement('div');
       bubble.className = 'mai-chat__bubble mai-chat__bubble--assistant mai-chat__bubble--streaming';
       bubble.innerHTML = '<div class="mai-chat__stream">'
         + '<span class="mai-chat__stream-text"></span>'
         + '<span class="mai-chat__cursor" aria-hidden="true"></span>'
         + '</div>';
-
-      wrap.appendChild(bubble);
-      messagesEl.appendChild(wrap);
-      scrollBottom();
+      row.body.appendChild(bubble);
 
       var textEl = bubble.querySelector('.mai-chat__stream-text');
       var units = buildStreamUnits(text);
@@ -476,9 +400,7 @@
         holder.innerHTML = linksHtml.trim();
         var linksEl = holder.firstElementChild;
         if (!linksEl) return;
-        linksEl.classList.add('mai-chat__links--reveal');
-        bubble.appendChild(linksEl);
-        initMapsInLinks(linksEl);
+        row.body.appendChild(linksEl);
         scrollBottom();
       }
 
@@ -490,17 +412,10 @@
         var cursor = bubble.querySelector('.mai-chat__cursor');
         if (cursor) cursor.remove();
         bubble.classList.remove('mai-chat__bubble--streaming');
-        wrap.classList.remove('mai-chat__bubble-wrap--streaming');
-        wrap.removeAttribute('title');
+        row.wrap.classList.remove('mai-chat__row--streaming');
         revealLinks();
         scrollBottom();
-        wrap.removeEventListener('click', onSkip);
         resolve();
-      }
-
-      function onSkip(e) {
-        if (e.target.closest('a')) return;
-        finishInstant();
       }
 
       function tick(ts) {
@@ -530,7 +445,6 @@
         }
       }
 
-      wrap.addEventListener('click', onSkip);
       rafId = window.requestAnimationFrame(tick);
     });
   }
@@ -648,7 +562,7 @@
       })
       .catch(function (err) {
         removeTyping();
-        appendBubble('assistant', formatMessage(err.message || i18n.error), 'mai-chat__bubble-wrap--error');
+        appendBubble('assistant', formatMessage(err.message || i18n.error), 'mai-chat__row--error');
       })
       .finally(function () {
         busy = false;
