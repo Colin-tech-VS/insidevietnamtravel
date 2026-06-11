@@ -37,8 +37,8 @@
   var SIZE_KEY = 'ivt_mai_chat_size';
   var SIZE_MIN_W = 280;
   var SIZE_MIN_H = 320;
-  var SIZE_DEFAULT_W = 320;
-  var SIZE_DEFAULT_H = 480;
+  var SIZE_DEFAULT_W = 360;
+  var SIZE_DEFAULT_H = 520;
   var resizeActive = false;
   var resizeStartX = 0;
   var resizeStartY = 0;
@@ -258,11 +258,20 @@
     raw = raw.replace(/<\s*(https?:\/\/[^>]+)\s*>/g, '$1');
     raw = raw.replace(/\bhttps?:\/\/[^\s\]\)<>«»;,]+/g, '');
     raw = raw.replace(/\b(?:www\.)?[a-z0-9][-a-z0-9]*\.(?:gov(?:t)?\.vn|go\.vn|gov\.vn)[^\s,;]*/gi, '');
-    raw = raw.replace(/\s{2,}/g, ' ').trim();
+    raw = raw.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
     var escaped = escapeHtml(raw);
     escaped = applyEmphasis(escaped, !!streaming);
-    escaped = escaped.replace(/\n/g, '<br>');
-    return escaped;
+    var blocks = escaped.split(/\n{2,}/);
+    if (blocks.length === 1) {
+      return blocks[0].replace(/\n/g, '<br>');
+    }
+    var html = '';
+    blocks.forEach(function (block) {
+      block = block.replace(/\n/g, '<br>').trim();
+      if (!block) return;
+      html += '<p class="mai-chat__p">' + block + '</p>';
+    });
+    return html || escaped.replace(/\n/g, '<br>');
   }
 
   var scrollRaf = 0;
@@ -308,6 +317,28 @@
     messagesEl.appendChild(wrap);
     scrollBottom();
     return wrap;
+  }
+
+  function renderPhotos(photos) {
+    if (!photos || !photos.length) return '';
+    var html = '<div class="mai-chat__photos">';
+    photos.forEach(function (p) {
+      html += '<figure class="mai-chat__photo">';
+      if (p.page_url) {
+        html += '<a class="mai-chat__photo-link" href="' + escapeHtml(p.page_url) + '" target="_blank" rel="noopener">';
+      }
+      html += '<img class="mai-chat__photo-img" src="' + escapeHtml(p.url) + '" alt="' + escapeHtml(p.alt || '') + '" loading="lazy" decoding="async">';
+      if (p.page_url) html += '</a>';
+      if (p.caption || p.credit) {
+        html += '<figcaption class="mai-chat__photo-cap">';
+        if (p.caption) html += '<span>' + escapeHtml(p.caption) + '</span>';
+        if (p.credit) html += ' <span class="mai-chat__photo-credit">' + escapeHtml(p.credit) + '</span>';
+        html += '</figcaption>';
+      }
+      html += '</figure>';
+    });
+    html += '</div>';
+    return html;
   }
 
   function renderRefLink(url, label, isAff) {
@@ -372,7 +403,7 @@
     return ms;
   }
 
-  function streamAssistantMessage(text, linksHtml) {
+  function streamAssistantMessage(text, linksHtml, photosHtml) {
     return new Promise(function (resolve) {
       removeTyping();
 
@@ -394,13 +425,17 @@
       var carryMs = 0;
       var lastTs = 0;
 
-      function revealLinks() {
-        if (!linksHtml) return;
-        var holder = document.createElement('div');
-        holder.innerHTML = linksHtml.trim();
-        var linksEl = holder.firstElementChild;
-        if (!linksEl) return;
-        row.body.appendChild(linksEl);
+      function revealExtras() {
+        if (photosHtml) {
+          var ph = document.createElement('div');
+          ph.innerHTML = photosHtml.trim();
+          if (ph.firstElementChild) row.body.appendChild(ph.firstElementChild);
+        }
+        if (linksHtml) {
+          var holder = document.createElement('div');
+          holder.innerHTML = linksHtml.trim();
+          if (holder.firstElementChild) row.body.appendChild(holder.firstElementChild);
+        }
         scrollBottom();
       }
 
@@ -413,7 +448,7 @@
         if (cursor) cursor.remove();
         bubble.classList.remove('mai-chat__bubble--streaming');
         row.wrap.classList.remove('mai-chat__row--streaming');
-        revealLinks();
+        revealExtras();
         scrollBottom();
         resolve();
       }
@@ -508,7 +543,7 @@
     if (!opened) {
       opened = true;
       loadDynamicSuggestions();
-      streamAssistantMessage(i18n.greeting, '').then(renderSuggestions);
+      streamAssistantMessage(i18n.greeting, '', '').then(renderSuggestions);
     }
     input.focus();
   }
@@ -556,7 +591,8 @@
         }
         var msg = res.data.message || '';
         var linksHtml = renderLinks(res.data.site_links, res.data.affiliate_links, res.data.map_cards);
-        return streamAssistantMessage(msg, linksHtml).then(function () {
+        var photosHtml = renderPhotos(res.data.photos);
+        return streamAssistantMessage(msg, linksHtml, photosHtml).then(function () {
           history.push({ role: 'assistant', content: msg });
         });
       })

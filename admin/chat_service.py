@@ -1152,10 +1152,40 @@ def _clean_message_body(message: str, lang: str) -> str:
         flags=re.IGNORECASE,
     )
     msg = re.sub(r"\(\s*\)", "", msg)
-    msg = re.sub(r"\s{2,}", " ", msg)
+    msg = _normalize_message_layout(msg)
     msg = re.sub(r"\s+([.,;:!?])", r"\1", msg)
     msg = re.sub(r";\s*;", ";", msg)
     return msg.strip()
+
+
+def _normalize_message_layout(msg: str) -> str:
+    """Garde les paragraphes et aère les pavés sans retours à la ligne."""
+    msg = re.sub(r"\r\n?", "\n", msg or "")
+    msg = re.sub(r"\n{3,}", "\n\n", msg)
+    blocks: list[str] = []
+    for block in msg.split("\n\n"):
+        block = re.sub(r"[ \t]+", " ", block).strip()
+        if block:
+            blocks.append(block)
+    msg = "\n\n".join(blocks)
+    if "\n\n" in msg or len(msg) < 200:
+        return msg
+    sentences = re.split(r"(?<=[.!?…»\"])\s+(?=\S)", msg)
+    if len(sentences) < 3:
+        return msg
+    paragraphs: list[str] = []
+    buf: list[str] = []
+    buf_len = 0
+    for sentence in sentences:
+        buf.append(sentence)
+        buf_len += len(sentence)
+        if len(buf) >= 2 and buf_len >= 70:
+            paragraphs.append(" ".join(buf))
+            buf = []
+            buf_len = 0
+    if buf:
+        paragraphs.append(" ".join(buf))
+    return "\n\n".join(paragraphs) if len(paragraphs) > 1 else msg
 
 
 def _ensure_context_highlights(message: str, user_question: str, lang: str) -> str:
@@ -1198,8 +1228,8 @@ def _system_prompt(lang: str) -> str:
             "LANGUAGE: always reply in ENGLISH on /en pages; never mix French in the message body. "
             "KNOWLEDGE: use ONLY facts and URLs from CONTEXT + SITE MAP. If missing, say so honestly — never invent. "
             "GOLDEN RULE: answer the user's QUESTION first, directly and precisely, from the very first sentence. "
-            "STYLE (ChatGPT-like): natural conversation, clear and precise — short paragraphs, no filler, no "
-            "link lists in the message. Answer like a smart travel friend, not a brochure. "
+            "STYLE (ChatGPT-like): natural conversation, clear and precise — short paragraphs separated by a "
+            "blank line, no filler, no link lists in the message. Answer like a smart travel friend, not a brochure. "
             "BREVITY: simple question → 1–2 sentences (~60 words); advice → 3–5 sentences (~120 words max). "
             "LINKS (sparse): in MOST replies set site_links=[] and affiliate_links=[]. Add AT MOST 1 site_link "
             "OR 1 affiliate_link only when the user clearly needs it (visa page, prepare trip, book a hotel, "
@@ -1223,7 +1253,9 @@ def _system_prompt(lang: str) -> str:
             "itinerary (“Great choice!”, “Well done — that's the best time to go!”). Encourage the hesitant, "
             "reassure the worried, and vary your wording from one answer to the next. "
             "A few well-placed emojis — never cheesy. "
-            "HIGHLIGHTS: wrap 2–4 key phrases in **double asterisks** (gold + green underline in UI). "
+            "HIGHLIGHTS: wrap 2–3 key phrases in **double asterisks** — sparingly, for names and essentials only. "
+            "PHOTOS: when the user asks for photos/images, answer briefly — the system attaches site or web "
+            "images automatically; never invent image URLs. "
             "Write a COMPLETE message (never end with a colon or an unfinished list). "
             "Always answer in ENGLISH. Be honest: if the answer is not in CONTEXT, say so plainly — never invent prices or visa rules. "
             "ONLY use URLs from CONTEXT for site_links and affiliate_links. "
@@ -1236,8 +1268,9 @@ def _system_prompt(lang: str) -> str:
         "CONNAISSANCE : utilise UNIQUEMENT les faits et URL du CONTEXTE + PLAN DU SITE. Si l'info manque, dis-le "
         "honnêtement — n'invente jamais. "
         "RÈGLE D'OR : réponds D'ABORD, DIRECTEMENT et précisément à la QUESTION posée, dès la première phrase. "
-        "STYLE (type ChatGPT) : conversation naturelle, claire et précise — pas de remplissage, pas de liste de "
-        "liens dans le message. Tu parles comme une amie experte, pas comme une brochure. "
+        "STYLE (type ChatGPT) : conversation naturelle, claire et précise — paragraphes courts séparés par une "
+        "ligne vide, pas de remplissage, pas de liste de liens dans le message. Tu parles comme une amie experte, "
+        "pas comme une brochure. "
         "CONCISION : question simple → 1–2 phrases (~60 mots) ; conseils → 3–5 phrases (~120 mots max). "
         "LIENS (rares) : dans la PLUPART des réponses site_links=[] et affiliate_links=[]. Ajoute AU PLUS "
         "1 site_link OU 1 affiliate_link seulement si le voyageur en a clairement besoin (page visa, préparer "
@@ -1263,8 +1296,11 @@ def _system_prompt(lang: str) -> str:
         "réservés, itinéraire malin (« Excellent choix ! », « Bravo, c'est la meilleure période ! »). Encourage "
         "les hésitants, rassure les inquiets, et varie tes formulations d'une réponse à l'autre. "
         "Quelques emojis bien placés — jamais lourd. "
-        "MISE EN VALEUR : entoure 2 à 4 expressions clés avec **double astérisques** (doré + barre verte). "
+        "MISE EN VALEUR : entoure 2 à 3 expressions clés avec **double astérisques** — avec parcimonie (noms, dates, "
+        "conseils essentiels). "
         "Ne mets JAMAIS d'URL brute dans message. "
+        "PHOTOS : si l'utilisateur demande des photos/images, réponds brièvement dans message — "
+        "le système joint automatiquement des visuels du site ou du web ; n'invente pas d'URL d'image. "
         "Rédige un message COMPLET (ne termine jamais par « : » ni une liste inachevée). "
         "Réponds TOUJOURS en FRANÇAIS. Reste honnête : si la réponse n'est pas dans le CONTEXTE, dis-le simplement — "
         "n'invente jamais de prix ni de règles visa. "
@@ -1410,6 +1446,18 @@ def chat_reply(
     )
     # Pas de carte Leaflet lourde dans le chat — lien discret vers la page destination si besoin.
     map_cards: list[dict] = []
+    photos: list[dict] = []
+    try:
+        from admin.chat_photos import build_chat_photos
+        photos = build_chat_photos(
+            user_question,
+            enrich_text,
+            lang,
+            slug,
+            detect_slug_fn=_detect_destination_slug,
+        )
+    except Exception:
+        pass
     if _message_incomplete(message):
         message = _repair_message(
             message,
@@ -1424,4 +1472,5 @@ def chat_reply(
         "site_links": site_links[:1],
         "affiliate_links": affiliate_links[:1],
         "map_cards": map_cards,
+        "photos": photos[:3],
     }
