@@ -691,6 +691,10 @@ def newsletter_admin():
                 )
                 if result["sent"]:
                     flash(f"Email envoyé à {email}.", "success")
+                    partner_id = (request.form.get("partner_id") or "").strip()
+                    if partner_id:
+                        from admin.partners_service import mark_contacted
+                        mark_contacted(partner_id)
                 else:
                     flash(f"Échec d'envoi vers {email}.", "error")
             elif action == "send_all":
@@ -727,6 +731,8 @@ def newsletter_admin():
     subscribers = get_newsletter_subscribers()
     draft = _get_draft("newsletter")
     preview_html = render_newsletter_preview(draft) if draft else ""
+    from admin import partners_service as ps
+    partners_to_contact = [p for p in ps.get_partnerships() if p.get("email")]
     return render_template(
         "admin/newsletter.html",
         subscribers=subscribers,
@@ -738,6 +744,8 @@ def newsletter_admin():
         email_types=groq_newsletter.EMAIL_TYPES,
         draft_is_manual=bool(draft and draft.get("manual")),
         test_email_default=os.environ.get("LEGAL_CONTACT_EMAIL", ""),
+        partners_to_contact=partners_to_contact,
+        partner_status_labels=ps.PARTNER_STATUS_LABELS,
     )
 
 
@@ -1000,11 +1008,12 @@ def analytics():
     )
 
 
-# ── Réseaux sociaux (Facebook) ────────────────────────────────────────
+# ── Réseaux sociaux (Facebook + réseaux voyageurs) ────────────────────
 @admin_bp.route("/social")
 @login_required
 def social():
     from admin import facebook_service as fb
+    from admin import social_networks as sn
     from admin.social_ai import page_inventory
 
     inventory = page_inventory("fr")
@@ -1017,6 +1026,8 @@ def social():
         fb_configured=fb.is_configured(),
         fb_page_id=fb.get_page_id(),
         fb_token_masked=fb.masked_token(),
+        networks=sn.network_status(),
+        reddit_default_sub=sn.get_field("reddit_default_sub") or "VietnamTravel",
         page_groups=groups,
         pool_images=_social_pool_images(),
         social=db.get_social_traffic(30),
@@ -1062,15 +1073,54 @@ def social_test():
     return redirect(url_for("admin.social"))
 
 
+@admin_bp.route("/social/network/<key>/settings", methods=["POST"])
+@login_required
+def social_network_settings(key):
+    from admin import social_networks as sn
+
+    net = sn.NETWORK_KEYS.get(key)
+    if not net:
+        flash(f"Réseau inconnu : {key}", "error")
+        return redirect(url_for("admin.social"))
+    try:
+        sn.save_network_config(key, request.form)
+        flash(f"Configuration {net['name']} enregistrée.", "success")
+    except Exception as exc:  # noqa: BLE001
+        flash(f"Échec de l'enregistrement {net['name']} : {exc}", "error")
+    return redirect(url_for("admin.social"))
+
+
+@admin_bp.route("/social/network/<key>/test", methods=["POST"])
+@login_required
+def social_network_test(key):
+    from admin import social_networks as sn
+
+    net = sn.NETWORK_KEYS.get(key)
+    if not net:
+        flash(f"Réseau inconnu : {key}", "error")
+        return redirect(url_for("admin.social"))
+    try:
+        # On enregistre d'abord les champs saisis pour tester la config à jour.
+        sn.save_network_config(key, request.form)
+        info = sn.test_connection(key)
+        flash(f"Connexion {net['name']} OK — {info}.", "success")
+    except Exception as exc:  # noqa: BLE001
+        flash(f"Échec de la connexion {net['name']} : {exc}", "error")
+    return redirect(url_for("admin.social"))
+
+
 @admin_bp.route("/api/social/generate", methods=["POST"])
 @login_required
 def api_social_generate():
-    from admin import facebook_service as fb
+    from admin import social_networks as sn
     from admin.social_ai import find_page, generate_post, default_campaign
 
     payload = request.get_json(silent=True) or {}
     mode = payload.get("mode", "page")
     lang = "en" if payload.get("lang") == "en" else "fr"
+    network = payload.get("network") or "facebook"
+    if network not in sn.NETWORK_KEYS:
+        network = "facebook"
     page = find_page(payload.get("page_id", ""), lang) if mode == "page" else None
     brief = (payload.get("brief") or "").strip()
 
@@ -1080,16 +1130,16 @@ def api_social_generate():
         return jsonify({"ok": False, "error": "Expliquez le sujet du contenu nouveau."}), 400
 
     try:
-        message = generate_post(page=page, brief=brief, lang=lang)
+        message = generate_post(page=page, brief=brief, lang=lang, network=network)
     except Exception as exc:  # noqa: BLE001
         return jsonify({"ok": False, "error": ai_client.friendly_error(exc)}), 502
 
-    campaign = default_campaign(page, brief)
+    campaign = default_campaign(page, brief, network)
     return jsonify({
         "ok": True,
         "message": message,
         "campaign": campaign,
-        "link": fb.add_utm(page["url"], campaign) if page else "",
+        "link": sn.add_utm(page["url"], campaign, network) if page else "",
         "image": page["image"] if page else "",
     })
 
@@ -1098,41 +1148,158 @@ def api_social_generate():
 @login_required
 def social_publish():
     from admin import facebook_service as fb
+    from admin import social_networks as sn
     from admin.social_ai import find_page
 
-    if not fb.is_configured():
-        flash("Configurez d'abord la connexion Facebook (ID de page + token).", "error")
+    network = request.form.get("network") or "facebook"
+    net = sn.NETWORK_KEYS.get(network)
+    if not net:
+        flash(f"Réseau inconnu : {network}", "error")
         return redirect(url_for("admin.social"))
 
     mode = request.form.get("mode", "page")
     message = (request.form.get("message") or "").strip()
-    campaign = fb.sanitize_campaign(request.form.get("campaign", "") or "fb-post")
+    campaign = fb.sanitize_campaign(request.form.get("campaign", "") or f"{network}-post")
     if not message:
         flash("Le texte du post est vide.", "error")
         return redirect(url_for("admin.social"))
 
+    # Lien et image selon le mode (page du site ou contenu nouveau).
+    image_url = (request.form.get("image_url") or "").strip()
+    if mode == "page":
+        page = find_page(request.form.get("page_id", ""), "fr")
+        if not page:
+            flash("Page introuvable.", "error")
+            return redirect(url_for("admin.social"))
+        link = sn.add_utm(page["url"], campaign, network)
+        if not image_url:
+            image_url = page.get("image", "")
+    else:
+        link = (request.form.get("link") or "").strip()
+        if link:
+            link = sn.add_utm(link, campaign, network)
+
     try:
-        if mode == "page":
-            page = find_page(request.form.get("page_id", ""), "fr")
-            if not page:
-                flash("Page introuvable.", "error")
+        if network == "facebook":
+            if not fb.is_configured():
+                flash("Configurez d'abord la connexion Facebook (ID de page + token).", "error")
                 return redirect(url_for("admin.social"))
-            link = fb.add_utm(page["url"], campaign)
-            result = fb.publish_link(message, link)
+            if mode == "page":
+                result = fb.publish_link(message, link)
+            else:
+                if not image_url:
+                    flash("Une image est obligatoire pour un contenu nouveau.", "error")
+                    return redirect(url_for("admin.social"))
+                caption = f"{message}\n\n👉 {link}" if link else message
+                result = fb.publish_photo(caption, image_url)
+            permalink = fb.post_permalink(result)
         else:
-            image_url = (request.form.get("image_url") or "").strip()
-            if not image_url:
-                flash("Une image est obligatoire pour un contenu nouveau.", "error")
-                return redirect(url_for("admin.social"))
-            link = (request.form.get("link") or "").strip()
-            caption = message
-            if link:
-                caption = f"{message}\n\n👉 {fb.add_utm(link, campaign)}"
-            result = fb.publish_photo(caption, image_url)
-        flash(f"Publié sur Facebook ✅ {fb.post_permalink(result)}".strip(), "success")
+            permalink = sn.publish(
+                network,
+                message=message,
+                link=link,
+                image_url=image_url,
+                subreddit=(request.form.get("subreddit") or "").strip(),
+            )
+        flash(f"Publié sur {net['name']} ✅ {permalink}".strip(), "success")
     except Exception as exc:  # noqa: BLE001
-        flash(f"Échec de la publication : {fb.friendly_error(exc)}", "error")
+        friendly = fb.friendly_error(exc) if network == "facebook" else str(exc)
+        flash(f"Échec de la publication : {friendly}", "error")
     return redirect(url_for("admin.social"))
+
+
+# ── Partenariats (influenceurs, guides, blogueurs, agences…) ──────────
+@admin_bp.route("/partnerships", methods=["GET", "POST"])
+@login_required
+def partnerships():
+    from admin import partners_service as ps
+
+    if request.method == "POST":
+        action = request.form.get("action")
+        try:
+            if action == "add":
+                partner = ps.add_partnership({
+                    "name": request.form.get("name", ""),
+                    "type": request.form.get("type", "influenceur"),
+                    "email": request.form.get("email", ""),
+                    "links": request.form.get("links", ""),
+                    "topics": request.form.get("topics", ""),
+                    "followers": request.form.get("followers", ""),
+                    "notes": request.form.get("notes", ""),
+                    "source": "manuel",
+                })
+                flash(f"Partenaire « {partner['name']} » ajouté.", "success")
+            elif action == "update":
+                ps.update_partnership(request.form.get("partner_id", ""), {
+                    "type": request.form.get("type"),
+                    "email": request.form.get("email"),
+                    "status": request.form.get("status"),
+                    "topics": request.form.get("topics"),
+                    "notes": request.form.get("notes"),
+                    "links": request.form.get("links"),
+                })
+                flash("Partenaire mis à jour.", "success")
+            elif action == "delete":
+                ps.delete_partnership(request.form.get("partner_id", ""))
+                flash("Partenaire supprimé.", "success")
+        except ValueError as e:
+            flash(str(e), "error")
+        except Exception as e:  # noqa: BLE001
+            flash(f"Erreur : {e}", "error")
+        return redirect(url_for("admin.partnerships"))
+
+    status_filter = request.args.get("status", "")
+    type_filter = request.args.get("type", "")
+    items = ps.get_partnerships()
+    if status_filter:
+        items = [p for p in items if p.get("status") == status_filter]
+    if type_filter:
+        items = [p for p in items if p.get("type") == type_filter]
+
+    return render_template(
+        "admin/partnerships.html",
+        partners=items,
+        stats=ps.partnership_stats(),
+        types=ps.PARTNER_TYPES,
+        statuses=ps.PARTNER_STATUSES,
+        type_labels=ps.PARTNER_TYPE_LABELS,
+        status_labels=ps.PARTNER_STATUS_LABELS,
+        status_filter=status_filter,
+        type_filter=type_filter,
+        ai_ready=ai_client.is_configured(),
+        smtp_ok=is_smtp_configured(),
+    )
+
+
+@admin_bp.route("/api/partnerships/search", methods=["POST"])
+@login_required
+def api_partnerships_search():
+    from admin import assistant_service
+    from admin import partners_service as ps
+
+    payload = request.get_json(silent=True) or {}
+    brief = (payload.get("brief") or "").strip()
+    if not brief:
+        return jsonify({"ok": False, "error": "Décrivez la recherche (ex. « influenceurs francophones voyage Vietnam »)."}), 400
+    if not ai_client.is_configured():
+        return jsonify({"ok": False, "error": "Aucune clé IA configurée — la recherche IA est indisponible."}), 400
+
+    token = assistant_service.start_action_job(
+        lambda report: _search_partners_result(ps, brief, report),
+        initial_phase="Recherche web des influenceurs…",
+    )
+    return jsonify({"ok": True, "job_token": token})
+
+
+def _search_partners_result(ps, brief: str, report) -> dict:
+    result = ps.search_and_save_influencers(brief, progress=report)
+    saved = result["saved"]
+    return {
+        "saved": len(saved),
+        "skipped": result["skipped"],
+        "names": [f"{p['name']}" + (f" ({p['email']})" if p.get("email") else "") for p in saved],
+        "message": f"{len(saved)} contact(s) enregistré(s), {result['skipped']} doublon(s) ignoré(s).",
+    }
 
 
 @admin_bp.route("/map", methods=["GET", "POST"])

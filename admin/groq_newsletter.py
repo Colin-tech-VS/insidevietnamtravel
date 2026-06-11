@@ -13,6 +13,7 @@ EMAIL_TYPES = [
     {"value": "conseils", "label": "Conseils pratiques", "icon": "💡"},
     {"value": "promo_pdf", "label": "Guide PDF / offre", "icon": "📘"},
     {"value": "saison", "label": "Meilleure saison", "icon": "🌤"},
+    {"value": "partenariat", "label": "Proposition de partenariat", "icon": "🤝"},
 ]
 
 SYSTEM_PROMPT = """Tu es rédacteur email marketing pour "Inside Vietnam Travel", guide voyage Vietnam en français.
@@ -69,6 +70,23 @@ def generate_newsletter_email(
         f"Type : {type_label}\n"
         f"Sujet / angle : {topic}\n"
     )
+    if email_type == "partenariat":
+        user_msg = (
+            "Rédige un email de PROSPECTION PARTENARIAT (B2B) — PAS une newsletter aux abonnés.\n"
+            f"Destinataire : {topic}\n"
+            "CONTEXTE : tu écris au nom de l'éditeur d'Inside Vietnam Travel "
+            "(insidevietnamtravel.fr), guide francophone du voyage au Vietnam, à un "
+            "partenaire potentiel (influenceur, blogueur, créateur, guide local ou agence).\n"
+            "OBJECTIF : proposer une collaboration concrète et gagnant-gagnant — au choix "
+            "selon le profil : article invité ou interview sur le site, mise en avant de son "
+            "contenu auprès de notre audience, post sponsorisé / échange de visibilité sur "
+            "nos réseaux (Facebook, Pinterest, Instagram…), lien d'affiliation.\n"
+            "RÈGLES SPÉCIFIQUES : personnalise avec le nom et la niche du destinataire "
+            "(fournis dans le sujet/notes) ; reste court (120-200 mots), humain et direct ; "
+            "montre qu'on connaît son travail ; UNE proposition claire + question simple en "
+            "fin (« partant pour en discuter ? ») ; pas de jargon marketing ni de promesses "
+            "chiffrées inventées ; signature « L'équipe Inside Vietnam Travel ».\n"
+        )
     if notes:
         user_msg += f"Notes éditoriales : {notes}\n"
     user_msg += "Réponds en JSON strict."

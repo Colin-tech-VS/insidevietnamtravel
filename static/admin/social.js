@@ -6,9 +6,14 @@
   if (!form) return;
 
   var fMode = document.getElementById("f-mode");
+  var fNetwork = document.getElementById("f-network");
   var fImage = document.getElementById("f-image-url");
   var fMessage = document.getElementById("f-message");
   var fCampaign = document.getElementById("f-campaign");
+  var utmSource = document.getElementById("utm-source");
+  var publishLabel = document.getElementById("publish-label");
+  var publishHint = document.getElementById("publish-hint");
+  var networkHint = document.getElementById("network-hint");
   var pageSelect = document.getElementById("page-select");
   var brief = document.getElementById("brief");
   var customImage = document.getElementById("custom-image");
@@ -18,6 +23,13 @@
   var genBtn = document.getElementById("btn-generate");
   var genStatus = document.getElementById("gen-status");
   var blocks = { page: form.querySelector('[data-block="page"]'), "new": form.querySelector('[data-block="new"]') };
+  var redditBlock = form.querySelector('[data-block="reddit"]');
+
+  // Préfixe de campagne UTM par réseau (même nomenclature que le backend).
+  var CAMPAIGN_PREFIX = {
+    facebook: "fb", pinterest: "pin", instagram: "ig", threads: "thr",
+    x: "x", telegram: "tg", reddit: "rdt",
+  };
 
   var previewImg = document.getElementById("preview-img");
   var previewMedia = document.getElementById("preview-media");
@@ -37,18 +49,42 @@
     return r ? r.value : "page";
   }
 
+  function networkOption() {
+    return form.querySelector('input[name="network_choice"]:checked');
+  }
+
+  function currentNetwork() {
+    var r = networkOption();
+    return r ? r.value : "facebook";
+  }
+
   function selectedPageOption() {
     return pageSelect ? pageSelect.options[pageSelect.selectedIndex] : null;
   }
 
   function defaultCampaign() {
+    var prefix = CAMPAIGN_PREFIX[currentNetwork()] || currentNetwork();
     if (currentMode() === "page") {
       var opt = selectedPageOption();
-      return sanitizeCampaign("fb-" + (opt ? opt.value.replace(/:/g, "-") : "page"));
+      return sanitizeCampaign(prefix + "-" + (opt ? opt.value.replace(/:/g, "-") : "page"));
     }
     var d = new Date();
     var ym = "" + d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2);
-    return sanitizeCampaign("fb-" + ym + "-" + (brief && brief.value ? brief.value.slice(0, 30) : "post"));
+    return sanitizeCampaign(prefix + "-" + ym + "-" + (brief && brief.value ? brief.value.slice(0, 30) : "post"));
+  }
+
+  function applyNetwork() {
+    var net = currentNetwork();
+    var opt = networkOption();
+    var configured = opt && opt.getAttribute("data-configured") === "1";
+    var name = opt ? opt.getAttribute("data-name") : "Facebook";
+    fNetwork.value = net;
+    if (utmSource) utmSource.textContent = net;
+    if (publishLabel) publishLabel.textContent = "Publier sur " + name;
+    if (redditBlock) redditBlock.hidden = net !== "reddit";
+    if (networkHint) networkHint.hidden = !!configured;
+    if (publishHint) publishHint.hidden = !!configured;
+    if (publishBtn) publishBtn.disabled = !configured;
   }
 
   function syncMessage() {
@@ -95,6 +131,13 @@
   }
 
   // ── Évènements ──
+  form.querySelectorAll('input[name="network_choice"]').forEach(function (r) {
+    r.addEventListener("change", function () {
+      fCampaign.value = defaultCampaign();
+      applyNetwork();
+    });
+  });
+
   form.querySelectorAll('input[name="mode_choice"]').forEach(function (r) {
     r.addEventListener("change", function () { fCampaign.value = defaultCampaign(); applyMode(); });
   });
@@ -131,7 +174,7 @@
   // ── Rédaction IA ──
   if (genBtn) genBtn.addEventListener("click", function () {
     var mode = currentMode();
-    var payload = { mode: mode, lang: "fr" };
+    var payload = { mode: mode, lang: "fr", network: currentNetwork() };
     if (mode === "page") {
       var opt = selectedPageOption();
       payload.page_id = opt ? opt.value : "";
@@ -165,9 +208,16 @@
     syncMessage();
     fCampaign.value = sanitizeCampaign(fCampaign.value || defaultCampaign());
     if (!fMessage.value) { e.preventDefault(); alert("Le texte du post est vide."); return; }
-    if (currentMode() === "new" && !fImage.value) {
+    var netOpt = networkOption();
+    var needsImage = netOpt && netOpt.getAttribute("data-needs-image") === "1";
+    if (currentMode() === "new" && !fImage.value && (currentNetwork() === "facebook" || needsImage)) {
       e.preventDefault();
-      alert("Une image est obligatoire pour un contenu nouveau.");
+      alert("Une image est obligatoire pour ce type de publication.");
+      return;
+    }
+    if (needsImage && !fImage.value) {
+      e.preventDefault();
+      alert("Ce réseau (" + (netOpt ? netOpt.getAttribute("data-name") : "") + ") exige une image.");
       return;
     }
     // Anti double-clic : un second envoi rapproché ferait deux posts et
@@ -180,4 +230,5 @@
 
   // Init
   applyMode();
+  applyNetwork();
 })();
