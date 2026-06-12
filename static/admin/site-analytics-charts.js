@@ -239,6 +239,71 @@
     });
   }
 
+  // ── Realtime timeline (GA4-style sparkline) ─────────
+  let realtimeTimelineChart = null;
+  const timelineCtx = document.getElementById('realtimeTimelineChart');
+
+  function timelineBarColor(ctx) {
+    const total = ctx.chart.data.datasets[0].data.length;
+    const opacity = 0.18 + (ctx.dataIndex / (total - 1)) * 0.67;
+    return `rgba(27, 77, 74, ${opacity.toFixed(2)})`;
+  }
+
+  if (timelineCtx) {
+    realtimeTimelineChart = new Chart(timelineCtx, {
+      type: 'bar',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'Pages vues',
+          data: [],
+          backgroundColor: timelineBarColor,
+          borderRadius: 2,
+          borderSkipped: false,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: (items) => items[0].label,
+              label: (item) => `${item.raw} vue${item.raw !== 1 ? 's' : ''}`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { color: '#7A7772', maxTicksLimit: 10, font: { size: 10 } },
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: '#F0EBE3' },
+            ticks: { color: '#7A7772', precision: 0, font: { size: 10 }, maxTicksLimit: 5 },
+          },
+        },
+      },
+    });
+
+    function updateTimeline() {
+      fetch('/admin/api/realtime-timeline')
+        .then((r) => r.json())
+        .then((data) => {
+          if (!realtimeTimelineChart) return;
+          realtimeTimelineChart.data.labels = data.map((d) => d.minute);
+          realtimeTimelineChart.data.datasets[0].data = data.map((d) => d.views);
+          realtimeTimelineChart.update('none');
+        })
+        .catch(() => {});
+    }
+
+    updateTimeline();
+    setInterval(updateTimeline, 60000);
+  }
+
   setInterval(() => {
     fetch('/admin/api/realtime')
       .then((r) => r.json())

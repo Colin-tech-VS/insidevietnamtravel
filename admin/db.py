@@ -204,6 +204,38 @@ def get_realtime_stats():
     }
 
 
+def get_realtime_timeline() -> list[dict]:
+    """Per-minute page view counts for the last 30 minutes (GA4-style sparkline)."""
+    bot = _human_traffic_sql()
+    now = datetime.utcnow()
+    with get_connection() as conn:
+        rows = _execute(
+            conn,
+            f"""SELECT date_trunc('minute', created_at) AS minute, COUNT(*) AS views
+                FROM page_views
+                WHERE created_at >= %s{bot}
+                GROUP BY minute
+                ORDER BY minute""",
+            f"""SELECT strftime('%Y-%m-%dT%H:%M', created_at) AS minute, COUNT(*) AS views
+                FROM page_views
+                WHERE created_at >= ?{bot}
+                GROUP BY minute
+                ORDER BY minute""",
+            (_since(30),),
+        ).fetchall()
+    data = {}
+    for row in rows:
+        d = _row_dict(row)
+        key = d["minute"] if isinstance(d["minute"], str) else d["minute"].isoformat()
+        data[key[:16]] = d["views"]
+    timeline = []
+    for i in range(30, 0, -1):
+        m = (now - timedelta(minutes=i)).replace(second=0, microsecond=0)
+        key = m.strftime("%Y-%m-%dT%H:%M")
+        timeline.append({"minute": m.strftime("%H:%M"), "views": data.get(key, 0)})
+    return timeline
+
+
 def get_daily_views(days: int = 30):
     bot = _human_traffic_sql()
     with get_connection() as conn:

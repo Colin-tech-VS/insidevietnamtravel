@@ -58,6 +58,9 @@
   {% if session.get('admin_logged_in') %}
   <div class="admin-shell">
     <div class="admin-backdrop" id="admin-backdrop" aria-hidden="true"></div>
+    <button type="button" class="admin-sidebar-toggle" aria-expanded="false" aria-controls="admin-sidebar" aria-label="Ouvrir le menu admin">
+      <span></span><span></span><span></span>
+    </button>
     <aside id="admin-sidebar" class="admin-sidebar" aria-label="Navigation admin">
       <a href="{{ url_for('admin.dashboard') }}" class="admin-logo">
         <svg class="admin-logo__icon" viewBox="0 0 40 40" aria-hidden="true">
@@ -124,9 +127,6 @@
     <div class="admin-content">
       <header class="admin-topbar">
         <div class="admin-topbar__row">
-          <button type="button" class="admin-sidebar-toggle" aria-expanded="false" aria-controls="admin-sidebar" aria-label="Ouvrir le menu admin">
-            <span></span><span></span><span></span>
-          </button>
           <div class="admin-topbar__inner">
             <p class="admin-topbar__eyebrow">Panneau de gestion</p>
             <h1 class="admin-topbar__title">{% block page_title %}Admin{% endblock %}</h1>
