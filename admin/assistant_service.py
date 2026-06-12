@@ -570,6 +570,11 @@ def _system_prompt() -> str:
         "(y compris depuis internet), ajouter des points carte, "
         "publier/envoyer. Si l'admin demande une action couverte par un outil, appelle "
         "l'outil SANS tergiverser ; s'il n'existe pas d'outil, donne le lien admin prefill. "
+        "MODIFICATIONS GROUPÉES : quand l'admin demande PLUSIEURS changements similaires "
+        "(ex. les 15 images de bannière des destinations, plusieurs points de carte), "
+        "traite TOUT le lot en UN SEUL appel d'outil (update_images avec un item par "
+        "image, add_map_points avec plusieurs points) — une seule confirmation pour "
+        "l'ensemble, jamais une demande par élément. "
         "CONFIRMATIONS — règles strictes : "
         "1) Ne demande JAMAIS toi-même de confirmation dans le texte (« veux-tu que je… ? », "
         "« es-tu sûr ? ») : appelle directement l'outil, le SYSTÈME affiche lui-même UNE carte "
@@ -620,7 +625,8 @@ def _system_prompt() -> str:
         '- {"name":"improve_article","params":{"slug":"…","instructions":"…"}} — réécrire/améliorer un guide publié par IA (SEO, clarté, maillage interne, longueur…) selon tes instructions ; job en arrière-plan après confirmation\n'
         '- {"name":"update_destination","params":{"slug":"…","tagline":"…","meta_title":"…","meta_description":"…","overview":"…","tips":["…"],"things_to_do":[{"title":"…","desc":"…"}],"region":"…"}} — modifier une page destination publiée ; champs optionnels (confirmation auto). slug = slug ÉTAT DU SITE (ex. delta-du-mekong)\n'
         '- {"name":"improve_destination","params":{"slug":"…","instructions":"…"}} — réécrire/améliorer une destination publiée par IA selon tes instructions ; job en arrière-plan après confirmation\n'
-        '- {"name":"update_image","params":{"target":"article|destination","slug":"…","image_url":"https://…","query":"…","alt":"…"}} — mettre à jour l\'image d\'un article ou d\'une destination publiée. slug = slug ÉTAT DU SITE (ex. hue pour Huế, delta-du-mekong). Préfère query (mots-clés Pixabay, ex. « Hue imperial citadel Vietnam ») : fiable et sans URL cassée. image_url seulement si lien DIRECT (.jpg/.webp) ou page Wikimedia Commons /wiki/File:… — pas une page galerie HTML (pixnio, shutterstock…). alt facultatif. Job WebP après confirmation\n'
+        '- {"name":"update_image","params":{"target":"article|destination","slug":"…","image_url":"https://…","query":"…","alt":"…"}} — mettre à jour l\'image d\'UN SEUL article ou destination publiée. slug = slug ÉTAT DU SITE (ex. hue pour Huế, delta-du-mekong). Préfère query (mots-clés Pixabay, ex. « Hue imperial citadel Vietnam ») : fiable et sans URL cassée. image_url seulement si lien DIRECT (.jpg/.webp) ou page Wikimedia Commons /wiki/File:… — pas une page galerie HTML (pixnio, shutterstock…). alt facultatif. Job WebP après confirmation\n'
+        '- {"name":"update_images","params":{"items":[{"target":"article|destination","slug":"…","query":"…","image_url":"…","alt":"…"},…]}} — mettre à jour PLUSIEURS images en UNE SEULE action (une seule confirmation, puis job en arrière-plan image par image, sans doublon de photo). Dès que l\'admin demande plus d\'une image (ex. « change les bannières de toutes les destinations »), utilise update_images, JAMAIS update_image en boucle. Raccourci : {"all_destinations":true,"query":"ambiance optionnelle (ex. sunset)"} = nouvelle bannière pour CHAQUE destination publiée. query optionnelle par item (mots-clés Pixabay auto sinon)\n'
         '- {"name":"add_map_points","params":{"city":"slug ou nom de la ville","points":[{"title":"…","address":"adresse complète","kind":"restaurant","desc":"…","price_hint":"…","image_url":"https://…"}]}} — ajouter des points sur la carte interactive : restaurants, bars, hôtels, activités, lieux… kind de préférence ∈ hotel|activity|restaurant|bar|poi|service, mais tout autre type est accepté (ex. « spa », « marché nocturne ») : il est créé automatiquement avec sa couleur et sa légende ; address = adresse la plus précise possible (géocodée via OpenStreetMap), sinon « Nom, Ville » ; image_url facultative (lien DIRECT vers une photo du lieu) — sans elle une photo est cherchée automatiquement sur Pixabay (confirmation auto)\n'
         '- {"name":"update_map_images","params":{"title":"nom du point","city":"ville","image_url":"https://… ou mots-clés"}} ou {"all_missing":true} — mettre à jour la photo d\'un point existant de la carte (URL directe, mots-clés Pixabay, ou vide = recherche auto), ou trouver une photo pour TOUS les points sans image (job en arrière-plan) (confirmation auto)\n'
         '- {"name":"publish_draft","params":{"kind":"article"}} ou {"kind":"destination"} — publier le brouillon en attente (confirmation auto)\n'
@@ -827,6 +833,17 @@ def execute_confirmation(token: str) -> dict:
             "async": True,
             "job_token": job_token,
             "message": "⏳ Mise à jour d'image en cours (téléchargement + optimisation WebP)…",
+        }
+    if action == "update_images":
+        count = len(params.get("items") or [])
+        job_token = start_action_job(
+            lambda report: _exec_update_images(params, report),
+            initial_phase=f"Préparation des {count} images…",
+        )
+        return {
+            "async": True,
+            "job_token": job_token,
+            "message": f"⏳ Mise à jour de {count} image(s) en cours (recherche + téléchargement + WebP, une par une)…",
         }
     if action == "add_map_points":
         # Géocodage OSM (≥1,1 s/requête) + photo Pixabay par point : plusieurs
@@ -1218,7 +1235,8 @@ def _resolve_destination_slug(slug: str) -> tuple[str, dict]:
     return resolved, dest
 
 
-def _exec_update_image(params: dict, report=None) -> dict:
+def _apply_resolved_image(target: str, slug: str, image_url: str, alt: str | None) -> tuple[str, str]:
+    """Télécharge + optimise WebP + applique. Retourne (libellé, url publique)."""
     from admin.image_service import (
         set_remote_image_for_article,
         set_remote_image_for_destination,
@@ -1229,6 +1247,21 @@ def _exec_update_image(params: dict, report=None) -> dict:
         update_destination_image,
     )
 
+    if target == "destination":
+        resolved_slug, dest = _resolve_destination_slug(slug)
+        meta = set_remote_image_for_destination(dest, image_url, alt)
+        update_destination_image(resolved_slug, meta)
+        return dest.get("name", resolved_slug), f"/{resolved_slug}"
+
+    article = get_article_by_slug(slug)
+    if not article:
+        raise ValueError(f"Article introuvable : « {slug} ».")
+    meta = set_remote_image_for_article(article, image_url, alt)
+    update_article_image(slug, meta)
+    return article.get("title", slug), f"/blog/{slug}"
+
+
+def _exec_update_image(params: dict, report=None) -> dict:
     target = (params.get("target") or "article").strip().lower()
     slug = (params.get("slug") or "").strip()
     alt = (params.get("alt") or "").strip() or None
@@ -1239,24 +1272,58 @@ def _exec_update_image(params: dict, report=None) -> dict:
     if report:
         report("Téléchargement et optimisation WebP…")
 
-    if target == "destination":
-        resolved_slug, dest = _resolve_destination_slug(slug)
-        meta = set_remote_image_for_destination(dest, image_url, alt)
-        update_destination_image(resolved_slug, meta)
-        return {
-            "message": f"✅ Image mise à jour pour la destination « {dest.get('name', resolved_slug)} ».",
-            "url": f"/{resolved_slug}",
-        }
+    label, url = _apply_resolved_image(target, slug, image_url, alt)
+    what = "la destination" if target == "destination" else "l'article"
+    return {"message": f"✅ Image mise à jour pour {what} « {label} ».", "url": url}
 
-    article = get_article_by_slug(slug)
-    if not article:
-        raise ValueError(f"Article introuvable : « {slug} ».")
-    meta = set_remote_image_for_article(article, image_url, alt)
-    update_article_image(slug, meta)
-    return {
-        "message": f"✅ Image mise à jour pour l'article « {article.get('title', slug)} ».",
-        "url": f"/blog/{slug}",
-    }
+
+def _exec_update_images(params: dict, report=None) -> dict:
+    """Lot d'images (ex. toutes les bannières destinations) — un job, une image
+    à la fois, et jamais deux fois la même photo Pixabay dans le même lot."""
+    from admin.image_service import (
+        IMAGE_STEP_HARD_DEADLINE,
+        _run_with_deadline,
+        pixabay_image_url,
+    )
+
+    items = params.get("items") or []
+    used_urls: set[str] = set()
+    done: list[str] = []
+    errors: list[str] = []
+
+    for i, item in enumerate(items, 1):
+        slug = (item.get("slug") or "").strip()
+        target = (item.get("target") or "destination").strip().lower()
+        if report:
+            report(f"Image {i}/{len(items)} : {slug}…")
+        try:
+            image_url = _resolve_image_url(item)
+            if image_url in used_urls and not (item.get("image_url") or "").strip():
+                # Même photo Pixabay qu'un item précédent : on varie avec un seed.
+                query = _pixabay_query_for_image_params(item)
+                for seed in range(1, 4):
+                    candidate = _run_with_deadline(
+                        pixabay_image_url, IMAGE_STEP_HARD_DEADLINE, query, seed,
+                    )
+                    if candidate not in used_urls:
+                        image_url = candidate
+                        break
+            used_urls.add(image_url)
+            label, _url = _apply_resolved_image(
+                target, slug, image_url, (item.get("alt") or "").strip() or None,
+            )
+            done.append(label)
+        except Exception as exc:  # noqa: BLE001 — une image en échec ne bloque pas le lot
+            errors.append(f"{slug} ({exc})")
+
+    parts = []
+    if done:
+        parts.append(f"✅ {len(done)} image(s) mise(s) à jour : " + ", ".join(done) + ".")
+    if errors:
+        parts.append("⚠️ Échec pour : " + " ; ".join(errors))
+    if not parts:
+        parts.append("Aucune image n'a pu être mise à jour.")
+    return {"message": "\n".join(parts), "url": "/admin/destinations"}
 
 
 def _exec_add_map_points(params: dict, report=None) -> dict:
@@ -1669,6 +1736,85 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
             f"Nouvelle image : {src}\nElle sera téléchargée, optimisée en WebP puis appliquée.",
         )}
 
+    if name == "update_images":
+        from admin.image_service import destination_pixabay_query
+        from admin.store import get_article_by_slug, get_destinations_dict
+
+        raw_items = params.get("items") or []
+        if isinstance(raw_items, str):
+            try:
+                raw_items = json.loads(raw_items)
+            except ValueError:
+                raw_items = []
+        if isinstance(raw_items, dict):
+            raw_items = [raw_items]
+        if not isinstance(raw_items, list):
+            raw_items = []
+
+        if params.get("all_destinations"):
+            # Raccourci : une nouvelle bannière pour CHAQUE destination publiée.
+            extra = _coerce_str(params.get("query"))
+            existing = {(_coerce_str(it.get("slug")) if isinstance(it, dict) else "") for it in raw_items}
+            for slug, dest in get_destinations_dict().items():
+                if slug in existing:
+                    continue
+                query = destination_pixabay_query(slug, dest)
+                if extra:
+                    query = f"{dest.get('name', slug)} Vietnam {extra}"
+                raw_items.append({"target": "destination", "slug": slug, "query": query})
+
+        items: list[dict] = []
+        for it in raw_items[:30]:
+            if not isinstance(it, dict):
+                continue
+            slug = _coerce_str(it.get("slug"))
+            if not slug:
+                continue
+            target = (_coerce_str(it.get("target")) or "destination").lower()
+            if target not in ("article", "destination"):
+                raise ValueError(f"Cible invalide pour « {slug} » — target=article ou destination.")
+            query = _coerce_str(it.get("query"))
+            image_url = _coerce_str(it.get("image_url"))
+            if target == "destination":
+                resolved_slug, dest = _resolve_destination_slug(slug)
+                slug = resolved_slug
+                if not query and not image_url:
+                    query = destination_pixabay_query(resolved_slug, dest)
+                label = dest.get("name", resolved_slug)
+            else:
+                article = get_article_by_slug(slug)
+                if not article:
+                    raise ValueError(f"Article introuvable : « {slug} » — vérifie le slug.")
+                label = article.get("title", slug)
+                if not query and not image_url:
+                    query = f"{label} Vietnam"
+            items.append({
+                "target": target,
+                "slug": slug,
+                "query": query,
+                "image_url": image_url,
+                "alt": _coerce_str(it.get("alt")),
+                "label": label,
+            })
+        if not items:
+            raise ValueError(
+                "Aucune image à mettre à jour — passe items:[{target, slug, query|image_url}] "
+                "ou all_destinations:true."
+            )
+
+        listing = "\n".join(
+            f"• {it['label']} ({it['target']}) — "
+            + (it["image_url"] or f"recherche « {it['query'][:60]} »")
+            for it in items
+        )
+        return {"confirm": create_confirmation(
+            "update_images", {"items": items},
+            f"Mettre à jour {len(items)} image(s) en une fois ?",
+            listing + "\n\nUne seule confirmation pour tout le lot : chaque image sera "
+            "cherchée (ou téléchargée), optimisée en WebP puis appliquée, une par une "
+            "en arrière-plan — sans jamais réutiliser deux fois la même photo.",
+        )}
+
     if name == "add_map_points":
         from admin import map_service
 
@@ -1897,7 +2043,7 @@ _KNOWN_TOOLS = {
     "web_search", "audit_site", "generate_guide", "generate_destination",
     "generate_newsletter", "generate_social_post", "set_destination_region",
     "update_article", "add_category", "improve_article", "update_destination",
-    "improve_destination", "update_image", "add_map_points", "update_map_images",
+    "improve_destination", "update_image", "update_images", "add_map_points", "update_map_images",
     "publish_draft", "publish_facebook", "publish_social", "send_newsletter",
     "find_influencers", "add_partner",
 }
