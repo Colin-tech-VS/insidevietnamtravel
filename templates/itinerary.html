@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros/affiliates.html" import hotel_card, activity_card, sim_banner, insurance_banner, affiliate_disclosure with context %}
+{% from "macros/affiliates.html" import hotel_card, activity_card, sim_banner, insurance_banner, transport_banner, affiliate_disclosure with context %}
 {% from "macros/images.html" import responsive_img with context %}
 {% from "macros/itinerary.html" import itin_day_block with context %}
 {% from "macros/seo.html" import json_ld_graph, og_image_tags with context %}
@@ -244,6 +244,7 @@
   </article>
 
   <aside class="page-sidebar">
+    {{ transport_banner() }}
     {{ sim_banner() }}
     {{ insurance_banner() }}
     <div class="sidebar-card">

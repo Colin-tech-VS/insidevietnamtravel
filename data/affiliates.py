@@ -12,6 +12,8 @@ AFFILIATE_IDS = {
     "airalo_ref": "PLACEHOLDER",
     "holafly_ref": "PLACEHOLDER",
     "heymondo_ref": "PLACEHOLDER",
+    "twelvego_ref": "PLACEHOLDER",
+    "ivisa_ref": "PLACEHOLDER",
     "pdf_checkout_url": "#pdf-guide",
 }
 

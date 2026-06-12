@@ -183,5 +183,27 @@ def travel_insurance() -> str:
     return "https://heymondo.fr/"
 
 
+def transport_12go() -> str:
+    """12Go — lien d'affiliation complet (recommandé) ou ID partenaire (?z=)."""
+    ref = str(_ids().get("twelvego_ref", "")).strip()
+    if ref.lower().startswith("http"):
+        return ref
+    base = "https://12go.asia/fr/vietnam"
+    if ref and ref.upper() != "PLACEHOLDER":
+        return f"{base}?z={ref}"
+    return base
+
+
+def visa_ivisa() -> str:
+    """iVisa — lien d'affiliation complet (recommandé, garantit l'attribution) ou code."""
+    ref = str(_ids().get("ivisa_ref", "")).strip()
+    if ref.lower().startswith("http"):
+        return ref
+    base = "https://www.ivisa.com/vietnam-visa"
+    if ref and ref.upper() != "PLACEHOLDER":
+        return f"{base}?aff={ref}"
+    return base
+
+
 def pdf_checkout() -> str:
     return _ids().get("pdf_checkout_url", "#pdf-guide")

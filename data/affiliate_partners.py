@@ -123,6 +123,44 @@ BUILTIN_PARTNERS = [
         "id_placeholder": "ex: https://… (lien complet) ou code cod=",
     },
     {
+        "id": "transport_12go",
+        "id_key": "twelvego_ref",
+        "name": "12Go",
+        "category": "Transport",
+        "icon": "🚌",
+        "description": "Trains, bus de nuit et ferries au Vietnam — la plateforme de réservation transport n°1 en Asie du Sud-Est.",
+        "what_you_earn": "~4 à 8% par billet vendu (~0,50 à 2 € par billet).",
+        "avg_per_click": 1.5,
+        "signup_url": "https://12go.asia/en/affiliate",
+        "dashboard_url": "https://12go.asia/en/affiliate",
+        "signup_note": (
+            "Inscription directe sur 12go.asia/en/affiliate (programme aussi disponible via Travelpayouts). "
+            "Une fois accepté, collez ici votre lien d'affiliation complet (recommandé) "
+            "ou votre identifiant partenaire (paramètre z=)."
+        ),
+        "id_label": "Lien d'affiliation ou ID partenaire (z=)",
+        "id_placeholder": "ex: https://12go.asia/… (lien complet) ou 1234567",
+    },
+    {
+        "id": "visa_ivisa",
+        "id_key": "ivisa_ref",
+        "name": "iVisa",
+        "category": "Visa",
+        "icon": "🛂",
+        "description": "E-visa Vietnam en ligne — à placer sur les pages visa, trafic à très forte intention.",
+        "what_you_earn": "~10 à 20% par dossier traité (~2 à 5 € par visa).",
+        "avg_per_click": 3.0,
+        "signup_url": "https://www.ivisa.com/affiliates",
+        "dashboard_url": "https://www.ivisa.com/affiliates",
+        "signup_note": (
+            "Inscription sur ivisa.com/affiliates (programme aussi disponible via certaines régies comme "
+            "Travelpayouts ou FlexOffers). Une fois accepté, collez ici votre lien d'affiliation complet "
+            "(recommandé — c'est lui qui garantit l'attribution de la commission) ou votre code partenaire."
+        ),
+        "id_label": "Lien d'affiliation ou code partenaire",
+        "id_placeholder": "ex: https://… (lien complet) ou code",
+    },
+    {
         "id": "pdf",
         "id_key": "pdf_checkout_url",
         "name": "Guide PDF",
