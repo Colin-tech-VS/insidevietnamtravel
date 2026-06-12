@@ -124,6 +124,22 @@ ITINERARY_7_DAYS_FR = {
             "q": "Faut-il réserver la croisière Halong à l'avance ?",
             "a": "Oui en haute saison (nov–fév). Réservez 2–3 semaines avant pour les jonques bien notées.",
         },
+        {
+            "q": "Quel budget prévoir pour 7 jours au Vietnam ?",
+            "a": "Comptez 450–800 € sur place hors vol international : hôtels 3*, croisière Halong milieu de gamme, food tours et vol intérieur Hanoï → Đà Nẵng.",
+        },
+        {
+            "q": "Quelle est la meilleure période pour cet itinéraire d'une semaine ?",
+            "a": "D'octobre à avril, quand le nord et le centre sont secs et agréables. Évitez juillet–septembre : la saison des typhons peut annuler les croisières sur la baie.",
+        },
+        {
+            "q": "Cet itinéraire est-il faisable avec des enfants ?",
+            "a": "Oui — le vol intérieur raccourcit les trajets, de nombreuses croisières Halong accueillent les familles et Hội An se découvre à vélo sur terrain plat. Choisissez une jonque avec cabines familiales.",
+        },
+        {
+            "q": "Vol ou train entre Hanoï et Đà Nẵng ?",
+            "a": "Sur 7 jours, prenez le vol d'1 h (40–70 €). Le train de la Réunification, panoramique, demande environ 16 h — à réserver aux itinéraires plus longs.",
+        },
     ],
     "days": [
         {

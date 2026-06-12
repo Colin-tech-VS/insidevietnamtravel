@@ -127,6 +127,22 @@ ITINERARY_10_DAYS_FR = {
             "q": "Peut-on sauter Halong ?",
             "a": "Oui — remplacez par Ninh Bình (Tam Coc) en 1 jour depuis Hanoï, puis vol vers Đà Nẵng.",
         },
+        {
+            "q": "Quel budget prévoir pour 10 jours au Vietnam ?",
+            "a": "Comptez 700–1 200 € sur place hors vol international : hôtels 3*, deux vols intérieurs, croisière Halong et excursions à la journée.",
+        },
+        {
+            "q": "Faut-il faire le circuit du nord au sud ou l'inverse ?",
+            "a": "Les deux sens fonctionnent — choisissez selon vos vols internationaux. Le sens nord → sud permet de finir par la douceur du delta et un départ depuis Saigon.",
+        },
+        {
+            "q": "Avion, train ou bus pour les liaisons intérieures ?",
+            "a": "Sur 10 jours, deux vols intérieurs (HAN→DAD puis DAD→SGN, ~1 h chacun) sont le meilleur usage de votre temps. Le train de nuit Hanoï–Đà Nẵng (~16 h) reste une alternative panoramique si vous avez du temps.",
+        },
+        {
+            "q": "Peut-on ajouter une extension plage ?",
+            "a": "Oui — ajoutez 2–3 nuits à Đà Nẵng après Hội An, ou un vol vers Phú Quốc depuis Saigon en fin de circuit. L'idéal est de passer à 12–13 jours pour finir en douceur.",
+        },
     ],
     "days": [
         {
