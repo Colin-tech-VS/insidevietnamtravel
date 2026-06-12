@@ -1409,6 +1409,12 @@ def api_realtime():
     return jsonify(db.get_realtime_stats())
 
 
+@admin_bp.route("/api/realtime-timeline")
+@login_required
+def api_realtime_timeline():
+    return jsonify(db.get_realtime_timeline())
+
+
 # ── Linh — copilote IA interne (développement & SEO) ──────────────────
 # Différent de Mai (widget public) : voir admin/assistant_service.py.
 
