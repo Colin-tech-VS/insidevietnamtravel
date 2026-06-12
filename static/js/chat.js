@@ -344,7 +344,9 @@
 
   function renderRefLink(url, label, isAff) {
     return '<a class="mai-chat__ref' + (isAff ? ' mai-chat__ref--aff' : '') + '" href="' + escapeHtml(url) + '" target="_blank" rel="' + (isAff ? 'noopener sponsored' : 'noopener') + '">'
-      + escapeHtml(label) + '</a>';
+      + escapeHtml(label)
+      + (isAff ? '<span class="mai-chat__ref-badge">' + escapeHtml(i18n.affiliate) + '</span>' : '')
+      + '</a>';
   }
 
   function renderLinks(siteLinks, affiliateLinks, mapCards) {
