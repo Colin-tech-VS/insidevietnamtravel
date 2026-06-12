@@ -566,15 +566,19 @@ def _system_prompt() -> str:
         "Tu peux AGIR à la place de l'admin via le champ \"tool\" : tu sais faire TOUT ce "
         "que l'admin peut faire dans /admin — générer un guide, une destination, une "
         "newsletter, un post Facebook, modifier ou améliorer par IA un guide/article ou "
-        "une destination publiée, mettre à jour l'image d'un article/d'une destination "
-        "(y compris depuis internet), ajouter des points carte, "
+        "une destination publiée (une page ou un LOT de pages en une passe), mettre à "
+        "jour l'image d'un article/d'une destination "
+        "(y compris cherchée et téléchargée depuis internet), ajouter des points carte, "
         "publier/envoyer. Si l'admin demande une action couverte par un outil, appelle "
         "l'outil SANS tergiverser ; s'il n'existe pas d'outil, donne le lien admin prefill. "
         "MODIFICATIONS GROUPÉES : quand l'admin demande PLUSIEURS changements similaires "
-        "(ex. les 15 images de bannière des destinations, plusieurs points de carte), "
-        "traite TOUT le lot en UN SEUL appel d'outil (update_images avec un item par "
-        "image, add_map_points avec plusieurs points) — une seule confirmation pour "
-        "l'ensemble, jamais une demande par élément. "
+        "(ex. les 15 images de bannière des destinations, la même retouche de contenu sur "
+        "tous les guides, plusieurs points de carte), traite TOUT le lot en UN SEUL appel "
+        "d'outil (update_images avec un item par image, update_pages avec un item par page "
+        "— éditions directes ET réécritures IA, articles ET destinations mélangés —, "
+        "add_map_points avec plusieurs points) — une seule confirmation pour "
+        "l'ensemble, jamais une demande par élément. Tout ce que tu sais faire sur UNE page, "
+        "tu sais le faire sur PLUSIEURS pages en une passe. "
         "CONFIRMATIONS — règles strictes : "
         "1) Ne demande JAMAIS toi-même de confirmation dans le texte (« veux-tu que je… ? », "
         "« es-tu sûr ? ») : appelle directement l'outil, le SYSTÈME affiche lui-même UNE carte "
@@ -613,7 +617,17 @@ def _system_prompt() -> str:
         "\"message\" UNE phrase courte annonçant ta recherche (le système affiche un indicateur "
         "de chargement, exécute la recherche et te rappelle avec un bloc RÉSULTATS WEB) ; tu "
         "rédigeras alors ta réponse finale en citant les URLs sources. Ne dis JAMAIS que tu "
-        "recherches sans appeler l'outil web_search\n"
+        "recherches sans appeler l'outil web_search. JAMAIS web_search pour trouver des "
+        "images : utilise search_images (dédié, bien plus rapide)\n"
+        '- {"name":"search_images","params":{"query":"mots-clés ANGLAIS (ex. Hoi An lanterns night)"}} — '
+        "chercher des PHOTOS directement téléchargeables sur les banques d'images libres "
+        "(Pixabay, Openverse, Wikimedia Commons, DuckDuckGo Images) : le système exécute la "
+        "recherche et te renvoie une liste d'images candidates (URL DIRECTE image_url, "
+        "dimensions, source, page d'origine). Utilise-le dès que l'admin veut TROUVER, VOIR ou "
+        "CHOISIR des images, ou qu'il faut la photo d'un lieu précis ; si l'admin a demandé de "
+        "REMPLACER une image, enchaîne immédiatement update_image/update_images avec "
+        "l'image_url choisie (le système télécharge, optimise en WebP et remplace). "
+        "Pour un simple remplacement sans choix, update_image avec query suffit (recherche auto)\n"
         '- {"name":"audit_site","params":{}} — relancer l\'audit complet et présenter les résultats\n'
         '- {"name":"generate_guide","params":{"city":"…","topic":"…","guide_type":"article blog"}} — guide SEO (job en arrière-plan)\n'
         '- {"name":"generate_destination","params":{"city":"…","notes":"…"}} — page destination (job en arrière-plan)\n'
@@ -625,10 +639,11 @@ def _system_prompt() -> str:
         '- {"name":"improve_article","params":{"slug":"…","instructions":"…"}} — réécrire/améliorer un guide publié par IA (SEO, clarté, maillage interne, longueur…) selon tes instructions ; job en arrière-plan après confirmation\n'
         '- {"name":"update_destination","params":{"slug":"…","tagline":"…","meta_title":"…","meta_description":"…","overview":"…","tips":["…"],"things_to_do":[{"title":"…","desc":"…"}],"region":"…"}} — modifier une page destination publiée ; champs optionnels (confirmation auto). slug = slug ÉTAT DU SITE (ex. delta-du-mekong)\n'
         '- {"name":"improve_destination","params":{"slug":"…","instructions":"…"}} — réécrire/améliorer une destination publiée par IA selon tes instructions ; job en arrière-plan après confirmation\n'
-        '- {"name":"update_image","params":{"target":"article|destination","slug":"…","image_url":"https://…","query":"…","alt":"…"}} — mettre à jour l\'image d\'UN SEUL article ou destination publiée. slug = slug ÉTAT DU SITE (ex. hue pour Huế, delta-du-mekong). Préfère query (mots-clés Pixabay, ex. « Hue imperial citadel Vietnam ») : fiable et sans URL cassée. image_url seulement si lien DIRECT (.jpg/.webp) ou page Wikimedia Commons /wiki/File:… — pas une page galerie HTML (pixnio, shutterstock…). alt facultatif. Job WebP après confirmation\n'
-        '- {"name":"update_images","params":{"items":[{"target":"article|destination","slug":"…","query":"…","image_url":"…","alt":"…"},…]}} — mettre à jour PLUSIEURS images en UNE SEULE action (une seule confirmation, puis job en arrière-plan image par image, sans doublon de photo). Dès que l\'admin demande plus d\'une image (ex. « change les bannières de toutes les destinations »), utilise update_images, JAMAIS update_image en boucle. Raccourci : {"all_destinations":true,"query":"ambiance optionnelle (ex. sunset)"} = nouvelle bannière pour CHAQUE destination publiée. query optionnelle par item (mots-clés Pixabay auto sinon)\n'
-        '- {"name":"add_map_points","params":{"city":"slug ou nom de la ville","points":[{"title":"…","address":"adresse complète","kind":"restaurant","desc":"…","price_hint":"…","image_url":"https://…"}]}} — ajouter des points sur la carte interactive : restaurants, bars, hôtels, activités, lieux… kind de préférence ∈ hotel|activity|restaurant|bar|poi|service, mais tout autre type est accepté (ex. « spa », « marché nocturne ») : il est créé automatiquement avec sa couleur et sa légende ; address = adresse la plus précise possible (géocodée via OpenStreetMap), sinon « Nom, Ville » ; image_url facultative (lien DIRECT vers une photo du lieu) — sans elle une photo est cherchée automatiquement sur Pixabay (confirmation auto)\n'
-        '- {"name":"update_map_images","params":{"title":"nom du point","city":"ville","image_url":"https://… ou mots-clés"}} ou {"all_missing":true} — mettre à jour la photo d\'un point existant de la carte (URL directe, mots-clés Pixabay, ou vide = recherche auto), ou trouver une photo pour TOUS les points sans image (job en arrière-plan) (confirmation auto)\n'
+        '- {"name":"update_pages","params":{"items":[{"target":"article|destination","slug":"…","title":"…","content":"…","instructions":"…"},…]}} — modifier PLUSIEURS pages en UNE SEULE action (une seule confirmation, puis job en arrière-plan page par page). Chaque item est SOIT une édition directe (mêmes champs que update_article pour un article, que update_destination pour une destination), SOIT une réécriture IA (champ instructions, comme improve_article/improve_destination) ; articles et destinations peuvent être mélangés dans le même lot. Dès que l\'admin demande la même modification sur PLUS D\'UNE page (ex. « ajoute une FAQ à tous les guides », « réécris les meta descriptions de toutes les destinations »), utilise update_pages, JAMAIS update_article/improve_article en boucle\n'
+        '- {"name":"update_image","params":{"target":"article|destination","slug":"…","image_url":"https://…","query":"…","alt":"…"}} — mettre à jour l\'image d\'UN SEUL article ou destination publiée. slug = slug ÉTAT DU SITE (ex. hue pour Huế, delta-du-mekong). Deux façons : query (mots-clés ANGLAIS, ex. « Hue imperial citadel Vietnam ») = le serveur cherche tout seul dans les banques d\'images libres (Pixabay, Openverse, Wikimedia Commons), fiable et sans URL cassée ; ou image_url = lien DIRECT (.jpg/.webp), page Wikimedia Commons /wiki/File:…, ou image_url d\'un résultat search_images — pas une page galerie HTML (pixnio, shutterstock…). alt facultatif. Le système télécharge, optimise en WebP et REMPLACE l\'image (job après confirmation)\n'
+        '- {"name":"update_images","params":{"items":[{"target":"article|destination","slug":"…","query":"…","image_url":"…","alt":"…"},…]}} — mettre à jour PLUSIEURS images en UNE SEULE action (une seule confirmation, puis job en arrière-plan image par image, sans doublon de photo). Dès que l\'admin demande plus d\'une image (ex. « change les bannières de toutes les destinations »), utilise update_images, JAMAIS update_image en boucle. Raccourci : {"all_destinations":true,"query":"ambiance optionnelle (ex. sunset)"} = nouvelle bannière pour CHAQUE destination publiée. query optionnelle par item (mots-clés auto sinon)\n'
+        '- {"name":"add_map_points","params":{"city":"slug ou nom de la ville","points":[{"title":"…","address":"adresse complète","kind":"restaurant","desc":"…","price_hint":"…","image_url":"https://…"}]}} — ajouter des points sur la carte interactive : restaurants, bars, hôtels, activités, lieux… kind de préférence ∈ hotel|activity|restaurant|bar|poi|service, mais tout autre type est accepté (ex. « spa », « marché nocturne ») : il est créé automatiquement avec sa couleur et sa légende ; address = adresse la plus précise possible (géocodée via OpenStreetMap), sinon « Nom, Ville » ; image_url facultative (lien DIRECT vers une photo du lieu) — sans elle une photo est cherchée automatiquement dans les banques d\'images libres (confirmation auto)\n'
+        '- {"name":"update_map_images","params":{"title":"nom du point","city":"ville","image_url":"https://… ou mots-clés"}} ou {"all_missing":true} — mettre à jour la photo d\'un point existant de la carte (URL directe, mots-clés, ou vide = recherche auto), ou trouver une photo pour TOUS les points sans image (job en arrière-plan) (confirmation auto)\n'
         '- {"name":"publish_draft","params":{"kind":"article"}} ou {"kind":"destination"} — publier le brouillon en attente (confirmation auto)\n'
         '- {"name":"publish_facebook","params":{}} — publier le dernier post généré sur Facebook (confirmation auto)\n'
         '- {"name":"publish_social","params":{"network":"…"}} — publier le dernier post généré sur le réseau indiqué (doit être connecté sur /admin/social ; confirmation auto)\n'
@@ -823,6 +838,20 @@ def execute_confirmation(token: str) -> dict:
             "async": True,
             "job_token": job_token,
             "message": "⏳ Amélioration IA de la destination en cours…",
+        }
+    if action == "update_pages":
+        count = len(params.get("items") or [])
+        job_token = start_action_job(
+            lambda report: _exec_update_pages(params, report),
+            initial_phase=f"Préparation des {count} pages…",
+        )
+        return {
+            "async": True,
+            "job_token": job_token,
+            "message": (
+                f"⏳ Modification de {count} page(s) en cours (une par une, "
+                "version EN retraduite si le texte FR change)…"
+            ),
         }
     if action == "update_image":
         job_token = start_action_job(
@@ -1171,8 +1200,48 @@ def _exec_improve_destination(params: dict, report=None) -> dict:
     }
 
 
-def _pixabay_query_for_image_params(params: dict) -> str:
-    """Mots-clés Pixabay par défaut quand l'URL fournie n'est pas exploitable."""
+def _exec_update_pages(params: dict, report=None) -> dict:
+    """Lot de modifications de CONTENU (articles et destinations mélangés) — un
+    job, une page à la fois. Chaque item est soit une édition directe de champs
+    (comme update_article/update_destination), soit une réécriture IA quand il
+    porte des `instructions` (comme improve_article/improve_destination). Une
+    page en échec ne bloque jamais le reste du lot."""
+    items = params.get("items") or []
+    done: list[str] = []
+    errors: list[str] = []
+
+    for i, item in enumerate(items, 1):
+        slug = (item.get("slug") or "").strip()
+        target = (item.get("target") or "article").strip().lower()
+        instructions = (item.get("instructions") or "").strip()
+        if report:
+            report(f"Page {i}/{len(items)} : {slug}…")
+        try:
+            if instructions:
+                if target == "destination":
+                    _exec_improve_destination({"slug": slug, "instructions": instructions}, report)
+                else:
+                    _exec_improve_article({"slug": slug, "instructions": instructions}, report)
+            elif target == "destination":
+                _exec_update_destination(item)
+            else:
+                _exec_update_article(item)
+            done.append(item.get("label") or slug)
+        except Exception as exc:  # noqa: BLE001 — une page en échec ne bloque pas le lot
+            errors.append(f"{slug} ({exc})")
+
+    parts = []
+    if done:
+        parts.append(f"✅ {len(done)} page(s) modifiée(s) : " + ", ".join(done) + ".")
+    if errors:
+        parts.append("⚠️ Échec pour : " + " ; ".join(errors))
+    if not parts:
+        parts.append("Aucune page n'a pu être modifiée.")
+    return {"message": "\n".join(parts), "url": "/admin"}
+
+
+def _image_query_for_params(params: dict) -> str:
+    """Mots-clés de recherche d'image par défaut quand l'URL fournie n'est pas exploitable."""
     from admin.image_service import destination_pixabay_query
 
     query = (params.get("query") or "").strip()
@@ -1192,32 +1261,33 @@ def _pixabay_query_for_image_params(params: dict) -> str:
 
 
 def _resolve_image_url(params: dict, report=None) -> str:
-    """URL d'image : directe/Commons/og:image, sinon Pixabay (repli fiable)."""
-    from admin.image_service import (
-        IMAGE_STEP_HARD_DEADLINE,
-        _run_with_deadline,
-        pixabay_image_url,
-        resolve_direct_image_url,
-    )
+    """URL d'image : directe/Commons/og:image, sinon banques d'images libres.
+
+    La recherche par mots-clés interroge en cascade Pixabay (si clé), Openverse,
+    Wikimedia Commons puis DuckDuckGo Images — toutes renvoient des URLs
+    directement téléchargeables, plus de dépendance dure à PIXABAY_API_KEY.
+    """
+    from admin.image_search import find_image_url
+    from admin.image_service import resolve_direct_image_url
 
     image_url = (params.get("image_url") or "").strip()
     if image_url:
         direct = resolve_direct_image_url(image_url)
         if direct:
             return direct
-        query = _pixabay_query_for_image_params(params)
+        query = _image_query_for_params(params)
         if report:
             report(
-                f"URL page non utilisable — recherche Pixabay « {query[:60]} »…"
+                f"URL page non utilisable — recherche d'image « {query[:60]} »…"
             )
-        return _run_with_deadline(pixabay_image_url, IMAGE_STEP_HARD_DEADLINE, query)
+        return find_image_url(query)
 
-    query = _pixabay_query_for_image_params(params)
+    query = _image_query_for_params(params)
     if not query:
         raise ValueError("Indique une URL d'image (image_url) ou des mots-clés (query).")
     if report:
         report(f"Recherche d'image « {query[:60]} »…")
-    return _run_with_deadline(pixabay_image_url, IMAGE_STEP_HARD_DEADLINE, query)
+    return find_image_url(query)
 
 
 def _resolve_destination_slug(slug: str) -> tuple[str, dict]:
@@ -1279,12 +1349,8 @@ def _exec_update_image(params: dict, report=None) -> dict:
 
 def _exec_update_images(params: dict, report=None) -> dict:
     """Lot d'images (ex. toutes les bannières destinations) — un job, une image
-    à la fois, et jamais deux fois la même photo Pixabay dans le même lot."""
-    from admin.image_service import (
-        IMAGE_STEP_HARD_DEADLINE,
-        _run_with_deadline,
-        pixabay_image_url,
-    )
+    à la fois, et jamais deux fois la même photo dans le même lot."""
+    from admin.image_search import find_image_url
 
     items = params.get("items") or []
     used_urls: set[str] = set()
@@ -1299,12 +1365,10 @@ def _exec_update_images(params: dict, report=None) -> dict:
         try:
             image_url = _resolve_image_url(item)
             if image_url in used_urls and not (item.get("image_url") or "").strip():
-                # Même photo Pixabay qu'un item précédent : on varie avec un seed.
-                query = _pixabay_query_for_image_params(item)
+                # Même photo qu'un item précédent : on varie avec un seed.
+                query = _image_query_for_params(item)
                 for seed in range(1, 4):
-                    candidate = _run_with_deadline(
-                        pixabay_image_url, IMAGE_STEP_HARD_DEADLINE, query, seed,
-                    )
+                    candidate = find_image_url(query, seed)
                     if candidate not in used_urls:
                         image_url = candidate
                         break
@@ -1684,6 +1748,87 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
             f"/{resolved_slug}\nInstructions : {preview}\nL'IA réécrira la page FR, puis retraduction EN.",
         )}
 
+    if name == "update_pages":
+        from admin.store import (
+            ARTICLE_EDITABLE_FIELDS,
+            DESTINATION_EDITABLE_FIELDS,
+            DESTINATION_LIST_FIELDS,
+            get_article_by_slug,
+            get_categories,
+        )
+
+        raw_items = params.get("items") or []
+        if isinstance(raw_items, str):
+            try:
+                raw_items = json.loads(raw_items)
+            except ValueError:
+                raw_items = []
+        if isinstance(raw_items, dict):
+            raw_items = [raw_items]
+        if not isinstance(raw_items, list):
+            raw_items = []
+
+        items: list[dict] = []
+        for it in raw_items[:20]:
+            if not isinstance(it, dict):
+                continue
+            slug = _coerce_str(it.get("slug"))
+            if not slug:
+                continue
+            target = (_coerce_str(it.get("target")) or "article").lower()
+            if target not in ("article", "destination"):
+                raise ValueError(f"Cible invalide pour « {slug} » — target=article ou destination.")
+            instructions = _coerce_str(it.get("instructions"))
+            if target == "destination":
+                resolved_slug, dest = _resolve_destination_slug(slug)
+                slug = resolved_slug
+                label = dest.get("name", resolved_slug)
+                fields = [
+                    k for k in (*DESTINATION_EDITABLE_FIELDS, *DESTINATION_LIST_FIELDS, "tips", "region")
+                    if it.get(k)
+                ]
+            else:
+                article = get_article_by_slug(slug)
+                if not article:
+                    raise ValueError(f"Article introuvable : « {slug} » — vérifie le slug.")
+                label = article.get("title", slug)
+                fields = [k for k in (*ARTICLE_EDITABLE_FIELDS, "category") if it.get(k)]
+                category = _coerce_str(it.get("category"))
+                if category and category not in get_categories():
+                    raise ValueError(
+                        f"Catégorie inconnue « {category} » — crée-la d'abord avec add_category."
+                    )
+            if not instructions and not fields:
+                raise ValueError(
+                    f"Rien à modifier pour « {slug} » — passe des champs directs "
+                    "(title, content, overview…) ou des instructions (réécriture IA)."
+                )
+            items.append({**it, "target": target, "slug": slug, "label": label})
+
+        if not items:
+            raise ValueError(
+                "Aucune page à modifier — passe items:[{target, slug, champs…|instructions}]."
+            )
+
+        def _item_summary(it: dict) -> str:
+            instructions = _coerce_str(it.get("instructions"))
+            if instructions:
+                return "réécriture IA : " + instructions[:70] + ("…" if len(instructions) > 70 else "")
+            if it["target"] == "destination":
+                keys = (*DESTINATION_EDITABLE_FIELDS, *DESTINATION_LIST_FIELDS, "tips", "region")
+            else:
+                keys = (*ARTICLE_EDITABLE_FIELDS, "category")
+            return "champs : " + ", ".join(k for k in keys if it.get(k))
+
+        listing = "\n".join(f"• {it['label']} ({it['target']}) — {_item_summary(it)}" for it in items)
+        return {"confirm": create_confirmation(
+            "update_pages", {"items": items},
+            f"Modifier {len(items)} page(s) en une fois ?",
+            listing + "\n\nUne seule confirmation pour tout le lot : les pages seront "
+            "traitées une par une en arrière-plan (version EN retraduite si le texte "
+            "FR change) ; une page en échec ne bloque pas les autres.",
+        )}
+
     if name == "update_image":
         from admin.store import get_article_by_slug
 
@@ -2040,10 +2185,11 @@ def _normalize_reply(data) -> dict:
 
 
 _KNOWN_TOOLS = {
-    "web_search", "audit_site", "generate_guide", "generate_destination",
+    "web_search", "search_images", "audit_site", "generate_guide", "generate_destination",
     "generate_newsletter", "generate_social_post", "set_destination_region",
     "update_article", "add_category", "improve_article", "update_destination",
-    "improve_destination", "update_image", "update_images", "add_map_points", "update_map_images",
+    "improve_destination", "update_pages", "update_image", "update_images",
+    "add_map_points", "update_map_images",
     "publish_draft", "publish_facebook", "publish_social", "send_newsletter",
     "find_influencers", "add_partner",
 }
@@ -2100,7 +2246,43 @@ def _web_search_round(user_block: str, params: dict, first: dict) -> dict:
     )
     data = _ask_linh(followup)
     tool = data.get("tool")
-    if isinstance(tool, dict) and (tool.get("name") or "").strip() == "web_search":
+    if isinstance(tool, dict) and (tool.get("name") or "").strip() in ("web_search", "search_images"):
+        data["tool"] = None  # une seule recherche par message — pas de boucle
+    return data
+
+
+def _image_search_round(user_block: str, params: dict, first: dict) -> dict:
+    """Exécute la recherche d'IMAGES demandée par Linh puis redemande la réponse finale.
+
+    Même flux en deux temps que web_search, mais sur les banques d'images libres
+    (Pixabay, Openverse, Wikimedia Commons, DuckDuckGo Images) : les candidates ont
+    des URLs DIRECTES téléchargeables, Linh peut donc enchaîner immédiatement
+    update_image/update_images si l'admin a demandé un remplacement.
+    """
+    from admin.image_search import format_image_results, search_images
+
+    query = (params.get("query") or "").strip()
+    try:
+        results = search_images(query, max_results=8)
+    except Exception as exc:  # noqa: BLE001 — la recherche échoue, pas le chat
+        first["message"] = ((first.get("message") or "").strip() + f"\n\n⚠️ {exc}").strip()
+        return first
+
+    followup = (
+        user_block
+        + "\n\nRÉSULTATS IMAGES (recherche effectuée à l'instant sur les banques d'images libres) :\n"
+        + format_image_results(query, results)
+        + "\n\nRédige maintenant ta réponse finale au MESSAGE DE L'ADMIN : "
+        "1) si l'admin a demandé de CHANGER/REMPLACER une image, appelle DIRECTEMENT l'outil "
+        "update_image (ou update_images) avec en image_url l'URL DIRECTE du meilleur résultat "
+        "ci-dessus (champ image_url, JAMAIS le champ page) — privilégie une image large "
+        "(≥ 1200 px) et en rapport exact avec le sujet ; "
+        "2) sinon, présente les 3 à 5 meilleures images (titre, dimensions, source, image_url) "
+        "et propose de l'appliquer. N'invente AUCUNE URL ; ne rappelle plus search_images."
+    )
+    data = _ask_linh(followup)
+    tool = data.get("tool")
+    if isinstance(tool, dict) and (tool.get("name") or "").strip() in ("web_search", "search_images"):
         data["tool"] = None  # une seule recherche par message — pas de boucle
     return data
 
@@ -2247,26 +2429,32 @@ def chat_reply(message: str, history: list[dict]) -> dict:
     # Recherche internet : flux en deux temps — on renvoie tout de suite
     # l'annonce + un marqueur "search", le widget affiche un loader et rappelle
     # /api/assistant/search qui exécute la recherche et rédige la réponse finale.
-    if _tool_name(data) == "web_search":
+    if _tool_name(data) in ("web_search", "search_images"):
         tool = data.get("tool") or {}
         query = (_coerce_str((tool.get("params") or {}).get("query")) or message)[:200]
+        if _tool_name(data) == "search_images":
+            intro = (data.get("message") or "").strip() or f"Je cherche des images : « {query} »…"
+            return {"ok": True, "message": intro, "actions": [], "search": {"query": query, "kind": "images"}}
         intro = (data.get("message") or "").strip() or f"Je lance une recherche sur internet : « {query} »…"
-        return {"ok": True, "message": intro, "actions": [], "search": {"query": query}}
+        return {"ok": True, "message": intro, "actions": [], "search": {"query": query, "kind": "web"}}
     if not _tool_name(data) and _SEARCH_CLAIM_RE.search(data.get("message") or ""):
         return {
             "ok": True,
             "message": (data.get("message") or "").strip(),
             "actions": [],
-            "search": {"query": message[:200]},
+            "search": {"query": message[:200], "kind": "web"},
         }
 
     return _finalize(data, snapshot)
 
 
-def search_reply(query: str, message: str, history: list[dict]) -> dict:
-    """Deuxième temps de la recherche web : exécute la recherche DuckDuckGo puis
+def search_reply(query: str, message: str, history: list[dict], kind: str = "web") -> dict:
+    """Deuxième temps de la recherche web/images : exécute la recherche puis
     Linh rédige sa réponse finale sourcée (le widget affiche un loader entre les
-    deux temps et revient seul avec les résultats réels)."""
+    deux temps et revient seul avec les résultats réels).
+
+    kind="images" → banques d'images libres (search_images) ; sinon DuckDuckGo texte.
+    """
     if not is_enabled():
         raise ValueError("Aucune clé IA configurée (GROQ_API_KEY ou MISTRAL_API_KEY).")
 
@@ -2276,7 +2464,8 @@ def search_reply(query: str, message: str, history: list[dict]) -> dict:
     message = (message or "").strip() or query
 
     snapshot, user_block = _build_context(message, history)
-    data = _web_search_round(user_block, {"query": query}, {"message": "", "tool": None})
+    round_fn = _image_search_round if kind == "images" else _web_search_round
+    data = round_fn(user_block, {"query": query}, {"message": "", "tool": None})
     return _finalize(data, snapshot)
 
 

@@ -582,7 +582,7 @@
       if (d.confirm) renderConfirmCard(d.confirm);
 
       if (d.search && d.search.query) {
-        runWebSearch(d.search.query, originalText); // busy reste true pendant la recherche
+        runWebSearch(d.search.query, originalText, d.search.kind); // busy reste true pendant la recherche
       } else if (d.job && d.job.kind) {
         showTyping('Génération en cours…');
         pollJob(d.job.kind); // busy reste true jusqu'à la fin du job
@@ -595,16 +595,17 @@
     });
   }
 
-  /* Recherche web en deux temps : Linh a annoncé sa recherche, on affiche un
-     loader dédié, le serveur interroge DuckDuckGo puis Linh revient toute
-     seule avec sa réponse sourcée (résultats réels). */
-  function runWebSearch(query, originalText) {
-    showTyping('🔍 Recherche sur internet…');
+  /* Recherche web/images en deux temps : Linh a annoncé sa recherche, on affiche
+     un loader dédié, le serveur interroge DuckDuckGo (texte) ou les banques
+     d'images libres (kind="images") puis Linh revient toute seule avec sa
+     réponse sourcée (résultats réels). */
+  function runWebSearch(query, originalText, kind) {
+    showTyping(kind === 'images' ? "🖼️ Recherche d'images (banques libres)…" : '🔍 Recherche sur internet…');
     fetch(searchUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       credentials: 'same-origin',
-      body: JSON.stringify({ query: query, message: originalText || '', history: history.slice(-10) }),
+      body: JSON.stringify({ query: query, message: originalText || '', history: history.slice(-10), kind: kind || 'web' }),
     })
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
       .then(function (res) {

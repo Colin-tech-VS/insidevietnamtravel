@@ -108,8 +108,8 @@ def legend_for_kinds(kinds, lang: str = "fr") -> list[dict]:
 
 
 # ── Images des points (popups carte) ──────────────────────────────────
-# URLs distantes (Pixabay ou URL fournie) : le FS Scalingo est éphémère,
-# un fichier écrit au runtime disparaîtrait au redéploiement.
+# URLs distantes (banques d'images libres ou URL fournie) : le FS Scalingo est
+# éphémère, un fichier écrit au runtime disparaîtrait au redéploiement.
 
 _KIND_IMAGE_QUERY = {
     "hotel": "hotel resort",
@@ -123,7 +123,7 @@ _KIND_IMAGE_QUERY = {
 
 
 def _point_image_queries(point: dict) -> list[str]:
-    """Requêtes Pixabay, de la plus spécifique (le lieu lui-même) à la plus générique."""
+    """Requêtes image, de la plus spécifique (le lieu lui-même) à la plus générique."""
     title = (point.get("title") or "").strip()
     city = (point.get("destination_name") or point.get("requested_city") or "").strip()
     kind = normalize_kind(point.get("kind") or "poi")
@@ -143,28 +143,33 @@ def _point_image_seed(point: dict) -> int:
 
 
 def find_point_image(point: dict) -> str:
-    """URL d'image illustrant le point (photo du lieu si trouvée, sinon type + ville)."""
-    from admin.image_service import pixabay_photo_url
+    """URL d'image illustrant le point (photo du lieu si trouvée, sinon type + ville).
+
+    Recherche en cascade dans les banques d'images libres (Pixabay si clé,
+    Openverse, Wikimedia Commons, DuckDuckGo Images) — plus de dépendance dure
+    à PIXABAY_API_KEY.
+    """
+    from admin.image_search import find_image_url
 
     seed = _point_image_seed(point)
     last_err: Exception | None = None
     for query in _point_image_queries(point):
         try:
-            return pixabay_photo_url(query, seed, prefer_small=True)
+            return find_image_url(query, seed, prefer_small=True)
         except Exception as exc:  # noqa: BLE001 — on tente la requête suivante
             last_err = exc
     raise ValueError(f"Aucune image trouvée ({last_err}).")
 
 
 def resolve_point_image(point: dict, image: str) -> str:
-    """URL http(s) directe telle quelle ; mots-clés → recherche Pixabay ; vide → auto."""
+    """URL http(s) directe telle quelle ; mots-clés → banques d'images ; vide → auto."""
     value = (image or "").strip()
     if value.startswith(("http://", "https://")):
         return value
     if value:
-        from admin.image_service import pixabay_photo_url
+        from admin.image_search import find_image_url
 
-        return pixabay_photo_url(f"{value} vietnam", _point_image_seed(point), prefer_small=True)
+        return find_image_url(f"{value} vietnam", _point_image_seed(point), prefer_small=True)
     return find_point_image(point)
 
 
@@ -196,7 +201,7 @@ def set_point_image_by_title(city: str, title: str, image: str = "") -> dict:
 
 
 def backfill_point_images(*, only_missing: bool = True, destination_slug: str | None = None) -> dict:
-    """Trouve une image pour chaque point qui n'en a pas (lent : 1-3 appels Pixabay/point)."""
+    """Trouve une image pour chaque point qui n'en a pas (lent : 1-3 recherches/point)."""
     store = get_map_store()
     targets = [
         p for p in store.get("points", [])
@@ -1089,7 +1094,7 @@ def add_map_point(form: dict) -> dict:
     }
     try:
         point["image"] = resolve_point_image(point, image)
-    except Exception:  # noqa: BLE001 — pas d'image (clé Pixabay absente…) : le point reste valide
+    except Exception:  # noqa: BLE001 — aucune image trouvée : le point reste valide
         point["image"] = image if image.startswith(("http://", "https://")) else ""
 
     if slug:
