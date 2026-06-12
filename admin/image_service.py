@@ -11,7 +11,7 @@ import urllib.parse
 from pathlib import Path
 
 import requests
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageOps
 
 from admin.genlog import log
 
@@ -265,6 +265,47 @@ def _align_destination_pool_image(dest: dict) -> dict | None:
         "image_photo_id": pid,
         "image_placeholder": False,
     }
+
+# Texte alternatif des photos de ville committées dans static/images/destinations/.
+DESTINATION_IMAGE_ALTS: dict[str, str] = {
+    "hanoi": "Pont rouge Thê Húc sur le lac Hoàn Kiếm, Hanoï, Vietnam",
+    "ho-chi-minh-city": "Skyline de Ho Chi Minh-Ville illuminée la nuit, Vietnam",
+    "hoi-an": "Lanternes colorées de la vieille ville de Hội An la nuit, Vietnam",
+    "da-nang": "Pont d'Or (Golden Bridge) soutenu par des mains géantes, Bà Nà Hills, Đà Nẵng",
+    "halong": "Karsts calcaires émergeant des eaux émeraude de la baie d'Halong, Vietnam",
+    "sapa": "Rizières en terrasses dorées de la vallée de Sapa, Vietnam",
+    "delta-du-mekong": "Marché flottant de Cái Răng, barques chargées de fruits, delta du Mékong",
+    "hue": "Tour du drapeau et douves de la citadelle impériale de Huế, Vietnam",
+    "phu-quoc": "Plage de sable blanc, palmiers et eaux turquoise de Phú Quốc, Vietnam",
+}
+
+
+def _upgrade_to_committed_city_image(dest: dict) -> dict | None:
+    """Adopte la photo de VILLE committée (destinations/<slug>.webp) à la place
+    d'une photo pool générique.
+
+    Le pool est un stock de photos Vietnam génériques : plusieurs villes y
+    partagent la même ambiance (« paysage », « plage »…). Quand une vraie photo
+    de la ville est committée dans le repo (persistante au redéploiement), elle
+    est toujours plus représentative. On ne touche PAS aux images destinations/
+    ni aux URLs distantes déjà en place : ce sont des choix explicites de
+    l'admin (manuel ou via Linh)."""
+    slug = dest.get("slug", "")
+    image = (dest.get("image") or "").strip()
+    if image.startswith("/static/images/destinations/") or _is_remote_image_url(image):
+        return None
+    committed = DEST_IMAGES_DIR / f"{slug}.webp"
+    if not committed.is_file():
+        return None
+    return {
+        **dest,
+        "image": f"/static/images/destinations/{slug}.webp",
+        "image_alt": DESTINATION_IMAGE_ALTS.get(slug)
+        or f"Guide voyage {dest.get('name', slug)}, Vietnam",
+        "image_photo_id": "",
+        "image_placeholder": False,
+    }
+
 
 LEGACY_PROMPTS: dict[str, str] = {
     "visa-vietnam-guide-complet-francais": (
@@ -573,6 +614,8 @@ def pool_image_url(photo_id: str) -> str:
 def sync_destination_images(*, allow_network: bool = True) -> int:
     """Aligne le store sur des URLs d'image réellement servables (même rendu admin + public).
 
+    - Image pool générique + photo de VILLE committée dans destinations/ → on adopte
+      la photo de ville (plus représentative ; cf. _upgrade_to_committed_city_image).
     - Image déjà valide → conservée telle quelle (choix admin).
     - Fichier destinations/ manquant + `image_source_url` → re-télécharge (si allow_network).
     - `image_photo_id` + pool local → met à jour `image` vers /static/images/pool/….
@@ -584,6 +627,11 @@ def sync_destination_images(*, allow_network: bool = True) -> int:
     updated = 0
     for slug, dest in dests.items():
         dest = {**dest, "slug": slug}
+        upgraded = _upgrade_to_committed_city_image(dest)
+        if upgraded:
+            dests[slug] = upgraded
+            updated += 1
+            continue
         aligned = _align_destination_pool_image(dest)
         if aligned:
             dests[slug] = aligned
@@ -738,28 +786,46 @@ def _fetch_pixabay_photo(query: str, seed: int) -> bytes:
     return img.content
 
 
+def _cover_1200x675(img: Image.Image) -> Image.Image:
+    """Recadre au format 16:9 (1200×675) SANS déformer.
+
+    L'ancien resize((1200, 675)) étirait l'image : une photo 4:3 arrivait
+    écrasée de ~25 % (visages et monuments déformés). On recadre au centre,
+    légèrement vers le haut (0.42) : sur les photos de voyage, le sujet
+    (monument, horizon) est plus souvent dans la moitié haute que plein centre.
+    """
+    return ImageOps.fit(img, (1200, 675), Image.Resampling.LANCZOS, centering=(0.5, 0.42))
+
+
 def _to_webp(raw: bytes, out_path: Path) -> None:
     img = Image.open(io.BytesIO(raw)).convert("RGB")
-    img = img.resize((1200, 675), Image.Resampling.LANCZOS)
+    img = _cover_1200x675(img)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     img.save(out_path, "WEBP", quality=82, method=WEBP_METHOD)
-    _create_responsive_variants(img, out_path)
+    # force=True : on vient d'écrire une NOUVELLE image principale — les variantes
+    # -640/-960 de l'ancienne image doivent être remplacées, sinon le srcset
+    # (mobile, cartes) continue de servir l'ancienne photo après un changement.
+    _create_responsive_variants(img, out_path, force=True)
 
 
 def _write_webp_fast(raw: bytes, out_path: Path) -> None:
     """Écriture WebP minimale (method=0, sans variantes) — repli si l'encodage soigné
     dépasse son échéance. Garantit qu'un fichier image valide existe toujours."""
-    img = Image.open(io.BytesIO(raw)).convert("RGB").resize((1200, 675), Image.Resampling.LANCZOS)
+    img = _cover_1200x675(Image.open(io.BytesIO(raw)).convert("RGB"))
     out_path.parent.mkdir(parents=True, exist_ok=True)
     img.save(out_path, "WEBP", quality=80, method=0)
+    # Pas de variantes ici (chemin rapide) : on supprime celles de l'ancienne image
+    # pour que le srcset ne serve pas une photo périmée.
+    for suffix in ("-640", "-960"):
+        (out_path.parent / f"{out_path.stem}{suffix}.webp").unlink(missing_ok=True)
 
 
-def _create_responsive_variants(img: Image.Image, full_path: Path) -> None:
+def _create_responsive_variants(img: Image.Image, full_path: Path, *, force: bool = False) -> None:
     """Génère -640 et -960 pour les cartes et grilles (chargement plus rapide)."""
     w, h = img.size
     for target_w, suffix, quality in ((640, "-640", 76), (960, "-960", 78)):
         out = full_path.parent / f"{full_path.stem}{suffix}.webp"
-        if out.exists():
+        if out.exists() and not force:
             continue
         nh = max(1, int(h * target_w / w))
         resized = img.resize((target_w, nh), Image.Resampling.LANCZOS)
@@ -1163,12 +1229,24 @@ def _download_image_bytes(url: str) -> bytes:
         raise ValueError("URL d'image invalide — fournis une adresse http(s) directe vers une image.")
 
     resolved = resolve_direct_image_url(url) or url
-    resp = requests.get(
-        resolved,
-        timeout=(REMOTE_IMAGE_CONNECT_TIMEOUT, REMOTE_IMAGE_READ_TIMEOUT),
-        headers={"User-Agent": "InsideVietnamTravel/1.0"},
-        stream=True,
-    )
+
+    # 429/5xx transitoires (rate-limit Wikimedia/Flickr…) : 2 reprises courtes plutôt
+    # qu'un échec sec — un lot Linh de 9 images perdait une image sur un simple 429.
+    # Les pauses restent courtes pour tenir dans IMAGE_STEP_HARD_DEADLINE (15 s).
+    resp = None
+    for attempt in range(3):
+        resp = requests.get(
+            resolved,
+            timeout=(REMOTE_IMAGE_CONNECT_TIMEOUT, REMOTE_IMAGE_READ_TIMEOUT),
+            headers={"User-Agent": "InsideVietnamTravel/1.0"},
+            stream=True,
+        )
+        if resp.status_code == 429 or resp.status_code >= 500:
+            resp.close()
+            if attempt < 2:
+                time.sleep(1.5 * (attempt + 1))
+                continue
+        break
     resp.raise_for_status()
 
     ctype = (resp.headers.get("Content-Type") or "").lower()

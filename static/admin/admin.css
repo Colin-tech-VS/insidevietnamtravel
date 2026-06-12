@@ -2585,7 +2585,9 @@ body.is-admin-nav-open { overflow: hidden; }
 /* Réseaux voyageurs (hors Facebook) */
 .social-networks {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  /* min(330px, 100%) : sur écran < ~370px, le plancher de 330px déborderait
+     du conteneur ; on retombe alors sur la largeur disponible. */
+  grid-template-columns: repeat(auto-fill, minmax(min(330px, 100%), 1fr));
   gap: 1rem;
 }
 .social-net {
@@ -2635,7 +2637,9 @@ body.is-admin-nav-open { overflow: hidden; }
 }
 .social-netpick__opt.is-off { opacity: 0.55; }
 .social-netpick__opt.is-off:has(input:checked) { opacity: 0.9; border-color: var(--warn); color: var(--warn); background: rgba(196,101,74,0.08); }
-.social-netpick__opt input { position: absolute; opacity: 0; pointer-events: none; }
+/* width/height 1px : un input abspos garde sinon une largeur intrinsèque qui
+   déborde du viewport et crée un scroll horizontal sur mobile. */
+.social-netpick__opt input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
 .social-netpick__icon { margin-right: 0.35rem; }
 .social-netpick__hint { margin-top: -0.4rem; margin-bottom: 0.9rem; }
 
@@ -2664,7 +2668,7 @@ body.is-admin-nav-open { overflow: hidden; }
 .social-mode { display: flex; gap: 0.25rem; background: var(--rice); padding: 0.3rem; border-radius: 12px; margin-bottom: 1.25rem; }
 .social-mode__opt { flex: 1; text-align: center; padding: 0.55rem 0.75rem; border-radius: 9px; cursor: pointer; font-weight: 600; font-size: 0.88rem; color: var(--ink-muted); transition: all .15s; }
 .social-mode__opt:has(input:checked) { background: var(--white); box-shadow: 0 1px 5px rgba(0,0,0,0.1); color: var(--teal); }
-.social-mode__opt input { position: absolute; opacity: 0; pointer-events: none; }
+.social-mode__opt input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
 
 .form-label { display: block; font-weight: 600; font-size: 0.88rem; margin: 1.1rem 0 0.4rem; }
 .social-req { font-size: 0.7rem; font-weight: 700; color: var(--warn); text-transform: uppercase; margin-left: 0.3rem; }
@@ -2885,6 +2889,11 @@ a.partners-stat:hover { border-color: var(--teal-light); color: var(--teal); }
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
+  max-width: 100%;
+  min-width: 0;
 }
+/* Les libellés longs des boutons doivent pouvoir passer à la ligne sur mobile,
+   sinon le bouton impose sa largeur max-content et déborde du viewport. */
+.inline-form .btn { white-space: normal; max-width: 100%; }
 .map-pending-form select { max-width: 180px; }
 .flash--warn { background: #fef9ec; border-color: #e8d5a8; color: #7a5c1e; }
