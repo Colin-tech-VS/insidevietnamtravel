@@ -368,7 +368,7 @@
 
       <figure class="draft-cover">
 
-        <img src="{{ draft.image }}" alt="{{ draft.image_alt or draft.title }}" width="1200" height="675" loading="lazy" decoding="async">
+        <img src="{{ draft.image | static_v }}" alt="{{ draft.image_alt or draft.title }}" width="1200" height="675" loading="lazy" decoding="async">
 
         <figcaption class="muted">Image WebP — optimisée pour le web</figcaption>
 
@@ -502,7 +502,7 @@
 
             {% if a.image %}
 
-            <img src="{{ a.image }}" alt="" class="dest-admin-item__thumb" width="64" height="36" loading="lazy">
+            <img src="{{ a.image | static_v }}" alt="" class="dest-admin-item__thumb" width="64" height="36" loading="lazy">
 
             {% endif %}
 

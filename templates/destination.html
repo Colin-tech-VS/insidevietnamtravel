@@ -9,7 +9,7 @@
 
 {% block og_image %}
 {% if dest.image %}
-{{ og_image_tags(site.SITE_URL ~ dest.image) }}
+{{ og_image_tags(site.SITE_URL ~ (dest.image | static_v)) }}
 {% else %}
 {{ super() }}
 {% endif %}
@@ -32,7 +32,7 @@
   "inLanguage": "en-GB" if lang == 'en' else "fr-FR"
 } %}
 {% if dest.image %}
-{% set _ = dest_schema.update({"image": site.SITE_URL ~ dest.image}) %}
+{% set _ = dest_schema.update({"image": site.SITE_URL ~ (dest.image | static_v)}) %}
 {% endif %}
 {{ json_ld_graph([
   dest_schema,

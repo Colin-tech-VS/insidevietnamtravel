@@ -167,7 +167,7 @@
             <div class="social-imgpicker" id="img-picker">
               {% for img in pool_images %}
               <button type="button" class="social-imgpicker__item" data-url="{{ img.url }}" title="{{ img.label }}">
-                <img src="{{ img.thumb }}" alt="{{ img.label }}" loading="lazy" width="120" height="68">
+                <img src="{{ img.thumb | static_v }}" alt="{{ img.label }}" loading="lazy" width="120" height="68">
               </button>
               {% endfor %}
             </div>

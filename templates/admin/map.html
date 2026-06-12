@@ -115,7 +115,7 @@
             <tr>
               <td>
                 {% if p.image %}
-                <img class="map-point-thumb" src="{{ p.image }}" alt="" loading="lazy">
+                <img class="map-point-thumb" src="{{ p.image | static_v }}" alt="" loading="lazy">
                 {% else %}
                 <span class="map-point-thumb map-point-thumb--empty" title="Pas encore de photo">📷</span>
                 {% endif %}

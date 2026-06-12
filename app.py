@@ -241,7 +241,14 @@ def add_static_version(endpoint, values):
 @app.after_request
 def add_performance_headers(response):
     if request.path.startswith("/static/"):
-        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        # immutable 1 an UNIQUEMENT pour les URLs versionnées (?v=mtime) : une
+        # réponse immutable sur une URL stable (image du store référencée en dur)
+        # figeait l'ancienne photo chez les visiteurs pendant un an après un
+        # remplacement. Sans ?v=, cache court revalidable.
+        if request.args.get("v"):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        else:
+            response.headers["Cache-Control"] = "public, max-age=3600, must-revalidate"
     if request.path.startswith("/go/"):
         response.headers["X-Robots-Tag"] = "noindex, nofollow"
     return response
@@ -382,6 +389,30 @@ def _variant_exists(static_rel: str) -> bool:
     return (Path(app.static_folder) / static_rel).is_file()
 
 
+def _static_versioned(static_url: str) -> str:
+    """Ajoute ?v=<mtime> à une URL /static/ écrite en dur (image du store).
+
+    Les chemins d'images stockés en base (« /static/images/destinations/… »)
+    n'passent pas par url_for : sans ?v=, le Cache-Control immutable d'un an
+    fait que les visiteurs déjà venus gardent l'ANCIENNE photo après un
+    remplacement (admin ou Linh). Même principe que add_static_version.
+    """
+    base = static_url.split("?", 1)[0]
+    if not base.startswith("/static/"):
+        return static_url
+    try:
+        mtime = (Path(app.static_folder) / base.removeprefix("/static/")).stat().st_mtime
+    except OSError:
+        return static_url
+    return f"{base}?v={int(mtime)}"
+
+
+@app.template_filter("static_v")
+def static_v_filter(path: str) -> str:
+    """Filtre Jinja : cache-busting d'un chemin /static/ brut (og:image, schema…)."""
+    return _static_versioned(path) if path else path
+
+
 @app.template_global()
 def responsive_image(image_url: str, *, card: bool = False) -> dict:
     """src + srcset pour images WebP locales avec variantes -640/-960."""
@@ -400,15 +431,15 @@ def responsive_image(image_url: str, *, card: bool = False) -> dict:
     for suffix, width in (("-640", 640), ("-960", 960)):
         variant_rel = f"{stem_rel}{suffix}.webp"
         if _variant_exists(variant_rel):
-            parts.append(f"/static/{variant_rel} {width}w")
-    parts.append(f"{image_url} 1200w")
+            parts.append(f"{_static_versioned(f'/static/{variant_rel}')} {width}w")
+    parts.append(f"{_static_versioned(image_url)} 1200w")
 
     sizes = (
         "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
         if card
         else "100vw"
     )
-    best_src = parts[0].split()[0] if len(parts) > 1 else image_url
+    best_src = parts[0].split()[0] if len(parts) > 1 else _static_versioned(image_url)
     return {
         "src": best_src,
         "srcset": ", ".join(parts),

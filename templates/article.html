@@ -8,7 +8,7 @@
 
 {% block og_image %}
 {% if article.image %}
-{{ og_image_tags(site.SITE_URL ~ article.image) }}
+{{ og_image_tags(site.SITE_URL ~ (article.image | static_v)) }}
 {% else %}
 {{ super() }}
 {% endif %}
@@ -36,7 +36,7 @@
   "inLanguage": "en-GB" if lang == 'en' else "fr-FR"
 } %}
 {% if article.image %}
-{% set _ = article_schema.update({"image": site.SITE_URL ~ article.image}) %}
+{% set _ = article_schema.update({"image": site.SITE_URL ~ (article.image | static_v)}) %}
 {% endif %}
 {% set faq_items = seo_faq_from_html(article.content) %}
 {% set faq_schema_obj = seo_faq(faq_items) %}

@@ -56,8 +56,8 @@
 
   {# Image OG resolue : variable `og_image` (chemin ou URL) fournie par la route,
      sinon carte de marque raster par defaut (le SVG n'est pas lu par Facebook/X). #}
-  {% set og_image_abs = (og_image if (og_image and '://' in og_image) else (site.SITE_URL ~ og_image) if og_image else (site.SITE_URL ~ url_for('static', filename='images/og-default.jpg'))) %}
-  {% set og_image_type = 'image/webp' if og_image_abs.endswith('.webp') else ('image/png' if og_image_abs.endswith('.png') else 'image/jpeg') %}
+  {% set og_image_abs = (og_image if (og_image and '://' in og_image) else (site.SITE_URL ~ (og_image | static_v)) if og_image else (site.SITE_URL ~ url_for('static', filename='images/og-default.jpg'))) %}
+  {% set og_image_type = 'image/webp' if '.webp' in og_image_abs else ('image/png' if '.png' in og_image_abs else 'image/jpeg') %}
   {% set og_image_alt = (og_image_alt | default(meta_title)) %}
 
   {% block og_image %}

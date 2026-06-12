@@ -8,7 +8,7 @@
 
 {% block og_image %}
 {% if itin.hero_image %}
-{{ og_image_tags(site.SITE_URL ~ itin.hero_image) }}
+{{ og_image_tags(site.SITE_URL ~ (itin.hero_image | static_v)) }}
 {% else %}
 {{ super() }}
 {% endif %}
@@ -40,7 +40,7 @@
   }
 } %}
 {% if itin.hero_image %}
-{% set _ = trip_schema.update({"image": site.SITE_URL ~ itin.hero_image}) %}
+{% set _ = trip_schema.update({"image": site.SITE_URL ~ (itin.hero_image | static_v)}) %}
 {% endif %}
 {% set schemas = [
   trip_schema,
