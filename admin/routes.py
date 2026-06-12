@@ -1431,15 +1431,16 @@ def api_assistant():
 @admin_bp.route("/api/assistant/search", methods=["POST"])
 @login_required
 def api_assistant_search():
-    """Deuxième temps de la recherche web de Linh (le widget affiche un loader)."""
+    """Deuxième temps de la recherche web/images de Linh (le widget affiche un loader)."""
     from admin import assistant_service
 
     payload = request.get_json(silent=True) or {}
     query = (payload.get("query") or "").strip()
     message = (payload.get("message") or "").strip()
     history = payload.get("history") if isinstance(payload.get("history"), list) else []
+    kind = (payload.get("kind") or "web").strip().lower()
     try:
-        return jsonify(assistant_service.search_reply(query, message, history))
+        return jsonify(assistant_service.search_reply(query, message, history, kind=kind))
     except ValueError as exc:
         return jsonify({"ok": False, "error": str(exc)}), 400
     except Exception as exc:  # noqa: BLE001

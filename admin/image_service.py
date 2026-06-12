@@ -1093,7 +1093,11 @@ def _wikimedia_commons_direct_url(page_url: str) -> str | None:
 
 
 def _extract_og_image_url(page_url: str) -> str | None:
-    """Extrait og:image / twitter:image d'une page HTML (galerie, article…)."""
+    """Extrait og:image / twitter:image d'une page HTML (galerie, article…).
+
+    Si l'URL sert en réalité une image (Content-Type image/*) sans extension
+    visible — fréquent sur Openverse, Flickr, CDN — on la renvoie telle quelle.
+    """
     try:
         resp = requests.get(
             page_url,
@@ -1102,6 +1106,9 @@ def _extract_og_image_url(page_url: str) -> str | None:
             stream=True,
         )
         resp.raise_for_status()
+        if (resp.headers.get("Content-Type") or "").lower().startswith("image/"):
+            resp.close()
+            return page_url
         buf = bytearray()
         for chunk in resp.iter_content(4096):
             if not chunk:
