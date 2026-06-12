@@ -42,14 +42,26 @@
 {% if itin.hero_image %}
 {% set _ = trip_schema.update({"image": site.SITE_URL ~ itin.hero_image}) %}
 {% endif %}
-{{ json_ld_graph([
+{% set schemas = [
   trip_schema,
   seo_breadcrumb([
     (t('nav.home'), site.SITE_URL ~ lang_url('index')),
     (t('nav.itineraries'), site.SITE_URL ~ "/#itin-title"),
     (itin.title, None),
   ]),
-]) }}
+] %}
+{% if itin.faq %}
+{% set faq_items = [] %}
+{% for item in itin.faq %}
+{% set _ = faq_items.append({
+  "@type": "Question",
+  "name": item.q,
+  "acceptedAnswer": {"@type": "Answer", "text": item.a}
+}) %}
+{% endfor %}
+{% set _ = schemas.append({"@type": "FAQPage", "mainEntity": faq_items}) %}
+{% endif %}
+{{ json_ld_graph(schemas) }}
 {% endblock %}
 
 {% block content %}
@@ -207,6 +219,22 @@
           <summary>{{ item.q }}</summary>
           <p>{{ item.a }}</p>
         </details>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {% if other_itins %}
+    <section class="content-block">
+      <h2>{% if lang == 'en' %}Other Vietnam itineraries{% else %}Autres itinéraires au Vietnam{% endif %}</h2>
+      <p class="section-intro">{% if lang == 'en' %}More or less time? Pick the route that matches your trip.{% else %}Plus ou moins de temps ? Choisissez le circuit adapté à votre voyage.{% endif %}</p>
+      <div class="itin-others">
+        {% for o in other_itins %}
+        <a class="itin-other-card" href="{{ lang_url('itinerary', slug=o.slug) }}">
+          <span class="itin-other-card__days">{{ o.duration }} {{ t('nav.days') }}</span>
+          <strong class="itin-other-card__title">{{ o.title }}</strong>
+          {% if o.summary %}<span class="itin-other-card__sum">{{ o.summary }}</span>{% endif %}
+        </a>
         {% endfor %}
       </div>
     </section>
