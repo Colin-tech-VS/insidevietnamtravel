@@ -52,7 +52,9 @@ from data.affiliate_urls import (
     esim_holafly,
     get_location_meta,
     pdf_checkout,
+    transport_12go,
     travel_insurance,
+    visa_ivisa,
 )
 from data.itineraries import ITINERARIES
 from data.affiliates import PDF_GUIDE, NEWSLETTER
@@ -478,6 +480,16 @@ def esim_holafly_url() -> str:
 @app.template_global()
 def travel_insurance_url() -> str:
     return tracked_affiliate_url("travel_insurance", travel_insurance())
+
+
+@app.template_global()
+def transport_12go_url() -> str:
+    return tracked_affiliate_url("transport_12go", transport_12go())
+
+
+@app.template_global()
+def visa_ivisa_url() -> str:
+    return tracked_affiliate_url("visa_ivisa", visa_ivisa())
 
 
 @app.template_global()

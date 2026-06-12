@@ -363,6 +363,8 @@ UI: dict[str, dict[str, str]] = {
     },
     "aff.sim.aria": {"fr": "Offre eSIM Vietnam", "en": "Vietnam eSIM offer"},
     "aff.insurance.aria": {"fr": "Assurance voyage", "en": "Travel insurance"},
+    "aff.transport.aria": {"fr": "Réservation transport Vietnam", "en": "Vietnam transport booking"},
+    "aff.visa.aria": {"fr": "E-visa Vietnam en ligne", "en": "Vietnam e-visa online"},
     "aff.insurance.eyebrow": {"fr": "Protection", "en": "Protection"},
     "aff.insurance.title": {
         "fr": "Assurance voyage Vietnam",

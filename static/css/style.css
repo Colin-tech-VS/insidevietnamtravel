@@ -1554,6 +1554,8 @@ body.is-nav-open { overflow: hidden; }
 }
 .affiliate-banner--sim { background: linear-gradient(135deg, #e8f4f3 0%, var(--rice) 100%); }
 .affiliate-banner--insurance { background: linear-gradient(135deg, #fdf6e8 0%, var(--rice) 100%); }
+.affiliate-banner--transport { background: linear-gradient(135deg, #eef2e8 0%, var(--rice) 100%); }
+.affiliate-banner--visa { background: linear-gradient(135deg, #e8edf4 0%, var(--rice) 100%); }
 .affiliate-banner--pdf { background: linear-gradient(135deg, var(--teal-deep) 0%, var(--teal) 100%); color: var(--white); border: none; }
 .affiliate-banner--pdf .affiliate-banner__eyebrow,
 .affiliate-banner--pdf .affiliate-banner__title,

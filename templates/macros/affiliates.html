@@ -61,6 +61,32 @@
 </aside>
 {% endmacro %}
 
+{% macro transport_banner() %}
+<aside class="affiliate-banner affiliate-banner--transport" aria-label="{{ t('aff.transport.aria') }}">
+  <div class="affiliate-banner__content">
+    <span class="affiliate-banner__eyebrow">{% if lang == 'en' %}Getting around{% else %}Se déplacer{% endif %}</span>
+    <h3 class="affiliate-banner__title">{% if lang == 'en' %}Trains, buses & ferries in Vietnam{% else %}Trains, bus et ferries au Vietnam{% endif %}</h3>
+    <p class="affiliate-banner__text">{% if lang == 'en' %}Book your night train to Sapa, sleeper bus or ferry in advance — seats sell out fast on popular routes.{% else %}Réservez votre train de nuit pour Sapa, bus couchettes ou ferry à l'avance — les places partent vite sur les trajets populaires.{% endif %}</p>
+    <a href="{{ transport_12go_url() }}" class="btn btn-primary btn-sm affiliate-link" rel="sponsored noopener noreferrer" target="_blank">
+      {% if lang == 'en' %}Check routes on 12Go{% else %}Voir les trajets sur 12Go{% endif %}
+    </a>
+  </div>
+</aside>
+{% endmacro %}
+
+{% macro visa_banner() %}
+<aside class="affiliate-banner affiliate-banner--visa" aria-label="{{ t('aff.visa.aria') }}">
+  <div class="affiliate-banner__content">
+    <span class="affiliate-banner__eyebrow">{% if lang == 'en' %}Formalities{% else %}Formalités{% endif %}</span>
+    <h3 class="affiliate-banner__title">{% if lang == 'en' %}Vietnam e-visa without the hassle{% else %}E-visa Vietnam sans prise de tête{% endif %}</h3>
+    <p class="affiliate-banner__text">{% if lang == 'en' %}Apply online in minutes: form checked by experts, updates by email, no government portal in Vietnamese.{% else %}Demande en ligne en quelques minutes : dossier vérifié par des experts, suivi par email, sans passer par le portail officiel en vietnamien.{% endif %}</p>
+    <a href="{{ visa_ivisa_url() }}" class="btn btn-primary btn-sm affiliate-link" rel="sponsored noopener noreferrer" target="_blank">
+      {% if lang == 'en' %}Apply for my e-visa{% else %}Faire ma demande d'e-visa{% endif %}
+    </a>
+  </div>
+</aside>
+{% endmacro %}
+
 {% macro pdf_banner() %}
 <aside class="affiliate-banner affiliate-banner--pdf" id="pdf-guide" aria-label="{{ t('aff.pdf.aria') }}">
   <div class="affiliate-banner__content">
