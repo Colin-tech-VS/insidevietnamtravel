@@ -84,13 +84,13 @@
 
               {% for city in city_options %}
 
-              <option value="{{ city }}">{{ city }}</option>
+              <option value="{{ city }}">{{ city }}{% if city in published_by_city %} — ✓ déjà sur le site (/{{ published_by_city[city] }}){% else %} — à créer{% endif %}</option>
 
               {% endfor %}
 
             </select>
 
-            <p class="field-hint">La page sera publiée sur <code>/slug-ville</code> (ex. /sapa).</p>
+            <p class="field-hint">La page sera publiée sur <code>/slug-ville</code> (ex. /sapa). ✓ = page déjà publiée : régénérer remplacera son contenu.</p>
 
           </div>
 
@@ -172,11 +172,13 @@
 
               {% for city in city_options %}
 
-              <option value="{{ city }}" {% if draft and draft.manual and (draft.city == city or draft.name == city) %}selected{% endif %}>{{ city }}</option>
+              <option value="{{ city }}" {% if draft and draft.manual and (draft.city == city or draft.name == city) %}selected{% endif %}>{{ city }}{% if city in published_by_city %} — ✓ déjà sur le site (/{{ published_by_city[city] }}){% else %} — à créer{% endif %}</option>
 
               {% endfor %}
 
             </select>
+
+            <p class="field-hint">✓ = une page existe déjà pour cette ville sur le site.</p>
 
           </div>
 

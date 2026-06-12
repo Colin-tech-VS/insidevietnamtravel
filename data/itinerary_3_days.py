@@ -91,6 +91,22 @@ ITINERARY_3_DAYS_FR = {
             "q": "Peut-on faire Halong en une journée ?",
             "a": "Oui — départ 7h, retour 20h. Moins immersif qu'une nuit à bord mais parfait pour 3 jours.",
         },
+        {
+            "q": "Quel budget prévoir pour 3 jours au Vietnam ?",
+            "a": "Comptez 150–350 € sur place hors vol international : hôtel 3* (45–60 €/nuit), repas street food (2–5 €), food tour (~35 €) et croisière journée Halong (~55 €).",
+        },
+        {
+            "q": "Faut-il un visa pour un séjour de 3 jours ?",
+            "a": "De nombreuses nationalités — dont la plupart des pays de l'UE — bénéficient d'une exemption de visa jusqu'à 45 jours. Sinon, demandez l'e-visa officiel en ligne : 3–5 jours ouvrés.",
+        },
+        {
+            "q": "Quelle est la meilleure saison pour un city break à Hanoï ?",
+            "a": "D'octobre à avril : temps sec et températures douces. Évitez juillet–août, très chauds et pluvieux au nord.",
+        },
+        {
+            "q": "Faut-il réserver les activités à l'avance ?",
+            "a": "Réservez l'excursion Halong et le food tour quelques jours avant, surtout de novembre à février. Les marionnettes sur l'eau se réservent la veille.",
+        },
     ],
     "days": [
         {

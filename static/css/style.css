@@ -2037,6 +2037,40 @@ body.is-nav-open { overflow: hidden; }
   font-size: 0.95rem;
 }
 
+.itin-others {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+.itin-other-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--rice-dark);
+  border-radius: var(--radius-sm);
+  background: var(--rice);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.itin-other-card:hover {
+  border-color: rgba(27, 77, 74, 0.4);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+.itin-other-card__days {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--teal);
+}
+.itin-other-card__title { font-size: 0.95rem; }
+.itin-other-card__sum {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
 .itin-gallery {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -4129,27 +4163,39 @@ body.mai-chat-resizing * {
 .mai-chat__ref {
   display: inline-flex;
   align-items: center;
-  font-size: 0.72rem;
+  gap: 0.35em;
+  font-size: 0.74rem;
   line-height: 1.35;
-  color: var(--ink-muted);
+  padding: 0.26rem 0.62rem;
+  border-radius: 999px;
+  background: var(--rice);
+  border: 1px solid var(--rice-dark);
+  color: var(--ink-soft);
   text-decoration: none;
-  border-bottom: 1px solid transparent;
-  transition: color var(--transition), border-color var(--transition);
+  transition: color var(--transition), border-color var(--transition), background var(--transition);
 }
 .mai-chat__ref:hover {
   color: var(--teal);
-  border-bottom-color: rgba(27, 77, 74, 0.35);
+  border-color: rgba(27, 77, 74, 0.35);
+  background: #fff;
 }
 .mai-chat__ref--aff::after {
   content: '↗';
-  font-size: 0.65em;
-  margin-left: 0.2em;
+  font-size: 0.7em;
   opacity: 0.65;
 }
 .mai-chat__ref--aff {
-  color: var(--ink-soft);
+  border-color: rgba(196, 160, 83, 0.45);
+  background: rgba(196, 160, 83, 0.08);
 }
-.mai-chat__ref--aff:hover { color: var(--gold); border-bottom-color: rgba(196, 160, 83, 0.45); }
+.mai-chat__ref--aff:hover { color: var(--gold); border-color: rgba(196, 160, 83, 0.7); background: rgba(196, 160, 83, 0.13); }
+.mai-chat__ref-badge {
+  font-size: 0.82em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gold);
+  opacity: 0.9;
+}
 
 .mai-chat__photos {
   display: grid;

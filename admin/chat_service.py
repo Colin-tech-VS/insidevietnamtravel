@@ -658,7 +658,12 @@ def _link_intent(text: str) -> dict[str, bool]:
     hay = _fold(text)
     return {
         "booking": any(w in hay for w in ("hotel", "dormir", "reserv", "book", "heberg", "loger", "stay", "lodging")),
-        "activity": any(w in hay for w in ("activit", "tour", "excursion", "visite", "things to do")),
+        "activity": any(w in hay for w in (
+            "activit", "tour", "excursion", "visite", "visiter", "things to do",
+            "que faire", "quoi faire", "a faire", "que voir", "a voir", "incontournable",
+            "croisiere", "cruise", "trek", "rando", "plongee", "snorkel", "kayak",
+            "musee", "museum", "billet", "ticket", "what to do", "must-see", "day trip",
+        )),
         "esim": any(w in hay for w in ("esim", "sim", "forfait", "data mobile", "internet mobile")),
         "insurance": any(w in hay for w in ("assurance", "insurance", "sante", "santé", "health", "medic")),
         "visa": any(w in hay for w in ("visa", "evisa", "e-visa", "passeport", "passport", "formalit")),
@@ -678,9 +683,15 @@ def _curate_links(
     site_links: list[dict],
     affiliate_links: list[dict],
     lang: str,
+    assistant_message: str = "",
 ) -> tuple[list[dict], list[dict]]:
-    """Garde 0–1 lien site et 0–1 affilié, seulement si la question le justifie."""
-    intent = _link_intent(user_question)
+    """Garde 0–1 lien site et 0–1 affilié, dès que la conversation le justifie.
+
+    L'intention est lue dans la question ET dans la réponse de Mai : si Mai
+    parle d'activités ou d'hôtels, le lien affilié correspondant est proposé
+    (discret sous la bulle), même si la question ne contenait pas le mot-clé.
+    """
+    intent = _link_intent(f"{user_question}\n{assistant_message}")
     wants_site = intent["visa"] or intent["prepare"] or intent["guide_page"] or intent["map"]
     wants_aff = intent["booking"] or intent["activity"] or intent["esim"] or intent["insurance"]
 
@@ -707,18 +718,21 @@ def _curate_links(
             out_site = [site_links[0]]
 
     if wants_aff and affiliate_links:
+        def _first_matching(*needles: str) -> dict:
+            return next(
+                (l for l in affiliate_links
+                 if any(n in _fold(l.get("label", "") + " " + l.get("url", "")) for n in needles)),
+                affiliate_links[0],
+            )
+
         if intent["esim"]:
-            esim = next(
-                (l for l in affiliate_links if "esim" in l.get("label", "").lower() or "airalo" in l.get("url", "").lower() or "holafly" in l.get("url", "").lower()),
-                affiliate_links[0],
-            )
-            out_aff = [esim]
+            out_aff = [_first_matching("esim", "airalo", "holafly")]
         elif intent["insurance"]:
-            ins = next(
-                (l for l in affiliate_links if "assur" in l.get("label", "").lower() or "insur" in l.get("label", "").lower()),
-                affiliate_links[0],
-            )
-            out_aff = [ins]
+            out_aff = [_first_matching("assur", "insur")]
+        elif intent["activity"] and not intent["booking"]:
+            out_aff = [_first_matching("activit", "tour")]
+        elif intent["booking"] and not intent["activity"]:
+            out_aff = [_first_matching("hotel", "booking")]
         else:
             out_aff = [affiliate_links[0]]
 
@@ -1231,10 +1245,13 @@ def _system_prompt(lang: str) -> str:
             "STYLE (ChatGPT-like): natural conversation, clear and precise — short paragraphs separated by a "
             "blank line, no filler, no link lists in the message. Answer like a smart travel friend, not a brochure. "
             "BREVITY: simple question → 1–2 sentences (~60 words); advice → 3–5 sentences (~120 words max). "
-            "LINKS (sparse): in MOST replies set site_links=[] and affiliate_links=[]. Add AT MOST 1 site_link "
-            "OR 1 affiliate_link only when the user clearly needs it (visa page, prepare trip, book a hotel, "
-            "eSIM, insurance, activity). Never both unless they explicitly asked for two things. "
-            "Never add links to casual or follow-up questions. "
+            "LINKS (useful, discreet but clear): links are shown as small cards UNDER your message — never put "
+            "raw URLs in the body. Whenever your reply mentions something the traveler can BOOK — a hotel, an "
+            "activity/tour/cruise/excursion, an eSIM, travel insurance — add the matching affiliate_link from "
+            "CONTEXT with a clear, action-oriented label (e.g. \"Book activities in Hội An\"). Add 1 site_link "
+            "when a site page genuinely deepens the answer (visa, prepare trip, destination page, guide). "
+            "At most 1 site_link + 1 affiliate_link per reply; no links on small talk or follow-ups with "
+            "nothing new to book or read. "
             "The site has dedicated guides: travel safety & scams, customs & etiquette, useful Vietnamese phrases, "
             "visa checker (evisa.gov.vn), weather planner by region/destination, useful apps (Grab), eSIM & insurance — "
             "recommend the matching page from CONTEXT when relevant. "
@@ -1273,10 +1290,13 @@ def _system_prompt(lang: str) -> str:
         "ligne vide, pas de remplissage, pas de liste de liens dans le message. Tu parles comme une amie experte, "
         "pas comme une brochure. "
         "CONCISION : question simple → 1–2 phrases (~60 mots) ; conseils → 3–5 phrases (~120 mots max). "
-        "LIENS (rares) : dans la PLUPART des réponses site_links=[] et affiliate_links=[]. Ajoute AU PLUS "
-        "1 site_link OU 1 affiliate_link seulement si le voyageur en a clairement besoin (page visa, préparer "
-        "son voyage, réserver un hôtel, eSIM, assurance, activité). Jamais les deux sauf demande explicite. "
-        "Pas de lien sur les questions bavardes ou de suivi. "
+        "LIENS (utiles, discrets mais clairs) : les liens s'affichent en petites cartes SOUS ta réponse — "
+        "jamais d'URL brute dans le message. Dès que ta réponse évoque quelque chose que le voyageur peut "
+        "RÉSERVER — un hôtel, une activité/excursion/croisière, une eSIM, une assurance voyage — ajoute le "
+        "lien affilié correspondant du CONTEXTE avec un label clair et orienté action (ex. « Réserver des "
+        "activités à Hội An »). Ajoute 1 site_link quand une page du site approfondit vraiment la réponse "
+        "(visa, préparer son voyage, page destination, guide). Au plus 1 site_link + 1 affiliate_link par "
+        "réponse ; aucun lien sur le bavardage ou les relances sans rien de nouveau à réserver ou lire. "
         "Adapte la longueur à la question — utilise l'HISTORIQUE pour les relances. "
         "Le site propose des guides dédiés : sécurité & arnaques, coutumes & étiquette, phrases utiles en vietnamien, "
         "test visa (evisa.gov.vn), météo par région/ville avec planificateur, apps utiles (Grab), eSIM & assurance — "
@@ -1446,6 +1466,7 @@ def chat_reply(
         site_links,
         affiliate_links,
         lang,
+        assistant_message=message,
     )
     # Pas de carte Leaflet lourde dans le chat — lien discret vers la page destination si besoin.
     map_cards: list[dict] = []

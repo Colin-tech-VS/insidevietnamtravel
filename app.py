@@ -796,13 +796,21 @@ def category(category):
 @app.route("/en/itineraries/<slug>")
 def itinerary(slug):
     lang = get_lang()
-    itin = _itineraries(lang).get(slug)
+    all_itins = _itineraries(lang)
+    itin = all_itins.get(slug)
     if not itin:
         abort(404)
+    # Maillage interne : les autres durées (3/7/10/15 jours) en bas de page.
+    other_itins = [
+        {"slug": s, "title": it["title"], "duration": it["duration"],
+         "summary": it.get("summary", ""), "budget_hint": it.get("budget_hint", "")}
+        for s, it in all_itins.items() if s != slug
+    ]
     return render_template(
         "itinerary.html",
         itin=itin,
         slug=slug,
+        other_itins=other_itins,
         meta_title=itin["meta_title"],
         meta_description=itin["meta_description"],
         meta_keywords=t("meta.itin.kw", lang, days=str(itin["duration"])),

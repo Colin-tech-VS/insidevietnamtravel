@@ -112,7 +112,16 @@
     return wrap;
   }
 
+  /* Un SEUL loader à la fois : si un indicateur est déjà affiché, on met à
+     jour son libellé au lieu d'en empiler un deuxième. */
   function showTyping(label) {
+    var existing = messagesEl.querySelector('[data-typing="1"]');
+    if (existing) {
+      var lbl = existing.querySelector('.linh-chat__typing-label');
+      if (lbl) lbl.textContent = label || 'Linh analyse le site…';
+      scrollBottom();
+      return existing;
+    }
     var html = '<span class="linh-chat__typing">'
       + '<span aria-hidden="true">🧭</span>'
       + '<span class="linh-chat__typing-dots" aria-hidden="true"><span></span><span></span><span></span></span>'
@@ -124,8 +133,8 @@
   }
 
   function removeTyping() {
-    var el = messagesEl.querySelector('[data-typing="1"]');
-    if (el) el.remove();
+    var els = messagesEl.querySelectorAll('[data-typing="1"]');
+    for (var i = 0; i < els.length; i += 1) els[i].remove();
   }
 
   /* ── Effet « machine à écrire » — même rendu que Mai côté public ── */

@@ -45,7 +45,7 @@ from admin.store import (
     get_affiliate_ids, save_affiliate_ids,
     get_articles, add_article, get_article_by_slug, replace_published_article,
     get_destinations_dict, add_or_update_destination, delete_destination,
-    get_destination_by_slug, set_destination_region,
+    get_destination_by_slug, set_destination_region, find_destination_slug,
     count_newsletter_subscribers,
     add_custom_partner, delete_custom_partner, get_custom_partners,
     save_custom_partners, slugify,
@@ -612,6 +612,12 @@ def destinations_admin():
     region_rank = {key: i for i, key in enumerate(REGION_ORDER)}
     dest_list.sort(key=lambda d: (region_rank.get(d["region_key"], 9), (d.get("name") or "").lower()))
     city_options = [c for c in ALL_CITY_VALUES if c != "Tout le Vietnam"]
+    # Ville → slug de la page destination déjà publiée (pour marquer le sélecteur).
+    published_by_city = {}
+    for c in city_options:
+        slug = find_destination_slug(c)
+        if slug:
+            published_by_city[c] = slug
 
     draft = _get_draft("destination")
     return render_template(
@@ -619,6 +625,7 @@ def destinations_admin():
         draft=draft,
         destinations=dest_list,
         city_options=city_options,
+        published_by_city=published_by_city,
         region_options=[(key, REGION_LABELS_FR[key]) for key in REGION_ORDER],
         groq_ok=ai_client.is_configured(),
         ai_provider_label=ai_client.provider_label(),
