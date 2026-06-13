@@ -1437,6 +1437,53 @@ def llms_full_txt():
     return Response(render_llms_txt(full=True), mimetype="text/plain; charset=utf-8")
 
 
+@app.route("/feed.xml")
+@app.route("/en/feed.xml")
+def blog_feed():
+    """Flux RSS du blog (FR + EN) — découverte, syndication, signaux IA."""
+    from seo_feed import render_blog_feed
+    lang = get_lang()
+    xml = render_blog_feed(lang)
+    resp = Response(xml, mimetype="application/rss+xml; charset=utf-8")
+    resp.headers["Cache-Control"] = "public, max-age=1800"
+    return resp
+
+
+@app.route("/site.webmanifest")
+def web_manifest():
+    """Web App Manifest — signaux mobile/PWA présents sur toutes les pages."""
+    from flask import jsonify
+    base = config.SITE_URL.rstrip("/")
+    manifest = {
+        "name": config.SITE_NAME,
+        "short_name": "Inside Vietnam",
+        "description": config.SITE_DESCRIPTION,
+        "start_url": "/",
+        "scope": "/",
+        "display": "standalone",
+        "lang": "fr",
+        "dir": "ltr",
+        "background_color": "#FAF7F2",
+        "theme_color": "#1B4D4A",
+        "categories": ["travel", "lifestyle", "education"],
+        "icons": [
+            {
+                "src": f"{base}/static/images/favicon-180.png",
+                "sizes": "180x180",
+                "type": "image/png",
+                "purpose": "any",
+            },
+            {
+                "src": f"{base}/static/images/favicon.svg",
+                "sizes": "any",
+                "type": "image/svg+xml",
+                "purpose": "any",
+            },
+        ],
+    }
+    return jsonify(manifest)
+
+
 @app.errorhandler(404)
 def not_found(e):
     lang = get_lang()

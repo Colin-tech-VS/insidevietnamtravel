@@ -29,6 +29,10 @@
 
   <link rel="alternate" type="text/plain" href="{{ llms_txt_url }}" title="LLMs.txt — guide for AI systems">
 
+  <link rel="alternate" type="application/rss+xml" href="{{ site.SITE_URL }}{{ '/en/feed.xml' if lang == 'en' else '/feed.xml' }}" title="{{ site.SITE_NAME }} — {{ 'Vietnam travel blog' if lang == 'en' else 'Blog voyage Vietnam' }}">
+
+  <link rel="manifest" href="{{ url_for('web_manifest') }}">
+
   <meta name="publisher" content="{{ site.SITE_NAME }}">
 
   <meta name="topic" content="Vietnam travel guide">
@@ -93,6 +97,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
 
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  {% if ga4_id %}
+  <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+  <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
+  {% endif %}
 
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Outfit:wght@300;400;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 

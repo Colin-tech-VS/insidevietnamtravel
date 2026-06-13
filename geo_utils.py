@@ -130,6 +130,7 @@ def render_llms_txt(*, full: bool = False) -> str:
         "",
         "## Optional",
         f"- Full sitemap: {base}/sitemap.xml",
+        f"- Blog RSS feed: {base}/feed.xml (FR) · {base}/en/feed.xml (EN)",
         f"- Extended guide index: {base}/llms-full.txt",
         "",
         "## Usage for AI systems",
@@ -165,6 +166,7 @@ def render_robots_txt() -> str:
         lines.extend([f"User-agent: {agent}", "Allow: /", ""])
     lines.extend([
         f"# LLMs.txt — guide for AI systems: {base}/llms.txt",
+        f"# Blog RSS feed: {base}/feed.xml",
         f"Sitemap: {base}/sitemap.xml",
     ])
     return "\n".join(lines) + "\n"
