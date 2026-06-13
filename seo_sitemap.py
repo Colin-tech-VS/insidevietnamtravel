@@ -35,25 +35,38 @@ SITEMAP_STATIC: dict[str, dict[str, str]] = {
 DynamicResolver = Callable[[], list[tuple[str, str | None]]]
 
 
-def _article_entries() -> list[tuple[str, str | None]]:
+def _abs_image(path: str | None) -> str | None:
+    """Normalise un chemin image (store ou /static) en URL absolue pour le sitemap."""
+    if not path:
+        return None
+    path = path.strip()
+    if not path:
+        return None
+    if "://" in path:
+        return path
+    base = _site_base()
+    return base + ("/" + path.lstrip("/"))
+
+
+def _article_entries() -> list[tuple[str, str | None, str | None]]:
     seen: set[str] = set()
-    entries: list[tuple[str, str | None]] = []
+    entries: list[tuple[str, str | None, str | None]] = []
     for article in get_articles():
         slug = article.get("slug")
         if not slug or slug in seen:
             continue
         seen.add(slug)
         lastmod = article.get("date") or article.get("updated_at")
-        entries.append((slug, lastmod))
+        entries.append((slug, lastmod, _abs_image(article.get("image"))))
     return entries
 
 
-def _destination_entries() -> list[tuple[str, str | None]]:
+def _destination_entries() -> list[tuple[str, str | None, str | None]]:
     raw = get_destinations_dict()
-    entries: list[tuple[str, str | None]] = []
+    entries: list[tuple[str, str | None, str | None]] = []
     for slug, dest in raw.items():
         lastmod = dest.get("updated_at")
-        entries.append((slug, lastmod))
+        entries.append((slug, lastmod, _abs_image(dest.get("image"))))
     return entries
 
 
@@ -122,6 +135,7 @@ class SitemapUrl:
     changefreq: str | None = None
     lastmod: str | None = None
     alternates: list[tuple[str, str]] = field(default_factory=list)
+    images: list[str] = field(default_factory=list)
 
 
 def _site_base() -> str:
@@ -142,6 +156,7 @@ def _add_url(
     priority: str,
     changefreq: str | None,
     lastmod: str | None,
+    images: list[str] | None = None,
     **path_kwargs,
 ) -> None:
     base = _site_base()
@@ -153,6 +168,7 @@ def _add_url(
             changefreq=changefreq,
             lastmod=lastmod,
             alternates=alternates,
+            images=list(images or []),
         ))
 
 
@@ -172,13 +188,16 @@ def build_sitemap_urls() -> list[SitemapUrl]:
     for endpoint, meta in SITEMAP_DYNAMIC.items():
         param = meta["param"]
         resolver: DynamicResolver = meta["items"]
-        for slug, lastmod in resolver():
+        for entry in resolver():
+            slug, lastmod = entry[0], entry[1]
+            image = entry[2] if len(entry) > 2 else None
             _add_url(
                 urls,
                 endpoint=endpoint,
                 priority=meta["priority"],
                 changefreq=meta.get("changefreq"),
                 lastmod=lastmod,
+                images=[image] if image else None,
                 **{param: slug},
             )
 
@@ -190,7 +209,8 @@ def render_sitemap_xml(urls: list[SitemapUrl] | None = None) -> str:
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"',
-        '        xmlns:xhtml="http://www.w3.org/1999/xhtml">',
+        '        xmlns:xhtml="http://www.w3.org/1999/xhtml"',
+        '        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">',
     ]
     for entry in urls:
         lines.append("  <url>")
@@ -205,6 +225,10 @@ def render_sitemap_xml(urls: list[SitemapUrl] | None = None) -> str:
                 f'    <xhtml:link rel="alternate" hreflang="{escape(hreflang)}" '
                 f'href="{escape(href)}" />'
             )
+        for image_loc in entry.images:
+            lines.append("    <image:image>")
+            lines.append(f"      <image:loc>{escape(image_loc)}</image:loc>")
+            lines.append("    </image:image>")
         lines.append("  </url>")
     lines.append("</urlset>")
     return "\n".join(lines) + "\n"
