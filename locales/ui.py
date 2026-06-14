@@ -963,8 +963,12 @@ UI: dict[str, dict[str, str]] = {
     "phrases.listen": {"fr": "Écouter la prononciation", "en": "Listen to pronunciation"},
     "phrases.listen_stop": {"fr": "Arrêter la lecture", "en": "Stop playback"},
     "phrases.audio_hint": {
-        "fr": "Cliquez sur l'icône haut-parleur pour entendre chaque phrase en vietnamien (audio du navigateur).",
-        "en": "Tap the speaker icon to hear each phrase in Vietnamese (browser audio).",
+        "fr": "Cliquez sur l'icône haut-parleur pour entendre la prononciation en vietnamien.",
+        "en": "Tap the speaker icon to hear the Vietnamese pronunciation.",
+    },
+    "phrases.audio_error": {
+        "fr": "Audio indisponible — réessayez dans un instant.",
+        "en": "Audio unavailable — please try again in a moment.",
     },
 
     # ── Comparateurs ─────────────────────────────────────────────────

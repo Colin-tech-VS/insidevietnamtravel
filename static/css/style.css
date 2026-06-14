@@ -329,6 +329,30 @@ a:hover { color: var(--terracotta); }
   /* .main-nav > ul force white-space: nowrap ; sans ce reset, les taglines
      débordent de leur colonne (desktop) ou sont tronquées (mobile). */
   white-space: normal;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(27, 77, 74, 0.38) rgba(27, 77, 74, 0.08);
+}
+
+.nav-mega::-webkit-scrollbar {
+  width: 9px;
+}
+
+.nav-mega::-webkit-scrollbar-track {
+  margin: 0.35rem 0;
+  background: rgba(27, 77, 74, 0.06);
+  border-radius: 999px;
+}
+
+.nav-mega::-webkit-scrollbar-thumb {
+  background: rgba(27, 77, 74, 0.32);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.nav-mega::-webkit-scrollbar-thumb:hover {
+  background: rgba(27, 77, 74, 0.52);
+  background-clip: padding-box;
 }
 
 .nav-mega__panel { width: 100%; }
@@ -425,6 +449,11 @@ a:hover { color: var(--terracotta); }
     backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(27, 77, 74, 0.1);
     box-shadow: var(--shadow-lg);
+    max-height: calc(100dvh - var(--header-h));
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
   }
 
   .nav-dropdown--mega.is-open .nav-mega__panel {
@@ -1408,7 +1437,10 @@ body.is-nav-open { overflow: hidden; }
     margin-top: -0.35rem;
     margin-bottom: 0.35rem;
     padding: 0.75rem 0.65rem 0.65rem;
+    overflow-x: hidden;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
     -webkit-overflow-scrolling: touch;
   }
 

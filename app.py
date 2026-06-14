@@ -777,6 +777,40 @@ def customs_guide():
     )
 
 
+@app.route("/api/phrases/tts")
+def phrase_tts():
+    """Audio vietnamien pour le guide de phrases (proxy TTS, fiable sur Windows/Chrome)."""
+    import re
+
+    import requests as req
+
+    text = (request.args.get("q") or "").strip()
+    if not text or len(text) > 220:
+        abort(400)
+    if not re.search(r"[\w\u00C0-\u1EF9]", text, re.UNICODE):
+        abort(400)
+
+    try:
+        resp = req.get(
+            "https://translate.googleapis.com/translate_tts",
+            params={"ie": "UTF-8", "client": "gtx", "tl": "vi", "q": text},
+            headers={"User-Agent": "InsideVietnamTravel/1.0"},
+            timeout=8,
+        )
+        resp.raise_for_status()
+    except req.RequestException:
+        abort(502)
+
+    if not resp.content or len(resp.content) < 256:
+        abort(502)
+
+    return Response(
+        resp.content,
+        mimetype="audio/mpeg",
+        headers={"Cache-Control": "public, max-age=604800"},
+    )
+
+
 @app.route("/phrases-utiles-vietnamien")
 @app.route("/en/useful-vietnamese-phrases")
 def phrases_guide():

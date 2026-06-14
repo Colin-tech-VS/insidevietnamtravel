@@ -109,6 +109,7 @@
   window.ivtPhrasesAudio = {
     listen: {{ t('phrases.listen') | tojson }},
     stop: {{ t('phrases.listen_stop') | tojson }},
+    ttsUrl: {{ url_for('phrase_tts') | tojson }},
   };
 </script>
 <script src="{{ url_for('static', filename='js/phrases-audio.js') }}" defer></script>
