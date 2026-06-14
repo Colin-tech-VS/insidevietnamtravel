@@ -25,6 +25,8 @@ from admin.partner_portal_service import (
     get_page_by_partner,
     is_hidden_test_partner,
     mark_page_ai_review,
+    page_ai_review_stale,
+    release_page_from_ai_review,
     save_page_draft,
 )
 from partners.auth import (
@@ -79,9 +81,16 @@ def _start_page_job(partner_id: str) -> str:
     session[_JOB_KEY] = token
 
     def _run(report):
-        result = generate_and_review_partner_page(account, page, progress=report)
-        apply_ai_page_result(partner_id, result)
-        return result
+        try:
+            fresh_page = get_page_by_partner(partner_id)
+            if not fresh_page:
+                raise ValueError("Brouillon de page introuvable.")
+            result = generate_and_review_partner_page(account, fresh_page, progress=report)
+            apply_ai_page_result(partner_id, result)
+            return result
+        except Exception:
+            release_page_from_ai_review(partner_id)
+            raise
 
     draft_store.start_job(
         token,
@@ -213,18 +222,89 @@ def page_review():
     is_hidden = is_hidden_test_partner(partner)
     page = get_page_by_partner(partner["id"])
     job_token = session.get(_JOB_KEY)
-    job_status = draft_store.status(job_token) if job_token else {"status": "missing"}
+    job_status = draft_store.status(job_token) if job_token else {"status": "missing", "error": "", "phase": ""}
+
     if job_status.get("status") == "done":
         session.pop(_JOB_KEY, None)
         page = get_page_by_partner(partner["id"])
+    elif job_status.get("status") == "error":
+        release_page_from_ai_review(partner["id"])
+        page = get_page_by_partner(partner["id"])
+
+    token = session.get(_JOB_KEY)
+    job_running = bool(token and draft_store.status(token).get("status") == "running")
+    if not job_running and page_ai_review_stale(page):
+        release_page_from_ai_review(partner["id"])
+        page = get_page_by_partner(partner["id"])
+        if job_status.get("status") == "missing":
+            job_status = {
+                "status": "error",
+                "error": "L'analyse a été interrompue (délai dépassé ou redémarrage serveur).",
+                "phase": "",
+            }
+
+    page_status = (page or {}).get("status")
+    job_state = job_status.get("status")
+    show_loader = (
+        job_state == "running"
+        or (page_status == "ai_review" and job_state not in ("error",))
+    )
+
     return render_template(
         "partners/page_review.html",
         partner=partner,
         page=page,
         job_status=job_status,
+        show_loader=show_loader,
         is_hidden_account=is_hidden,
         page_status_labels=PAGE_STATUS_LABELS,
+        ai_ready=ai_client.is_configured(),
     )
+
+
+@partners_bp.route("/page/retry-ai", methods=["POST"])
+@partner_login_required
+def page_retry_ai():
+    partner = current_partner()
+    page = get_page_by_partner(partner["id"])
+    if not page:
+        flash("Créez d'abord votre brouillon.", "error")
+        return redirect(url_for("partners.page_edit"))
+    if not ai_client.is_configured():
+        flash("Génération IA indisponible — contactez l'équipe.", "error")
+        return redirect(url_for("partners.page_edit"))
+
+    token = session.get(_JOB_KEY)
+    if token and draft_store.status(token).get("status") == "running":
+        flash("Analyse déjà en cours.", "success")
+        return redirect(url_for("partners.page_review"))
+
+    if page.get("status") == "ai_review":
+        release_page_from_ai_review(partner["id"])
+
+    try:
+        _start_page_job(partner["id"])
+        flash("Analyse relancée — patientez quelques instants.", "success")
+    except ValueError as exc:
+        flash(str(exc), "error")
+        return redirect(url_for("partners.page_edit"))
+    return redirect(url_for("partners.page_review"))
+
+
+@partners_bp.route("/api/page-review-state")
+@partner_login_required
+def api_page_review_state():
+    partner = current_partner()
+    page = get_page_by_partner(partner["id"])
+    token = session.get(_JOB_KEY)
+    job = draft_store.status(token) if token else {"status": "missing", "error": "", "phase": ""}
+    ps = (page or {}).get("status") or "none"
+    return jsonify({
+        "job": job,
+        "page_status": ps,
+        "page_ready": ps in ("published", "rejected"),
+        "page_has_content": bool(page and (page.get("overview_html") or page.get("title"))),
+    })
 
 
 @partners_bp.route("/api/page-job-status")

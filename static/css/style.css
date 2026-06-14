@@ -4674,6 +4674,15 @@ a.article-category:hover { text-decoration: underline; }
 .partner-review__ko { padding: 1rem 0; }
 .partner-review__ok .btn,
 .partner-review__ko .btn { margin: 0.35rem; }
+.partner-review__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  justify-content: center;
+  margin-top: 1rem;
+}
+.partner-review__actions form { margin: 0; }
+.partner-review__wait-note { font-size: 0.82rem; margin-top: 0.75rem; }
 
 .partner-public__contact { margin-top: 1.5rem; padding: 1.25rem; }
 .partner-highlights li { margin-bottom: 0.35rem; }

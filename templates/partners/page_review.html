@@ -1,17 +1,10 @@
 {% extends "partners/layout.html" %}
 {% block partner_content %}
 <section class="partner-review card" id="partner-review"
-         data-status-url="{{ url_for('partners.api_page_job_status') }}"
-         data-dashboard-url="{{ url_for('partners.dashboard') }}">
+         data-state-url="{{ url_for('partners.api_page_review_state') }}">
   <h1>Analyse de votre page</h1>
 
-  {% if job_status.status == 'running' %}
-  <div class="partner-review__loader" aria-live="polite">
-    <div class="partner-review__spinner" aria-hidden="true"></div>
-    <p id="partner-review-phase">{{ job_status.phase or 'Analyse en cours…' }}</p>
-    <p class="muted">Notre IA vérifie le contenu, le SEO et la cohérence avec Inside Vietnam Travel (30–90 s).</p>
-  </div>
-  {% elif page and page.status == 'published' %}
+  {% if page and page.status == 'published' %}
   <div class="partner-review__ok">
     <h2>✅ Page validée{% if is_hidden_account %} (mode privé){% else %} et publiée{% endif %}</h2>
     <p>{{ page.ai_review.summary if page.ai_review else 'Votre page est prête.' }}</p>
@@ -22,6 +15,7 @@
     {% endif %}
     <a href="{{ url_for('partners.dashboard') }}" class="btn btn-secondary">Dashboard</a>
   </div>
+
   {% elif page and page.status == 'rejected' %}
   <div class="partner-review__ko">
     <h2>Page non publiée</h2>
@@ -35,18 +29,55 @@
     {% endif %}
     <a href="{{ url_for('partners.page_edit') }}" class="btn btn-primary">Modifier et réessayer</a>
   </div>
+
+  {% elif show_loader %}
+  <div class="partner-review__loader" aria-live="polite">
+    <div class="partner-review__spinner" aria-hidden="true"></div>
+    <p id="partner-review-phase">{{ job_status.phase or 'Analyse en cours…' }}</p>
+    <p class="muted">Notre IA rédige votre fiche, vérifie le SEO et la cohérence éditoriale (30–90 s).</p>
+    <p class="muted partner-review__wait-note">Ne fermez pas cette page — elle se mettra à jour automatiquement.</p>
+  </div>
+
   {% elif job_status.status == 'error' %}
-  <p class="flash flash--error">{{ job_status.error or 'Erreur lors de l\'analyse.' }}</p>
-  <a href="{{ url_for('partners.page_edit') }}" class="btn btn-secondary">Retour</a>
+  <div class="partner-review__ko">
+    <h2>Analyse interrompue</h2>
+    <p class="flash flash--error">{{ job_status.error or 'Erreur lors de l\'analyse IA.' }}</p>
+    <p class="muted">Votre brouillon est conservé. Vous pouvez relancer l'analyse ou modifier le contenu.</p>
+    <div class="partner-review__actions">
+      {% if ai_ready %}
+      <form method="post" action="{{ url_for('partners.page_retry_ai') }}">
+        <button type="submit" class="btn btn-primary">Relancer l'analyse</button>
+      </form>
+      {% endif %}
+      <a href="{{ url_for('partners.page_edit') }}" class="btn btn-secondary">Modifier le brouillon</a>
+    </div>
+  </div>
+
+  {% elif page and page.status == 'draft' and page.extra %}
+  <div class="partner-review__ko">
+    <h2>Analyse non terminée</h2>
+    <p class="muted">L'analyse a été interrompue (session expirée ou redémarrage serveur). Votre brouillon est intact.</p>
+    <div class="partner-review__actions">
+      {% if ai_ready %}
+      <form method="post" action="{{ url_for('partners.page_retry_ai') }}">
+        <button type="submit" class="btn btn-primary">Relancer l'analyse IA</button>
+      </form>
+      {% endif %}
+      <a href="{{ url_for('partners.page_edit') }}" class="btn btn-secondary">Retour à l'éditeur</a>
+    </div>
+  </div>
+
   {% else %}
-  <p class="muted">Aucune analyse en cours.</p>
-  <a href="{{ url_for('partners.page_edit') }}" class="btn btn-secondary">Retour à l'éditeur</a>
+  <div class="partner-review__ko">
+    <p class="muted">Aucune analyse en cours. Commencez par rédiger votre page.</p>
+    <a href="{{ url_for('partners.page_edit') }}" class="btn btn-primary">Créer ma page</a>
+  </div>
   {% endif %}
 </section>
 {% endblock %}
 
 {% block partner_scripts %}
-{% if job_status.status == 'running' %}
+{% if show_loader %}
 <script src="{{ url_for('static', filename='js/partner_page_review.js') }}" defer></script>
 {% endif %}
 {% endblock %}

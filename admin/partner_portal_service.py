@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -536,6 +536,45 @@ def mark_page_ai_review(partner_id: str) -> bool:
                 (now, partner_id),
             )
         return cur.rowcount > 0
+
+
+def release_page_from_ai_review(partner_id: str) -> bool:
+    """Remet la page en brouillon après une analyse IA interrompue ou en échec."""
+    now = _now_iso()
+    with get_connection() as conn:
+        cur = conn.cursor()
+        if is_postgres():
+            cur.execute(
+                """UPDATE partner_pages SET status = 'draft', updated_at = %s
+                   WHERE partner_id = %s AND status = 'ai_review'""",
+                (now, partner_id),
+            )
+        else:
+            cur.execute(
+                """UPDATE partner_pages SET status = 'draft', updated_at = ?
+                   WHERE partner_id = ? AND status = 'ai_review'""",
+                (now, partner_id),
+            )
+        return cur.rowcount > 0
+
+
+def page_ai_review_stale(page: dict | None, *, minutes: int = 3) -> bool:
+    """True si la page est bloquée en ai_review depuis trop longtemps."""
+    if not page or page.get("status") != "ai_review":
+        return False
+    raw = page.get("updated_at")
+    if not raw:
+        return True
+    try:
+        if isinstance(raw, datetime):
+            dt = raw
+        else:
+            dt = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return datetime.now(timezone.utc) - dt > timedelta(minutes=minutes)
+    except (TypeError, ValueError):
+        return True
 
 
 def portal_stats() -> dict:
