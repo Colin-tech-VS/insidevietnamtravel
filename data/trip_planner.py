@@ -559,6 +559,7 @@ def build_planner_catalog(
             "gate_error_consent": t_fn("flash.consent", lang),
             "gate_error_email": t_fn("flash.invalid_email", lang),
             "gate_error_generic": t_fn("prepare.gate.error", lang),
+            "gate_loading": t_fn("prepare.gate.loading", lang),
             "results_title": t_fn("prepare.results.title", lang),
             "results_sub": t_fn("prepare.results.sub", lang),
             "itin_section": t_fn("prepare.results.itineraries", lang),

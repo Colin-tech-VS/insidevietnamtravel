@@ -1,73 +1,501 @@
 [
   {
-    "slug": "plats-incontournables-vietnam",
-    "category": "food",
+    "slug": "croisiere-baie-halong-vietnam",
+    "category": "itinerary",
     "date": "2026-06-10",
-    "read_time": 12,
-    "featured": true,
-    "image": "/static/images/pool/1526139334526-f591a54b477c.webp",
-    "image_photo_id": "1526139334526-f591a54b477c",
+    "updated_at": "2026-06-10",
+    "builtin_version": "2026-06-10-v2",
+    "city": "Ha Long",
+    "featured": false,
+    "read_time": 14,
+    "guide_type": "Guide expérience",
+    "ai_generated": false,
+    "image": "/static/images/destinations/halong.webp",
+    "image_photo_id": "1772867342647-6e6d87a0b014",
     "image_placeholder": false,
     "i18n": {
       "fr": {
-        "title": "Phở, bún chả & plats vietnamiens à goûter absolument",
-        "excerpt": "Les 12 plats emblématiques du Vietnam, région par région : où les trouver et comment les commander.",
-        "content": "\n<p>La cuisine vietnamienne se lit sur une carte géographique : le <strong>Nord</strong> (Hanoï) privilégie\nbouillons clairs et herbes fraîches, le <strong>Centre</strong> (Huế, Hội An) mise sur épices et nouilles\nartisanales, le <strong>Sud</strong> (Saigon) assaisonne plus sucré et généreux. Voici les plats à ne pas\nmanquer, avec leur territoire d'origine.</p>\n<h2>Les incontournables par région</h2>\n<h3>Nord — Hanoï</h3>\n<ul>\n<li><strong>Phở bò</strong> : bouillon de bœuf clair, nouilles de riz, basilic thaï et citron vert.\nCommandez <em>phở tái</em> (bœuf saisi) ou <em>phở chín</em> (bien cuit). Référence : Phở Bát Đàn.</li>\n<li><strong>Bún chả</strong> : viande de porc grillée au charbon, vermicelles froids, nước chấm aigre-doux.\nLe plat du déjeuner hanoïen — essayez Bún chả Hương Liên (rue Lê Văn Hưu).</li>\n<li><strong>Bún thang</strong> : bouillon délicat aux vermicelles, poulet, œuf et jambon — spécialité raffinée du Nord.</li>\n<li><strong>Chả cá Lã Vọng</strong> : poisson grillé à la table avec aneth et cacahuètes — expérience conviviale.</li>\n</ul>\n<h3>Centre — Huế &amp; Hội An</h3>\n<ul>\n<li><strong>Bún bò Huế</strong> : soupe épicée au citronnelle et pâte de crevettes, nouilles épaisses.\nPlus corsé que le phở — incontournable à Huế.</li>\n<li><strong>Cao lầu</strong> : nouilles au charbon de bois, porc, herbes — exclusif à Hội An (eau du puits Ba Lễ).</li>\n<li><strong>White rose (bánh bao bánh vạc)</strong> : raviolis translucides aux crevettes, spécialité hoiannoise.</li>\n<li><strong>Mì Quảng</strong> : nouilles au curcuma, porc ou poulet, peu de bouillon — plat emblématique de Đà Nẵng.</li>\n</ul>\n<h3>Sud — Ho Chi Minh-Ville</h3>\n<ul>\n<li><strong>Bánh mì</strong> : baguette croustillante, pâté, viande, pickles et coriandre.\nLe Sud en fait une religion — Bánh mì Huỳnh Hoa est la référence.</li>\n<li><strong>Cơm tấm</strong> : riz brisé, côtes de porc grillées, œuf et nước mắm sucré — petit-déjeuner du Sud.</li>\n<li><strong>Hủ tiếu Nam Vang</strong> : soupe de nouilles aux crevettes et porc, héritage cambodgien.</li>\n<li><strong>Bò lá lốt</strong> : bœuf enroulé dans des feuilles de bétel, grillé — saveur fumée typique.</li>\n</ul>\n<h2>Plats présents partout</h2>\n<ul>\n<li><strong>Gỏi cuốn</strong> : rouleaux de printemps frais (crevettes, porc, vermicelles, herbes).</li>\n<li><strong>Chả giò / nem rán</strong> : rouleaux frits croustillants — entrée universelle.</li>\n<li><strong>Bún riêu</strong> : soupe de tomate au crabe, vermicelles — réconfortant et abordable.</li>\n</ul>\n<h2>Comment commander sans stress</h2>\n<ul>\n<li>Pointez le plat sur la carte ou montrez une photo sur votre téléphone.</li>\n<li>Les stands fréquentés tournent vite : c'est le meilleur indicateur de fraîcheur.</li>\n<li>Un repas street food coûte <strong>1,50–4 €</strong> ; un restaurant local <strong>5–12 €</strong>.</li>\n<li>Dites <em>không cay</em> (pas épicé) ou <em>ít cay</em> (peu épicé) si vous êtes sensible au piment.</li>\n</ul>\n<p>Pour des adresses testées à Hanoï, voir notre guide\n<a href=\"/blog/meilleurs-restaurants-hanoi\">meilleurs restaurants de Hanoï</a>.\nLes pages destinations <a href=\"/hanoi\">Hanoï</a>,\n<a href=\"/hoi-an\">Hội An</a> et\n<a href=\"/ho-chi-minh-city\">Ho Chi Minh-Ville</a> détaillent aussi la street food locale.</p>\n",
-        "category_label": "Gastronomie",
+        "title": "Croisière dans la baie d'Halong : guide complet 2026 (prix, durée, conseils)",
+        "excerpt": "Karsts, kayak et nuit à bord : comparatif 1 jour / 2 jours, budgets, arnaques à éviter et bons plans pour réserver votre croisière à Halong.",
+        "content": "<p>La <strong>baie d'Halong</strong>, classée à l'UNESCO, reste l'expérience la plus iconique du Vietnam. Des milliers d'îlots karstiques émergent d'une eau émeraude : kayak, grottes, baignade et nuit à bord transforment un simple paysage en souvenir marquant. Que vous partiez de <a href=\"/hanoi\">Hanoï</a> pour une journée ou que vous combiniez Halong avec <a href=\"/sapa\">Sapa</a> dans le Nord, ce guide vous aide à choisir la bonne formule sans mauvaise surprise.</p><h2>Pourquoi faire une croisière à Halong ?</h2><p>Halong n'est pas qu'une carte postale : c'est un archipel vivant où pêcheurs et fermiers de palétuviers cohabitent avec une flotte de jonques. Une <strong>nuit sur l'eau</strong> permet de sortir des couloirs touristiques du matin, d'admirer le coucher de soleil entre les rochers et de profiter du kayak avant l'arrivée des excursions d'une journée. C'est aussi l'une des rares activités au Vietnam où réserver à l'avance est vraiment recommandé en haute saison.</p><h2>1 jour ou 2 jours / 1 nuit ?</h2><p><strong>Excursion d'une journée</strong> depuis Hanoï (4 h de route aller-retour) : correct si vous manquez de temps, mais fatigant et souvent bondé. <strong>2 jours / 1 nuit</strong> : le meilleur compromis — coucher de soleil, matinée kayak, baignade. <strong>3 jours / 2 nuits</strong> : pour explorer la baie de Bai Tu Long ou Lan Ha, plus calmes que le cœur d'Halong.</p><ul><li><strong>Budget</strong> : jonque collective, cabine partagée, 80–120 €/pers.</li><li><strong>Confort</strong> : cabine privée, repas soignés, 130–200 €/pers.</li><li><strong>Premium</strong> : yacht, suite, 250 €+ — excellent rapport vs Méditerranée.</li></ul><h2>Quel type de bateau choisir ?</h2><p>Vérifiez toujours : transfert depuis Hanoï, entrée de la baie, activités (kayak, grotte), repas et pourboires. Les jonques « luxe » à 150 € offrent souvent plus de confort qu'une croisière méditerranéenne à 400 €. Évitez les vendeurs de rue à Hanoï et les offres trop belles dans la vieille ville — privilégiez un opérateur avec avis récentes et politique d'annulation claire.</p><blockquote><p><strong>Réserver une croisière Halong</strong></p><ul><li><a href=\"/go/getyourguide?to=https%3A%2F%2Fwww.getyourguide.com%2Fhanoi-l205%2F%3Fq%3DHalong%2BBay%2Bcruise%2BVietnam%26partner_id%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Croisières baie d'Halong (GetYourGuide)</a></li><li><a href=\"/go/viator?to=https%3A%2F%2Fwww.viator.com%2FsearchResults%2Fall%3Ftext%3DHalong%2BBay%2Bcruise%2BVietnam%26pid%3DPLACEHOLDER%26mcid%3DPLACEHOLDER%26destId%3D351\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Excursions Halong (Viator)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DHanoi%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Nuit à Hanoï avant le départ (Booking)</a></li></ul></blockquote><h2>Itinéraire conseillé</h2><ol><li><strong>Jour 1</strong> : matinée libre à Hanoï, départ vers Halong (~12 h), embarquement, grottes et kayak, nuit à bord.</li><li><strong>Jour 2</strong> : lever tôt, baignade, brunch, retour Hanoï en fin d'après-midi.</li><li><strong>Option</strong> : +1 nuit à <a href=\"/halong\">Halong</a> ou ferry vers <strong>Cat Ba</strong> pour randonnée au parc national.</li></ol><h2>Conseils pratiques</h2><ul><li><strong>Meilleure saison</strong> : octobre à avril (mer plus calme, ciel dégagé).</li><li><strong>À éviter</strong> : Tết et week-ends vietnamiens (affluence, tarifs majorés).</li><li><strong>À emporter</strong> : crème solaire, chapeau, chaussures antidérapantes, antinauséeux si sensible.</li><li><strong>Éthique</strong> : refusez les dauphins en cage et les attractions animales.</li></ul><h2>Questions fréquentes</h2><h3>Faut-il réserver sa croisière Halong à l'avance ?</h3><p>Oui, surtout de novembre à mars et pendant les vacances. Les meilleures jonques affichent complet plusieurs jours à l'avance ; réserver sur place à Hanoï laisse peu de choix sur les cabines et les itinéraires.</p><h3>La baie d'Halong vaut-elle le détour en 1 jour ?</h3><p>Oui pour un premier aperçu, mais la route depuis Hanoï grignote une large part de la journée. Si votre planning le permet, une nuit à bord change vraiment l'expérience.</p><h3>Halong ou Lan Ha / Bai Tu Long ?</h3><p>Halong central est le plus spectaculaire mais le plus fréquenté. Lan Ha (près de Cat Ba) et Bai Tu Long, au nord, offrent des eaux plus calmes avec des paysages très proches.</p><h2>Aller plus loin</h2><p>Consultez notre <a href=\"/halong\">guide complet Halong</a>, le pilier <a href=\"/guide/que-faire-au-vietnam\">Que faire au Vietnam</a> et nos conseils <a href=\"/guide/preparer-son-voyage\">Préparer son voyage</a> (visa, budget, eSIM).</p><blockquote><p><strong>Préparer le voyage</strong></p><ul><li><a href=\"/go/travel_insurance?to=https%3A%2F%2Fheymondo.fr%2F\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Assurance voyage Vietnam (Heymondo)</a></li><li><a href=\"/go/esim_airalo?to=https%3A%2F%2Fwww.airalo.com%2Fvietnam-esim%3Fref%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">eSIM Vietnam — internet dès l'atterrissage (Airalo)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DHanoi%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Halong (Booking)</a></li><li><a href=\"/go/agoda?to=https%3A%2F%2Fwww.agoda.com%2Fsearch%3Fcity%3D2758%26cid%3DPLACEHOLDER%26locale%3Dfr-fr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Halong (Agoda)</a></li></ul></blockquote>",
+        "category_label": "Itinéraires",
         "tags": [
-          "phở",
-          "bún chả",
-          "street food",
-          "gastronomie"
-        ]
+          "Halong",
+          "croisière",
+          "baie d'Halong",
+          "UNESCO",
+          "jonque",
+          "kayak"
+        ],
+        "image_alt": "Croisière dans la baie d'Halong : guide complet 2026 (prix, durée, conseils) — Ha Long, Vietnam"
       },
       "en": {}
     },
-    "title": "Phở, bún chả & plats vietnamiens à goûter absolument",
-    "excerpt": "Les 12 plats emblématiques du Vietnam, région par région : où les trouver et comment les commander.",
-    "content": "\n<p>La cuisine vietnamienne se lit sur une carte géographique : le <strong>Nord</strong> (Hanoï) privilégie\nbouillons clairs et herbes fraîches, le <strong>Centre</strong> (Huế, Hội An) mise sur épices et nouilles\nartisanales, le <strong>Sud</strong> (Saigon) assaisonne plus sucré et généreux. Voici les plats à ne pas\nmanquer, avec leur territoire d'origine.</p>\n<h2>Les incontournables par région</h2>\n<h3>Nord — Hanoï</h3>\n<ul>\n<li><strong>Phở bò</strong> : bouillon de bœuf clair, nouilles de riz, basilic thaï et citron vert.\nCommandez <em>phở tái</em> (bœuf saisi) ou <em>phở chín</em> (bien cuit). Référence : Phở Bát Đàn.</li>\n<li><strong>Bún chả</strong> : viande de porc grillée au charbon, vermicelles froids, nước chấm aigre-doux.\nLe plat du déjeuner hanoïen — essayez Bún chả Hương Liên (rue Lê Văn Hưu).</li>\n<li><strong>Bún thang</strong> : bouillon délicat aux vermicelles, poulet, œuf et jambon — spécialité raffinée du Nord.</li>\n<li><strong>Chả cá Lã Vọng</strong> : poisson grillé à la table avec aneth et cacahuètes — expérience conviviale.</li>\n</ul>\n<h3>Centre — Huế &amp; Hội An</h3>\n<ul>\n<li><strong>Bún bò Huế</strong> : soupe épicée au citronnelle et pâte de crevettes, nouilles épaisses.\nPlus corsé que le phở — incontournable à Huế.</li>\n<li><strong>Cao lầu</strong> : nouilles au charbon de bois, porc, herbes — exclusif à Hội An (eau du puits Ba Lễ).</li>\n<li><strong>White rose (bánh bao bánh vạc)</strong> : raviolis translucides aux crevettes, spécialité hoiannoise.</li>\n<li><strong>Mì Quảng</strong> : nouilles au curcuma, porc ou poulet, peu de bouillon — plat emblématique de Đà Nẵng.</li>\n</ul>\n<h3>Sud — Ho Chi Minh-Ville</h3>\n<ul>\n<li><strong>Bánh mì</strong> : baguette croustillante, pâté, viande, pickles et coriandre.\nLe Sud en fait une religion — Bánh mì Huỳnh Hoa est la référence.</li>\n<li><strong>Cơm tấm</strong> : riz brisé, côtes de porc grillées, œuf et nước mắm sucré — petit-déjeuner du Sud.</li>\n<li><strong>Hủ tiếu Nam Vang</strong> : soupe de nouilles aux crevettes et porc, héritage cambodgien.</li>\n<li><strong>Bò lá lốt</strong> : bœuf enroulé dans des feuilles de bétel, grillé — saveur fumée typique.</li>\n</ul>\n<h2>Plats présents partout</h2>\n<ul>\n<li><strong>Gỏi cuốn</strong> : rouleaux de printemps frais (crevettes, porc, vermicelles, herbes).</li>\n<li><strong>Chả giò / nem rán</strong> : rouleaux frits croustillants — entrée universelle.</li>\n<li><strong>Bún riêu</strong> : soupe de tomate au crabe, vermicelles — réconfortant et abordable.</li>\n</ul>\n<h2>Comment commander sans stress</h2>\n<ul>\n<li>Pointez le plat sur la carte ou montrez une photo sur votre téléphone.</li>\n<li>Les stands fréquentés tournent vite : c'est le meilleur indicateur de fraîcheur.</li>\n<li>Un repas street food coûte <strong>1,50–4 €</strong> ; un restaurant local <strong>5–12 €</strong>.</li>\n<li>Dites <em>không cay</em> (pas épicé) ou <em>ít cay</em> (peu épicé) si vous êtes sensible au piment.</li>\n</ul>\n<p>Pour des adresses testées à Hanoï, voir notre guide\n<a href=\"/blog/meilleurs-restaurants-hanoi\">meilleurs restaurants de Hanoï</a>.\nLes pages destinations <a href=\"/hanoi\">Hanoï</a>,\n<a href=\"/hoi-an\">Hội An</a> et\n<a href=\"/ho-chi-minh-city\">Ho Chi Minh-Ville</a> détaillent aussi la street food locale.</p>\n",
-    "category_label": "Gastronomie",
+    "title": "Croisière dans la baie d'Halong : guide complet 2026 (prix, durée, conseils)",
+    "excerpt": "Karsts, kayak et nuit à bord : comparatif 1 jour / 2 jours, budgets, arnaques à éviter et bons plans pour réserver votre croisière à Halong.",
+    "content": "<p>La <strong>baie d'Halong</strong>, classée à l'UNESCO, reste l'expérience la plus iconique du Vietnam. Des milliers d'îlots karstiques émergent d'une eau émeraude : kayak, grottes, baignade et nuit à bord transforment un simple paysage en souvenir marquant. Que vous partiez de <a href=\"/hanoi\">Hanoï</a> pour une journée ou que vous combiniez Halong avec <a href=\"/sapa\">Sapa</a> dans le Nord, ce guide vous aide à choisir la bonne formule sans mauvaise surprise.</p><h2>Pourquoi faire une croisière à Halong ?</h2><p>Halong n'est pas qu'une carte postale : c'est un archipel vivant où pêcheurs et fermiers de palétuviers cohabitent avec une flotte de jonques. Une <strong>nuit sur l'eau</strong> permet de sortir des couloirs touristiques du matin, d'admirer le coucher de soleil entre les rochers et de profiter du kayak avant l'arrivée des excursions d'une journée. C'est aussi l'une des rares activités au Vietnam où réserver à l'avance est vraiment recommandé en haute saison.</p><h2>1 jour ou 2 jours / 1 nuit ?</h2><p><strong>Excursion d'une journée</strong> depuis Hanoï (4 h de route aller-retour) : correct si vous manquez de temps, mais fatigant et souvent bondé. <strong>2 jours / 1 nuit</strong> : le meilleur compromis — coucher de soleil, matinée kayak, baignade. <strong>3 jours / 2 nuits</strong> : pour explorer la baie de Bai Tu Long ou Lan Ha, plus calmes que le cœur d'Halong.</p><ul><li><strong>Budget</strong> : jonque collective, cabine partagée, 80–120 €/pers.</li><li><strong>Confort</strong> : cabine privée, repas soignés, 130–200 €/pers.</li><li><strong>Premium</strong> : yacht, suite, 250 €+ — excellent rapport vs Méditerranée.</li></ul><h2>Quel type de bateau choisir ?</h2><p>Vérifiez toujours : transfert depuis Hanoï, entrée de la baie, activités (kayak, grotte), repas et pourboires. Les jonques « luxe » à 150 € offrent souvent plus de confort qu'une croisière méditerranéenne à 400 €. Évitez les vendeurs de rue à Hanoï et les offres trop belles dans la vieille ville — privilégiez un opérateur avec avis récentes et politique d'annulation claire.</p><blockquote><p><strong>Réserver une croisière Halong</strong></p><ul><li><a href=\"/go/getyourguide?to=https%3A%2F%2Fwww.getyourguide.com%2Fhanoi-l205%2F%3Fq%3DHalong%2BBay%2Bcruise%2BVietnam%26partner_id%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Croisières baie d'Halong (GetYourGuide)</a></li><li><a href=\"/go/viator?to=https%3A%2F%2Fwww.viator.com%2FsearchResults%2Fall%3Ftext%3DHalong%2BBay%2Bcruise%2BVietnam%26pid%3DPLACEHOLDER%26mcid%3DPLACEHOLDER%26destId%3D351\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Excursions Halong (Viator)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DHanoi%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Nuit à Hanoï avant le départ (Booking)</a></li></ul></blockquote><h2>Itinéraire conseillé</h2><ol><li><strong>Jour 1</strong> : matinée libre à Hanoï, départ vers Halong (~12 h), embarquement, grottes et kayak, nuit à bord.</li><li><strong>Jour 2</strong> : lever tôt, baignade, brunch, retour Hanoï en fin d'après-midi.</li><li><strong>Option</strong> : +1 nuit à <a href=\"/halong\">Halong</a> ou ferry vers <strong>Cat Ba</strong> pour randonnée au parc national.</li></ol><h2>Conseils pratiques</h2><ul><li><strong>Meilleure saison</strong> : octobre à avril (mer plus calme, ciel dégagé).</li><li><strong>À éviter</strong> : Tết et week-ends vietnamiens (affluence, tarifs majorés).</li><li><strong>À emporter</strong> : crème solaire, chapeau, chaussures antidérapantes, antinauséeux si sensible.</li><li><strong>Éthique</strong> : refusez les dauphins en cage et les attractions animales.</li></ul><h2>Questions fréquentes</h2><h3>Faut-il réserver sa croisière Halong à l'avance ?</h3><p>Oui, surtout de novembre à mars et pendant les vacances. Les meilleures jonques affichent complet plusieurs jours à l'avance ; réserver sur place à Hanoï laisse peu de choix sur les cabines et les itinéraires.</p><h3>La baie d'Halong vaut-elle le détour en 1 jour ?</h3><p>Oui pour un premier aperçu, mais la route depuis Hanoï grignote une large part de la journée. Si votre planning le permet, une nuit à bord change vraiment l'expérience.</p><h3>Halong ou Lan Ha / Bai Tu Long ?</h3><p>Halong central est le plus spectaculaire mais le plus fréquenté. Lan Ha (près de Cat Ba) et Bai Tu Long, au nord, offrent des eaux plus calmes avec des paysages très proches.</p><h2>Aller plus loin</h2><p>Consultez notre <a href=\"/halong\">guide complet Halong</a>, le pilier <a href=\"/guide/que-faire-au-vietnam\">Que faire au Vietnam</a> et nos conseils <a href=\"/guide/preparer-son-voyage\">Préparer son voyage</a> (visa, budget, eSIM).</p><blockquote><p><strong>Préparer le voyage</strong></p><ul><li><a href=\"/go/travel_insurance?to=https%3A%2F%2Fheymondo.fr%2F\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Assurance voyage Vietnam (Heymondo)</a></li><li><a href=\"/go/esim_airalo?to=https%3A%2F%2Fwww.airalo.com%2Fvietnam-esim%3Fref%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">eSIM Vietnam — internet dès l'atterrissage (Airalo)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DHanoi%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Halong (Booking)</a></li><li><a href=\"/go/agoda?to=https%3A%2F%2Fwww.agoda.com%2Fsearch%3Fcity%3D2758%26cid%3DPLACEHOLDER%26locale%3Dfr-fr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Halong (Agoda)</a></li></ul></blockquote>",
+    "category_label": "Itinéraires",
     "tags": [
-      "phở",
-      "bún chả",
-      "street food",
-      "gastronomie"
-    ]
+      "Halong",
+      "croisière",
+      "baie d'Halong",
+      "UNESCO",
+      "jonque",
+      "kayak"
+    ],
+    "image_alt": "Croisière dans la baie d'Halong : guide complet 2026 (prix, durée, conseils) — Ha Long, Vietnam"
   },
   {
-    "slug": "cafe-vietnamien-guide",
-    "category": "food",
+    "slug": "trek-sapa-rizieres-vietnam",
+    "category": "itinerary",
     "date": "2026-06-10",
-    "read_time": 10,
+    "updated_at": "2026-06-10",
+    "builtin_version": "2026-06-10-v2",
+    "city": "Sapa",
     "featured": false,
-    "image": "/static/images/pool/1559592413-7cec4d0cae2b.webp",
-    "image_photo_id": "1559592413-7cec4d0cae2b",
+    "read_time": 14,
+    "guide_type": "Guide expérience",
+    "ai_generated": false,
+    "image": "/static/images/destinations/sapa.webp",
+    "image_photo_id": "1531737212413-667205e1cda7",
     "image_placeholder": false,
     "i18n": {
       "fr": {
-        "title": "Café vietnamien : à l'œuf, à la noix de coco et au filtre phin",
-        "excerpt": "Cà phê sữa đá, egg coffee, café coco : histoire, adresses et comment boire comme un local.",
-        "content": "\n<p>Le Vietnam est l'un des plus grands exportateurs de café au monde. Ici, on ne boit pas un expresso\nrapide : on s'assoit, on attend que le <strong>phin</strong> (filtre métallique) goutte lentement,\net on sirote un café souvent corsé, parfois sucré de lait concentré.</p>\n<h2>Les styles incontournables</h2>\n<h3>Cà phê đen (café noir)</h3>\n<p>Robusta torréfié foncé, servi court et intense. Parfait après un phở matinal.\nDemandez <em>đen nóng</em> (chaud) ou <em>đen đá</em> (glacé).</p>\n<h3>Cà phê sữa đá (café glacé au lait concentré)</h3>\n<p>Le classique national : café filtre sur le lait concentré sucré, puis glaçons.\nSucré, fort, rafraîchissant — le petit-déjeuner du Sud et des trottoirs de Saigon.</p>\n<h3>Cà phê trứng (egg coffee)</h3>\n<p>Invention hanoïenne des années 1940 (Café Giang) : jaune d'œuf monté en neige avec du lait\ncondensé, versé sur un espresso chaud. Onctueux, dessert-like, à déguster assis sur un tabouret\ndans le vieux quartier.</p>\n<h3>Cà phê dừa (café à la noix de coco)</h3>\n<p>Mode récente : café glacé sur lait de coco et glace pilée. Populaire à Hội An et dans les cafés\nbranchés de Saigon — moins traditionnel mais délicieux en après-midi chaud.</p>\n<h2>Le rituel du phin</h2>\n<ol>\n<li>Le serveur pose le filtre sur votre tasse avec café moulu et un filet d'eau chaude.</li>\n<li>Attendez 3–5 minutes que le café goutte — ne pressez pas le phin.</li>\n<li>Ajoutez lait concentré ou sucre selon le style commandé.</li>\n</ol>\n<h2>Où boire un bon café</h2>\n<ul>\n<li><strong>Hanoï</strong> : Café Giang (egg coffee original), Loading T (terrasse), Cộng Cà Phê (déco rétro).</li>\n<li><strong>Ho Chi Minh-Ville</strong> : The Workshop (torréfaction artisanale), Cộng Cà Phê, cafés du quartier Bùi Viện.</li>\n<li><strong>Hội An</strong> : Faifo Coffee (vue sur les toits), cafés du marché central.</li>\n</ul>\n<h2>Conseils pratiques</h2>\n<ul>\n<li>Prix : <strong>0,80–2,50 €</strong> selon l'adresse (street vs café design).</li>\n<li>Le café vietnamien est souvent <strong>plus fort</strong> qu'en Europe — commencez par un demi-verre.</li>\n<li>Évitez le café instantané des hôtels : le phin local vaut le détour.</li>\n<li>Beaucoup de cafés ferment vers <strong>21 h</strong> ; les stands de rue servent dès 6 h.</li>\n</ul>\n<p>Combinez votre pause café avec notre guide des\n<a href=\"/blog/plats-incontournables-vietnam\">plats incontournables</a> pour une journée gourmande complète.</p>\n",
-        "category_label": "Gastronomie",
+        "title": "Trek à Sapa : rizières, villages et randonnées dans le Nord (guide 2026)",
+        "excerpt": "Sentiers, guides Hmong, homestay, train de nuit depuis Hanoï et meilleure saison pour randonner à Sapa dans les rizières en terrasses.",
+        "content": "<p><strong>Sapa</strong>, perchée à 1 600 m dans les montagnes du Nord, offre des rizières en terrasses parmi les plus photogéniques d'Asie. Entre villages Hmong, Dao et Tay, le trek reste accessible aux marcheurs moyens tout en plongeant dans une culture montagnarde encore très vivante. Ce guide détaille les sentiers, l'intérêt d'un guide local, les homestays et la meilleure saison — indispensable avant de quitter <a href=\"/hanoi\">Hanoï</a>.</p><h2>Comprendre le trek à Sapa</h2><p>Sapa ville est très touristique, mais dix minutes de marche suffisent pour retrouver des sentiers entre rizières et forêts de bambous. Les randonnées vont de la demi-journée facile aux ascensions sportives vers le <strong>Fansipan</strong> (3 143 m, « toit du Vietnam »). Le climat change vite : prévoyez des couches même en été.</p><h2>Les meilleures randonnées</h2><ul><li><strong>Cat Cat → Y Linh Ho</strong> (½ journée) : villages Hmong, rizières proches, idéal pour débuter.</li><li><strong>Ta Van → Giang Ta Chai</strong> (1 jour) : cascades, ponts de bambou, rencontres locales.</li><li><strong>Muong Hoa Valley</strong> (1–2 jours) : le grand classique des terrasses.</li><li><strong>Fansipan</strong> (2 jours à pied ou câble) : panorama sur le Nord vietnamien.</li></ul><h2>Guide local, agence ou homestay ?</h2><p>Un guide Hmong ou Dao connaît les sentiers boueux, évite les pièges à touristes et facilite les échanges dans les villages. L'<strong>homestay</strong> (Ta Van, Lao Chai) reste l'expérience la plus immersive : repas partagés, riz local, réveil dans la brume. Réservez via votre hôtel ou une agence établie — méfiez-vous des vendeuses insistantes dès la gare de Sapa.</p><blockquote><p><strong>Réserver trek et hébergement</strong></p><ul><li><a href=\"/go/getyourguide?to=https%3A%2F%2Fwww.getyourguide.com%2Fhanoi-l205%2F%3Fq%3DSapa%2Btrekking%2Btour%2BVietnam%26partner_id%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Trek et tours Sapa (GetYourGuide)</a></li><li><a href=\"/go/viator?to=https%3A%2F%2Fwww.viator.com%2FsearchResults%2Fall%3Ftext%3DSapa%2Btrekking%2Btour%2BVietnam%26pid%3DPLACEHOLDER%26mcid%3DPLACEHOLDER%26destId%3D351\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Randonnées Sapa (Viator)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DHanoi%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Sapa (Booking)</a></li></ul></blockquote><h2>Comment s'y rendre depuis Hanoï ?</h2><p>Train de nuit jusqu'à <strong>Lao Cai</strong> (8–9 h) puis minibus 1 h — atmosphérique et reposant. Alternative : bus direct 5–6 h depuis Hanoï. Comptez au minimum <strong>2 nuits à Sapa</strong> après le trajet pour profiter d'une randonnée complète.</p><h2>Quand partir à Sapa ?</h2><ul><li><strong>Septembre–novembre</strong> : rizières dorées, ciel dégagé — haute saison.</li><li><strong>Mars–mai</strong> : verdure intense, floraisons.</li><li><strong>Juin–août</strong> : pluies, brume, sentiers glissants — paysages mystiques mais conditions difficiles.</li><li><strong>Décembre–février</strong> : froid possible (5–10 °C), peu de touristes.</li></ul><h2>Questions fréquentes</h2><h3>Faut-il un guide obligatoire pour trekker à Sapa ?</h3><p>Non légalement pour les sentiers proches, mais fortement recommandé pour les randonnées d'une journée ou plus : orientation, météo, accueil dans les villages et prix équitables aux homestays.</p><h3>Combien de jours prévoir à Sapa ?</h3><p>2 nuits minimum (1 jour de trek), 3 nuits idéal pour combiner vallée de Muong Hoa et marché du dimanche à Bac Ha si votre calendrier le permet.</p><h3>Le trek à Sapa convient-il aux enfants ?</h3><p>Oui pour les circuits faciles (Cat Cat, portion de Muong Hoa). Au-delà, les pentes et l'humidité fatiguent vite — privilégiez une demi-journée et un retour en taxi.</p><h2>Aller plus loin</h2><p>Consultez notre <a href=\"/sapa\">guide complet Sapa</a>, le pilier <a href=\"/guide/que-faire-au-vietnam\">Que faire au Vietnam</a> et nos conseils <a href=\"/guide/preparer-son-voyage\">Préparer son voyage</a> (visa, budget, eSIM).</p><blockquote><p><strong>Préparer le voyage</strong></p><ul><li><a href=\"/go/travel_insurance?to=https%3A%2F%2Fheymondo.fr%2F\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Assurance voyage Vietnam (Heymondo)</a></li><li><a href=\"/go/esim_airalo?to=https%3A%2F%2Fwww.airalo.com%2Fvietnam-esim%3Fref%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">eSIM Vietnam — internet dès l'atterrissage (Airalo)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DHanoi%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Sapa (Booking)</a></li><li><a href=\"/go/agoda?to=https%3A%2F%2Fwww.agoda.com%2Fsearch%3Fcity%3D2758%26cid%3DPLACEHOLDER%26locale%3Dfr-fr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Sapa (Agoda)</a></li></ul></blockquote>",
+        "category_label": "Itinéraires",
         "tags": [
-          "café",
-          "egg coffee",
-          "hanoï",
-          "saigon"
+          "Sapa",
+          "trek",
+          "rizières",
+          "montagne",
+          "Fansipan",
+          "homestay"
+        ],
+        "image_alt": "Trek à Sapa : rizières, villages et randonnées dans le Nord (guide 2026) — Sapa, Vietnam"
+      },
+      "en": {}
+    },
+    "title": "Trek à Sapa : rizières, villages et randonnées dans le Nord (guide 2026)",
+    "excerpt": "Sentiers, guides Hmong, homestay, train de nuit depuis Hanoï et meilleure saison pour randonner à Sapa dans les rizières en terrasses.",
+    "content": "<p><strong>Sapa</strong>, perchée à 1 600 m dans les montagnes du Nord, offre des rizières en terrasses parmi les plus photogéniques d'Asie. Entre villages Hmong, Dao et Tay, le trek reste accessible aux marcheurs moyens tout en plongeant dans une culture montagnarde encore très vivante. Ce guide détaille les sentiers, l'intérêt d'un guide local, les homestays et la meilleure saison — indispensable avant de quitter <a href=\"/hanoi\">Hanoï</a>.</p><h2>Comprendre le trek à Sapa</h2><p>Sapa ville est très touristique, mais dix minutes de marche suffisent pour retrouver des sentiers entre rizières et forêts de bambous. Les randonnées vont de la demi-journée facile aux ascensions sportives vers le <strong>Fansipan</strong> (3 143 m, « toit du Vietnam »). Le climat change vite : prévoyez des couches même en été.</p><h2>Les meilleures randonnées</h2><ul><li><strong>Cat Cat → Y Linh Ho</strong> (½ journée) : villages Hmong, rizières proches, idéal pour débuter.</li><li><strong>Ta Van → Giang Ta Chai</strong> (1 jour) : cascades, ponts de bambou, rencontres locales.</li><li><strong>Muong Hoa Valley</strong> (1–2 jours) : le grand classique des terrasses.</li><li><strong>Fansipan</strong> (2 jours à pied ou câble) : panorama sur le Nord vietnamien.</li></ul><h2>Guide local, agence ou homestay ?</h2><p>Un guide Hmong ou Dao connaît les sentiers boueux, évite les pièges à touristes et facilite les échanges dans les villages. L'<strong>homestay</strong> (Ta Van, Lao Chai) reste l'expérience la plus immersive : repas partagés, riz local, réveil dans la brume. Réservez via votre hôtel ou une agence établie — méfiez-vous des vendeuses insistantes dès la gare de Sapa.</p><blockquote><p><strong>Réserver trek et hébergement</strong></p><ul><li><a href=\"/go/getyourguide?to=https%3A%2F%2Fwww.getyourguide.com%2Fhanoi-l205%2F%3Fq%3DSapa%2Btrekking%2Btour%2BVietnam%26partner_id%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Trek et tours Sapa (GetYourGuide)</a></li><li><a href=\"/go/viator?to=https%3A%2F%2Fwww.viator.com%2FsearchResults%2Fall%3Ftext%3DSapa%2Btrekking%2Btour%2BVietnam%26pid%3DPLACEHOLDER%26mcid%3DPLACEHOLDER%26destId%3D351\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Randonnées Sapa (Viator)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DHanoi%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Sapa (Booking)</a></li></ul></blockquote><h2>Comment s'y rendre depuis Hanoï ?</h2><p>Train de nuit jusqu'à <strong>Lao Cai</strong> (8–9 h) puis minibus 1 h — atmosphérique et reposant. Alternative : bus direct 5–6 h depuis Hanoï. Comptez au minimum <strong>2 nuits à Sapa</strong> après le trajet pour profiter d'une randonnée complète.</p><h2>Quand partir à Sapa ?</h2><ul><li><strong>Septembre–novembre</strong> : rizières dorées, ciel dégagé — haute saison.</li><li><strong>Mars–mai</strong> : verdure intense, floraisons.</li><li><strong>Juin–août</strong> : pluies, brume, sentiers glissants — paysages mystiques mais conditions difficiles.</li><li><strong>Décembre–février</strong> : froid possible (5–10 °C), peu de touristes.</li></ul><h2>Questions fréquentes</h2><h3>Faut-il un guide obligatoire pour trekker à Sapa ?</h3><p>Non légalement pour les sentiers proches, mais fortement recommandé pour les randonnées d'une journée ou plus : orientation, météo, accueil dans les villages et prix équitables aux homestays.</p><h3>Combien de jours prévoir à Sapa ?</h3><p>2 nuits minimum (1 jour de trek), 3 nuits idéal pour combiner vallée de Muong Hoa et marché du dimanche à Bac Ha si votre calendrier le permet.</p><h3>Le trek à Sapa convient-il aux enfants ?</h3><p>Oui pour les circuits faciles (Cat Cat, portion de Muong Hoa). Au-delà, les pentes et l'humidité fatiguent vite — privilégiez une demi-journée et un retour en taxi.</p><h2>Aller plus loin</h2><p>Consultez notre <a href=\"/sapa\">guide complet Sapa</a>, le pilier <a href=\"/guide/que-faire-au-vietnam\">Que faire au Vietnam</a> et nos conseils <a href=\"/guide/preparer-son-voyage\">Préparer son voyage</a> (visa, budget, eSIM).</p><blockquote><p><strong>Préparer le voyage</strong></p><ul><li><a href=\"/go/travel_insurance?to=https%3A%2F%2Fheymondo.fr%2F\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Assurance voyage Vietnam (Heymondo)</a></li><li><a href=\"/go/esim_airalo?to=https%3A%2F%2Fwww.airalo.com%2Fvietnam-esim%3Fref%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">eSIM Vietnam — internet dès l'atterrissage (Airalo)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DHanoi%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Sapa (Booking)</a></li><li><a href=\"/go/agoda?to=https%3A%2F%2Fwww.agoda.com%2Fsearch%3Fcity%3D2758%26cid%3DPLACEHOLDER%26locale%3Dfr-fr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Sapa (Agoda)</a></li></ul></blockquote>",
+    "category_label": "Itinéraires",
+    "tags": [
+      "Sapa",
+      "trek",
+      "rizières",
+      "montagne",
+      "Fansipan",
+      "homestay"
+    ],
+    "image_alt": "Trek à Sapa : rizières, villages et randonnées dans le Nord (guide 2026) — Sapa, Vietnam"
+  },
+  {
+    "slug": "excursion-delta-mekong-marches-flottants",
+    "category": "itinerary",
+    "date": "2026-06-10",
+    "updated_at": "2026-06-10",
+    "builtin_version": "2026-06-10-v2",
+    "city": "Mỹ Tho / Delta du Mékong",
+    "featured": false,
+    "read_time": 13,
+    "guide_type": "Guide expérience",
+    "ai_generated": false,
+    "image": "/static/images/destinations/delta-du-mekong.webp",
+    "image_photo_id": "1605649487212-47bdab064df7",
+    "image_placeholder": false,
+    "i18n": {
+      "fr": {
+        "title": "Delta du Mékong : marchés flottants et excursions depuis Saigon (guide 2026)",
+        "excerpt": "Can Tho, Cai Rang, Mỹ Tho : organiser une excursion 1 ou 2 jours dans le delta, éviter les pièges et vivre les marchés à l'aube.",
+        "content": "<p>Le <strong>delta du Mékong</strong>, au sud de <a href=\"/ho-chi-minh-city\">Hô-Chi-Minh-Ville</a>, est un labyrinthe de canaux, de vergers de noix de coco et de <strong>marchés flottants</strong>. Là où les mégalopoles accélèrent, la vie s'organise encore autour de l'eau : sampans, maisons sur pilotis, plantations de fruits. Ce guide compare excursion d'une journée et séjour de 2 jours pour vivre le delta sans se contenter d'un circuit trop formaté.</p><h2>Comprendre le delta</h2><p>Le Mékong se divise en innombrables bras avant de rejoindre la mer. Les provinces de <strong>Ben Tre</strong>, <strong>Mỹ Tho</strong>, <strong>Cần Thơ</strong> et <strong>Vĩnh Long</strong> offrent chacune une facette différente : artisanat du coco, vergers, marchés à l'aube. Plus vous dormez sur place, plus l'expérience s'éloigne du « tour bus » classique.</p><h2>Excursion 1 jour depuis Saigon</h2><p>Les circuits populaires partent vers Mỹ Tho ou Ben Tre : croisière en sampan, dégustation de fruits, atelier de bonbons à la noix de coco, balade à vélo sur île. Comptez <strong>25–45 €</strong> avec transfert et déjeuner. Idéal pour un premier aperçu si vous n'avez qu'une journée libre dans le Sud.</p><h2>2 jours : le vrai delta</h2><p>Passez une nuit à <strong>Cần Thơ</strong> pour le <strong>marché flottant de Cai Rang</strong> à l'aube (5 h–8 h) : c'est le moment le plus authentique. Ajoutez une balade en petit canal et, si possible, un <strong>homestay</strong> à Ben Tre pour la nuit au rythme local. Le delta mérite au moins cette nuit pour justifier le trajet depuis Saigon.</p><blockquote><p><strong>Réserver une excursion dans le delta</strong></p><ul><li><a href=\"/go/getyourguide?to=https%3A%2F%2Fwww.getyourguide.com%2Fho-chi-minh-city-l272%2F%3Fq%3DMekong%2BDelta%2Btour%2BVietnam%26partner_id%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Tours delta du Mékong (GetYourGuide)</a></li><li><a href=\"/go/viator?to=https%3A%2F%2Fwww.viator.com%2FsearchResults%2Fall%3Ftext%3DMekong%2BDelta%2Btour%2BVietnam%26pid%3DPLACEHOLDER%26mcid%3DPLACEHOLDER%26destId%3D352\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Excursions Mékong (Viator)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DHo%2BChi%2BMinh%2BCity%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Ho Chi Minh-Ville (Booking)</a></li></ul></blockquote><h2>Que voir et quoi goûter</h2><ul><li><strong>Marchés flottants</strong> : Cai Rang (le plus grand), Cai Be (plus proche de Saigon).</li><li><strong>Îles</strong> : Phoenix, Tortoise, Unicorn près de Mỹ Tho.</li><li><strong>Spécialités</strong> : bonbons coco, huîtres grillées, canard fermenté, fruits exotiques.</li><li><strong>Artisanat</strong> : nattes, poteries, confiserie de riz soufflé.</li></ul><h2>Conseils pratiques</h2><ul><li>Partez <strong>très tôt</strong> pour les marchés — l'activité retombe vers 9 h.</li><li>Prévoyez chapeau, anti-moustiques, espèces pour achats sur l'eau.</li><li>Combinez avec 2–3 jours à <a href=\"/ho-chi-minh-city\">Ho Chi Minh-Ville</a> avant ou après.</li><li>Saison sèche (décembre–mai) : canaux plus accessibles, moins de pluie.</li></ul><h2>Questions fréquentes</h2><h3>Le delta du Mékong vaut-il le détour en 1 jour ?</h3><p>Oui pour une première découverte depuis Saigon, mais attendez-vous à un rythme touristique. Une nuit à Cần Thơ transforme l'expérience grâce au marché de l'aube.</p><h3>Comment rejoindre Cần Thơ depuis Saigon ?</h3><p>Bus 3–4 h (10–15 €) ou voiture privée 3 h. Beaucoup de tours incluent le transfert ; sinon, réservez un car partagé via votre hôtel.</p><h3>Peut-on visiter le delta sans agence ?</h3><p>Oui en allant à Cần Thơ par vos moyens et en louant un sampan sur place le matin, mais un guide local facilite l'accès aux petits canaux et évite les pièges tarifaires.</p><h2>Aller plus loin</h2><p>Consultez notre <a href=\"/delta-du-mekong\">guide complet Delta du Mékong</a>, le pilier <a href=\"/guide/que-faire-au-vietnam\">Que faire au Vietnam</a> et nos conseils <a href=\"/guide/preparer-son-voyage\">Préparer son voyage</a> (visa, budget, eSIM).</p><blockquote><p><strong>Préparer le voyage</strong></p><ul><li><a href=\"/go/travel_insurance?to=https%3A%2F%2Fheymondo.fr%2F\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Assurance voyage Vietnam (Heymondo)</a></li><li><a href=\"/go/esim_airalo?to=https%3A%2F%2Fwww.airalo.com%2Fvietnam-esim%3Fref%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">eSIM Vietnam — internet dès l'atterrissage (Airalo)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DHo%2BChi%2BMinh%2BCity%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Delta du Mékong (Booking)</a></li><li><a href=\"/go/agoda?to=https%3A%2F%2Fwww.agoda.com%2Fsearch%3Fcity%3D13170%26cid%3DPLACEHOLDER%26locale%3Dfr-fr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Delta du Mékong (Agoda)</a></li></ul></blockquote>",
+        "category_label": "Itinéraires",
+        "tags": [
+          "Mékong",
+          "delta",
+          "marché flottant",
+          "Can Tho",
+          "Saigon",
+          "sampan"
+        ],
+        "image_alt": "Delta du Mékong : marchés flottants et excursions depuis Saigon (guide 2026) — Mỹ Tho / Delta du Mékong, Vietnam"
+      },
+      "en": {}
+    },
+    "title": "Delta du Mékong : marchés flottants et excursions depuis Saigon (guide 2026)",
+    "excerpt": "Can Tho, Cai Rang, Mỹ Tho : organiser une excursion 1 ou 2 jours dans le delta, éviter les pièges et vivre les marchés à l'aube.",
+    "content": "<p>Le <strong>delta du Mékong</strong>, au sud de <a href=\"/ho-chi-minh-city\">Hô-Chi-Minh-Ville</a>, est un labyrinthe de canaux, de vergers de noix de coco et de <strong>marchés flottants</strong>. Là où les mégalopoles accélèrent, la vie s'organise encore autour de l'eau : sampans, maisons sur pilotis, plantations de fruits. Ce guide compare excursion d'une journée et séjour de 2 jours pour vivre le delta sans se contenter d'un circuit trop formaté.</p><h2>Comprendre le delta</h2><p>Le Mékong se divise en innombrables bras avant de rejoindre la mer. Les provinces de <strong>Ben Tre</strong>, <strong>Mỹ Tho</strong>, <strong>Cần Thơ</strong> et <strong>Vĩnh Long</strong> offrent chacune une facette différente : artisanat du coco, vergers, marchés à l'aube. Plus vous dormez sur place, plus l'expérience s'éloigne du « tour bus » classique.</p><h2>Excursion 1 jour depuis Saigon</h2><p>Les circuits populaires partent vers Mỹ Tho ou Ben Tre : croisière en sampan, dégustation de fruits, atelier de bonbons à la noix de coco, balade à vélo sur île. Comptez <strong>25–45 €</strong> avec transfert et déjeuner. Idéal pour un premier aperçu si vous n'avez qu'une journée libre dans le Sud.</p><h2>2 jours : le vrai delta</h2><p>Passez une nuit à <strong>Cần Thơ</strong> pour le <strong>marché flottant de Cai Rang</strong> à l'aube (5 h–8 h) : c'est le moment le plus authentique. Ajoutez une balade en petit canal et, si possible, un <strong>homestay</strong> à Ben Tre pour la nuit au rythme local. Le delta mérite au moins cette nuit pour justifier le trajet depuis Saigon.</p><blockquote><p><strong>Réserver une excursion dans le delta</strong></p><ul><li><a href=\"/go/getyourguide?to=https%3A%2F%2Fwww.getyourguide.com%2Fho-chi-minh-city-l272%2F%3Fq%3DMekong%2BDelta%2Btour%2BVietnam%26partner_id%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Tours delta du Mékong (GetYourGuide)</a></li><li><a href=\"/go/viator?to=https%3A%2F%2Fwww.viator.com%2FsearchResults%2Fall%3Ftext%3DMekong%2BDelta%2Btour%2BVietnam%26pid%3DPLACEHOLDER%26mcid%3DPLACEHOLDER%26destId%3D352\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Excursions Mékong (Viator)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DHo%2BChi%2BMinh%2BCity%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Ho Chi Minh-Ville (Booking)</a></li></ul></blockquote><h2>Que voir et quoi goûter</h2><ul><li><strong>Marchés flottants</strong> : Cai Rang (le plus grand), Cai Be (plus proche de Saigon).</li><li><strong>Îles</strong> : Phoenix, Tortoise, Unicorn près de Mỹ Tho.</li><li><strong>Spécialités</strong> : bonbons coco, huîtres grillées, canard fermenté, fruits exotiques.</li><li><strong>Artisanat</strong> : nattes, poteries, confiserie de riz soufflé.</li></ul><h2>Conseils pratiques</h2><ul><li>Partez <strong>très tôt</strong> pour les marchés — l'activité retombe vers 9 h.</li><li>Prévoyez chapeau, anti-moustiques, espèces pour achats sur l'eau.</li><li>Combinez avec 2–3 jours à <a href=\"/ho-chi-minh-city\">Ho Chi Minh-Ville</a> avant ou après.</li><li>Saison sèche (décembre–mai) : canaux plus accessibles, moins de pluie.</li></ul><h2>Questions fréquentes</h2><h3>Le delta du Mékong vaut-il le détour en 1 jour ?</h3><p>Oui pour une première découverte depuis Saigon, mais attendez-vous à un rythme touristique. Une nuit à Cần Thơ transforme l'expérience grâce au marché de l'aube.</p><h3>Comment rejoindre Cần Thơ depuis Saigon ?</h3><p>Bus 3–4 h (10–15 €) ou voiture privée 3 h. Beaucoup de tours incluent le transfert ; sinon, réservez un car partagé via votre hôtel.</p><h3>Peut-on visiter le delta sans agence ?</h3><p>Oui en allant à Cần Thơ par vos moyens et en louant un sampan sur place le matin, mais un guide local facilite l'accès aux petits canaux et évite les pièges tarifaires.</p><h2>Aller plus loin</h2><p>Consultez notre <a href=\"/delta-du-mekong\">guide complet Delta du Mékong</a>, le pilier <a href=\"/guide/que-faire-au-vietnam\">Que faire au Vietnam</a> et nos conseils <a href=\"/guide/preparer-son-voyage\">Préparer son voyage</a> (visa, budget, eSIM).</p><blockquote><p><strong>Préparer le voyage</strong></p><ul><li><a href=\"/go/travel_insurance?to=https%3A%2F%2Fheymondo.fr%2F\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Assurance voyage Vietnam (Heymondo)</a></li><li><a href=\"/go/esim_airalo?to=https%3A%2F%2Fwww.airalo.com%2Fvietnam-esim%3Fref%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">eSIM Vietnam — internet dès l'atterrissage (Airalo)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DHo%2BChi%2BMinh%2BCity%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Delta du Mékong (Booking)</a></li><li><a href=\"/go/agoda?to=https%3A%2F%2Fwww.agoda.com%2Fsearch%3Fcity%3D13170%26cid%3DPLACEHOLDER%26locale%3Dfr-fr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Delta du Mékong (Agoda)</a></li></ul></blockquote>",
+    "category_label": "Itinéraires",
+    "tags": [
+      "Mékong",
+      "delta",
+      "marché flottant",
+      "Can Tho",
+      "Saigon",
+      "sampan"
+    ],
+    "image_alt": "Delta du Mékong : marchés flottants et excursions depuis Saigon (guide 2026) — Mỹ Tho / Delta du Mékong, Vietnam"
+  },
+  {
+    "slug": "hoi-an-lanternes-vieille-ville",
+    "category": "itinerary",
+    "date": "2026-06-10",
+    "updated_at": "2026-06-10",
+    "builtin_version": "2026-06-10-v2",
+    "city": "Hội An",
+    "featured": false,
+    "read_time": 13,
+    "guide_type": "Guide expérience",
+    "ai_generated": false,
+    "image": "/static/images/destinations/hoi-an.webp",
+    "image_photo_id": "1528127269322-539801943592",
+    "image_placeholder": false,
+    "i18n": {
+      "fr": {
+        "title": "Hội An : lanternes, vieille ville UNESCO et meilleures expériences (guide 2026)",
+        "excerpt": "Vieille ville, tailleurs, plage d'An Bang, festival des lanternes : quand partir, combien de temps et quoi faire à Hội An.",
+        "content": "<p><strong>Hội An</strong>, ancien comptoir marchand classé à l'UNESCO, est la ville la plus photogénique du Vietnam. Maisons en bois ocre, <strong>lanternes</strong> colorées, tailleurs sur mesure et plage d'<strong>An Bang</strong> à vélo : l'atmosphère est unique, surtout au crépuscule. Située à 30 min de <a href=\"/da-nang\">Đà Nẵng</a>, Hội An se combine naturellement avec Huế et la côte du Centre.</p><h2>La vieille ville et ses monuments</h2><p>Le cœur piéton est accessible avec un <strong>ticket monuments</strong> (~120 000 VND, valable plusieurs jours) donnant accès à pont japonais, assemblées communales et maisons historiques. Perdez-vous dans les ruelles avant 9 h ou après 17 h pour éviter les groupes. Le quartier est plat — idéal à pied ou en vélo.</p><h2>Expériences à ne pas manquer</h2><ul><li><strong>Soirée lanternes</strong> : chaque soir, le centre s'illumine ; le 14e jour lunaire, festival des lanternes flottantes.</li><li><strong>Tailleur sur mesure</strong> : costume ou robe en 24–48 h, tissus abordables.</li><li><strong>Cours de cuisine</strong> : marché + atelier (banh xeo, cao lau).</li><li><strong>Plage d'An Bang</strong> : 15 min à vélo, bars de plage et couchers de soleil.</li><li><strong>Excursion</strong> : Cham Islands (snorkeling) ou My Son (sanctuaires Cham).</li></ul><blockquote><p><strong>Activités et hébergement à Hội An</strong></p><ul><li><a href=\"/go/getyourguide?to=https%3A%2F%2Fwww.getyourguide.com%2Fhoi-an-l831%2F%3Fq%3DHoi%2BAn%2Btour%2BVietnam%26partner_id%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Visites et ateliers Hội An (GetYourGuide)</a></li><li><a href=\"/go/viator?to=https%3A%2F%2Fwww.viator.com%2FsearchResults%2Fall%3Ftext%3DHoi%2BAn%2Btour%2BVietnam%26pid%3DPLACEHOLDER%26mcid%3DPLACEHOLDER%26destId%3D5229\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Tours Hội An (Viator)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DHoi%2BAn%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Hội An (Booking)</a></li><li><a href=\"/go/agoda?to=https%3A%2F%2Fwww.agoda.com%2Fsearch%3Fcity%3D16552%26cid%3DPLACEHOLDER%26locale%3Dfr-fr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Hội An (Agoda)</a></li></ul></blockquote><h2>Où dormir ?</h2><p>Le centre historique pour l'ambiance (mais bruyant le soir), ou An Bang / Cam Chau pour la plage. Les hôtels-boutiques en maison ancienne sont la spécialité de la ville — réservez tôt en haute saison (février–août).</p><h2>Combien de temps et quand y aller ?</h2><p><strong>2 nuits minimum</strong> pour profiter d'une soirée et d'une demi-journée libre. <strong>Meilleure période</strong> : février–août (temps sec). Octobre–décembre : pluies possibles et rues parfois inondées. Évitez le Tết si vous voulez des tailleurs disponibles.</p><h2>Questions fréquentes</h2><h3>Faut-il un ticket pour entrer dans Hội An ?</h3><p>La circulation piétonne du centre est contrôlée en soirée ; le ticket monuments couvre les sites historiques mais pas la simple balade dans les rues illuminées.</p><h3>Hội An ou Đà Nẵng pour dormir ?</h3><p>Hội An pour l'ambiance et les soirées ; Đà Nẵng pour les plages longues, l'aéroport et un hub plus moderne — les deux villes sont complémentaires à 30 min.</p><h3>Combien coûte un costume sur mesure ?</h3><p>Comptez 80–200 € selon le tissu et le délai. Demandez toujours un essayage final et vérifiez les finitions avant le départ.</p><h2>Aller plus loin</h2><p>Consultez notre <a href=\"/hoi-an\">guide complet Hội An</a>, le pilier <a href=\"/guide/que-faire-au-vietnam\">Que faire au Vietnam</a> et nos conseils <a href=\"/guide/preparer-son-voyage\">Préparer son voyage</a> (visa, budget, eSIM).</p><blockquote><p><strong>Préparer le voyage</strong></p><ul><li><a href=\"/go/travel_insurance?to=https%3A%2F%2Fheymondo.fr%2F\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Assurance voyage Vietnam (Heymondo)</a></li><li><a href=\"/go/esim_airalo?to=https%3A%2F%2Fwww.airalo.com%2Fvietnam-esim%3Fref%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">eSIM Vietnam — internet dès l'atterrissage (Airalo)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DHoi%2BAn%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Hội An (Booking)</a></li><li><a href=\"/go/agoda?to=https%3A%2F%2Fwww.agoda.com%2Fsearch%3Fcity%3D16552%26cid%3DPLACEHOLDER%26locale%3Dfr-fr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Hội An (Agoda)</a></li></ul></blockquote>",
+        "category_label": "Itinéraires",
+        "tags": [
+          "Hội An",
+          "lanternes",
+          "UNESCO",
+          "vieille ville",
+          "An Bang",
+          "tailleur"
+        ],
+        "image_alt": "Hội An : lanternes, vieille ville UNESCO et meilleures expériences (guide 2026) — Hội An, Vietnam"
+      },
+      "en": {}
+    },
+    "title": "Hội An : lanternes, vieille ville UNESCO et meilleures expériences (guide 2026)",
+    "excerpt": "Vieille ville, tailleurs, plage d'An Bang, festival des lanternes : quand partir, combien de temps et quoi faire à Hội An.",
+    "content": "<p><strong>Hội An</strong>, ancien comptoir marchand classé à l'UNESCO, est la ville la plus photogénique du Vietnam. Maisons en bois ocre, <strong>lanternes</strong> colorées, tailleurs sur mesure et plage d'<strong>An Bang</strong> à vélo : l'atmosphère est unique, surtout au crépuscule. Située à 30 min de <a href=\"/da-nang\">Đà Nẵng</a>, Hội An se combine naturellement avec Huế et la côte du Centre.</p><h2>La vieille ville et ses monuments</h2><p>Le cœur piéton est accessible avec un <strong>ticket monuments</strong> (~120 000 VND, valable plusieurs jours) donnant accès à pont japonais, assemblées communales et maisons historiques. Perdez-vous dans les ruelles avant 9 h ou après 17 h pour éviter les groupes. Le quartier est plat — idéal à pied ou en vélo.</p><h2>Expériences à ne pas manquer</h2><ul><li><strong>Soirée lanternes</strong> : chaque soir, le centre s'illumine ; le 14e jour lunaire, festival des lanternes flottantes.</li><li><strong>Tailleur sur mesure</strong> : costume ou robe en 24–48 h, tissus abordables.</li><li><strong>Cours de cuisine</strong> : marché + atelier (banh xeo, cao lau).</li><li><strong>Plage d'An Bang</strong> : 15 min à vélo, bars de plage et couchers de soleil.</li><li><strong>Excursion</strong> : Cham Islands (snorkeling) ou My Son (sanctuaires Cham).</li></ul><blockquote><p><strong>Activités et hébergement à Hội An</strong></p><ul><li><a href=\"/go/getyourguide?to=https%3A%2F%2Fwww.getyourguide.com%2Fhoi-an-l831%2F%3Fq%3DHoi%2BAn%2Btour%2BVietnam%26partner_id%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Visites et ateliers Hội An (GetYourGuide)</a></li><li><a href=\"/go/viator?to=https%3A%2F%2Fwww.viator.com%2FsearchResults%2Fall%3Ftext%3DHoi%2BAn%2Btour%2BVietnam%26pid%3DPLACEHOLDER%26mcid%3DPLACEHOLDER%26destId%3D5229\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Tours Hội An (Viator)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DHoi%2BAn%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Hội An (Booking)</a></li><li><a href=\"/go/agoda?to=https%3A%2F%2Fwww.agoda.com%2Fsearch%3Fcity%3D16552%26cid%3DPLACEHOLDER%26locale%3Dfr-fr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Hội An (Agoda)</a></li></ul></blockquote><h2>Où dormir ?</h2><p>Le centre historique pour l'ambiance (mais bruyant le soir), ou An Bang / Cam Chau pour la plage. Les hôtels-boutiques en maison ancienne sont la spécialité de la ville — réservez tôt en haute saison (février–août).</p><h2>Combien de temps et quand y aller ?</h2><p><strong>2 nuits minimum</strong> pour profiter d'une soirée et d'une demi-journée libre. <strong>Meilleure période</strong> : février–août (temps sec). Octobre–décembre : pluies possibles et rues parfois inondées. Évitez le Tết si vous voulez des tailleurs disponibles.</p><h2>Questions fréquentes</h2><h3>Faut-il un ticket pour entrer dans Hội An ?</h3><p>La circulation piétonne du centre est contrôlée en soirée ; le ticket monuments couvre les sites historiques mais pas la simple balade dans les rues illuminées.</p><h3>Hội An ou Đà Nẵng pour dormir ?</h3><p>Hội An pour l'ambiance et les soirées ; Đà Nẵng pour les plages longues, l'aéroport et un hub plus moderne — les deux villes sont complémentaires à 30 min.</p><h3>Combien coûte un costume sur mesure ?</h3><p>Comptez 80–200 € selon le tissu et le délai. Demandez toujours un essayage final et vérifiez les finitions avant le départ.</p><h2>Aller plus loin</h2><p>Consultez notre <a href=\"/hoi-an\">guide complet Hội An</a>, le pilier <a href=\"/guide/que-faire-au-vietnam\">Que faire au Vietnam</a> et nos conseils <a href=\"/guide/preparer-son-voyage\">Préparer son voyage</a> (visa, budget, eSIM).</p><blockquote><p><strong>Préparer le voyage</strong></p><ul><li><a href=\"/go/travel_insurance?to=https%3A%2F%2Fheymondo.fr%2F\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Assurance voyage Vietnam (Heymondo)</a></li><li><a href=\"/go/esim_airalo?to=https%3A%2F%2Fwww.airalo.com%2Fvietnam-esim%3Fref%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">eSIM Vietnam — internet dès l'atterrissage (Airalo)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DHoi%2BAn%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Hội An (Booking)</a></li><li><a href=\"/go/agoda?to=https%3A%2F%2Fwww.agoda.com%2Fsearch%3Fcity%3D16552%26cid%3DPLACEHOLDER%26locale%3Dfr-fr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Hội An (Agoda)</a></li></ul></blockquote>",
+    "category_label": "Itinéraires",
+    "tags": [
+      "Hội An",
+      "lanternes",
+      "UNESCO",
+      "vieille ville",
+      "An Bang",
+      "tailleur"
+    ],
+    "image_alt": "Hội An : lanternes, vieille ville UNESCO et meilleures expériences (guide 2026) — Hội An, Vietnam"
+  },
+  {
+    "slug": "hue-citadelle-imperiale-vietnam",
+    "category": "itinerary",
+    "date": "2026-06-10",
+    "updated_at": "2026-06-10",
+    "builtin_version": "2026-06-10-v2",
+    "city": "Huế",
+    "featured": false,
+    "read_time": 13,
+    "guide_type": "Guide expérience",
+    "ai_generated": false,
+    "image": "/static/images/destinations/hue.webp",
+    "image_photo_id": "1578662996442-48f60103fc96",
+    "image_placeholder": false,
+    "i18n": {
+      "fr": {
+        "title": "Huế impériale : citadelle, tombeaux et rivière des Parfums (guide 2026)",
+        "excerpt": "Citadelle Nguyen, tombeaux de Minh Mạng et Khải Định, cuisine impériale : organiser 1 à 2 jours à Huế entre Hội An et le Nord.",
+        "content": "<p><strong>Huế</strong> fut la capitale impériale du Vietnam (1802–1945). Entre <strong>citadelle</strong>, tombeaux des empereurs Nguyễn, pagode Thien Mu et <strong>rivière des Parfums</strong>, la ville offre une immersion culturelle rare entre <a href=\"/hoi-an\">Hội An</a> et le Nord. Sa cuisine impériale — bún bò Huế, assiettes royales — mérite à elle seule le détour.</p><h2>La citadelle impériale</h2><p>Enceinte de 10 km, palais, temples et jardins : prévoyez une <strong>demi-journée</strong>. Une partie des bâtiments a été endommagée pendant la guerre puis restaurée — l'échelle reste impressionnante. Louez un audio-guide ou un guide francophone pour comprendre la symbolique des portes et des pavillons.</p><h2>Tombeaux et pagodes</h2><ul><li><strong>Tombeau de Minh Mạng</strong> : le plus harmonieux, lac et architecture sereine.</li><li><strong>Tombeau de Khải Định</strong> : style art déco, mosaïques colorées, très photogénique.</li><li><strong>Tombeau de Tự Đức</strong> : promenade forestière autour du tombeau.</li><li><strong>Pagode Thien Mu</strong> : symbole de la ville, vue sur la rivière des Parfums.</li></ul><h2>Croisière et cuisine</h2><p>Une <strong>croisière au coucher du soleil</strong> sur la rivière des Parfums relie souvent Thien Mu et dîner traditionnel. Côté assiette, goûtez le <strong>bún bò Huế</strong> dans une rue locale, puis réservez un restaurant de cuisine impériale pour les bouchées royales miniatures.</p><blockquote><p><strong>Réserver visites et hôtels à Huế</strong></p><ul><li><a href=\"/go/getyourguide?to=https%3A%2F%2Fwww.getyourguide.com%2Fda-nang-l939%2F%3Fq%3DHue%2Bimperial%2Btour%2BVietnam%26partner_id%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Visites impériales Huế (GetYourGuide)</a></li><li><a href=\"/go/viator?to=https%3A%2F%2Fwww.viator.com%2FsearchResults%2Fall%3Ftext%3DHue%2Bimperial%2Btour%2BVietnam%26pid%3DPLACEHOLDER%26mcid%3DPLACEHOLDER%26destId%3D4680\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Excursions Huế (Viator)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DDa%2BNang%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Huế (Booking)</a></li></ul></blockquote><h2>Organisation du séjour</h2><p><strong>1 à 2 jours</strong> suffisent pour citadelle + 2 tombeaux. Louez un cyclo-pousse, taxi ou scooter pour relier les sites éloignés. Le train depuis <a href=\"/da-nang\">Đà Nẵng</a> (2 h, littoral spectaculaire) est une belle entrée en matière. Combinez Huế avec Hội An et Đà Nẵng pour un triangle classique du Centre.</p><h2>Questions fréquentes</h2><h3>Combien de temps pour visiter Huế ?</h3><p>Une journée intense couvre citadelle et Thien Mu ; deux jours permettent d'ajouter deux tombeaux et un repas impérial sans courir.</p><h3>Huế est-elle une ville pour les gourmands ?</h3><p>Oui : bún bò Huế, nem lụi, banh beo et cuisine de rue raffinée. C'est l'une des capitales gastronomiques du Vietnam.</p><h3>Comment rejoindre Huế depuis Hội An ?</h3><p>Minibus 3–4 h via col de Hải Vân, ou train depuis Đà Nẵng. Le bus est direct ; le train offre les plus beaux paysages.</p><h2>Aller plus loin</h2><p>Consultez notre <a href=\"/hue\">guide complet Huế</a>, le pilier <a href=\"/guide/que-faire-au-vietnam\">Que faire au Vietnam</a> et nos conseils <a href=\"/guide/preparer-son-voyage\">Préparer son voyage</a> (visa, budget, eSIM).</p><blockquote><p><strong>Préparer le voyage</strong></p><ul><li><a href=\"/go/travel_insurance?to=https%3A%2F%2Fheymondo.fr%2F\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Assurance voyage Vietnam (Heymondo)</a></li><li><a href=\"/go/esim_airalo?to=https%3A%2F%2Fwww.airalo.com%2Fvietnam-esim%3Fref%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">eSIM Vietnam — internet dès l'atterrissage (Airalo)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DDa%2BNang%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Huế (Booking)</a></li><li><a href=\"/go/agoda?to=https%3A%2F%2Fwww.agoda.com%2Fsearch%3Fcity%3D16440%26cid%3DPLACEHOLDER%26locale%3Dfr-fr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Huế (Agoda)</a></li></ul></blockquote>",
+        "category_label": "Itinéraires",
+        "tags": [
+          "Huế",
+          "impérial",
+          "citadelle",
+          "tombeaux",
+          "patrimoine",
+          "bún bò"
+        ],
+        "image_alt": "Huế impériale : citadelle, tombeaux et rivière des Parfums (guide 2026) — Huế, Vietnam"
+      },
+      "en": {}
+    },
+    "title": "Huế impériale : citadelle, tombeaux et rivière des Parfums (guide 2026)",
+    "excerpt": "Citadelle Nguyen, tombeaux de Minh Mạng et Khải Định, cuisine impériale : organiser 1 à 2 jours à Huế entre Hội An et le Nord.",
+    "content": "<p><strong>Huế</strong> fut la capitale impériale du Vietnam (1802–1945). Entre <strong>citadelle</strong>, tombeaux des empereurs Nguyễn, pagode Thien Mu et <strong>rivière des Parfums</strong>, la ville offre une immersion culturelle rare entre <a href=\"/hoi-an\">Hội An</a> et le Nord. Sa cuisine impériale — bún bò Huế, assiettes royales — mérite à elle seule le détour.</p><h2>La citadelle impériale</h2><p>Enceinte de 10 km, palais, temples et jardins : prévoyez une <strong>demi-journée</strong>. Une partie des bâtiments a été endommagée pendant la guerre puis restaurée — l'échelle reste impressionnante. Louez un audio-guide ou un guide francophone pour comprendre la symbolique des portes et des pavillons.</p><h2>Tombeaux et pagodes</h2><ul><li><strong>Tombeau de Minh Mạng</strong> : le plus harmonieux, lac et architecture sereine.</li><li><strong>Tombeau de Khải Định</strong> : style art déco, mosaïques colorées, très photogénique.</li><li><strong>Tombeau de Tự Đức</strong> : promenade forestière autour du tombeau.</li><li><strong>Pagode Thien Mu</strong> : symbole de la ville, vue sur la rivière des Parfums.</li></ul><h2>Croisière et cuisine</h2><p>Une <strong>croisière au coucher du soleil</strong> sur la rivière des Parfums relie souvent Thien Mu et dîner traditionnel. Côté assiette, goûtez le <strong>bún bò Huế</strong> dans une rue locale, puis réservez un restaurant de cuisine impériale pour les bouchées royales miniatures.</p><blockquote><p><strong>Réserver visites et hôtels à Huế</strong></p><ul><li><a href=\"/go/getyourguide?to=https%3A%2F%2Fwww.getyourguide.com%2Fda-nang-l939%2F%3Fq%3DHue%2Bimperial%2Btour%2BVietnam%26partner_id%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Visites impériales Huế (GetYourGuide)</a></li><li><a href=\"/go/viator?to=https%3A%2F%2Fwww.viator.com%2FsearchResults%2Fall%3Ftext%3DHue%2Bimperial%2Btour%2BVietnam%26pid%3DPLACEHOLDER%26mcid%3DPLACEHOLDER%26destId%3D4680\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Excursions Huế (Viator)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DDa%2BNang%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Huế (Booking)</a></li></ul></blockquote><h2>Organisation du séjour</h2><p><strong>1 à 2 jours</strong> suffisent pour citadelle + 2 tombeaux. Louez un cyclo-pousse, taxi ou scooter pour relier les sites éloignés. Le train depuis <a href=\"/da-nang\">Đà Nẵng</a> (2 h, littoral spectaculaire) est une belle entrée en matière. Combinez Huế avec Hội An et Đà Nẵng pour un triangle classique du Centre.</p><h2>Questions fréquentes</h2><h3>Combien de temps pour visiter Huế ?</h3><p>Une journée intense couvre citadelle et Thien Mu ; deux jours permettent d'ajouter deux tombeaux et un repas impérial sans courir.</p><h3>Huế est-elle une ville pour les gourmands ?</h3><p>Oui : bún bò Huế, nem lụi, banh beo et cuisine de rue raffinée. C'est l'une des capitales gastronomiques du Vietnam.</p><h3>Comment rejoindre Huế depuis Hội An ?</h3><p>Minibus 3–4 h via col de Hải Vân, ou train depuis Đà Nẵng. Le bus est direct ; le train offre les plus beaux paysages.</p><h2>Aller plus loin</h2><p>Consultez notre <a href=\"/hue\">guide complet Huế</a>, le pilier <a href=\"/guide/que-faire-au-vietnam\">Que faire au Vietnam</a> et nos conseils <a href=\"/guide/preparer-son-voyage\">Préparer son voyage</a> (visa, budget, eSIM).</p><blockquote><p><strong>Préparer le voyage</strong></p><ul><li><a href=\"/go/travel_insurance?to=https%3A%2F%2Fheymondo.fr%2F\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Assurance voyage Vietnam (Heymondo)</a></li><li><a href=\"/go/esim_airalo?to=https%3A%2F%2Fwww.airalo.com%2Fvietnam-esim%3Fref%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">eSIM Vietnam — internet dès l'atterrissage (Airalo)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DDa%2BNang%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Huế (Booking)</a></li><li><a href=\"/go/agoda?to=https%3A%2F%2Fwww.agoda.com%2Fsearch%3Fcity%3D16440%26cid%3DPLACEHOLDER%26locale%3Dfr-fr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Huế (Agoda)</a></li></ul></blockquote>",
+    "category_label": "Itinéraires",
+    "tags": [
+      "Huế",
+      "impérial",
+      "citadelle",
+      "tombeaux",
+      "patrimoine",
+      "bún bò"
+    ],
+    "image_alt": "Huế impériale : citadelle, tombeaux et rivière des Parfums (guide 2026) — Huế, Vietnam"
+  },
+  {
+    "slug": "phu-quoc-plages-ile-tropicale",
+    "category": "itinerary",
+    "date": "2026-06-10",
+    "updated_at": "2026-06-10",
+    "builtin_version": "2026-06-10-v2",
+    "city": "Phú Quốc",
+    "featured": false,
+    "read_time": 12,
+    "guide_type": "Guide expérience",
+    "ai_generated": false,
+    "image": "/static/images/destinations/phu-quoc.webp",
+    "image_photo_id": "1480996408299-fc0e830b5db1",
+    "image_placeholder": false,
+    "i18n": {
+      "fr": {
+        "title": "Phu Quoc : plages, île tropicale et séjour détente (guide 2026)",
+        "excerpt": "Sao Beach, Long Beach, snorkeling et saison sèche : organiser 3 à 5 jours sur l'île la plus grande du Vietnam.",
+        "content": "<p><strong>Phu Quoc</strong>, plus grande île du Vietnam, cumule plages de sable blanc, eaux turquoise et resorts à tous budgets. Après le rythme intense de <a href=\"/hanoi\">Hanoï</a>, <a href=\"/hoi-an\">Hội An</a> ou <a href=\"/ho-chi-minh-city\">Saigon</a>, c'est la conclusion idéale : farniente, snorkeling et marchés nocturnes. Ce guide détaille les plages, activités et la saison pour organiser 3 à 5 jours sur l'île.</p><h2>Les meilleures plages</h2><ul><li><strong>Sao Beach</strong> : sable fin, eau calme, idéal famille.</li><li><strong>Long Beach</strong> : longue, couchers de soleil, restaurants en bord de mer.</li><li><strong>Bai Khem</strong> : eaux cristallines, accès parfois régulé — plus préservée.</li><li><strong>Ganh Dau</strong> : nord de l'île, plus sauvage, couchers de soleil.</li></ul><h2>Au-delà de la plage</h2><ul><li><strong>Snorkeling / plongée</strong> : îles An Thoi au sud, eaux claires mars–août.</li><li><strong>Plantations</strong> : poivre de Phu Quoc (IGP) et sauce nuoc mam.</li><li><strong>Marché nocturne Duong Dong</strong> : fruits de mer, street food.</li><li><strong>Vinpearl Safari</strong> : famille, demi-journée.</li><li><strong>Kayak mangrove</strong> : rivière Cua Can, calme et ombragé.</li></ul><blockquote><p><strong>Vols, hôtels et activités à Phu Quoc</strong></p><ul><li><a href=\"/go/getyourguide?to=https%3A%2F%2Fwww.getyourguide.com%2Fho-chi-minh-city-l272%2F%3Fq%3DPhu%2BQuoc%2Bisland%2Btour%2BVietnam%26partner_id%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Excursions île Phu Quoc (GetYourGuide)</a></li><li><a href=\"/go/viator?to=https%3A%2F%2Fwww.viator.com%2FsearchResults%2Fall%3Ftext%3DPhu%2BQuoc%2Bisland%2Btour%2BVietnam%26pid%3DPLACEHOLDER%26mcid%3DPLACEHOLDER%26destId%3D352\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Tours Phu Quoc (Viator)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DHo%2BChi%2BMinh%2BCity%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Phu Quoc (Booking)</a></li><li><a href=\"/go/agoda?to=https%3A%2F%2Fwww.agoda.com%2Fsearch%3Fcity%3D13170%26cid%3DPLACEHOLDER%26locale%3Dfr-fr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Phu Quoc (Agoda)</a></li></ul></blockquote><h2>Pratique : vols, saison, budget</h2><p>Vols directs depuis Hanoï, HCMC ou Đà Nẵng (1–2 h). <strong>Saison sèche</strong> novembre–avril : mer calme, ciel bleu. Mousson juin–octobre : mer agitée, pluies fréquentes — tarifs bas mais plage limitée. Budget : 40–80 €/jour confort (hôtel + restaurants), hors resort luxe.</p><h2>Questions fréquentes</h2><h3>Combien de jours à Phu Quoc ?</h3><p>3 jours pour se poser, 5 jours pour alterner plages, snorkeling et exploration de l'île sans précipitation.</p><h3>Phu Quoc ou Nha Trang pour la plage ?</h3><p>Phu Quoc est plus « île tropicale » avec resorts et nature ; Nha Trang plus urbaine et animée. Phu Quoc convient mieux en fin de voyage détente.</p><h3>Faut-il louer un scooter à Phu Quoc ?</h3><p>Oui si vous voulez explorer hors du littoral principal — routes correctes, locations ~5–8 €/jour. Grab existe aussi autour de Duong Dong.</p><h2>Aller plus loin</h2><p>Consultez notre <a href=\"/phu-quoc\">guide complet Phu Quoc</a>, le pilier <a href=\"/guide/que-faire-au-vietnam\">Que faire au Vietnam</a> et nos conseils <a href=\"/guide/preparer-son-voyage\">Préparer son voyage</a> (visa, budget, eSIM).</p><blockquote><p><strong>Préparer le voyage</strong></p><ul><li><a href=\"/go/travel_insurance?to=https%3A%2F%2Fheymondo.fr%2F\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Assurance voyage Vietnam (Heymondo)</a></li><li><a href=\"/go/esim_airalo?to=https%3A%2F%2Fwww.airalo.com%2Fvietnam-esim%3Fref%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">eSIM Vietnam — internet dès l'atterrissage (Airalo)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DHo%2BChi%2BMinh%2BCity%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Phu Quoc (Booking)</a></li><li><a href=\"/go/agoda?to=https%3A%2F%2Fwww.agoda.com%2Fsearch%3Fcity%3D13170%26cid%3DPLACEHOLDER%26locale%3Dfr-fr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Phu Quoc (Agoda)</a></li></ul></blockquote>",
+        "category_label": "Itinéraires",
+        "tags": [
+          "Phu Quoc",
+          "plage",
+          "île",
+          "détente",
+          "snorkeling",
+          "Duong Dong"
+        ],
+        "image_alt": "Phu Quoc : plages, île tropicale et séjour détente (guide 2026) — Phú Quốc, Vietnam"
+      },
+      "en": {}
+    },
+    "title": "Phu Quoc : plages, île tropicale et séjour détente (guide 2026)",
+    "excerpt": "Sao Beach, Long Beach, snorkeling et saison sèche : organiser 3 à 5 jours sur l'île la plus grande du Vietnam.",
+    "content": "<p><strong>Phu Quoc</strong>, plus grande île du Vietnam, cumule plages de sable blanc, eaux turquoise et resorts à tous budgets. Après le rythme intense de <a href=\"/hanoi\">Hanoï</a>, <a href=\"/hoi-an\">Hội An</a> ou <a href=\"/ho-chi-minh-city\">Saigon</a>, c'est la conclusion idéale : farniente, snorkeling et marchés nocturnes. Ce guide détaille les plages, activités et la saison pour organiser 3 à 5 jours sur l'île.</p><h2>Les meilleures plages</h2><ul><li><strong>Sao Beach</strong> : sable fin, eau calme, idéal famille.</li><li><strong>Long Beach</strong> : longue, couchers de soleil, restaurants en bord de mer.</li><li><strong>Bai Khem</strong> : eaux cristallines, accès parfois régulé — plus préservée.</li><li><strong>Ganh Dau</strong> : nord de l'île, plus sauvage, couchers de soleil.</li></ul><h2>Au-delà de la plage</h2><ul><li><strong>Snorkeling / plongée</strong> : îles An Thoi au sud, eaux claires mars–août.</li><li><strong>Plantations</strong> : poivre de Phu Quoc (IGP) et sauce nuoc mam.</li><li><strong>Marché nocturne Duong Dong</strong> : fruits de mer, street food.</li><li><strong>Vinpearl Safari</strong> : famille, demi-journée.</li><li><strong>Kayak mangrove</strong> : rivière Cua Can, calme et ombragé.</li></ul><blockquote><p><strong>Vols, hôtels et activités à Phu Quoc</strong></p><ul><li><a href=\"/go/getyourguide?to=https%3A%2F%2Fwww.getyourguide.com%2Fho-chi-minh-city-l272%2F%3Fq%3DPhu%2BQuoc%2Bisland%2Btour%2BVietnam%26partner_id%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Excursions île Phu Quoc (GetYourGuide)</a></li><li><a href=\"/go/viator?to=https%3A%2F%2Fwww.viator.com%2FsearchResults%2Fall%3Ftext%3DPhu%2BQuoc%2Bisland%2Btour%2BVietnam%26pid%3DPLACEHOLDER%26mcid%3DPLACEHOLDER%26destId%3D352\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Tours Phu Quoc (Viator)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DHo%2BChi%2BMinh%2BCity%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Phu Quoc (Booking)</a></li><li><a href=\"/go/agoda?to=https%3A%2F%2Fwww.agoda.com%2Fsearch%3Fcity%3D13170%26cid%3DPLACEHOLDER%26locale%3Dfr-fr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Phu Quoc (Agoda)</a></li></ul></blockquote><h2>Pratique : vols, saison, budget</h2><p>Vols directs depuis Hanoï, HCMC ou Đà Nẵng (1–2 h). <strong>Saison sèche</strong> novembre–avril : mer calme, ciel bleu. Mousson juin–octobre : mer agitée, pluies fréquentes — tarifs bas mais plage limitée. Budget : 40–80 €/jour confort (hôtel + restaurants), hors resort luxe.</p><h2>Questions fréquentes</h2><h3>Combien de jours à Phu Quoc ?</h3><p>3 jours pour se poser, 5 jours pour alterner plages, snorkeling et exploration de l'île sans précipitation.</p><h3>Phu Quoc ou Nha Trang pour la plage ?</h3><p>Phu Quoc est plus « île tropicale » avec resorts et nature ; Nha Trang plus urbaine et animée. Phu Quoc convient mieux en fin de voyage détente.</p><h3>Faut-il louer un scooter à Phu Quoc ?</h3><p>Oui si vous voulez explorer hors du littoral principal — routes correctes, locations ~5–8 €/jour. Grab existe aussi autour de Duong Dong.</p><h2>Aller plus loin</h2><p>Consultez notre <a href=\"/phu-quoc\">guide complet Phu Quoc</a>, le pilier <a href=\"/guide/que-faire-au-vietnam\">Que faire au Vietnam</a> et nos conseils <a href=\"/guide/preparer-son-voyage\">Préparer son voyage</a> (visa, budget, eSIM).</p><blockquote><p><strong>Préparer le voyage</strong></p><ul><li><a href=\"/go/travel_insurance?to=https%3A%2F%2Fheymondo.fr%2F\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Assurance voyage Vietnam (Heymondo)</a></li><li><a href=\"/go/esim_airalo?to=https%3A%2F%2Fwww.airalo.com%2Fvietnam-esim%3Fref%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">eSIM Vietnam — internet dès l'atterrissage (Airalo)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DHo%2BChi%2BMinh%2BCity%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Phu Quoc (Booking)</a></li><li><a href=\"/go/agoda?to=https%3A%2F%2Fwww.agoda.com%2Fsearch%3Fcity%3D13170%26cid%3DPLACEHOLDER%26locale%3Dfr-fr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Phu Quoc (Agoda)</a></li></ul></blockquote>",
+    "category_label": "Itinéraires",
+    "tags": [
+      "Phu Quoc",
+      "plage",
+      "île",
+      "détente",
+      "snorkeling",
+      "Duong Dong"
+    ],
+    "image_alt": "Phu Quoc : plages, île tropicale et séjour détente (guide 2026) — Phú Quốc, Vietnam"
+  },
+  {
+    "slug": "da-nang-plages-vietnam",
+    "category": "itinerary",
+    "date": "2026-06-10",
+    "updated_at": "2026-06-10",
+    "builtin_version": "2026-06-10-v2",
+    "city": "Đà Nẵng",
+    "featured": false,
+    "read_time": 12,
+    "guide_type": "Guide expérience",
+    "ai_generated": false,
+    "image": "/static/images/destinations/da-nang.webp",
+    "image_photo_id": "1555979864-7a8f9b4fddf8",
+    "image_placeholder": false,
+    "i18n": {
+      "fr": {
+        "title": "Đà Nẵng et ses plages : My Khe, Marble Mountains et pont du Dragon (guide 2026)",
+        "excerpt": "Ville balnéaire entre Hội An et Huế : plages, Ba Na Hills, itinéraire 2–3 jours et bons plans hébergement.",
+        "content": "<p><strong>Đà Nẵng</strong> est la ville la plus agréable à vivre du Centre : moderne, propre, entre mer et montagnes. Base idéale pour <a href=\"/hoi-an\">Hội An</a> (30 min), <a href=\"/hue\">Huế</a> (2 h) et les plages de <strong>My Khe</strong>, elle combine urbanité vietnamienne et farniente. Pont du Dragon, Marble Mountains et Ba Na Hills complètent un séjour où plage et culture coexistent.</p><h2>Plages et baignade</h2><p><strong>My Khe</strong> : 30 km de sable, surf occasionnel, bars et resorts — la plage « américaine » iconique. <strong>Non Nuoc</strong>, au pied des Marble Mountains : plus calme, idéale en famille. Baignade confortable <strong>octobre–mai</strong> ; surveillez les drapeaux de sécurité pendant la mousson.</p><h2>À voir en ville et aux alentours</h2><ul><li><strong>Marble Mountains</strong> : grottes, pagodes, vue panoramique sur la côte.</li><li><strong>Pont du Dragon</strong> : spectacle feu et eau week-end vers 21 h.</li><li><strong>Ba Na Hills</strong> : Golden Bridge (main géante), parc — journée complète.</li><li><strong>Musée Cham</strong> : sculpture cham unique au Vietnam.</li><li><strong>Han Market</strong> : street food et produits locaux.</li></ul><blockquote><p><strong>Activités et hôtels à Đà Nẵng</strong></p><ul><li><a href=\"/go/getyourguide?to=https%3A%2F%2Fwww.getyourguide.com%2Fda-nang-l939%2F%3Fq%3DDa%2BNang%2Bbeach%2Btour%2BVietnam%26partner_id%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Excursions Đà Nẵng (GetYourGuide)</a></li><li><a href=\"/go/viator?to=https%3A%2F%2Fwww.viator.com%2FsearchResults%2Fall%3Ftext%3DDa%2BNang%2Bbeach%2Btour%2BVietnam%26pid%3DPLACEHOLDER%26mcid%3DPLACEHOLDER%26destId%3D4680\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Tours Đà Nẵng (Viator)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DDa%2BNang%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Đà Nẵng (Booking)</a></li><li><a href=\"/go/agoda?to=https%3A%2F%2Fwww.agoda.com%2Fsearch%3Fcity%3D16440%26cid%3DPLACEHOLDER%26locale%3Dfr-fr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Đà Nẵng (Agoda)</a></li></ul></blockquote><h2>Itinéraire 2–3 jours</h2><ol><li><strong>Jour 1</strong> : Marble Mountains le matin, plage My Khe l'après-midi, pont du Dragon le soir.</li><li><strong>Jour 2</strong> : excursion <a href=\"/hoi-an\">Hội An</a> (vieille ville + lanternes).</li><li><strong>Jour 3</strong> : Ba Na Hills ou train vers <a href=\"/hue\">Huế</a>.</li></ol><h2>Questions fréquentes</h2><h3>Đà Nẵng est-elle une bonne base pour Hội An ?</h3><p>Oui : 30 min en taxi/Grab, plages supérieures à An Bang pour la baignade, aéroport international pratique. Beaucoup de voyageurs divisent nuits entre les deux villes.</p><h3>Quand voir le Dragon Bridge ?</h3><p>Le week-end vers 21 h (feu et eau) — arrivez 30 min en avance, foule importante. Le pont est illuminé tous les soirs même sans spectacle.</p><h3>Ba Na Hills vaut-il une journée ?</h3><p>Oui pour la Golden Bridge et la vue ; c'est un parc à thème avec files d'attente. Réservez tôt et partez à l'ouverture.</p><h2>Aller plus loin</h2><p>Consultez notre <a href=\"/da-nang\">guide complet Đà Nẵng</a>, le pilier <a href=\"/guide/que-faire-au-vietnam\">Que faire au Vietnam</a> et nos conseils <a href=\"/guide/preparer-son-voyage\">Préparer son voyage</a> (visa, budget, eSIM).</p><blockquote><p><strong>Préparer le voyage</strong></p><ul><li><a href=\"/go/travel_insurance?to=https%3A%2F%2Fheymondo.fr%2F\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Assurance voyage Vietnam (Heymondo)</a></li><li><a href=\"/go/esim_airalo?to=https%3A%2F%2Fwww.airalo.com%2Fvietnam-esim%3Fref%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">eSIM Vietnam — internet dès l'atterrissage (Airalo)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DDa%2BNang%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Đà Nẵng (Booking)</a></li><li><a href=\"/go/agoda?to=https%3A%2F%2Fwww.agoda.com%2Fsearch%3Fcity%3D16440%26cid%3DPLACEHOLDER%26locale%3Dfr-fr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Đà Nẵng (Agoda)</a></li></ul></blockquote>",
+        "category_label": "Itinéraires",
+        "tags": [
+          "Đà Nẵng",
+          "plage",
+          "My Khe",
+          "Marble Mountains",
+          "Dragon Bridge",
+          "centre"
+        ],
+        "image_alt": "Đà Nẵng et ses plages : My Khe, Marble Mountains et pont du Dragon (guide 2026) — Đà Nẵng, Vietnam"
+      },
+      "en": {}
+    },
+    "title": "Đà Nẵng et ses plages : My Khe, Marble Mountains et pont du Dragon (guide 2026)",
+    "excerpt": "Ville balnéaire entre Hội An et Huế : plages, Ba Na Hills, itinéraire 2–3 jours et bons plans hébergement.",
+    "content": "<p><strong>Đà Nẵng</strong> est la ville la plus agréable à vivre du Centre : moderne, propre, entre mer et montagnes. Base idéale pour <a href=\"/hoi-an\">Hội An</a> (30 min), <a href=\"/hue\">Huế</a> (2 h) et les plages de <strong>My Khe</strong>, elle combine urbanité vietnamienne et farniente. Pont du Dragon, Marble Mountains et Ba Na Hills complètent un séjour où plage et culture coexistent.</p><h2>Plages et baignade</h2><p><strong>My Khe</strong> : 30 km de sable, surf occasionnel, bars et resorts — la plage « américaine » iconique. <strong>Non Nuoc</strong>, au pied des Marble Mountains : plus calme, idéale en famille. Baignade confortable <strong>octobre–mai</strong> ; surveillez les drapeaux de sécurité pendant la mousson.</p><h2>À voir en ville et aux alentours</h2><ul><li><strong>Marble Mountains</strong> : grottes, pagodes, vue panoramique sur la côte.</li><li><strong>Pont du Dragon</strong> : spectacle feu et eau week-end vers 21 h.</li><li><strong>Ba Na Hills</strong> : Golden Bridge (main géante), parc — journée complète.</li><li><strong>Musée Cham</strong> : sculpture cham unique au Vietnam.</li><li><strong>Han Market</strong> : street food et produits locaux.</li></ul><blockquote><p><strong>Activités et hôtels à Đà Nẵng</strong></p><ul><li><a href=\"/go/getyourguide?to=https%3A%2F%2Fwww.getyourguide.com%2Fda-nang-l939%2F%3Fq%3DDa%2BNang%2Bbeach%2Btour%2BVietnam%26partner_id%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Excursions Đà Nẵng (GetYourGuide)</a></li><li><a href=\"/go/viator?to=https%3A%2F%2Fwww.viator.com%2FsearchResults%2Fall%3Ftext%3DDa%2BNang%2Bbeach%2Btour%2BVietnam%26pid%3DPLACEHOLDER%26mcid%3DPLACEHOLDER%26destId%3D4680\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Tours Đà Nẵng (Viator)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DDa%2BNang%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Đà Nẵng (Booking)</a></li><li><a href=\"/go/agoda?to=https%3A%2F%2Fwww.agoda.com%2Fsearch%3Fcity%3D16440%26cid%3DPLACEHOLDER%26locale%3Dfr-fr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Đà Nẵng (Agoda)</a></li></ul></blockquote><h2>Itinéraire 2–3 jours</h2><ol><li><strong>Jour 1</strong> : Marble Mountains le matin, plage My Khe l'après-midi, pont du Dragon le soir.</li><li><strong>Jour 2</strong> : excursion <a href=\"/hoi-an\">Hội An</a> (vieille ville + lanternes).</li><li><strong>Jour 3</strong> : Ba Na Hills ou train vers <a href=\"/hue\">Huế</a>.</li></ol><h2>Questions fréquentes</h2><h3>Đà Nẵng est-elle une bonne base pour Hội An ?</h3><p>Oui : 30 min en taxi/Grab, plages supérieures à An Bang pour la baignade, aéroport international pratique. Beaucoup de voyageurs divisent nuits entre les deux villes.</p><h3>Quand voir le Dragon Bridge ?</h3><p>Le week-end vers 21 h (feu et eau) — arrivez 30 min en avance, foule importante. Le pont est illuminé tous les soirs même sans spectacle.</p><h3>Ba Na Hills vaut-il une journée ?</h3><p>Oui pour la Golden Bridge et la vue ; c'est un parc à thème avec files d'attente. Réservez tôt et partez à l'ouverture.</p><h2>Aller plus loin</h2><p>Consultez notre <a href=\"/da-nang\">guide complet Đà Nẵng</a>, le pilier <a href=\"/guide/que-faire-au-vietnam\">Que faire au Vietnam</a> et nos conseils <a href=\"/guide/preparer-son-voyage\">Préparer son voyage</a> (visa, budget, eSIM).</p><blockquote><p><strong>Préparer le voyage</strong></p><ul><li><a href=\"/go/travel_insurance?to=https%3A%2F%2Fheymondo.fr%2F\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Assurance voyage Vietnam (Heymondo)</a></li><li><a href=\"/go/esim_airalo?to=https%3A%2F%2Fwww.airalo.com%2Fvietnam-esim%3Fref%3DPLACEHOLDER\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">eSIM Vietnam — internet dès l'atterrissage (Airalo)</a></li><li><a href=\"/go/booking?to=https%3A%2F%2Fwww.booking.com%2Fsearchresults.html%3Fss%3DDa%2BNang%252C%2BVietnam%26aid%3DPLACEHOLDER%26lang%3Dfr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Đà Nẵng (Booking)</a></li><li><a href=\"/go/agoda?to=https%3A%2F%2Fwww.agoda.com%2Fsearch%3Fcity%3D16440%26cid%3DPLACEHOLDER%26locale%3Dfr-fr\" rel=\"sponsored noopener noreferrer\" target=\"_blank\">Hôtels à Đà Nẵng (Agoda)</a></li></ul></blockquote>",
+    "category_label": "Itinéraires",
+    "tags": [
+      "Đà Nẵng",
+      "plage",
+      "My Khe",
+      "Marble Mountains",
+      "Dragon Bridge",
+      "centre"
+    ],
+    "image_alt": "Đà Nẵng et ses plages : My Khe, Marble Mountains et pont du Dragon (guide 2026) — Đà Nẵng, Vietnam"
+  },
+  {
+    "slug": "visa-vietnam-guide-complet-francais",
+    "category": "practical",
+    "date": "2026-05-12",
+    "read_time": 6,
+    "featured": true,
+    "i18n": {
+      "fr": {
+        "title": "Visa Vietnam 2026 : guide complet pour les voyageurs français",
+        "excerpt": "E-visa, documents, délais et erreurs à éviter — tout pour entrer au Vietnam sereinement.",
+        "content": "\n<p>Les ressortissants français ont besoin d'un visa pour entrer au Vietnam. La procédure est aujourd'hui en ligne via l'e-visa officiel.</p>\n<h2>E-visa : la méthode recommandée</h2>\n<p>Demande sur le portail gouvernemental. Délai : 3 à 5 jours ouvrés. Coût : environ 25 USD. Validité 90 jours, séjour jusqu'à 90 jours selon le type.</p>\n<h2>Documents requis</h2>\n<ul>\n<li>Passeport valide 6 mois après le retour</li>\n<li>Photo fond blanc (format numérique)</li>\n<li>Adresse du premier hébergement</li>\n</ul>\n<blockquote><p>Utilisez uniquement le site officiel — évitez les intermédiaires qui surfacturent.</p></blockquote>\n",
+        "category_label": "Pratique",
+        "tags": [
+          "visa",
+          "e-visa",
+          "formalités"
         ]
       },
       "en": {}
     },
-    "title": "Café vietnamien : à l'œuf, à la noix de coco et au filtre phin",
-    "excerpt": "Cà phê sữa đá, egg coffee, café coco : histoire, adresses et comment boire comme un local.",
-    "content": "\n<p>Le Vietnam est l'un des plus grands exportateurs de café au monde. Ici, on ne boit pas un expresso\nrapide : on s'assoit, on attend que le <strong>phin</strong> (filtre métallique) goutte lentement,\net on sirote un café souvent corsé, parfois sucré de lait concentré.</p>\n<h2>Les styles incontournables</h2>\n<h3>Cà phê đen (café noir)</h3>\n<p>Robusta torréfié foncé, servi court et intense. Parfait après un phở matinal.\nDemandez <em>đen nóng</em> (chaud) ou <em>đen đá</em> (glacé).</p>\n<h3>Cà phê sữa đá (café glacé au lait concentré)</h3>\n<p>Le classique national : café filtre sur le lait concentré sucré, puis glaçons.\nSucré, fort, rafraîchissant — le petit-déjeuner du Sud et des trottoirs de Saigon.</p>\n<h3>Cà phê trứng (egg coffee)</h3>\n<p>Invention hanoïenne des années 1940 (Café Giang) : jaune d'œuf monté en neige avec du lait\ncondensé, versé sur un espresso chaud. Onctueux, dessert-like, à déguster assis sur un tabouret\ndans le vieux quartier.</p>\n<h3>Cà phê dừa (café à la noix de coco)</h3>\n<p>Mode récente : café glacé sur lait de coco et glace pilée. Populaire à Hội An et dans les cafés\nbranchés de Saigon — moins traditionnel mais délicieux en après-midi chaud.</p>\n<h2>Le rituel du phin</h2>\n<ol>\n<li>Le serveur pose le filtre sur votre tasse avec café moulu et un filet d'eau chaude.</li>\n<li>Attendez 3–5 minutes que le café goutte — ne pressez pas le phin.</li>\n<li>Ajoutez lait concentré ou sucre selon le style commandé.</li>\n</ol>\n<h2>Où boire un bon café</h2>\n<ul>\n<li><strong>Hanoï</strong> : Café Giang (egg coffee original), Loading T (terrasse), Cộng Cà Phê (déco rétro).</li>\n<li><strong>Ho Chi Minh-Ville</strong> : The Workshop (torréfaction artisanale), Cộng Cà Phê, cafés du quartier Bùi Viện.</li>\n<li><strong>Hội An</strong> : Faifo Coffee (vue sur les toits), cafés du marché central.</li>\n</ul>\n<h2>Conseils pratiques</h2>\n<ul>\n<li>Prix : <strong>0,80–2,50 €</strong> selon l'adresse (street vs café design).</li>\n<li>Le café vietnamien est souvent <strong>plus fort</strong> qu'en Europe — commencez par un demi-verre.</li>\n<li>Évitez le café instantané des hôtels : le phin local vaut le détour.</li>\n<li>Beaucoup de cafés ferment vers <strong>21 h</strong> ; les stands de rue servent dès 6 h.</li>\n</ul>\n<p>Combinez votre pause café avec notre guide des\n<a href=\"/blog/plats-incontournables-vietnam\">plats incontournables</a> pour une journée gourmande complète.</p>\n",
-    "category_label": "Gastronomie",
+    "title": "Visa Vietnam 2026 : guide complet pour les voyageurs français",
+    "excerpt": "E-visa, documents, délais et erreurs à éviter — tout pour entrer au Vietnam sereinement.",
+    "content": "\n<p>Les ressortissants français ont besoin d'un visa pour entrer au Vietnam. La procédure est aujourd'hui en ligne via l'e-visa officiel.</p>\n<h2>E-visa : la méthode recommandée</h2>\n<p>Demande sur le portail gouvernemental. Délai : 3 à 5 jours ouvrés. Coût : environ 25 USD. Validité 90 jours, séjour jusqu'à 90 jours selon le type.</p>\n<h2>Documents requis</h2>\n<ul>\n<li>Passeport valide 6 mois après le retour</li>\n<li>Photo fond blanc (format numérique)</li>\n<li>Adresse du premier hébergement</li>\n</ul>\n<blockquote><p>Utilisez uniquement le site officiel — évitez les intermédiaires qui surfacturent.</p></blockquote>\n",
+    "category_label": "Pratique",
     "tags": [
-      "café",
-      "egg coffee",
-      "hanoï",
-      "saigon"
-    ]
+      "visa",
+      "e-visa",
+      "formalités"
+    ],
+    "image": "/static/images/destinations/hanoi.webp",
+    "image_photo_id": "1555921015-5532091f6026",
+    "image_alt": "Visa Vietnam 2026 : guide complet pour les voyageurs français — voyage Vietnam",
+    "image_placeholder": false
+  },
+  {
+    "slug": "budget-voyage-vietnam-2026",
+    "category": "practical",
+    "date": "2026-05-20",
+    "read_time": 8,
+    "featured": true,
+    "i18n": {
+      "fr": {
+        "title": "Budget voyage Vietnam 2026 : combien prévoir par jour ?",
+        "excerpt": "Fourchettes réalistes backpacker, confort et premium avec exemples concrets.",
+        "content": "\n<p>Le Vietnam reste abordable, mais l'écart entre prix locaux et touristiques est réel.</p>\n<h2>Backpacker — 25 à 35 €/jour</h2>\n<p>Dortoir, street food, bus de nuit, Grab occasionnel.</p>\n<h2>Confort — 45 à 70 €/jour</h2>\n<p>Hôtel 3*, mix street food / restaurants, excursions modérées.</p>\n<h2>Premium — 100 €+/jour</h2>\n<p>Resorts, croisières luxe, guides privés — excellent rapport qualité-prix vs Europe.</p>\n",
+        "category_label": "Pratique",
+        "tags": [
+          "budget",
+          "prix",
+          "économies"
+        ]
+      },
+      "en": {}
+    },
+    "title": "Budget voyage Vietnam 2026 : combien prévoir par jour ?",
+    "excerpt": "Fourchettes réalistes backpacker, confort et premium avec exemples concrets.",
+    "content": "\n<p>Le Vietnam reste abordable, mais l'écart entre prix locaux et touristiques est réel.</p>\n<h2>Backpacker — 25 à 35 €/jour</h2>\n<p>Dortoir, street food, bus de nuit, Grab occasionnel.</p>\n<h2>Confort — 45 à 70 €/jour</h2>\n<p>Hôtel 3*, mix street food / restaurants, excursions modérées.</p>\n<h2>Premium — 100 €+/jour</h2>\n<p>Resorts, croisières luxe, guides privés — excellent rapport qualité-prix vs Europe.</p>\n",
+    "category_label": "Pratique",
+    "tags": [
+      "budget",
+      "prix",
+      "économies"
+    ],
+    "image": "/static/images/destinations/hanoi.webp",
+    "image_photo_id": "1555921015-5532091f6026",
+    "image_alt": "Budget voyage Vietnam 2026 : combien prévoir par jour ? — voyage Vietnam",
+    "image_placeholder": false
+  },
+  {
+    "slug": "carte-sim-esim-vietnam",
+    "category": "practical",
+    "date": "2026-04-18",
+    "read_time": 7,
+    "featured": true,
+    "i18n": {
+      "fr": {
+        "title": "Carte SIM et eSIM Vietnam : quel forfait choisir en 2026 ?",
+        "excerpt": "Viettel, Vinaphone, Airalo, Holafly — comparatif et conseils d'achat avant le départ.",
+        "content": "\n<p>Internet mobile est indispensable pour Grab, Google Maps et traduction. Deux options : eSIM avant le départ ou SIM physique à l'aéroport.</p>\n<h2>eSIM (recommandé)</h2>\n<p>Activation avant l'atterrissage. Airalo et Holafly proposent des forfaits 7 à 30 jours. Comptez 8 à 20 € pour 10-20 Go.</p>\n<h2>SIM à l'aéroport</h2>\n<p>Viettel et Vinaphone ont des stands à Hanoï et HCMC. ~10 € pour 30 jours / données illimitées (fair use). Passeport requis.</p>\n<h2>Conseil</h2>\n<p>Vérifiez que votre téléphone est compatible eSIM. Gardez votre SIM française en slot secondaire si possible.</p>\n",
+        "category_label": "Pratique",
+        "tags": [
+          "esim",
+          "sim",
+          "internet",
+          "connectivité"
+        ]
+      },
+      "en": {}
+    },
+    "title": "Carte SIM et eSIM Vietnam : quel forfait choisir en 2026 ?",
+    "excerpt": "Viettel, Vinaphone, Airalo, Holafly — comparatif et conseils d'achat avant le départ.",
+    "content": "\n<p>Internet mobile est indispensable pour Grab, Google Maps et traduction. Deux options : eSIM avant le départ ou SIM physique à l'aéroport.</p>\n<h2>eSIM (recommandé)</h2>\n<p>Activation avant l'atterrissage. Airalo et Holafly proposent des forfaits 7 à 30 jours. Comptez 8 à 20 € pour 10-20 Go.</p>\n<h2>SIM à l'aéroport</h2>\n<p>Viettel et Vinaphone ont des stands à Hanoï et HCMC. ~10 € pour 30 jours / données illimitées (fair use). Passeport requis.</p>\n<h2>Conseil</h2>\n<p>Vérifiez que votre téléphone est compatible eSIM. Gardez votre SIM française en slot secondaire si possible.</p>\n",
+    "category_label": "Pratique",
+    "tags": [
+      "esim",
+      "sim",
+      "internet",
+      "connectivité"
+    ],
+    "image": "/static/images/destinations/ho-chi-minh-city.webp",
+    "image_photo_id": "1583417319070-4a69db38a482",
+    "image_alt": "Carte SIM et eSIM Vietnam : quel forfait choisir en 2026 ? — voyage Vietnam",
+    "image_placeholder": false
+  },
+  {
+    "slug": "securite-voyage-vietnam-conseils",
+    "category": "practical",
+    "date": "2026-05-05",
+    "read_time": 7,
+    "featured": false,
+    "i18n": {
+      "fr": {
+        "title": "Sécurité au Vietnam : conseils pratiques pour voyager sereinement",
+        "excerpt": "Arnaques courantes, santé, trafic et bonnes pratiques — le Vietnam est globalement sûr.",
+        "content": "\n<p>Le Vietnam figure parmi les destinations les plus sûres d'Asie du Sud-Est. Quelques précautions suffisent.</p>\n<ul>\n<li><strong>Trafic</strong> : traversez lentement et en groupe, sans hésiter une fois engagé.</li>\n<li><strong>Pickpockets</strong> : marchés bondés et bus de nuit — sac devant soi.</li>\n<li><strong>Arnaques</strong> : taxis sans compteur, motos qui roulent sur votre pied.</li>\n<li><strong>Santé</strong> : eau en bouteille, assurance voyage recommandée.</li>\n</ul>\n",
+        "category_label": "Pratique",
+        "tags": [
+          "sécurité",
+          "santé",
+          "arnaques"
+        ]
+      },
+      "en": {}
+    },
+    "title": "Sécurité au Vietnam : conseils pratiques pour voyager sereinement",
+    "excerpt": "Arnaques courantes, santé, trafic et bonnes pratiques — le Vietnam est globalement sûr.",
+    "content": "\n<p>Le Vietnam figure parmi les destinations les plus sûres d'Asie du Sud-Est. Quelques précautions suffisent.</p>\n<ul>\n<li><strong>Trafic</strong> : traversez lentement et en groupe, sans hésiter une fois engagé.</li>\n<li><strong>Pickpockets</strong> : marchés bondés et bus de nuit — sac devant soi.</li>\n<li><strong>Arnaques</strong> : taxis sans compteur, motos qui roulent sur votre pied.</li>\n<li><strong>Santé</strong> : eau en bouteille, assurance voyage recommandée.</li>\n</ul>\n",
+    "category_label": "Pratique",
+    "tags": [
+      "sécurité",
+      "santé",
+      "arnaques"
+    ],
+    "image": "/static/images/destinations/hanoi.webp",
+    "image_photo_id": "1555921015-5532091f6026",
+    "image_alt": "Sécurité au Vietnam : conseils pratiques pour voyager sereinement — voyage Vietnam",
+    "image_placeholder": false
+  },
+  {
+    "slug": "transport-vietnam-train-bus-vol",
+    "category": "practical",
+    "date": "2026-04-02",
+    "read_time": 9,
+    "featured": false,
+    "i18n": {
+      "fr": {
+        "title": "Se déplacer au Vietnam : train, bus, vol et Grab",
+        "excerpt": "Comment circuler efficacement entre les villes sans perdre de temps ni d'argent.",
+        "content": "\n<p>Relier Hanoï, Huế, Đà Nẵng et Ho Chi Minh-Ville : le bon choix dépend de votre <strong>budget</strong>,\ndu <strong>temps</strong> disponible et du confort souhaité. Voici un comparatif honnête pour planifier\nchaque étape sans mauvaise surprise.</p>\n<h2>Vol intérieur — le plus rapide</h2>\n<p><strong>Quand ?</strong> Axes longs (Hanoï → Saigon, Hanoï → Đà Nẵng) si vous avez 10–15 jours ou moins.\n<strong>Durée :</strong> 1 h–1 h 30. <strong>Prix :</strong> 35–70 € si réservé 2–3 semaines à l'avance\n(Vietnam Airlines, VietJet, Bamboo Airways).</p>\n<h2>Train — le plus authentique</h2>\n<p><strong>Quand ?</strong> Traversée Nord → Centre (Hanoï → Huế, ~14 h) ou expérience\n<a href=\"/guide/transport-au-vietnam\">Réunification</a> sur plusieurs jours.\n<strong>Prix :</strong> 15–45 € en couchette 4 lits (soft sleeper). Réservez sur\n<a href=\"https://www.12go.asia\" rel=\"noopener noreferrer\" target=\"_blank\">12go.asia</a> ou dsvn.vn.</p>\n<h2>Bus de nuit — le plus économique</h2>\n<p><strong>Quand ?</strong> Budget serré, axes sans rail direct (ex. Hanoï → Hội An via sleeper).\n<strong>Durée :</strong> 12–18 h. <strong>Prix :</strong> 12–25 €. Privilégiez les compagnies recommandées\n(Hoang Long, Futabus, Sinh Tourist).</p>\n<h2>En ville : Grab plutôt que taxi</h2>\n<p>Grab (voiture ou moto) affiche le prix à l'avance, évite les compteurs trafiqués.\nVoir notre page <a href=\"/applications-utiles-vietnam\">applications utiles</a>.</p>\n<h2>Règle simple</h2>\n<ul>\n<li><strong>&lt; 500 km et peu de temps</strong> → vol.</li>\n<li><strong>Paysages &amp; ambiance</strong> → train de jour ou couchette.</li>\n<li><strong>Budget minimal</strong> → bus de nuit VIP.</li>\n<li><strong>Derniers kilomètres</strong> → Grab.</li>\n</ul>\n",
+        "category_label": "Pratique",
+        "tags": [
+          "transport",
+          "train",
+          "vol",
+          "grab",
+          "bus"
+        ]
+      },
+      "en": {}
+    },
+    "title": "Se déplacer au Vietnam : train, bus, vol et Grab",
+    "excerpt": "Comment circuler efficacement entre les villes sans perdre de temps ni d'argent.",
+    "content": "\n<p>Relier Hanoï, Huế, Đà Nẵng et Ho Chi Minh-Ville : le bon choix dépend de votre <strong>budget</strong>,\ndu <strong>temps</strong> disponible et du confort souhaité. Voici un comparatif honnête pour planifier\nchaque étape sans mauvaise surprise.</p>\n<h2>Vol intérieur — le plus rapide</h2>\n<p><strong>Quand ?</strong> Axes longs (Hanoï → Saigon, Hanoï → Đà Nẵng) si vous avez 10–15 jours ou moins.\n<strong>Durée :</strong> 1 h–1 h 30. <strong>Prix :</strong> 35–70 € si réservé 2–3 semaines à l'avance\n(Vietnam Airlines, VietJet, Bamboo Airways).</p>\n<h2>Train — le plus authentique</h2>\n<p><strong>Quand ?</strong> Traversée Nord → Centre (Hanoï → Huế, ~14 h) ou expérience\n<a href=\"/guide/transport-au-vietnam\">Réunification</a> sur plusieurs jours.\n<strong>Prix :</strong> 15–45 € en couchette 4 lits (soft sleeper). Réservez sur\n<a href=\"https://www.12go.asia\" rel=\"noopener noreferrer\" target=\"_blank\">12go.asia</a> ou dsvn.vn.</p>\n<h2>Bus de nuit — le plus économique</h2>\n<p><strong>Quand ?</strong> Budget serré, axes sans rail direct (ex. Hanoï → Hội An via sleeper).\n<strong>Durée :</strong> 12–18 h. <strong>Prix :</strong> 12–25 €. Privilégiez les compagnies recommandées\n(Hoang Long, Futabus, Sinh Tourist).</p>\n<h2>En ville : Grab plutôt que taxi</h2>\n<p>Grab (voiture ou moto) affiche le prix à l'avance, évite les compteurs trafiqués.\nVoir notre page <a href=\"/applications-utiles-vietnam\">applications utiles</a>.</p>\n<h2>Règle simple</h2>\n<ul>\n<li><strong>&lt; 500 km et peu de temps</strong> → vol.</li>\n<li><strong>Paysages &amp; ambiance</strong> → train de jour ou couchette.</li>\n<li><strong>Budget minimal</strong> → bus de nuit VIP.</li>\n<li><strong>Derniers kilomètres</strong> → Grab.</li>\n</ul>\n",
+    "category_label": "Pratique",
+    "tags": [
+      "transport",
+      "train",
+      "vol",
+      "grab",
+      "bus"
+    ],
+    "image": "/static/images/destinations/hanoi.webp",
+    "image_photo_id": "1555921015-5532091f6026",
+    "image_alt": "Se déplacer au Vietnam : train, bus, vol et Grab — voyage Vietnam",
+    "image_placeholder": false
   },
   {
     "slug": "train-reunification-hanoi-saigon",
@@ -75,9 +503,6 @@
     "date": "2026-06-10",
     "read_time": 11,
     "featured": false,
-    "image": "/static/images/pool/1555921015-5532091f6026.webp",
-    "image_photo_id": "1555921015-5532091f6026",
-    "image_placeholder": false,
     "i18n": {
       "fr": {
         "title": "Train de la Réunification Hanoï–Saigon : guide complet",
@@ -104,7 +529,11 @@
       "hanoï",
       "saigon",
       "huế"
-    ]
+    ],
+    "image": "/static/images/destinations/hanoi.webp",
+    "image_photo_id": "1555921015-5532091f6026",
+    "image_placeholder": false,
+    "image_alt": "Train de la Réunification Hanoï–Saigon : guide complet — voyage Vietnam"
   },
   {
     "slug": "vols-interieurs-vietnam",
@@ -112,9 +541,6 @@
     "date": "2026-06-10",
     "read_time": 10,
     "featured": false,
-    "image": "/static/images/pool/1603852452378-a4e8d84324a2.webp",
-    "image_photo_id": "1603852452378-a4e8d84324a2",
-    "image_placeholder": false,
     "i18n": {
       "fr": {
         "title": "Vols intérieurs au Vietnam : compagnies, prix et astuces",
@@ -139,7 +565,11 @@
       "transport",
       "avion",
       "budget"
-    ]
+    ],
+    "image": "/static/images/destinations/ho-chi-minh-city.webp",
+    "image_photo_id": "1583417319070-4a69db38a482",
+    "image_placeholder": false,
+    "image_alt": "Vols intérieurs au Vietnam : compagnies, prix et astuces — voyage Vietnam"
   },
   {
     "slug": "location-scooter-vietnam",
@@ -147,9 +577,6 @@
     "date": "2026-06-10",
     "read_time": 9,
     "featured": false,
-    "image": "/static/images/pool/1521993117367-b7f70ccd029d.webp",
-    "image_photo_id": "1521993117367-b7f70ccd029d",
-    "image_placeholder": false,
     "i18n": {
       "fr": {
         "title": "Louer un scooter au Vietnam : permis, prix et sécurité",
@@ -174,287 +601,117 @@
       "transport",
       "sécurité",
       "permis"
-    ]
+    ],
+    "image": "/static/images/destinations/hoi-an.webp",
+    "image_photo_id": "1528127269322-539801943592",
+    "image_placeholder": false,
+    "image_alt": "Louer un scooter au Vietnam : permis, prix et sécurité — voyage Vietnam"
   },
   {
-    "slug": "da-nang-plages-vietnam",
-    "category": "itinerary",
+    "slug": "plats-incontournables-vietnam",
+    "category": "food",
     "date": "2026-06-10",
-    "city": "Đà Nẵng",
-    "featured": false,
-    "read_time": 7,
-    "guide_type": "Guide expérience",
-    "ai_generated": false,
-    "image": "/static/images/pool/1555979864-7a8f9b4fddf8.webp",
-    "image_photo_id": "1555979864-7a8f9b4fddf8",
-    "image_placeholder": false,
+    "read_time": 12,
+    "featured": true,
     "i18n": {
       "fr": {
-        "title": "Đà Nẵng et ses plages : ville balnéaire entre Hội An et Huế",
-        "excerpt": "My Khe, Marble Mountains et pont du Dragon : 2 jours entre culture et farniente.",
-        "content": "<p>Đà Nẵng est la ville la plus agréable à vivre du Centre : moderne, propre, entre mer et montagnes.\nElle sert de base idéale pour Hội An (30 min) et la région de Huế.</p>\n<h2>Plages et baignade</h2>\n<p><strong>My Khe</strong> (plage « américaine ») : 30 km de sable, bars et resorts. <strong>Non Nuoc</strong>\nau pied des Marble Mountains : plus calme. La baignade est possible octobre–mai ; surveillez les\ndrapeaux de sécurité en saison des pluies.</p>\n<h2>À voir en ville</h2>\n<ul>\n<li><strong>Marble Mountains</strong> : grottes, pagodes, vue sur la côte.</li>\n<li><strong>Pont du Dragon</strong> : spectacle de feu et eau le week-end (20 h).</li>\n<li><strong>Ba Na Hills</strong> : Golden Bridge (main géante), parc d'attractions — journée complète.</li>\n</ul>\n<h2>Combien de temps ?</h2>\n<p>2 nuits pour la ville + une excursion à <strong>Hội An</strong>. Les voyageurs pressés font Đà Nẵng\nen hub aérien entre le Nord et le Sud.</p><p>Pour les adresses, hébergements et conseils détaillés sur place, consultez notre <a href=\"/da-nang\">guide complet Đà Nẵng</a>.</p>",
-        "category_label": "Itinéraires",
+        "title": "Phở, bún chả & plats vietnamiens à goûter absolument",
+        "excerpt": "Les 12 plats emblématiques du Vietnam, région par région : où les trouver et comment les commander.",
+        "content": "\n<p>La cuisine vietnamienne se lit sur une carte géographique : le <strong>Nord</strong> (Hanoï) privilégie\nbouillons clairs et herbes fraîches, le <strong>Centre</strong> (Huế, Hội An) mise sur épices et nouilles\nartisanales, le <strong>Sud</strong> (Saigon) assaisonne plus sucré et généreux. Voici les plats à ne pas\nmanquer, avec leur territoire d'origine.</p>\n<h2>Les incontournables par région</h2>\n<h3>Nord — Hanoï</h3>\n<ul>\n<li><strong>Phở bò</strong> : bouillon de bœuf clair, nouilles de riz, basilic thaï et citron vert.\nCommandez <em>phở tái</em> (bœuf saisi) ou <em>phở chín</em> (bien cuit). Référence : Phở Bát Đàn.</li>\n<li><strong>Bún chả</strong> : viande de porc grillée au charbon, vermicelles froids, nước chấm aigre-doux.\nLe plat du déjeuner hanoïen — essayez Bún chả Hương Liên (rue Lê Văn Hưu).</li>\n<li><strong>Bún thang</strong> : bouillon délicat aux vermicelles, poulet, œuf et jambon — spécialité raffinée du Nord.</li>\n<li><strong>Chả cá Lã Vọng</strong> : poisson grillé à la table avec aneth et cacahuètes — expérience conviviale.</li>\n</ul>\n<h3>Centre — Huế &amp; Hội An</h3>\n<ul>\n<li><strong>Bún bò Huế</strong> : soupe épicée au citronnelle et pâte de crevettes, nouilles épaisses.\nPlus corsé que le phở — incontournable à Huế.</li>\n<li><strong>Cao lầu</strong> : nouilles au charbon de bois, porc, herbes — exclusif à Hội An (eau du puits Ba Lễ).</li>\n<li><strong>White rose (bánh bao bánh vạc)</strong> : raviolis translucides aux crevettes, spécialité hoiannoise.</li>\n<li><strong>Mì Quảng</strong> : nouilles au curcuma, porc ou poulet, peu de bouillon — plat emblématique de Đà Nẵng.</li>\n</ul>\n<h3>Sud — Ho Chi Minh-Ville</h3>\n<ul>\n<li><strong>Bánh mì</strong> : baguette croustillante, pâté, viande, pickles et coriandre.\nLe Sud en fait une religion — Bánh mì Huỳnh Hoa est la référence.</li>\n<li><strong>Cơm tấm</strong> : riz brisé, côtes de porc grillées, œuf et nước mắm sucré — petit-déjeuner du Sud.</li>\n<li><strong>Hủ tiếu Nam Vang</strong> : soupe de nouilles aux crevettes et porc, héritage cambodgien.</li>\n<li><strong>Bò lá lốt</strong> : bœuf enroulé dans des feuilles de bétel, grillé — saveur fumée typique.</li>\n</ul>\n<h2>Plats présents partout</h2>\n<ul>\n<li><strong>Gỏi cuốn</strong> : rouleaux de printemps frais (crevettes, porc, vermicelles, herbes).</li>\n<li><strong>Chả giò / nem rán</strong> : rouleaux frits croustillants — entrée universelle.</li>\n<li><strong>Bún riêu</strong> : soupe de tomate au crabe, vermicelles — réconfortant et abordable.</li>\n</ul>\n<h2>Comment commander sans stress</h2>\n<ul>\n<li>Pointez le plat sur la carte ou montrez une photo sur votre téléphone.</li>\n<li>Les stands fréquentés tournent vite : c'est le meilleur indicateur de fraîcheur.</li>\n<li>Un repas street food coûte <strong>1,50–4 €</strong> ; un restaurant local <strong>5–12 €</strong>.</li>\n<li>Dites <em>không cay</em> (pas épicé) ou <em>ít cay</em> (peu épicé) si vous êtes sensible au piment.</li>\n</ul>\n<p>Pour des adresses testées à Hanoï, voir notre guide\n<a href=\"/blog/meilleurs-restaurants-hanoi\">meilleurs restaurants de Hanoï</a>.\nLes pages destinations <a href=\"/hanoi\">Hanoï</a>,\n<a href=\"/hoi-an\">Hội An</a> et\n<a href=\"/ho-chi-minh-city\">Ho Chi Minh-Ville</a> détaillent aussi la street food locale.</p>\n",
+        "category_label": "Gastronomie",
         "tags": [
-          "Đà Nẵng",
-          "plage",
-          "My Khe",
-          "centre"
-        ],
-        "image_alt": "Đà Nẵng et ses plages : ville balnéaire entre Hội An et Huế — Đà Nẵng, Vietnam"
+          "phở",
+          "bún chả",
+          "street food",
+          "gastronomie"
+        ]
       },
       "en": {}
     },
-    "title": "Đà Nẵng et ses plages : ville balnéaire entre Hội An et Huế",
-    "excerpt": "My Khe, Marble Mountains et pont du Dragon : 2 jours entre culture et farniente.",
-    "content": "<p>Đà Nẵng est la ville la plus agréable à vivre du Centre : moderne, propre, entre mer et montagnes.\nElle sert de base idéale pour Hội An (30 min) et la région de Huế.</p>\n<h2>Plages et baignade</h2>\n<p><strong>My Khe</strong> (plage « américaine ») : 30 km de sable, bars et resorts. <strong>Non Nuoc</strong>\nau pied des Marble Mountains : plus calme. La baignade est possible octobre–mai ; surveillez les\ndrapeaux de sécurité en saison des pluies.</p>\n<h2>À voir en ville</h2>\n<ul>\n<li><strong>Marble Mountains</strong> : grottes, pagodes, vue sur la côte.</li>\n<li><strong>Pont du Dragon</strong> : spectacle de feu et eau le week-end (20 h).</li>\n<li><strong>Ba Na Hills</strong> : Golden Bridge (main géante), parc d'attractions — journée complète.</li>\n</ul>\n<h2>Combien de temps ?</h2>\n<p>2 nuits pour la ville + une excursion à <strong>Hội An</strong>. Les voyageurs pressés font Đà Nẵng\nen hub aérien entre le Nord et le Sud.</p><p>Pour les adresses, hébergements et conseils détaillés sur place, consultez notre <a href=\"/da-nang\">guide complet Đà Nẵng</a>.</p>",
-    "category_label": "Itinéraires",
+    "title": "Phở, bún chả & plats vietnamiens à goûter absolument",
+    "excerpt": "Les 12 plats emblématiques du Vietnam, région par région : où les trouver et comment les commander.",
+    "content": "\n<p>La cuisine vietnamienne se lit sur une carte géographique : le <strong>Nord</strong> (Hanoï) privilégie\nbouillons clairs et herbes fraîches, le <strong>Centre</strong> (Huế, Hội An) mise sur épices et nouilles\nartisanales, le <strong>Sud</strong> (Saigon) assaisonne plus sucré et généreux. Voici les plats à ne pas\nmanquer, avec leur territoire d'origine.</p>\n<h2>Les incontournables par région</h2>\n<h3>Nord — Hanoï</h3>\n<ul>\n<li><strong>Phở bò</strong> : bouillon de bœuf clair, nouilles de riz, basilic thaï et citron vert.\nCommandez <em>phở tái</em> (bœuf saisi) ou <em>phở chín</em> (bien cuit). Référence : Phở Bát Đàn.</li>\n<li><strong>Bún chả</strong> : viande de porc grillée au charbon, vermicelles froids, nước chấm aigre-doux.\nLe plat du déjeuner hanoïen — essayez Bún chả Hương Liên (rue Lê Văn Hưu).</li>\n<li><strong>Bún thang</strong> : bouillon délicat aux vermicelles, poulet, œuf et jambon — spécialité raffinée du Nord.</li>\n<li><strong>Chả cá Lã Vọng</strong> : poisson grillé à la table avec aneth et cacahuètes — expérience conviviale.</li>\n</ul>\n<h3>Centre — Huế &amp; Hội An</h3>\n<ul>\n<li><strong>Bún bò Huế</strong> : soupe épicée au citronnelle et pâte de crevettes, nouilles épaisses.\nPlus corsé que le phở — incontournable à Huế.</li>\n<li><strong>Cao lầu</strong> : nouilles au charbon de bois, porc, herbes — exclusif à Hội An (eau du puits Ba Lễ).</li>\n<li><strong>White rose (bánh bao bánh vạc)</strong> : raviolis translucides aux crevettes, spécialité hoiannoise.</li>\n<li><strong>Mì Quảng</strong> : nouilles au curcuma, porc ou poulet, peu de bouillon — plat emblématique de Đà Nẵng.</li>\n</ul>\n<h3>Sud — Ho Chi Minh-Ville</h3>\n<ul>\n<li><strong>Bánh mì</strong> : baguette croustillante, pâté, viande, pickles et coriandre.\nLe Sud en fait une religion — Bánh mì Huỳnh Hoa est la référence.</li>\n<li><strong>Cơm tấm</strong> : riz brisé, côtes de porc grillées, œuf et nước mắm sucré — petit-déjeuner du Sud.</li>\n<li><strong>Hủ tiếu Nam Vang</strong> : soupe de nouilles aux crevettes et porc, héritage cambodgien.</li>\n<li><strong>Bò lá lốt</strong> : bœuf enroulé dans des feuilles de bétel, grillé — saveur fumée typique.</li>\n</ul>\n<h2>Plats présents partout</h2>\n<ul>\n<li><strong>Gỏi cuốn</strong> : rouleaux de printemps frais (crevettes, porc, vermicelles, herbes).</li>\n<li><strong>Chả giò / nem rán</strong> : rouleaux frits croustillants — entrée universelle.</li>\n<li><strong>Bún riêu</strong> : soupe de tomate au crabe, vermicelles — réconfortant et abordable.</li>\n</ul>\n<h2>Comment commander sans stress</h2>\n<ul>\n<li>Pointez le plat sur la carte ou montrez une photo sur votre téléphone.</li>\n<li>Les stands fréquentés tournent vite : c'est le meilleur indicateur de fraîcheur.</li>\n<li>Un repas street food coûte <strong>1,50–4 €</strong> ; un restaurant local <strong>5–12 €</strong>.</li>\n<li>Dites <em>không cay</em> (pas épicé) ou <em>ít cay</em> (peu épicé) si vous êtes sensible au piment.</li>\n</ul>\n<p>Pour des adresses testées à Hanoï, voir notre guide\n<a href=\"/blog/meilleurs-restaurants-hanoi\">meilleurs restaurants de Hanoï</a>.\nLes pages destinations <a href=\"/hanoi\">Hanoï</a>,\n<a href=\"/hoi-an\">Hội An</a> et\n<a href=\"/ho-chi-minh-city\">Ho Chi Minh-Ville</a> détaillent aussi la street food locale.</p>\n",
+    "category_label": "Gastronomie",
     "tags": [
-      "Đà Nẵng",
-      "plage",
-      "My Khe",
-      "centre"
+      "phở",
+      "bún chả",
+      "street food",
+      "gastronomie"
     ],
-    "image_alt": "Đà Nẵng et ses plages : ville balnéaire entre Hội An et Huế — Đà Nẵng, Vietnam"
+    "image": "/static/images/destinations/hanoi.webp",
+    "image_photo_id": "1555921015-5532091f6026",
+    "image_placeholder": false,
+    "image_alt": "Phở, bún chả & plats vietnamiens à goûter absolument — voyage Vietnam"
   },
   {
-    "slug": "phu-quoc-plages-ile-tropicale",
-    "category": "itinerary",
+    "slug": "cafe-vietnamien-guide",
+    "category": "food",
     "date": "2026-06-10",
-    "city": "Phú Quốc",
+    "read_time": 10,
     "featured": false,
-    "read_time": 7,
-    "guide_type": "Guide expérience",
-    "ai_generated": false,
-    "image": "/static/images/pool/1555979864-7a8f9b4fddf8.webp",
-    "image_photo_id": "1555979864-7a8f9b4fddf8",
-    "image_placeholder": false,
     "i18n": {
       "fr": {
-        "title": "Phu Quoc : plages, île tropicale et séjour détente",
-        "excerpt": "Sable blanc, couchers de soleil, poivre et pêche : organiser 3 à 5 jours sur l'île du Sud.",
-        "content": "<p>Phu Quoc, la plus grande île du Vietnam, cumule plages de sable blanc, eaux turquoise et\nhôtels à tous budgets. C'est la conclusion idéale d'un voyage après le rythme intense du Nord et\ndu Centre.</p>\n<h2>Les meilleures plages</h2>\n<ul>\n<li><strong>Sao Beach</strong> : sable fin, eau calme, idéal famille.</li>\n<li><strong>Long Beach</strong> : longue, couchers de soleil, restaurants en bord de mer.</li>\n<li><strong>Bai Khem</strong> : plus préservée, eaux cristallines (accès parfois payant).</li>\n</ul>\n<h2>Activités au-delà de la plage</h2>\n<p>Snorkeling ou plongée au sud de l'île, visite des plantations de <strong>poivre</strong> et de\n<strong>nuoc mam</strong> (sauce de poisson), marché nocturne de Duong Dong. Le <strong>Vinpearl\nSafari</strong> plaît aux familles.</p>\n<h2>Pratique</h2>\n<p>Vols directs depuis Hanoï, HCMC ou Đà Nẵng. Saison sèche novembre–avril. Comptez 3 à 5 jours.\nÉvitez la mousson (juin–octobre) : mer agitée et pluies fréquentes.</p><p>Pour les adresses, hébergements et conseils détaillés sur place, consultez notre <a href=\"/phu-quoc\">guide complet Phu Quoc</a>.</p>",
-        "category_label": "Itinéraires",
+        "title": "Café vietnamien : à l'œuf, à la noix de coco et au filtre phin",
+        "excerpt": "Cà phê sữa đá, egg coffee, café coco : histoire, adresses et comment boire comme un local.",
+        "content": "\n<p>Le Vietnam est l'un des plus grands exportateurs de café au monde. Ici, on ne boit pas un expresso\nrapide : on s'assoit, on attend que le <strong>phin</strong> (filtre métallique) goutte lentement,\net on sirote un café souvent corsé, parfois sucré de lait concentré.</p>\n<h2>Les styles incontournables</h2>\n<h3>Cà phê đen (café noir)</h3>\n<p>Robusta torréfié foncé, servi court et intense. Parfait après un phở matinal.\nDemandez <em>đen nóng</em> (chaud) ou <em>đen đá</em> (glacé).</p>\n<h3>Cà phê sữa đá (café glacé au lait concentré)</h3>\n<p>Le classique national : café filtre sur le lait concentré sucré, puis glaçons.\nSucré, fort, rafraîchissant — le petit-déjeuner du Sud et des trottoirs de Saigon.</p>\n<h3>Cà phê trứng (egg coffee)</h3>\n<p>Invention hanoïenne des années 1940 (Café Giang) : jaune d'œuf monté en neige avec du lait\ncondensé, versé sur un espresso chaud. Onctueux, dessert-like, à déguster assis sur un tabouret\ndans le vieux quartier.</p>\n<h3>Cà phê dừa (café à la noix de coco)</h3>\n<p>Mode récente : café glacé sur lait de coco et glace pilée. Populaire à Hội An et dans les cafés\nbranchés de Saigon — moins traditionnel mais délicieux en après-midi chaud.</p>\n<h2>Le rituel du phin</h2>\n<ol>\n<li>Le serveur pose le filtre sur votre tasse avec café moulu et un filet d'eau chaude.</li>\n<li>Attendez 3–5 minutes que le café goutte — ne pressez pas le phin.</li>\n<li>Ajoutez lait concentré ou sucre selon le style commandé.</li>\n</ol>\n<h2>Où boire un bon café</h2>\n<ul>\n<li><strong>Hanoï</strong> : Café Giang (egg coffee original), Loading T (terrasse), Cộng Cà Phê (déco rétro).</li>\n<li><strong>Ho Chi Minh-Ville</strong> : The Workshop (torréfaction artisanale), Cộng Cà Phê, cafés du quartier Bùi Viện.</li>\n<li><strong>Hội An</strong> : Faifo Coffee (vue sur les toits), cafés du marché central.</li>\n</ul>\n<h2>Conseils pratiques</h2>\n<ul>\n<li>Prix : <strong>0,80–2,50 €</strong> selon l'adresse (street vs café design).</li>\n<li>Le café vietnamien est souvent <strong>plus fort</strong> qu'en Europe — commencez par un demi-verre.</li>\n<li>Évitez le café instantané des hôtels : le phin local vaut le détour.</li>\n<li>Beaucoup de cafés ferment vers <strong>21 h</strong> ; les stands de rue servent dès 6 h.</li>\n</ul>\n<p>Combinez votre pause café avec notre guide des\n<a href=\"/blog/plats-incontournables-vietnam\">plats incontournables</a> pour une journée gourmande complète.</p>\n",
+        "category_label": "Gastronomie",
         "tags": [
-          "Phu Quoc",
-          "plage",
-          "île",
-          "détente"
-        ],
-        "image_alt": "Phu Quoc : plages, île tropicale et séjour détente — Phú Quốc, Vietnam"
+          "café",
+          "egg coffee",
+          "hanoï",
+          "saigon"
+        ]
       },
       "en": {}
     },
-    "title": "Phu Quoc : plages, île tropicale et séjour détente",
-    "excerpt": "Sable blanc, couchers de soleil, poivre et pêche : organiser 3 à 5 jours sur l'île du Sud.",
-    "content": "<p>Phu Quoc, la plus grande île du Vietnam, cumule plages de sable blanc, eaux turquoise et\nhôtels à tous budgets. C'est la conclusion idéale d'un voyage après le rythme intense du Nord et\ndu Centre.</p>\n<h2>Les meilleures plages</h2>\n<ul>\n<li><strong>Sao Beach</strong> : sable fin, eau calme, idéal famille.</li>\n<li><strong>Long Beach</strong> : longue, couchers de soleil, restaurants en bord de mer.</li>\n<li><strong>Bai Khem</strong> : plus préservée, eaux cristallines (accès parfois payant).</li>\n</ul>\n<h2>Activités au-delà de la plage</h2>\n<p>Snorkeling ou plongée au sud de l'île, visite des plantations de <strong>poivre</strong> et de\n<strong>nuoc mam</strong> (sauce de poisson), marché nocturne de Duong Dong. Le <strong>Vinpearl\nSafari</strong> plaît aux familles.</p>\n<h2>Pratique</h2>\n<p>Vols directs depuis Hanoï, HCMC ou Đà Nẵng. Saison sèche novembre–avril. Comptez 3 à 5 jours.\nÉvitez la mousson (juin–octobre) : mer agitée et pluies fréquentes.</p><p>Pour les adresses, hébergements et conseils détaillés sur place, consultez notre <a href=\"/phu-quoc\">guide complet Phu Quoc</a>.</p>",
-    "category_label": "Itinéraires",
+    "title": "Café vietnamien : à l'œuf, à la noix de coco et au filtre phin",
+    "excerpt": "Cà phê sữa đá, egg coffee, café coco : histoire, adresses et comment boire comme un local.",
+    "content": "\n<p>Le Vietnam est l'un des plus grands exportateurs de café au monde. Ici, on ne boit pas un expresso\nrapide : on s'assoit, on attend que le <strong>phin</strong> (filtre métallique) goutte lentement,\net on sirote un café souvent corsé, parfois sucré de lait concentré.</p>\n<h2>Les styles incontournables</h2>\n<h3>Cà phê đen (café noir)</h3>\n<p>Robusta torréfié foncé, servi court et intense. Parfait après un phở matinal.\nDemandez <em>đen nóng</em> (chaud) ou <em>đen đá</em> (glacé).</p>\n<h3>Cà phê sữa đá (café glacé au lait concentré)</h3>\n<p>Le classique national : café filtre sur le lait concentré sucré, puis glaçons.\nSucré, fort, rafraîchissant — le petit-déjeuner du Sud et des trottoirs de Saigon.</p>\n<h3>Cà phê trứng (egg coffee)</h3>\n<p>Invention hanoïenne des années 1940 (Café Giang) : jaune d'œuf monté en neige avec du lait\ncondensé, versé sur un espresso chaud. Onctueux, dessert-like, à déguster assis sur un tabouret\ndans le vieux quartier.</p>\n<h3>Cà phê dừa (café à la noix de coco)</h3>\n<p>Mode récente : café glacé sur lait de coco et glace pilée. Populaire à Hội An et dans les cafés\nbranchés de Saigon — moins traditionnel mais délicieux en après-midi chaud.</p>\n<h2>Le rituel du phin</h2>\n<ol>\n<li>Le serveur pose le filtre sur votre tasse avec café moulu et un filet d'eau chaude.</li>\n<li>Attendez 3–5 minutes que le café goutte — ne pressez pas le phin.</li>\n<li>Ajoutez lait concentré ou sucre selon le style commandé.</li>\n</ol>\n<h2>Où boire un bon café</h2>\n<ul>\n<li><strong>Hanoï</strong> : Café Giang (egg coffee original), Loading T (terrasse), Cộng Cà Phê (déco rétro).</li>\n<li><strong>Ho Chi Minh-Ville</strong> : The Workshop (torréfaction artisanale), Cộng Cà Phê, cafés du quartier Bùi Viện.</li>\n<li><strong>Hội An</strong> : Faifo Coffee (vue sur les toits), cafés du marché central.</li>\n</ul>\n<h2>Conseils pratiques</h2>\n<ul>\n<li>Prix : <strong>0,80–2,50 €</strong> selon l'adresse (street vs café design).</li>\n<li>Le café vietnamien est souvent <strong>plus fort</strong> qu'en Europe — commencez par un demi-verre.</li>\n<li>Évitez le café instantané des hôtels : le phin local vaut le détour.</li>\n<li>Beaucoup de cafés ferment vers <strong>21 h</strong> ; les stands de rue servent dès 6 h.</li>\n</ul>\n<p>Combinez votre pause café avec notre guide des\n<a href=\"/blog/plats-incontournables-vietnam\">plats incontournables</a> pour une journée gourmande complète.</p>\n",
+    "category_label": "Gastronomie",
     "tags": [
-      "Phu Quoc",
-      "plage",
-      "île",
-      "détente"
+      "café",
+      "egg coffee",
+      "hanoï",
+      "saigon"
     ],
-    "image_alt": "Phu Quoc : plages, île tropicale et séjour détente — Phú Quốc, Vietnam"
+    "image": "/static/images/destinations/hoi-an.webp",
+    "image_photo_id": "1528127269322-539801943592",
+    "image_placeholder": false,
+    "image_alt": "Café vietnamien : à l'œuf, à la noix de coco et au filtre phin — voyage Vietnam"
   },
   {
-    "slug": "hue-citadelle-imperiale-vietnam",
-    "category": "itinerary",
-    "date": "2026-06-10",
-    "city": "Huế",
-    "featured": false,
-    "read_time": 7,
-    "guide_type": "Guide expérience",
-    "ai_generated": false,
-    "image": "/static/images/pool/1578662996442-48f60103fc96.webp",
-    "image_photo_id": "1578662996442-48f60103fc96",
-    "image_placeholder": false,
+    "slug": "meilleurs-restaurants-hanoi",
+    "category": "food",
+    "date": "2026-04-28",
+    "read_time": 11,
+    "featured": true,
     "i18n": {
       "fr": {
-        "title": "Hué impériale : citadelle, tombeaux et rivière des Parfums",
-        "excerpt": "Patrimoine impérial du Centre : citadelle, tombeaux des Nguyen et croisière sur la rivière.",
-        "content": "<p>Huế fut la capitale impériale du Vietnam (1802–1945). Sa citadelle, ses tombeaux et sa cuisine\nimpériale en font une étape culturelle incontournable entre Hội An et le Nord.</p>\n<h2>Les incontournables</h2>\n<ul>\n<li><strong>Citadelle impériale</strong> : palais, temples, murailles — prévoyez une demi-journée.</li>\n<li><strong>Tombeau de Minh Mạng</strong> : le plus harmonieux, lac et architecture sereine.</li>\n<li><strong>Tombeau de Khai Dinh</strong> : style art déco unique, mosaïques colorées.</li>\n<li><strong>Croisière sur la rivière des Parfums</strong> : pagode Thien Mu au coucher du soleil.</li>\n</ul>\n<h2>Cuisine impériale</h2>\n<p>Huế est réputée pour ses <strong>bún bò Huế</strong> (soupe piquante) et ses assiettes royales\nminiatures. Réservez une table dans un restaurant spécialisé pour l'expérience complète.</p>\n<h2>Organisation</h2>\n<p>1 à 2 jours suffisent. Louez un cyclo-pousse ou un scooter pour relier les tombeaux éloignés.\nCombinez avec le train depuis <strong>Đà Nẵng</strong> (2 h, paysages côtiers).</p><p>Pour les adresses, hébergements et conseils détaillés sur place, consultez notre <a href=\"/hue\">guide complet Huế</a>.</p>",
-        "category_label": "Itinéraires",
+        "title": "Où manger à Hanoï : street food et tables soignées",
+        "excerpt": "Phở, bún chả, bánh mì — les adresses incontournables de la capitale.",
+        "content": "\n<p>Hanoï est la capitale gastronomique du Vietnam : ici, la street food n'est pas un pis-aller mais\nun art de vivre. Le vieux quartier (Hoàn Kiếm) concentre les stands légendaires ; pour les tables\nsoignées, les quartiers Ba Đình et Tây Hồ offrent des adresses plus calmes.</p>\n<h2>Street food — les classiques</h2>\n<ul>\n<li><strong>Phở Bát Đàn</strong> (49 Bát Đàn) — référence du phở bò depuis des décennies. Arrivez avant 10 h\nou acceptez la file.</li>\n<li><strong>Bún chả Hương Liên</strong> (24 Lê Văn Hưu) — bún chả grillé, célèbre depuis la visite d'Obama.\nComplet à midi.</li>\n<li><strong>Bánh mì 25</strong> (25 Hàng Cá) — sandwich nordique, moins sucré que la version saigonnaise.</li>\n<li><strong>Bún thang Bà Thản</strong> — bouillon délicat, spécialité hanoïenne méconnue des touristes.</li>\n</ul>\n<h2>Expériences à table</h2>\n<ul>\n<li><strong>Chả Cá Thăng Long</strong> (19–31 Dương Thành) — poisson grillé à la table avec aneth et cacahuètes.\nRéservez le soir.</li>\n<li><strong>Home Vietnamese Restaurant</strong> — cuisine familiale revisitée, bon rapport qualité-prix.</li>\n<li><strong>Quán Ăn Ngon</strong> — carte pan-vietnamienne soignée, idéal pour goûter plusieurs régions en une soirée.</li>\n</ul>\n<h2>Café &amp; pause sucrée</h2>\n<p>Après le déjeuner, direction <strong>Café Giang</strong> pour un egg coffee (voir notre\n<a href=\"/blog/cafe-vietnamien-guide\">guide du café vietnamien</a>).\nLes stands de <em>chè</em> (desserts aux haricots et coco) parsèment les ruelles du vieux quartier.</p>\n<h2>Conseils pratiques</h2>\n<ul>\n<li>Petit-déjeuner hanoïen : phở ou bánh mì entre 6 h et 9 h — les stands ferment tôt.</li>\n<li>Apportez des espèces : beaucoup de stands n'acceptent pas la carte.</li>\n<li>Évitez les restaurants vides face aux sites touristiques — préférez les files locales.</li>\n<li>Budget : <strong>2–4 €</strong> en street food, <strong>8–15 €</strong> en restaurant assis.</li>\n</ul>\n<p>Pour le panorama des plats vietnamiens au-delà de Hanoï, consultez notre guide\n<a href=\"/blog/plats-incontournables-vietnam\">plats incontournables</a>.</p>\n",
+        "category_label": "Gastronomie",
         "tags": [
-          "Huế",
-          "impérial",
-          "citadelle",
-          "patrimoine"
-        ],
-        "image_alt": "Hué impériale : citadelle, tombeaux et rivière des Parfums — Huế, Vietnam"
+          "hanoï",
+          "street food",
+          "restaurants"
+        ]
       },
       "en": {}
     },
-    "title": "Hué impériale : citadelle, tombeaux et rivière des Parfums",
-    "excerpt": "Patrimoine impérial du Centre : citadelle, tombeaux des Nguyen et croisière sur la rivière.",
-    "content": "<p>Huế fut la capitale impériale du Vietnam (1802–1945). Sa citadelle, ses tombeaux et sa cuisine\nimpériale en font une étape culturelle incontournable entre Hội An et le Nord.</p>\n<h2>Les incontournables</h2>\n<ul>\n<li><strong>Citadelle impériale</strong> : palais, temples, murailles — prévoyez une demi-journée.</li>\n<li><strong>Tombeau de Minh Mạng</strong> : le plus harmonieux, lac et architecture sereine.</li>\n<li><strong>Tombeau de Khai Dinh</strong> : style art déco unique, mosaïques colorées.</li>\n<li><strong>Croisière sur la rivière des Parfums</strong> : pagode Thien Mu au coucher du soleil.</li>\n</ul>\n<h2>Cuisine impériale</h2>\n<p>Huế est réputée pour ses <strong>bún bò Huế</strong> (soupe piquante) et ses assiettes royales\nminiatures. Réservez une table dans un restaurant spécialisé pour l'expérience complète.</p>\n<h2>Organisation</h2>\n<p>1 à 2 jours suffisent. Louez un cyclo-pousse ou un scooter pour relier les tombeaux éloignés.\nCombinez avec le train depuis <strong>Đà Nẵng</strong> (2 h, paysages côtiers).</p><p>Pour les adresses, hébergements et conseils détaillés sur place, consultez notre <a href=\"/hue\">guide complet Huế</a>.</p>",
-    "category_label": "Itinéraires",
+    "title": "Où manger à Hanoï : street food et tables soignées",
+    "excerpt": "Phở, bún chả, bánh mì — les adresses incontournables de la capitale.",
+    "content": "\n<p>Hanoï est la capitale gastronomique du Vietnam : ici, la street food n'est pas un pis-aller mais\nun art de vivre. Le vieux quartier (Hoàn Kiếm) concentre les stands légendaires ; pour les tables\nsoignées, les quartiers Ba Đình et Tây Hồ offrent des adresses plus calmes.</p>\n<h2>Street food — les classiques</h2>\n<ul>\n<li><strong>Phở Bát Đàn</strong> (49 Bát Đàn) — référence du phở bò depuis des décennies. Arrivez avant 10 h\nou acceptez la file.</li>\n<li><strong>Bún chả Hương Liên</strong> (24 Lê Văn Hưu) — bún chả grillé, célèbre depuis la visite d'Obama.\nComplet à midi.</li>\n<li><strong>Bánh mì 25</strong> (25 Hàng Cá) — sandwich nordique, moins sucré que la version saigonnaise.</li>\n<li><strong>Bún thang Bà Thản</strong> — bouillon délicat, spécialité hanoïenne méconnue des touristes.</li>\n</ul>\n<h2>Expériences à table</h2>\n<ul>\n<li><strong>Chả Cá Thăng Long</strong> (19–31 Dương Thành) — poisson grillé à la table avec aneth et cacahuètes.\nRéservez le soir.</li>\n<li><strong>Home Vietnamese Restaurant</strong> — cuisine familiale revisitée, bon rapport qualité-prix.</li>\n<li><strong>Quán Ăn Ngon</strong> — carte pan-vietnamienne soignée, idéal pour goûter plusieurs régions en une soirée.</li>\n</ul>\n<h2>Café &amp; pause sucrée</h2>\n<p>Après le déjeuner, direction <strong>Café Giang</strong> pour un egg coffee (voir notre\n<a href=\"/blog/cafe-vietnamien-guide\">guide du café vietnamien</a>).\nLes stands de <em>chè</em> (desserts aux haricots et coco) parsèment les ruelles du vieux quartier.</p>\n<h2>Conseils pratiques</h2>\n<ul>\n<li>Petit-déjeuner hanoïen : phở ou bánh mì entre 6 h et 9 h — les stands ferment tôt.</li>\n<li>Apportez des espèces : beaucoup de stands n'acceptent pas la carte.</li>\n<li>Évitez les restaurants vides face aux sites touristiques — préférez les files locales.</li>\n<li>Budget : <strong>2–4 €</strong> en street food, <strong>8–15 €</strong> en restaurant assis.</li>\n</ul>\n<p>Pour le panorama des plats vietnamiens au-delà de Hanoï, consultez notre guide\n<a href=\"/blog/plats-incontournables-vietnam\">plats incontournables</a>.</p>\n",
+    "category_label": "Gastronomie",
     "tags": [
-      "Huế",
-      "impérial",
-      "citadelle",
-      "patrimoine"
+      "hanoï",
+      "street food",
+      "restaurants"
     ],
-    "image_alt": "Hué impériale : citadelle, tombeaux et rivière des Parfums — Huế, Vietnam"
-  },
-  {
-    "slug": "hoi-an-lanternes-vieille-ville",
-    "category": "itinerary",
-    "date": "2026-06-10",
-    "city": "Hội An",
-    "featured": false,
-    "read_time": 7,
-    "guide_type": "Guide expérience",
-    "ai_generated": false,
-    "image": "/static/images/pool/1559592413-7cec4d0cae2b.webp",
-    "image_photo_id": "1559592413-7cec4d0cae2b",
+    "image": "/static/images/destinations/hanoi.webp",
+    "image_photo_id": "1555921015-5532091f6026",
     "image_placeholder": false,
-    "i18n": {
-      "fr": {
-        "title": "Hội An : lanternes, vieille ville et atmosphère unique",
-        "excerpt": "Le joyau classé du Centre : lanternes, tailleurs, plage d'An Bang et meilleur moment pour visiter.",
-        "content": "<p>Hội An, ancien comptoir marchand, est la ville la plus photogénique du Vietnam. Ses maisons en\nbois ocre, ses lanternes colorées et ses ruelles piétonnes créent une atmosphère hors du temps.</p>\n<h2>Que faire dans la vieille ville ?</h2>\n<ul>\n<li>Se perdre au <strong>quartier historique</strong> (ticket monuments regroupé ~6 €).</li>\n<li>Faire tailler un costume ou une robe en 24–48 h (tissus abordables, qualité variable).</li>\n<li>Assister au <strong>full moon lantern festival</strong> (14e jour lunaire) si vos dates coïncident.</li>\n<li>Aller à la plage d'<strong>An Bang</strong> à vélo (15 min) pour un après-midi détente.</li>\n</ul>\n<h2>Combien de temps ?</h2>\n<p>2 nuits minimum pour profiter du soir (lanternes allumées) et d'une demi-journée libre. Hội An se\ncombine naturellement avec <strong>Đà Nẵng</strong> (30 min) et <strong>Huế</strong> (2–3 h).</p>\n<h3>Meilleure période</h3>\n<p>Février à août : temps sec. Évitez la saison des pluies (octobre–décembre) où les rues peuvent\nêtre inondées ponctuellement.</p><p>Pour les adresses, hébergements et conseils détaillés sur place, consultez notre <a href=\"/hoi-an\">guide complet Hội An</a>.</p>",
-        "category_label": "Itinéraires",
-        "tags": [
-          "Hội An",
-          "lanternes",
-          "UNESCO",
-          "vieille ville"
-        ],
-        "image_alt": "Hội An : lanternes, vieille ville et atmosphère unique — Hội An, Vietnam"
-      },
-      "en": {}
-    },
-    "title": "Hội An : lanternes, vieille ville et atmosphère unique",
-    "excerpt": "Le joyau classé du Centre : lanternes, tailleurs, plage d'An Bang et meilleur moment pour visiter.",
-    "content": "<p>Hội An, ancien comptoir marchand, est la ville la plus photogénique du Vietnam. Ses maisons en\nbois ocre, ses lanternes colorées et ses ruelles piétonnes créent une atmosphère hors du temps.</p>\n<h2>Que faire dans la vieille ville ?</h2>\n<ul>\n<li>Se perdre au <strong>quartier historique</strong> (ticket monuments regroupé ~6 €).</li>\n<li>Faire tailler un costume ou une robe en 24–48 h (tissus abordables, qualité variable).</li>\n<li>Assister au <strong>full moon lantern festival</strong> (14e jour lunaire) si vos dates coïncident.</li>\n<li>Aller à la plage d'<strong>An Bang</strong> à vélo (15 min) pour un après-midi détente.</li>\n</ul>\n<h2>Combien de temps ?</h2>\n<p>2 nuits minimum pour profiter du soir (lanternes allumées) et d'une demi-journée libre. Hội An se\ncombine naturellement avec <strong>Đà Nẵng</strong> (30 min) et <strong>Huế</strong> (2–3 h).</p>\n<h3>Meilleure période</h3>\n<p>Février à août : temps sec. Évitez la saison des pluies (octobre–décembre) où les rues peuvent\nêtre inondées ponctuellement.</p><p>Pour les adresses, hébergements et conseils détaillés sur place, consultez notre <a href=\"/hoi-an\">guide complet Hội An</a>.</p>",
-    "category_label": "Itinéraires",
-    "tags": [
-      "Hội An",
-      "lanternes",
-      "UNESCO",
-      "vieille ville"
-    ],
-    "image_alt": "Hội An : lanternes, vieille ville et atmosphère unique — Hội An, Vietnam"
-  },
-  {
-    "slug": "excursion-delta-mekong-marches-flottants",
-    "category": "itinerary",
-    "date": "2026-06-10",
-    "city": "Mỹ Tho / Delta du Mékong",
-    "featured": false,
-    "read_time": 7,
-    "guide_type": "Guide expérience",
-    "ai_generated": false,
-    "image": "/static/images/pool/1583417319070-4a69db38a482.webp",
-    "image_photo_id": "1583417319070-4a69db38a482",
-    "image_placeholder": false,
-    "i18n": {
-      "fr": {
-        "title": "Delta du Mékong : marchés flottants et excursions depuis Saigon",
-        "excerpt": "Can Tho, Cai Rang, Mỹ Tho : comment organiser une excursion 1 ou 2 jours dans le delta.",
-        "content": "<p>Le delta du Mékong, au sud de Hô-Chi-Minh-Ville, est un labyrinthe de canaux, de vergers et de\nmarchés flottants. C'est l'antithèse des mégalopoles : la vie s'organise autour de l'eau.</p>\n<h2>Excursion 1 jour depuis Saigon</h2>\n<p>Les circuits classiques partent vers <strong>Mỹ Tho</strong> ou <strong>Ben Tre</strong> : croisière en\nsampan, dégustation de noix de coco, atelier de bonbons artisanaux. Comptez 25–45 € avec transfert.\nIdéal pour un premier aperçu, mais touristique.</p>\n<h2>2 jours : le vrai delta</h2>\n<p>Passez une nuit à <strong>Can Tho</strong> pour assister au <strong>marché flottant de Cai Rang</strong>\nà l'aube (5 h–8 h). Ajoutez une balade en sampan dans les petits canaux et un homestay à Ben Tre\npour une immersion plus authentique.</p>\n<h2>Conseils</h2>\n<p>Partez tôt le matin pour les marchés. Prévoyez chapeau, anti-moustiques et espèces pour les achats\nsur l'eau. Combinez avec un séjour à <strong>Ho Chi Minh-Ville</strong> (2–3 jours) avant ou après.</p><p>Pour les adresses, hébergements et conseils détaillés sur place, consultez notre <a href=\"/delta-du-mekong\">guide complet Delta du Mékong</a>.</p>",
-        "category_label": "Itinéraires",
-        "tags": [
-          "Mékong",
-          "delta",
-          "marché flottant",
-          "Can Tho"
-        ],
-        "image_alt": "Delta du Mékong : marchés flottants et excursions depuis Saigon — Mỹ Tho / Delta du Mékong, Vietnam"
-      },
-      "en": {}
-    },
-    "title": "Delta du Mékong : marchés flottants et excursions depuis Saigon",
-    "excerpt": "Can Tho, Cai Rang, Mỹ Tho : comment organiser une excursion 1 ou 2 jours dans le delta.",
-    "content": "<p>Le delta du Mékong, au sud de Hô-Chi-Minh-Ville, est un labyrinthe de canaux, de vergers et de\nmarchés flottants. C'est l'antithèse des mégalopoles : la vie s'organise autour de l'eau.</p>\n<h2>Excursion 1 jour depuis Saigon</h2>\n<p>Les circuits classiques partent vers <strong>Mỹ Tho</strong> ou <strong>Ben Tre</strong> : croisière en\nsampan, dégustation de noix de coco, atelier de bonbons artisanaux. Comptez 25–45 € avec transfert.\nIdéal pour un premier aperçu, mais touristique.</p>\n<h2>2 jours : le vrai delta</h2>\n<p>Passez une nuit à <strong>Can Tho</strong> pour assister au <strong>marché flottant de Cai Rang</strong>\nà l'aube (5 h–8 h). Ajoutez une balade en sampan dans les petits canaux et un homestay à Ben Tre\npour une immersion plus authentique.</p>\n<h2>Conseils</h2>\n<p>Partez tôt le matin pour les marchés. Prévoyez chapeau, anti-moustiques et espèces pour les achats\nsur l'eau. Combinez avec un séjour à <strong>Ho Chi Minh-Ville</strong> (2–3 jours) avant ou après.</p><p>Pour les adresses, hébergements et conseils détaillés sur place, consultez notre <a href=\"/delta-du-mekong\">guide complet Delta du Mékong</a>.</p>",
-    "category_label": "Itinéraires",
-    "tags": [
-      "Mékong",
-      "delta",
-      "marché flottant",
-      "Can Tho"
-    ],
-    "image_alt": "Delta du Mékong : marchés flottants et excursions depuis Saigon — Mỹ Tho / Delta du Mékong, Vietnam"
-  },
-  {
-    "slug": "trek-sapa-rizieres-vietnam",
-    "category": "itinerary",
-    "date": "2026-06-10",
-    "city": "Sapa",
-    "featured": false,
-    "read_time": 7,
-    "guide_type": "Guide expérience",
-    "ai_generated": false,
-    "image": "/static/images/pool/1531737212413-667205e1cda7.webp",
-    "image_photo_id": "1531737212413-667205e1cda7",
-    "image_placeholder": false,
-    "i18n": {
-      "fr": {
-        "title": "Trek à Sapa : rizières, villages et randonnées dans le Nord",
-        "excerpt": "Randonnée et villages ethniques du Nord : sentiers, guides locaux, homestay et meilleure saison.",
-        "content": "<p>Sapa, perchée à 1 600 m d'altitude, offre des panoramas de rizières en terrasses parmi les plus\nphotogéniques d'Asie. Le trek y est accessible aux marcheurs moyens, avec des variantes faciles ou\nsportives.</p>\n<h2>Les meilleures randonnées</h2>\n<ul>\n<li><strong>Cat Cat → Y Linh Ho</strong> (½ journée) : villages Hmong, rizières proches de Sapa ville.</li>\n<li><strong>Ta Van → Giang Ta Chai</strong> (1 jour) : cascades, ponts de bambou, rencontres locales.</li>\n<li><strong>Fansipan</strong> (2 jours) : sommet du Vietnam (3 143 m) — câble possible pour gagner du temps.</li>\n</ul>\n<h2>Guide local ou homestay ?</h2>\n<p>Un guide Hmong ou Dao améliore l'expérience (sentiers, culture, prix du marché). L'<strong>homestay</strong>\ndans un village (Ta Van, Lao Chai) permet de vivre au rythme local — réservez via votre hôtel ou\nune agence sérieuse de Sapa.</p>\n<h2>Quand partir ?</h2>\n<p>Septembre à novembre : rizières dorées, ciel dégagé. Mars–mai : verdure intense. Évitez la saison\ndes pluies (juin–août) : sentiers boueux et brume fréquente.</p><p>Pour les adresses, hébergements et conseils détaillés sur place, consultez notre <a href=\"/sapa\">guide complet Sapa</a>.</p>",
-        "category_label": "Itinéraires",
-        "tags": [
-          "Sapa",
-          "trek",
-          "rizières",
-          "montagne"
-        ],
-        "image_alt": "Trek à Sapa : rizières, villages et randonnées dans le Nord — Sapa, Vietnam"
-      },
-      "en": {}
-    },
-    "title": "Trek à Sapa : rizières, villages et randonnées dans le Nord",
-    "excerpt": "Randonnée et villages ethniques du Nord : sentiers, guides locaux, homestay et meilleure saison.",
-    "content": "<p>Sapa, perchée à 1 600 m d'altitude, offre des panoramas de rizières en terrasses parmi les plus\nphotogéniques d'Asie. Le trek y est accessible aux marcheurs moyens, avec des variantes faciles ou\nsportives.</p>\n<h2>Les meilleures randonnées</h2>\n<ul>\n<li><strong>Cat Cat → Y Linh Ho</strong> (½ journée) : villages Hmong, rizières proches de Sapa ville.</li>\n<li><strong>Ta Van → Giang Ta Chai</strong> (1 jour) : cascades, ponts de bambou, rencontres locales.</li>\n<li><strong>Fansipan</strong> (2 jours) : sommet du Vietnam (3 143 m) — câble possible pour gagner du temps.</li>\n</ul>\n<h2>Guide local ou homestay ?</h2>\n<p>Un guide Hmong ou Dao améliore l'expérience (sentiers, culture, prix du marché). L'<strong>homestay</strong>\ndans un village (Ta Van, Lao Chai) permet de vivre au rythme local — réservez via votre hôtel ou\nune agence sérieuse de Sapa.</p>\n<h2>Quand partir ?</h2>\n<p>Septembre à novembre : rizières dorées, ciel dégagé. Mars–mai : verdure intense. Évitez la saison\ndes pluies (juin–août) : sentiers boueux et brume fréquente.</p><p>Pour les adresses, hébergements et conseils détaillés sur place, consultez notre <a href=\"/sapa\">guide complet Sapa</a>.</p>",
-    "category_label": "Itinéraires",
-    "tags": [
-      "Sapa",
-      "trek",
-      "rizières",
-      "montagne"
-    ],
-    "image_alt": "Trek à Sapa : rizières, villages et randonnées dans le Nord — Sapa, Vietnam"
-  },
-  {
-    "slug": "croisiere-baie-halong-vietnam",
-    "category": "itinerary",
-    "date": "2026-06-10",
-    "city": "Ha Long",
-    "featured": false,
-    "read_time": 7,
-    "guide_type": "Guide expérience",
-    "ai_generated": false,
-    "image": "/static/images/pool/1545172538-171a802bd867.webp",
-    "image_photo_id": "1545172538-171a802bd867",
-    "image_placeholder": false,
-    "i18n": {
-      "fr": {
-        "title": "Croisière dans la baie d'Halong : comment choisir et organiser",
-        "excerpt": "Karsts, kayak et nuit à bord : comparatif 1 jour / 2 jours, prix et conseils pour réserver sans arnaque.",
-        "content": "<p>La baie d'Halong, classée à l'UNESCO, reste l'expérience la plus iconique du Vietnam. Des milliers\nd'îlots karstiques émergent d'une eau émeraude : le spectacle justifie largement une nuit sur l'eau.</p>\n<h2>1 jour ou 2 jours (1 nuit) ?</h2>\n<p><strong>Excursion d'une journée</strong> depuis Hanoï (4 h de route aller-retour) : aperçu correct si\nvous manquez de temps, mais fatigant. <strong>Croisière 2 jours / 1 nuit</strong> : le choix idéal —\ncoucher de soleil, kayak au lever du jour, baignade loin des flottes du matin.</p>\n<h2>Quel type de bateau ?</h2>\n<ul>\n<li><strong>Budget</strong> : jonque collective, cabine partagée, 80–120 €/pers.</li>\n<li><strong>Confort</strong> : cabine privée, repas soignés, 130–200 €/pers.</li>\n<li><strong>Premium</strong> : yacht, suite, 250 €+ — excellent rapport vs croisières méditerranéennes.</li>\n</ul>\n<h2>Conseils pratiques</h2>\n<p>Réservez via un opérateur reconnu (évitez les vendeurs de rue à Hanoï). Vérifiez ce qui est inclus :\ntransfert, kayak, entrée de la baie, pourboires. Saison idéale : octobre à avril (mer plus calme).\nÉvitez le Tết si possible (affluence et tarifs majorés).</p>\n<h3>Combien de temps sur place ?</h3>\n<p>Comptez 2 à 3 jours au total avec le transfert depuis Hanoï. Pour prolonger, combinez avec\n<strong>Cat Ba</strong> ou un séjour à <strong>Hanoï</strong> avant le départ.</p><p>Pour les adresses, hébergements et conseils détaillés sur place, consultez notre <a href=\"/halong\">guide complet Halong</a>.</p>",
-        "category_label": "Itinéraires",
-        "tags": [
-          "Halong",
-          "croisière",
-          "baie",
-          "UNESCO"
-        ],
-        "image_alt": "Croisière dans la baie d'Halong : comment choisir et organiser — Ha Long, Vietnam"
-      },
-      "en": {}
-    },
-    "title": "Croisière dans la baie d'Halong : comment choisir et organiser",
-    "excerpt": "Karsts, kayak et nuit à bord : comparatif 1 jour / 2 jours, prix et conseils pour réserver sans arnaque.",
-    "content": "<p>La baie d'Halong, classée à l'UNESCO, reste l'expérience la plus iconique du Vietnam. Des milliers\nd'îlots karstiques émergent d'une eau émeraude : le spectacle justifie largement une nuit sur l'eau.</p>\n<h2>1 jour ou 2 jours (1 nuit) ?</h2>\n<p><strong>Excursion d'une journée</strong> depuis Hanoï (4 h de route aller-retour) : aperçu correct si\nvous manquez de temps, mais fatigant. <strong>Croisière 2 jours / 1 nuit</strong> : le choix idéal —\ncoucher de soleil, kayak au lever du jour, baignade loin des flottes du matin.</p>\n<h2>Quel type de bateau ?</h2>\n<ul>\n<li><strong>Budget</strong> : jonque collective, cabine partagée, 80–120 €/pers.</li>\n<li><strong>Confort</strong> : cabine privée, repas soignés, 130–200 €/pers.</li>\n<li><strong>Premium</strong> : yacht, suite, 250 €+ — excellent rapport vs croisières méditerranéennes.</li>\n</ul>\n<h2>Conseils pratiques</h2>\n<p>Réservez via un opérateur reconnu (évitez les vendeurs de rue à Hanoï). Vérifiez ce qui est inclus :\ntransfert, kayak, entrée de la baie, pourboires. Saison idéale : octobre à avril (mer plus calme).\nÉvitez le Tết si possible (affluence et tarifs majorés).</p>\n<h3>Combien de temps sur place ?</h3>\n<p>Comptez 2 à 3 jours au total avec le transfert depuis Hanoï. Pour prolonger, combinez avec\n<strong>Cat Ba</strong> ou un séjour à <strong>Hanoï</strong> avant le départ.</p><p>Pour les adresses, hébergements et conseils détaillés sur place, consultez notre <a href=\"/halong\">guide complet Halong</a>.</p>",
-    "category_label": "Itinéraires",
-    "tags": [
-      "Halong",
-      "croisière",
-      "baie",
-      "UNESCO"
-    ],
-    "image_alt": "Croisière dans la baie d'Halong : comment choisir et organiser — Ha Long, Vietnam"
+    "image_alt": "Où manger à Hanoï : street food et tables soignées — voyage Vietnam"
   },
   {
     "ai_generated": true,
@@ -464,8 +721,8 @@
     "featured": false,
     "read_time": 12,
     "slug": "decouvrez-hanoi-en-7-jours-itineraire-ideal-pour-les-debutants-au-vietnam",
-    "image": "/static/images/blog/decouvrez-hanoi-en-7-jours-itineraire-ideal-pour-les-debutants-au-vietnam.webp",
-    "image_photo_id": "1772867342647-6e6d87a0b014",
+    "image": "/static/images/destinations/hanoi.webp",
+    "image_photo_id": "1555921015-5532091f6026",
     "i18n": {
       "fr": {
         "title": "Découvrez Hanoï en 7 jours : Itinéraire idéal pour les débutants au Vietnam",
@@ -492,216 +749,7 @@
       "itinéraire",
       "débutants"
     ],
-    "image_alt": "Découvrez Hanoï en 7 jours : Itinéraire idéal pour les débutants au Vietnam — Hanoï, Vietnam"
-  },
-  {
-    "slug": "visa-vietnam-guide-complet-francais",
-    "category": "practical",
-    "date": "2026-05-12",
-    "read_time": 6,
-    "featured": true,
-    "image": "/static/images/blog/visa-vietnam-guide-complet-francais.webp",
-    "image_photo_id": "1557750255-c76072a7aad1",
-    "i18n": {
-      "fr": {
-        "title": "Visa Vietnam 2026 : guide complet pour les voyageurs français",
-        "excerpt": "E-visa, documents, délais et erreurs à éviter — tout pour entrer au Vietnam sereinement.",
-        "content": "\n<p>Les ressortissants français ont besoin d'un visa pour entrer au Vietnam. La procédure est aujourd'hui en ligne via l'e-visa officiel.</p>\n<h2>E-visa : la méthode recommandée</h2>\n<p>Demande sur le portail gouvernemental. Délai : 3 à 5 jours ouvrés. Coût : environ 25 USD. Validité 90 jours, séjour jusqu'à 90 jours selon le type.</p>\n<h2>Documents requis</h2>\n<ul>\n<li>Passeport valide 6 mois après le retour</li>\n<li>Photo fond blanc (format numérique)</li>\n<li>Adresse du premier hébergement</li>\n</ul>\n<blockquote><p>Utilisez uniquement le site officiel — évitez les intermédiaires qui surfacturent.</p></blockquote>\n",
-        "category_label": "Pratique",
-        "tags": [
-          "visa",
-          "e-visa",
-          "formalités"
-        ],
-        "image_alt": "Visa Vietnam 2026 : guide complet pour les voyageurs français — voyage Vietnam"
-      },
-      "en": {}
-    },
-    "title": "Visa Vietnam 2026 : guide complet pour les voyageurs français",
-    "excerpt": "E-visa, documents, délais et erreurs à éviter — tout pour entrer au Vietnam sereinement.",
-    "content": "\n<p>Les ressortissants français ont besoin d'un visa pour entrer au Vietnam. La procédure est aujourd'hui en ligne via l'e-visa officiel.</p>\n<h2>E-visa : la méthode recommandée</h2>\n<p>Demande sur le portail gouvernemental. Délai : 3 à 5 jours ouvrés. Coût : environ 25 USD. Validité 90 jours, séjour jusqu'à 90 jours selon le type.</p>\n<h2>Documents requis</h2>\n<ul>\n<li>Passeport valide 6 mois après le retour</li>\n<li>Photo fond blanc (format numérique)</li>\n<li>Adresse du premier hébergement</li>\n</ul>\n<blockquote><p>Utilisez uniquement le site officiel — évitez les intermédiaires qui surfacturent.</p></blockquote>\n",
-    "category_label": "Pratique",
-    "tags": [
-      "visa",
-      "e-visa",
-      "formalités"
-    ],
-    "image_alt": "Visa Vietnam 2026 : guide complet pour les voyageurs français — voyage Vietnam"
-  },
-  {
-    "slug": "budget-voyage-vietnam-2026",
-    "category": "practical",
-    "date": "2026-05-20",
-    "read_time": 8,
-    "featured": true,
-    "image": "/static/images/blog/budget-voyage-vietnam-2026.webp",
-    "image_photo_id": "1526139334526-f591a54b477c",
-    "i18n": {
-      "fr": {
-        "title": "Budget voyage Vietnam 2026 : combien prévoir par jour ?",
-        "excerpt": "Fourchettes réalistes backpacker, confort et premium avec exemples concrets.",
-        "content": "\n<p>Le Vietnam reste abordable, mais l'écart entre prix locaux et touristiques est réel.</p>\n<h2>Backpacker — 25 à 35 €/jour</h2>\n<p>Dortoir, street food, bus de nuit, Grab occasionnel.</p>\n<h2>Confort — 45 à 70 €/jour</h2>\n<p>Hôtel 3*, mix street food / restaurants, excursions modérées.</p>\n<h2>Premium — 100 €+/jour</h2>\n<p>Resorts, croisières luxe, guides privés — excellent rapport qualité-prix vs Europe.</p>\n",
-        "category_label": "Pratique",
-        "tags": [
-          "budget",
-          "prix",
-          "économies"
-        ],
-        "image_alt": "Budget voyage Vietnam 2026 : combien prévoir par jour ? — voyage Vietnam"
-      },
-      "en": {}
-    },
-    "title": "Budget voyage Vietnam 2026 : combien prévoir par jour ?",
-    "excerpt": "Fourchettes réalistes backpacker, confort et premium avec exemples concrets.",
-    "content": "\n<p>Le Vietnam reste abordable, mais l'écart entre prix locaux et touristiques est réel.</p>\n<h2>Backpacker — 25 à 35 €/jour</h2>\n<p>Dortoir, street food, bus de nuit, Grab occasionnel.</p>\n<h2>Confort — 45 à 70 €/jour</h2>\n<p>Hôtel 3*, mix street food / restaurants, excursions modérées.</p>\n<h2>Premium — 100 €+/jour</h2>\n<p>Resorts, croisières luxe, guides privés — excellent rapport qualité-prix vs Europe.</p>\n",
-    "category_label": "Pratique",
-    "tags": [
-      "budget",
-      "prix",
-      "économies"
-    ],
-    "image_alt": "Budget voyage Vietnam 2026 : combien prévoir par jour ? — voyage Vietnam"
-  },
-  {
-    "slug": "carte-sim-esim-vietnam",
-    "category": "practical",
-    "date": "2026-04-18",
-    "read_time": 7,
-    "featured": true,
-    "image": "/static/images/blog/carte-sim-esim-vietnam.webp",
-    "image_photo_id": "1583417319070-4a69db38a482",
-    "i18n": {
-      "fr": {
-        "title": "Carte SIM et eSIM Vietnam : quel forfait choisir en 2026 ?",
-        "excerpt": "Viettel, Vinaphone, Airalo, Holafly — comparatif et conseils d'achat avant le départ.",
-        "content": "\n<p>Internet mobile est indispensable pour Grab, Google Maps et traduction. Deux options : eSIM avant le départ ou SIM physique à l'aéroport.</p>\n<h2>eSIM (recommandé)</h2>\n<p>Activation avant l'atterrissage. Airalo et Holafly proposent des forfaits 7 à 30 jours. Comptez 8 à 20 € pour 10-20 Go.</p>\n<h2>SIM à l'aéroport</h2>\n<p>Viettel et Vinaphone ont des stands à Hanoï et HCMC. ~10 € pour 30 jours / données illimitées (fair use). Passeport requis.</p>\n<h2>Conseil</h2>\n<p>Vérifiez que votre téléphone est compatible eSIM. Gardez votre SIM française en slot secondaire si possible.</p>\n",
-        "category_label": "Pratique",
-        "tags": [
-          "esim",
-          "sim",
-          "internet",
-          "connectivité"
-        ],
-        "image_alt": "Carte SIM et eSIM Vietnam : quel forfait choisir en 2026 ? — voyage Vietnam"
-      },
-      "en": {}
-    },
-    "title": "Carte SIM et eSIM Vietnam : quel forfait choisir en 2026 ?",
-    "excerpt": "Viettel, Vinaphone, Airalo, Holafly — comparatif et conseils d'achat avant le départ.",
-    "content": "\n<p>Internet mobile est indispensable pour Grab, Google Maps et traduction. Deux options : eSIM avant le départ ou SIM physique à l'aéroport.</p>\n<h2>eSIM (recommandé)</h2>\n<p>Activation avant l'atterrissage. Airalo et Holafly proposent des forfaits 7 à 30 jours. Comptez 8 à 20 € pour 10-20 Go.</p>\n<h2>SIM à l'aéroport</h2>\n<p>Viettel et Vinaphone ont des stands à Hanoï et HCMC. ~10 € pour 30 jours / données illimitées (fair use). Passeport requis.</p>\n<h2>Conseil</h2>\n<p>Vérifiez que votre téléphone est compatible eSIM. Gardez votre SIM française en slot secondaire si possible.</p>\n",
-    "category_label": "Pratique",
-    "tags": [
-      "esim",
-      "sim",
-      "internet",
-      "connectivité"
-    ],
-    "image_alt": "Carte SIM et eSIM Vietnam : quel forfait choisir en 2026 ? — voyage Vietnam"
-  },
-  {
-    "slug": "securite-voyage-vietnam-conseils",
-    "category": "practical",
-    "date": "2026-05-05",
-    "read_time": 7,
-    "featured": false,
-    "image": "/static/images/blog/securite-voyage-vietnam-conseils.webp",
-    "image_photo_id": "1528127269322-539801943592",
-    "i18n": {
-      "fr": {
-        "title": "Sécurité au Vietnam : conseils pratiques pour voyager sereinement",
-        "excerpt": "Arnaques courantes, santé, trafic et bonnes pratiques — le Vietnam est globalement sûr.",
-        "content": "\n<p>Le Vietnam figure parmi les destinations les plus sûres d'Asie du Sud-Est. Quelques précautions suffisent.</p>\n<ul>\n<li><strong>Trafic</strong> : traversez lentement et en groupe, sans hésiter une fois engagé.</li>\n<li><strong>Pickpockets</strong> : marchés bondés et bus de nuit — sac devant soi.</li>\n<li><strong>Arnaques</strong> : taxis sans compteur, motos qui roulent sur votre pied.</li>\n<li><strong>Santé</strong> : eau en bouteille, assurance voyage recommandée.</li>\n</ul>\n",
-        "category_label": "Pratique",
-        "tags": [
-          "sécurité",
-          "santé",
-          "arnaques"
-        ],
-        "image_alt": "Sécurité au Vietnam : conseils pratiques pour voyager sereinement — voyage Vietnam"
-      },
-      "en": {}
-    },
-    "title": "Sécurité au Vietnam : conseils pratiques pour voyager sereinement",
-    "excerpt": "Arnaques courantes, santé, trafic et bonnes pratiques — le Vietnam est globalement sûr.",
-    "content": "\n<p>Le Vietnam figure parmi les destinations les plus sûres d'Asie du Sud-Est. Quelques précautions suffisent.</p>\n<ul>\n<li><strong>Trafic</strong> : traversez lentement et en groupe, sans hésiter une fois engagé.</li>\n<li><strong>Pickpockets</strong> : marchés bondés et bus de nuit — sac devant soi.</li>\n<li><strong>Arnaques</strong> : taxis sans compteur, motos qui roulent sur votre pied.</li>\n<li><strong>Santé</strong> : eau en bouteille, assurance voyage recommandée.</li>\n</ul>\n",
-    "category_label": "Pratique",
-    "tags": [
-      "sécurité",
-      "santé",
-      "arnaques"
-    ],
-    "image_alt": "Sécurité au Vietnam : conseils pratiques pour voyager sereinement — voyage Vietnam"
-  },
-  {
-    "slug": "transport-vietnam-train-bus-vol",
-    "category": "practical",
-    "date": "2026-04-02",
-    "read_time": 9,
-    "featured": false,
-    "image": "/static/images/blog/transport-vietnam-train-bus-vol.webp",
-    "image_photo_id": "1555921015-5532091f6026",
-    "i18n": {
-      "fr": {
-        "title": "Se déplacer au Vietnam : train, bus, vol et Grab",
-        "excerpt": "Comment circuler efficacement entre les villes sans perdre de temps ni d'argent.",
-        "content": "\n<h2>Vols intérieurs</h2>\n<p>Vietnam Airlines, VietJet, Bamboo Airways. Hanoï ↔ Đà Nẵng ~45 €, Đà Nẵng ↔ HCMC ~40 €. Réservez 2-3 semaines à l'avance.</p>\n<h2>Train</h2>\n<p>Hanoï → Huế (~14h) ou → HCMC (~32h). Confortable en couchette soft seat. Réservez sur dsvn.vn ou 12go.asia.</p>\n<h2>Bus / Open Tour</h2>\n<p>Économique mais long. Sleeper bus Hanoï → Hội An ~16h, 15-25 €.</p>\n<h2>En ville</h2>\n<p>Grab (voiture ou moto) est fiable et peu cher. Évitez les taxis non officiels.</p>\n",
-        "category_label": "Pratique",
-        "tags": [
-          "transport",
-          "train",
-          "vol",
-          "grab"
-        ],
-        "image_alt": "Se déplacer au Vietnam : train, bus, vol et Grab — voyage Vietnam"
-      },
-      "en": {}
-    },
-    "title": "Se déplacer au Vietnam : train, bus, vol et Grab",
-    "excerpt": "Comment circuler efficacement entre les villes sans perdre de temps ni d'argent.",
-    "content": "\n<p>Relier Hanoï, Huế, Đà Nẵng et Ho Chi Minh-Ville : le bon choix dépend de votre <strong>budget</strong>,\ndu <strong>temps</strong> disponible et du confort souhaité. Voici un comparatif honnête pour planifier\nchaque étape sans mauvaise surprise.</p>\n<h2>Vol intérieur — le plus rapide</h2>\n<p><strong>Quand ?</strong> Axes longs (Hanoï → Saigon, Hanoï → Đà Nẵng) si vous avez 10–15 jours ou moins.\n<strong>Durée :</strong> 1 h–1 h 30. <strong>Prix :</strong> 35–70 € si réservé 2–3 semaines à l'avance\n(Vietnam Airlines, VietJet, Bamboo Airways).</p>\n<h2>Train — le plus authentique</h2>\n<p><strong>Quand ?</strong> Traversée Nord → Centre (Hanoï → Huế, ~14 h) ou expérience\n<a href=\"/guide/transport-au-vietnam\">Réunification</a> sur plusieurs jours.\n<strong>Prix :</strong> 15–45 € en couchette 4 lits (soft sleeper). Réservez sur\n<a href=\"https://www.12go.asia\" rel=\"noopener noreferrer\" target=\"_blank\">12go.asia</a> ou dsvn.vn.</p>\n<h2>Bus de nuit — le plus économique</h2>\n<p><strong>Quand ?</strong> Budget serré, axes sans rail direct (ex. Hanoï → Hội An via sleeper).\n<strong>Durée :</strong> 12–18 h. <strong>Prix :</strong> 12–25 €. Privilégiez les compagnies recommandées\n(Hoang Long, Futabus, Sinh Tourist).</p>\n<h2>En ville : Grab plutôt que taxi</h2>\n<p>Grab (voiture ou moto) affiche le prix à l'avance, évite les compteurs trafiqués.\nVoir notre page <a href=\"/applications-utiles-vietnam\">applications utiles</a>.</p>\n<h2>Règle simple</h2>\n<ul>\n<li><strong>&lt; 500 km et peu de temps</strong> → vol.</li>\n<li><strong>Paysages &amp; ambiance</strong> → train de jour ou couchette.</li>\n<li><strong>Budget minimal</strong> → bus de nuit VIP.</li>\n<li><strong>Derniers kilomètres</strong> → Grab.</li>\n</ul>\n",
-    "category_label": "Pratique",
-    "tags": [
-      "transport",
-      "train",
-      "vol",
-      "grab",
-      "bus"
-    ],
-    "image_alt": "Se déplacer au Vietnam : train, bus, vol et Grab — voyage Vietnam"
-  },
-  {
-    "slug": "meilleurs-restaurants-hanoi",
-    "category": "food",
-    "date": "2026-04-28",
-    "read_time": 11,
-    "featured": true,
-    "image": "/static/images/blog/meilleurs-restaurants-hanoi.webp",
-    "image_photo_id": "1521993117367-b7f70ccd029d",
-    "image_placeholder": false,
-    "i18n": {
-      "fr": {
-        "title": "Où manger à Hanoï : street food et tables soignées",
-        "excerpt": "Phở, bún chả, bánh mì — les adresses incontournables de la capitale.",
-        "content": "\n<p>Hanoï est la capitale gastronomique du Vietnam : ici, la street food n'est pas un pis-aller mais\nun art de vivre. Le vieux quartier (Hoàn Kiếm) concentre les stands légendaires ; pour les tables\nsoignées, les quartiers Ba Đình et Tây Hồ offrent des adresses plus calmes.</p>\n<h2>Street food — les classiques</h2>\n<ul>\n<li><strong>Phở Bát Đàn</strong> (49 Bát Đàn) — référence du phở bò depuis des décennies. Arrivez avant 10 h\nou acceptez la file.</li>\n<li><strong>Bún chả Hương Liên</strong> (24 Lê Văn Hưu) — bún chả grillé, célèbre depuis la visite d'Obama.\nComplet à midi.</li>\n<li><strong>Bánh mì 25</strong> (25 Hàng Cá) — sandwich nordique, moins sucré que la version saigonnaise.</li>\n<li><strong>Bún thang Bà Thản</strong> — bouillon délicat, spécialité hanoïenne méconnue des touristes.</li>\n</ul>\n<h2>Expériences à table</h2>\n<ul>\n<li><strong>Chả Cá Thăng Long</strong> (19–31 Dương Thành) — poisson grillé à la table avec aneth et cacahuètes.\nRéservez le soir.</li>\n<li><strong>Home Vietnamese Restaurant</strong> — cuisine familiale revisitée, bon rapport qualité-prix.</li>\n<li><strong>Quán Ăn Ngon</strong> — carte pan-vietnamienne soignée, idéal pour goûter plusieurs régions en une soirée.</li>\n</ul>\n<h2>Café &amp; pause sucrée</h2>\n<p>Après le déjeuner, direction <strong>Café Giang</strong> pour un egg coffee (voir notre\n<a href=\"/blog/cafe-vietnamien-guide\">guide du café vietnamien</a>).\nLes stands de <em>chè</em> (desserts aux haricots et coco) parsèment les ruelles du vieux quartier.</p>\n<h2>Conseils pratiques</h2>\n<ul>\n<li>Petit-déjeuner hanoïen : phở ou bánh mì entre 6 h et 9 h — les stands ferment tôt.</li>\n<li>Apportez des espèces : beaucoup de stands n'acceptent pas la carte.</li>\n<li>Évitez les restaurants vides face aux sites touristiques — préférez les files locales.</li>\n<li>Budget : <strong>2–4 €</strong> en street food, <strong>8–15 €</strong> en restaurant assis.</li>\n</ul>\n<p>Pour le panorama des plats vietnamiens au-delà de Hanoï, consultez notre guide\n<a href=\"/blog/plats-incontournables-vietnam\">plats incontournables</a>.</p>\n",
-        "category_label": "Gastronomie",
-        "tags": [
-          "hanoï",
-          "street food",
-          "restaurants"
-        ],
-        "image_alt": "Où manger à Hanoï : street food et tables soignées — voyage Vietnam"
-      },
-      "en": {}
-    },
-    "title": "Où manger à Hanoï : street food et tables soignées",
-    "excerpt": "Phở, bún chả, bánh mì — les adresses incontournables de la capitale.",
-    "content": "\n<p>Hanoï est la capitale gastronomique du Vietnam : ici, la street food n'est pas un pis-aller mais\nun art de vivre. Le vieux quartier (Hoàn Kiếm) concentre les stands légendaires ; pour les tables\nsoignées, les quartiers Ba Đình et Tây Hồ offrent des adresses plus calmes.</p>\n<h2>Street food — les classiques</h2>\n<ul>\n<li><strong>Phở Bát Đàn</strong> (49 Bát Đàn) — référence du phở bò depuis des décennies. Arrivez avant 10 h\nou acceptez la file.</li>\n<li><strong>Bún chả Hương Liên</strong> (24 Lê Văn Hưu) — bún chả grillé, célèbre depuis la visite d'Obama.\nComplet à midi.</li>\n<li><strong>Bánh mì 25</strong> (25 Hàng Cá) — sandwich nordique, moins sucré que la version saigonnaise.</li>\n<li><strong>Bún thang Bà Thản</strong> — bouillon délicat, spécialité hanoïenne méconnue des touristes.</li>\n</ul>\n<h2>Expériences à table</h2>\n<ul>\n<li><strong>Chả Cá Thăng Long</strong> (19–31 Dương Thành) — poisson grillé à la table avec aneth et cacahuètes.\nRéservez le soir.</li>\n<li><strong>Home Vietnamese Restaurant</strong> — cuisine familiale revisitée, bon rapport qualité-prix.</li>\n<li><strong>Quán Ăn Ngon</strong> — carte pan-vietnamienne soignée, idéal pour goûter plusieurs régions en une soirée.</li>\n</ul>\n<h2>Café &amp; pause sucrée</h2>\n<p>Après le déjeuner, direction <strong>Café Giang</strong> pour un egg coffee (voir notre\n<a href=\"/blog/cafe-vietnamien-guide\">guide du café vietnamien</a>).\nLes stands de <em>chè</em> (desserts aux haricots et coco) parsèment les ruelles du vieux quartier.</p>\n<h2>Conseils pratiques</h2>\n<ul>\n<li>Petit-déjeuner hanoïen : phở ou bánh mì entre 6 h et 9 h — les stands ferment tôt.</li>\n<li>Apportez des espèces : beaucoup de stands n'acceptent pas la carte.</li>\n<li>Évitez les restaurants vides face aux sites touristiques — préférez les files locales.</li>\n<li>Budget : <strong>2–4 €</strong> en street food, <strong>8–15 €</strong> en restaurant assis.</li>\n</ul>\n<p>Pour le panorama des plats vietnamiens au-delà de Hanoï, consultez notre guide\n<a href=\"/blog/plats-incontournables-vietnam\">plats incontournables</a>.</p>\n",
-    "category_label": "Gastronomie",
-    "tags": [
-      "hanoï",
-      "street food",
-      "restaurants"
-    ],
-    "image_alt": "Où manger à Hanoï : street food et tables soignées — voyage Vietnam"
+    "image_alt": "Découvrez Hanoï en 7 jours : Itinéraire idéal pour les débutants au Vietnam — Hanoï, Vietnam",
+    "image_placeholder": false
   }
 ]

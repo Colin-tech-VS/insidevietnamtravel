@@ -196,6 +196,133 @@ DESTINATION_PIXABAY_QUERIES: dict[str, str] = {
     "phu-quoc": "Phu Quoc Vietnam tropical beach turquoise",
 }
 
+# Article → destination (image ville commitée dans static/images/destinations/)
+ARTICLE_DESTINATION_SLUG_MAP: dict[str, str] = {
+    "decouvrez-hanoi-en-7-jours-itineraire-ideal-pour-les-debutants-au-vietnam": "hanoi",
+    "meilleurs-restaurants-hanoi": "hanoi",
+    "visa-vietnam-guide-complet-francais": "hanoi",
+    "budget-voyage-vietnam-2026": "hanoi",
+    "securite-voyage-vietnam-conseils": "hanoi",
+    "transport-vietnam-train-bus-vol": "hanoi",
+    "plats-incontournables-vietnam": "hanoi",
+    "train-reunification-hanoi-saigon": "hanoi",
+    "carte-sim-esim-vietnam": "ho-chi-minh-city",
+    "vols-interieurs-vietnam": "ho-chi-minh-city",
+    "cafe-vietnamien-guide": "hoi-an",
+    "location-scooter-vietnam": "hoi-an",
+    "da-nang-plages-vietnam": "da-nang",
+    "phu-quoc-plages-ile-tropicale": "phu-quoc",
+    "hue-citadelle-imperiale-vietnam": "hue",
+    "hoi-an-lanternes-vieille-ville": "hoi-an",
+    "excursion-delta-mekong-marches-flottants": "delta-du-mekong",
+    "trek-sapa-rizieres-vietnam": "sapa",
+    "croisiere-baie-halong-vietnam": "halong",
+}
+
+_SLUG_DESTINATION_HINTS: list[tuple[str, str]] = [
+    ("ho-chi-minh", "ho-chi-minh-city"),
+    ("hochiminh", "ho-chi-minh-city"),
+    ("saigon", "ho-chi-minh-city"),
+    ("hoi-an", "hoi-an"),
+    ("hoian", "hoi-an"),
+    ("da-nang", "da-nang"),
+    ("danang", "da-nang"),
+    ("phu-quoc", "phu-quoc"),
+    ("phuquoc", "phu-quoc"),
+    ("delta-du-mekong", "delta-du-mekong"),
+    ("mekong", "delta-du-mekong"),
+    ("halong", "halong"),
+    ("sapa", "sapa"),
+    ("hanoi", "hanoi"),
+    ("hue", "hue"),
+]
+
+
+def _resolve_article_destination_slug(article: dict) -> str | None:
+    """Destination dont l'image ville commitée convient le mieux à l'article."""
+    slug = article.get("slug", "")
+    if slug in ARTICLE_DESTINATION_SLUG_MAP:
+        return ARTICLE_DESTINATION_SLUG_MAP[slug]
+    norm = _normalize_token(slug)
+    for hint, dest in _SLUG_DESTINATION_HINTS:
+        if _normalize_token(hint) in norm:
+            return dest
+    city_norm = _normalize_token(article.get("city", ""))
+    city_to_dest = {
+        "hanoi": "hanoi",
+        "hochiminh": "ho-chi-minh-city",
+        "hoian": "hoi-an",
+        "danang": "da-nang",
+        "halong": "halong",
+        "sapa": "sapa",
+        "hue": "hue",
+        "phuquoc": "phu-quoc",
+        "mekong": "delta-du-mekong",
+        "deltadumekong": "delta-du-mekong",
+    }
+    for key, dest in city_to_dest.items():
+        if key in city_norm:
+            return dest
+    return None
+
+
+def _committed_destination_image_url(dest_slug: str) -> str | None:
+    path = DEST_IMAGES_DIR / f"{dest_slug}.webp"
+    if path.is_file():
+        return f"/static/images/destinations/{dest_slug}.webp"
+    return None
+
+
+def _article_image_needs_repair(article: dict) -> bool:
+    if article.get("image_placeholder"):
+        return True
+    image = article.get("image") or ""
+    if not image:
+        return True
+    if image.startswith("/static/images/blog/") and not _static_image_exists(image):
+        return True
+    return False
+
+
+def sync_article_destination_images() -> int:
+    """Aligne les articles sur les images ville commitées (ou pool de secours)."""
+    from admin.store import get_articles, save_articles
+
+    articles = get_articles()
+    updated = 0
+
+    for i, article in enumerate(articles):
+        slug = article["slug"]
+        dest_slug = _resolve_article_destination_slug(article)
+        dest_url = _committed_destination_image_url(dest_slug) if dest_slug else None
+        current = article.get("image") or ""
+
+        if dest_url and (current != dest_url or _article_image_needs_repair(article)):
+            photo_ids = _photo_ids_for_destination(dest_slug) if dest_slug else []
+            photo_id = photo_ids[0] if photo_ids else (article.get("image_photo_id") or "")
+            meta = _article_image_meta(
+                article, slug, photo_id, placeholder=False, image_url=dest_url,
+            )
+            articles[i] = {**article, **meta}
+            updated += 1
+            continue
+
+        if not _article_image_needs_repair(article):
+            continue
+
+        photo_id = article.get("image_photo_id") or _pick_unique_photo_id(slug, 0, article)
+        pool_url = f"/static/images/pool/{photo_id}.webp"
+        if _local_pool_path(photo_id).exists():
+            meta = _article_image_meta(
+                article, slug, photo_id, placeholder=False, image_url=pool_url,
+            )
+            articles[i] = {**article, **meta}
+            updated += 1
+
+    if updated:
+        save_articles(articles)
+    return updated
+
 
 def destination_pixabay_query(slug: str, dest: dict | None = None) -> str:
     """Mots-clés Pixabay garantissant une photo de la bonne ville."""
@@ -923,6 +1050,16 @@ def attach_image_to_article(
     #    copie écrite au runtime disparaissait au déploiement suivant (« l'image de
     #    l'article généré disparaît après un push »). Le pool, lui, est dans git.
     if not want_ai:
+        dest_slug = _resolve_article_destination_slug(article)
+        if dest_slug:
+            dest_url = _committed_destination_image_url(dest_slug)
+            if dest_url:
+                candidates = _photo_ids_for_destination(dest_slug)
+                pid = candidates[0] if candidates else photo_id
+                log(f"IMAGE done  slug={slug} en {time.time() - t0:.1f}s dest_ref {dest_slug}")
+                return _article_image_meta(
+                    article, slug, pid, placeholder=False, image_url=dest_url,
+                )
         for pid in [photo_id] + [p[0] for p in VIETNAM_PHOTO_POOL if p[0] != photo_id]:
             if _local_pool_path(pid).exists():
                 log(f"IMAGE done  slug={slug} en {time.time() - t0:.1f}s pool_ref photo_id={pid}")

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="Inside Vietnam Travel">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F3330"/>
+      <stop offset="45%" stop-color="#1B4D4A"/>
+      <stop offset="100%" stop-color="#2A6B66"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#D4B86A"/>
+      <stop offset="100%" stop-color="#C4A053"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <circle cx="512" cy="512" r="448" fill="none" stroke="#C4A053" stroke-width="10" opacity="0.22"/>
+  <path d="M176 656 Q512 176 848 656" fill="none" stroke="url(#gold)" stroke-width="52" stroke-linecap="round"/>
+  <circle cx="512" cy="448" r="84" fill="url(#gold)"/>
+  <circle cx="512" cy="448" r="84" fill="none" stroke="#F0E2B8" stroke-width="6" opacity="0.45"/>
+</svg>

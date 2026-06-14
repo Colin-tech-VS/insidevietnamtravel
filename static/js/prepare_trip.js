@@ -66,7 +66,7 @@
     err.hidden = !msg;
   }
 
-  async function submitEmailGate(form) {
+  function submitEmailGate(form) {
     const email = (form.email.value || '').trim();
     const consent = form.consent_rgpd.checked;
     if (!consent) {
@@ -79,34 +79,30 @@
     }
 
     const btn = form.querySelector('.prepare-email-gate__submit');
+    const btnLabel = btn ? btn.textContent : '';
     if (btn) {
       btn.disabled = true;
       btn.setAttribute('aria-busy', 'true');
+      btn.textContent = labels.gate_loading || btnLabel;
     }
     showEmailError('');
 
-    try {
-      const res = await fetch(catalog.unlock_url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ email, consent_rgpd: '1' }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.ok) {
-        showEmailError(data.error || labels.gate_error_generic || '');
-        return;
-      }
-      setUnlocked();
-      hideEmailGate();
-      renderResults();
-    } catch (e) {
-      showEmailError(labels.gate_error_generic || '');
-    } finally {
-      if (btn) {
-        btn.disabled = false;
-        btn.removeAttribute('aria-busy');
-      }
+    setUnlocked();
+    showResultsShell();
+    requestAnimationFrame(() => renderResultsContent());
+
+    if (btn) {
+      btn.disabled = false;
+      btn.removeAttribute('aria-busy');
+      btn.textContent = btnLabel;
     }
+
+    fetch(catalog.unlock_url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ email, consent_rgpd: '1' }),
+      keepalive: true,
+    }).catch(() => { /* résultats déjà affichés ; inscription retentée au prochain passage */ });
   }
 
   function requestResults() {
@@ -527,7 +523,22 @@
     return block('📋', labels.summary_section || 'Profile', `<div class="prepare-summary">${cards}</div>`);
   }
 
-  function renderResults() {
+  function showResultsShell() {
+    hideEmailGate();
+    wizard.hidden = true;
+    resultsEl.hidden = false;
+    resultsEl.querySelector('.prepare-results__title').textContent = labels.results_title || '';
+    resultsEl.querySelector('.prepare-results__sub').textContent = labels.results_sub || '';
+    const backBtn = resultsEl.querySelector('.prepare-results-back');
+    if (backBtn) backBtn.textContent = labels.results_back || labels.back || '';
+    resultsEl.querySelector('.prepare-restart').textContent = labels.restart || '';
+    resultsEl.querySelector('.prepare-pdf-cta').textContent = labels.pdf_cta || '';
+    resultsEl.querySelector('.prepare-results__sections').innerHTML =
+      `<p class="prepare-results__loading" aria-live="polite">${labels.gate_loading || '…'}</p>`;
+    resultsEl.scrollIntoView({ behavior: 'auto', block: 'start' });
+  }
+
+  function renderResultsContent() {
     const { itinSlugs, destSlugs, artSlugs, catKeys } = resolveSlugs();
     const articles = catalog.articles || {};
     const extraArts = Object.values(articles).filter(
@@ -571,19 +582,8 @@
     // 7. Recommandations affiliées (à la fin).
     sections.push(recosHtml());
 
-    resultsEl.querySelector('.prepare-results__title').textContent = labels.results_title || '';
-    resultsEl.querySelector('.prepare-results__sub').textContent = labels.results_sub || '';
-    const backBtn = resultsEl.querySelector('.prepare-results-back');
-    if (backBtn) backBtn.textContent = labels.results_back || labels.back || '';
-    resultsEl.querySelector('.prepare-restart').textContent = labels.restart || '';
-    resultsEl.querySelector('.prepare-pdf-cta').textContent = labels.pdf_cta || '';
     resultsEl.querySelector('.prepare-results__sections').innerHTML =
       sections.filter(Boolean).join('') || `<p class="prepare-results__empty">${labels.empty || ''}</p>`;
-
-    wizard.hidden = true;
-    hideEmailGate();
-    resultsEl.hidden = false;
-    resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     if (window.ivtProfile && window.ivtProfile.saveTripPrefs) {
       window.ivtProfile.saveTripPrefs({
@@ -594,6 +594,11 @@
         cities: state.cities,
       });
     }
+  }
+
+  function renderResults() {
+    showResultsShell();
+    renderResultsContent();
   }
 
   function applySavedProfile() {

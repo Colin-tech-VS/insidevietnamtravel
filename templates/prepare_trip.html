@@ -117,7 +117,7 @@
         <h2 class="prepare-email-gate__title">{{ t('prepare.gate.title') }}</h2>
         <p class="prepare-email-gate__sub">{{ t('prepare.gate.sub') }}</p>
       </header>
-      <form class="prepare-email-gate__form" id="prepare-email-form" novalidate>
+      <form class="prepare-email-gate__form" id="prepare-email-form" data-no-loader novalidate>
         <label for="prepare-email" class="sr-only">Email</label>
         <input type="email" id="prepare-email" name="email" required
                placeholder="{{ newsletter.NEWSLETTER.placeholder }}"

@@ -2861,6 +2861,12 @@ a.article-category:hover { text-decoration: underline; }
   color: var(--ink-muted);
   padding: 2rem 1rem;
 }
+.prepare-results__loading {
+  text-align: center;
+  color: var(--ink-soft);
+  padding: 2.5rem 1rem;
+  font-size: 1rem;
+}
 
 .prepare-results__block { margin-bottom: 2.25rem; }
 .prepare-results__block:last-child { margin-bottom: 0; }

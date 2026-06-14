@@ -185,6 +185,10 @@ UI: dict[str, dict[str, str]] = {
         "fr": "Une erreur est survenue. Réessayez dans un instant.",
         "en": "Something went wrong. Please try again in a moment.",
     },
+    "prepare.gate.loading": {
+        "fr": "Génération de votre programme…",
+        "en": "Building your trip plan…",
+    },
 
     # Piliers SEO (hubs thématiques)
     "pillar.soon": {"fr": "Bientôt", "en": "Coming soon"},
@@ -956,6 +960,12 @@ UI: dict[str, dict[str, str]] = {
     "phrases.col_source": {"fr": "Français / English", "en": "French / English"},
     "phrases.col_vi": {"fr": "Vietnamien", "en": "Vietnamese"},
     "phrases.col_pron": {"fr": "Prononciation", "en": "Pronunciation"},
+    "phrases.listen": {"fr": "Écouter la prononciation", "en": "Listen to pronunciation"},
+    "phrases.listen_stop": {"fr": "Arrêter la lecture", "en": "Stop playback"},
+    "phrases.audio_hint": {
+        "fr": "Cliquez sur l'icône haut-parleur pour entendre chaque phrase en vietnamien (audio du navigateur).",
+        "en": "Tap the speaker icon to hear each phrase in Vietnamese (browser audio).",
+    },
 
     # ── Comparateurs ─────────────────────────────────────────────────
     "compare.eyebrow": {"fr": "Avant de partir", "en": "Before you go"},

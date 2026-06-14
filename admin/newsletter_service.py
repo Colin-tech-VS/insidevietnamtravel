@@ -65,8 +65,6 @@ def add_newsletter_subscriber(email: str) -> bool:
     email = email.strip().lower()
     if not email or "@" not in email:
         return False
-    if email in {s["email"] for s in get_newsletter_subscribers()}:
-        return False
     if is_postgres():
         with get_connection() as conn:
             cur = conn.cursor()
@@ -78,6 +76,11 @@ def add_newsletter_subscriber(email: str) -> bool:
                 (email,),
             )
             return cur.rowcount > 0
+    if NEWSLETTER_FILE.exists():
+        suffix = f",{email}"
+        for line in NEWSLETTER_FILE.read_text(encoding="utf-8").splitlines():
+            if line.strip().endswith(suffix):
+                return False
     NEWSLETTER_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(NEWSLETTER_FILE, "a", encoding="utf-8") as f:
         f.write(f"{datetime.now().isoformat()},{email}\n")
