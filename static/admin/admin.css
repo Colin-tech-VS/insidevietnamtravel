@@ -2389,6 +2389,22 @@ body.is-admin-nav-open { overflow: hidden; }
   flex-wrap: wrap;
   gap: 0.75rem 1rem;
 }
+.contact-sync-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.75rem;
+  width: 100%;
+  margin-top: 0.15rem;
+  font-size: 0.82rem;
+}
+.contact-sync-bar__label { color: var(--ink-soft); }
+.contact-sync-bar__hint { font-size: 0.78rem; }
+.contact-sync-pending {
+  width: 100%;
+  margin: 0 0 0.5rem;
+  font-size: 0.82rem;
+}
 
 .contact-filter {
   display: inline-flex;
@@ -2502,6 +2518,7 @@ body.is-admin-nav-open { overflow: hidden; }
 }
 .contact-mail-row--unread .contact-mail-row__from,
 .contact-mail-row--unread .contact-mail-row__subject { font-weight: 700; }
+.contact-mail-row.is-filtered-out { display: none !important; }
 .contact-mail-row__dot {
   flex: 0 0 8px;
   width: 8px;

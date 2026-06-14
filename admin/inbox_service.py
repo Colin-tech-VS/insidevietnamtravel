@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import os
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 
 from admin.contact_service import (
     delete_message as delete_form_message,
@@ -27,6 +28,8 @@ SOURCE_LABELS = {
 _REPLY_SUBJECT_RE = re.compile(r"^(re|fw|fwd|aw|tr|ré|ref)\s*:", re.I)
 _OUR_DOMAIN = "insidevietnamtravel.fr"
 _SNIPPET_LEN = 140
+# Intervalle conseillé pour recharger la page Contact (sync IMAP à chaque chargement).
+IMAP_SYNC_INTERVAL_SEC = max(60, int(os.environ.get("CONTACT_IMAP_SYNC_SECONDS", "180")))
 
 
 def _snippet(text: str, *, max_len: int = _SNIPPET_LEN) -> str:
@@ -87,6 +90,8 @@ def get_unified_inbox(*, limit: int = 80) -> dict:
         "unread": unread,
         "by_source": by_source,
         "source_labels": SOURCE_LABELS,
+        "synced_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
+        "sync_interval_sec": IMAP_SYNC_INTERVAL_SEC,
     }
 
 

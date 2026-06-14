@@ -898,6 +898,8 @@ def contact_admin():
         imap_error=inbox.get("imap_error") or "",
         imap_status=imap_status(),
         imap_verify=verify_imap(),
+        synced_at=inbox.get("synced_at") or "",
+        sync_interval_sec=inbox.get("sync_interval_sec") or 180,
     )
 
 

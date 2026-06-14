@@ -60,6 +60,20 @@
   <section class="panel contact-inbox-panel contact-inbox-panel--full">
         <div class="panel-head">
           <h2>Boîte de réception</h2>
+          {% if imap_ok %}
+          <div class="contact-sync-bar">
+            <span class="contact-sync-bar__label" id="contact-sync-label">
+              Dernière lecture IMAP : {{ synced_at[:16].replace('T', ' ') if synced_at else '—' }} (UTC)
+            </span>
+            <button type="button" class="btn btn-secondary btn-sm" id="contact-sync-btn" title="Relire la boîte contact@">
+              ↻ Actualiser
+            </button>
+            <span class="contact-sync-bar__hint muted">Auto toutes les {{ (sync_interval_sec // 60)|int }} min si la page reste ouverte</span>
+          </div>
+          <p class="contact-sync-pending muted" id="contact-sync-pending" hidden>
+            Nouveaux emails possibles — fermez le message ou cliquez Actualiser pour resynchroniser.
+          </p>
+          {% endif %}
           {% if messages %}
           <div class="contact-filter" role="tablist" aria-label="Filtrer les messages">
             <button type="button" class="contact-filter__btn is-active" data-filter="all" role="tab" aria-selected="true">
@@ -83,7 +97,8 @@
 
         {% if messages %}
         <div class="contact-mailbox" id="contact-mailbox"
-             data-mark-read-url="{{ url_for('admin.api_contact_mark_read') }}">
+             data-mark-read-url="{{ url_for('admin.api_contact_mark_read') }}"
+             data-sync-sec="{{ sync_interval_sec }}">
           <div class="contact-mailbox__list-wrap">
             <ul class="contact-mail-list" id="contact-mail-list">
               {% for m in messages %}
@@ -116,26 +131,8 @@
           <div class="contact-mailbox__detail" id="contact-mail-detail"></div>
         </div>
 
-        <div class="contact-mail-templates" hidden aria-hidden="true">
-          {% for m in messages %}
-          <template class="contact-mail-template"
-                    data-id="{{ m.id }}"
-                    data-read="{{ '1' if m.read else '0' }}"
-                    data-source="{{ m.source }}"
-                    data-source-label="{{ m.source_label }}"
-                    data-name="{{ m.name }}"
-                    data-email="{{ m.email }}"
-                    data-subject="{{ m.subject }}"
-                    data-date="{{ m.created_at[:16].replace('T', ' ') }}"
-                    data-date-iso="{{ m.created_at }}"
-                    data-lang="{{ m.lang or '' }}"
-                    data-has-html="{{ '1' if m.has_html else '0' }}"
-                    data-html-b64="{{ m.message_html_b64 }}"
-                    data-form-id="{{ m.form_id or '' }}">
-            <div class="contact-mail-plain">{{ m.message }}</div>
-          </template>
-          {% endfor %}
-        </div>
+        <script type="application/json" id="contact-mails-json">{{ messages | tojson }}</script>
+
         {% else %}
         <div class="contact-empty">
           <div class="contact-empty__icon" aria-hidden="true">✉</div>
@@ -181,7 +178,7 @@
       <h2>💡 Raccourcis</h2>
       <ul class="status-list">
         <li class="ok">Filtres → tri de la liste uniquement.</li>
-        <li class="ok">Lu automatique à l'ouverture.</li>
+        <li class="ok">IMAP relu à chaque actualisation (pas de sync en arrière-plan).</li>
         <li class="warn">Suppression définitive (IMAP).</li>
       </ul>
     </section>
