@@ -2360,8 +2360,25 @@ body.is-admin-nav-open { overflow: hidden; }
 }
 
 /* ── Contact admin ───────────────────────────────────────────────────── */
-.contact-admin__stats { margin-bottom: 1.25rem; }
+.contact-admin__stats { margin-bottom: 1rem; }
 .contact-admin__alert { margin: 0 0 1rem; }
+.contact-admin__help {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.65rem;
+  margin: 0 0 1rem;
+  font-size: 0.82rem;
+}
+.contact-inbox-panel--full { margin-bottom: 1rem; }
+.contact-admin__aside-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+@media (max-width: 900px) {
+  .contact-admin__aside-grid { grid-template-columns: 1fr; }
+}
 .stat-value--sm {
   font-size: 1.35rem;
   letter-spacing: -0.02em;
@@ -2428,25 +2445,30 @@ body.is-admin-nav-open { overflow: hidden; }
 /* Boîte mail — liste compacte + panneau détail (style Gmail) */
 .contact-mailbox {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  grid-template-columns: minmax(260px, 32%) minmax(0, 68%);
   gap: 0;
-  min-height: 520px;
+  min-height: min(82vh, 860px);
   border: 1px solid var(--rice-dark);
   border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--white);
+  width: 100%;
+  max-width: 100%;
 }
 .contact-mailbox__list-wrap {
   min-width: 0;
   border-right: 1px solid var(--rice-dark);
-  max-height: min(72vh, 720px);
+  max-height: min(82vh, 860px);
+  overflow-x: hidden;
   overflow-y: auto;
 }
 .contact-mailbox__detail {
   min-width: 0;
-  max-height: min(72vh, 720px);
+  max-height: min(82vh, 860px);
+  overflow-x: hidden;
   overflow-y: auto;
   background: #fafafa;
+  -webkit-overflow-scrolling: touch;
 }
 .contact-mail-list {
   list-style: none;
@@ -2538,7 +2560,7 @@ body.is-admin-nav-open { overflow: hidden; }
   opacity: 0.35;
   margin-bottom: 0.75rem;
 }
-.contact-mail-detail { padding: 0; }
+.contact-mail-detail { padding: 0; max-width: 100%; overflow-x: hidden; }
 .contact-mail-detail__toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -2551,16 +2573,18 @@ body.is-admin-nav-open { overflow: hidden; }
   position: sticky;
   top: 0;
   z-index: 2;
+  max-width: 100%;
 }
-.contact-mail-detail__back { display: none; }
 .contact-mail-detail__actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.45rem;
   margin-left: auto;
+  max-width: 100%;
 }
 .contact-mail-detail__delete { display: inline; margin: 0; }
+.contact-mail-detail__back { display: none; }
 .contact-mail-view-toggle {
   display: inline-flex;
   padding: 0.15rem;
@@ -2587,6 +2611,8 @@ body.is-admin-nav-open { overflow: hidden; }
   padding: 1rem 1.1rem 0.85rem;
   background: var(--white);
   border-bottom: 1px solid var(--rice-dark);
+  max-width: 100%;
+  overflow-x: hidden;
 }
 .contact-mail-detail__subject {
   margin: 0 0 0.5rem;
@@ -2614,13 +2640,18 @@ body.is-admin-nav-open { overflow: hidden; }
 .contact-mail-detail__body {
   padding: 0.85rem;
   min-height: 200px;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 .contact-mail-detail__iframe {
   width: 100%;
-  min-height: 420px;
+  max-width: 100%;
+  min-height: 280px;
   border: 1px solid var(--rice-dark);
   border-radius: var(--radius-sm);
   background: var(--white);
+  display: block;
+  overflow: hidden;
 }
 .contact-mail-detail__plain {
   margin: 0;
@@ -2633,6 +2664,9 @@ body.is-admin-nav-open { overflow: hidden; }
   line-height: 1.65;
   white-space: pre-wrap;
   word-break: break-word;
+  overflow-wrap: anywhere;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 .contact-mail-detail__plain.is-hidden { display: none; }
 
@@ -2643,15 +2677,17 @@ body.is-admin-nav-open { overflow: hidden; }
   }
   .contact-mailbox__list-wrap {
     border-right: none;
-    max-height: none;
+    max-height: min(42vh, 420px);
   }
   .contact-mailbox:not(.contact-mailbox--open) .contact-mailbox__detail {
     display: none;
   }
-  .contact-mailbox--open .contact-mailbox__list-wrap { display: none; }
+  .contact-mailbox--open .contact-mailbox__list-wrap {
+    max-height: min(28vh, 280px);
+  }
   .contact-mailbox--open .contact-mailbox__detail {
     max-height: none;
-    min-height: 60vh;
+    min-height: 55vh;
   }
   .contact-mail-detail__back { display: inline-flex; }
 }

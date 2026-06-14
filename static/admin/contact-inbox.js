@@ -1,5 +1,6 @@
 (function () {
   var list = document.getElementById("contact-mail-list");
+  var listWrap = document.querySelector(".contact-mailbox__list-wrap");
   var detail = document.getElementById("contact-mail-detail");
   var mailbox = document.getElementById("contact-mailbox");
   var emptyFilter = document.getElementById("contact-inbox-empty");
@@ -16,6 +17,21 @@
 
   var activeId = null;
   var activeFilter = "all";
+  var initialLoad = true;
+
+  var IFRAME_CSS =
+    "<style>" +
+    "html,body{margin:0;padding:14px 16px 20px;max-width:100%!important;overflow-x:hidden!important;" +
+    "word-wrap:break-word;overflow-wrap:anywhere;box-sizing:border-box;font-family:system-ui,sans-serif;" +
+    "font-size:15px;line-height:1.55;color:#1a1a18;}" +
+    "*,*::before,*::after{box-sizing:inherit;max-width:100%;}" +
+    "img,svg,video,iframe{max-width:100%!important;height:auto!important;}" +
+    "table{width:100%!important;max-width:100%!important;table-layout:fixed;border-collapse:collapse;}" +
+    "td,th{word-break:break-word;}" +
+    "pre{white-space:pre-wrap;word-break:break-word;overflow-x:hidden;}" +
+    "a{word-break:break-word;}" +
+    "blockquote{margin:0.75rem 0;padding-left:1rem;border-left:3px solid #ccc;}" +
+    "</style>";
 
   function decodeHtml(b64) {
     if (!b64) return "";
@@ -30,6 +46,37 @@
     } catch (e) {
       return "";
     }
+  }
+
+  function wrapEmailHtml(html) {
+    if (!html) return "";
+    if (/<head[\s>]/i.test(html)) {
+      return html.replace(/<head([^>]*)>/i, "<head$1>" + IFRAME_CSS);
+    }
+    if (/<html[\s>]/i.test(html)) {
+      return html.replace(/<html([^>]*)>/i, "<html$1><head>" + IFRAME_CSS + "</head>");
+    }
+    return IFRAME_CSS + html;
+  }
+
+  function resizeIframe(iframe) {
+    if (!iframe) return;
+    function fit() {
+      try {
+        var doc = iframe.contentDocument;
+        if (!doc) return;
+        var h = Math.max(
+          doc.documentElement ? doc.documentElement.scrollHeight : 0,
+          doc.body ? doc.body.scrollHeight : 0
+        );
+        iframe.style.height = Math.max(280, h + 32) + "px";
+      } catch (e) {
+        iframe.style.minHeight = "420px";
+      }
+    }
+    iframe.addEventListener("load", fit);
+    setTimeout(fit, 120);
+    setTimeout(fit, 400);
   }
 
   function setRowReadState(msgId, read) {
@@ -59,7 +106,8 @@
       .catch(function () {});
   }
 
-  function renderDetail(msgId) {
+  function renderDetail(msgId, options) {
+    options = options || {};
     var tpl = tplById[msgId];
     if (!tpl) return;
 
@@ -117,7 +165,7 @@
       "  </header>" +
       '  <div class="contact-mail-detail__body">' +
       (hasHtml
-        ? '    <iframe class="contact-mail-detail__iframe" title="Aperçu email" sandbox="" referrerpolicy="no-referrer"></iframe>'
+        ? '    <iframe class="contact-mail-detail__iframe" title="Aperçu email" sandbox="" referrerpolicy="no-referrer" scrolling="no"></iframe>'
         : "") +
       '    <pre class="contact-mail-detail__plain' +
       (hasHtml ? " is-hidden" : "") +
@@ -139,8 +187,11 @@
 
     if (hasHtml) {
       var iframe = detail.querySelector(".contact-mail-detail__iframe");
-      var html = decodeHtml(d.htmlB64);
-      if (iframe && html) iframe.srcdoc = html;
+      var html = wrapEmailHtml(decodeHtml(d.htmlB64));
+      if (iframe && html) {
+        iframe.srcdoc = html;
+        resizeIframe(iframe);
+      }
 
       var toggles = detail.querySelectorAll(".contact-mail-view-toggle__btn");
       toggles.forEach(function (btn) {
@@ -169,7 +220,12 @@
       row.classList.toggle("contact-mail-row--active", row.dataset.id === msgId);
     });
 
-    if (d.read !== "1") {
+    if (options.scrollDetail !== false) {
+      detail.scrollTop = 0;
+      detail.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    if (d.read !== "1" && !options.skipMarkRead) {
       markRead(d.id, d.formId || "");
     }
   }
@@ -180,7 +236,7 @@
     detail.innerHTML =
       '<div class="contact-mail-detail__placeholder">' +
       '<div class="contact-mail-detail__placeholder-icon" aria-hidden="true">✉</div>' +
-      "<p>Sélectionnez un message dans la liste</p>" +
+      "<p>Sélectionnez un filtre ou un message dans la liste</p>" +
       "</div>";
     list.querySelectorAll(".contact-mail-row").forEach(function (row) {
       row.classList.remove("contact-mail-row--active");
@@ -199,34 +255,57 @@
     return escapeHtml(str).replace(/'/g, "&#39;");
   }
 
-  function applyFilter(filter) {
+  function rowMatchesFilter(row, filter) {
+    return (
+      filter === "all" ||
+      (filter === "unread" && row.dataset.read === "0") ||
+      row.dataset.source === filter
+    );
+  }
+
+  function applyFilter(filter, options) {
+    options = options || {};
     activeFilter = filter;
     var visible = 0;
+    var firstVisible = null;
+
     list.querySelectorAll(".contact-mail-row").forEach(function (row) {
-      var show =
-        filter === "all" ||
-        (filter === "unread" && row.dataset.read === "0") ||
-        row.dataset.source === filter;
+      var show = rowMatchesFilter(row, filter);
       row.hidden = !show;
-      if (show) visible++;
+      if (show) {
+        visible++;
+        if (!firstVisible) firstVisible = row;
+      }
     });
+
     if (emptyFilter) emptyFilter.hidden = visible > 0;
-    if (activeId) {
+    if (listWrap) listWrap.scrollTop = 0;
+
+    mailbox.classList.toggle("contact-mailbox--filtered", filter !== "all");
+
+    if (options.openFirst !== false && firstVisible) {
+      renderDetail(firstVisible.dataset.id, { scrollDetail: !initialLoad });
+    } else if (!firstVisible) {
+      closeDetail();
+    } else if (activeId) {
       var activeRow = list.querySelector('.contact-mail-row[data-id="' + CSS.escape(activeId) + '"]');
-      if (activeRow && activeRow.hidden) closeDetail();
+      if (activeRow && activeRow.hidden) {
+        if (firstVisible) renderDetail(firstVisible.dataset.id);
+        else closeDetail();
+      }
     }
   }
 
   list.addEventListener("click", function (ev) {
     var row = ev.target.closest(".contact-mail-row");
-    if (!row) return;
+    if (!row || row.hidden) return;
     renderDetail(row.dataset.id);
   });
 
   list.addEventListener("keydown", function (ev) {
     if (ev.key !== "Enter" && ev.key !== " ") return;
     var row = ev.target.closest(".contact-mail-row");
-    if (!row) return;
+    if (!row || row.hidden) return;
     ev.preventDefault();
     renderDetail(row.dataset.id);
   });
@@ -237,7 +316,8 @@
         b.classList.toggle("is-active", b === btn);
         b.setAttribute("aria-selected", b === btn ? "true" : "false");
       });
-      applyFilter(btn.dataset.filter);
+      initialLoad = false;
+      applyFilter(btn.dataset.filter, { openFirst: true });
     });
   });
 

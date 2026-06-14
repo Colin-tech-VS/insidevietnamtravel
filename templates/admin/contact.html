@@ -50,9 +50,14 @@
     </div>
   </div>
 
-  <div class="admin-page-layout">
-    <div class="admin-page-main">
-      <section class="panel contact-inbox-panel">
+  <div class="contact-admin__help muted">
+    <span class="contact-source contact-source--contact_form">Formulaire</span>
+    <span class="contact-source contact-source--reply">Réponse</span>
+    <span class="contact-source contact-source--external">Externe</span>
+    — cliquez un filtre pour trier et afficher le premier message.
+  </div>
+
+  <section class="panel contact-inbox-panel contact-inbox-panel--full">
         <div class="panel-head">
           <h2>Boîte de réception</h2>
           {% if messages %}
@@ -146,52 +151,40 @@
         </div>
         {% endif %}
       </section>
-    </div>
 
-    <aside class="admin-page-aside">
-      <section class="panel">
-        <h2>Origines des messages</h2>
-        <ul class="status-list contact-source-legend">
-          <li><span class="contact-source contact-source--contact_form">Formulaire contact</span> — page /contact du site</li>
-          <li><span class="contact-source contact-source--reply">Réponse email</span> — réponse à un email partenariat ou newsletter envoyé</li>
-          <li><span class="contact-source contact-source--external">Email externe</span> — écrit directement sur la boîte mail</li>
-        </ul>
-      </section>
+  <div class="contact-admin__aside-grid">
+    <section class="panel">
+      <h2>Formulaire public</h2>
+      <p class="contact-aside__text">Page bilingue FR/EN pour les visiteurs.</p>
+      <a href="{{ url_for('contact') }}" class="btn btn-secondary contact-aside__link" target="_blank" rel="noopener">
+        Ouvrir /contact ↗
+      </a>
+    </section>
 
-      <section class="panel">
-        <h2>Formulaire public</h2>
-        <p class="contact-aside__text">Page visible par les visiteurs — bilingue FR/EN.</p>
-        <a href="{{ url_for('contact') }}" class="btn btn-secondary contact-aside__link" target="_blank" rel="noopener">
-          Ouvrir /contact ↗
-        </a>
-      </section>
+    <section class="panel">
+      <h2>Configuration mail</h2>
+      <ul class="status-list">
+        {% if smtp_ok %}
+        <li class="ok">SMTP contact OK.</li>
+        {% else %}
+        <li class="warn">SMTP contact absent.</li>
+        {% endif %}
+        {% if imap_verify.ok %}
+        <li class="ok">IMAP {{ imap_status.host }} — {{ imap_status.folder }}.</li>
+        {% else %}
+        <li class="warn">IMAP : {{ imap_verify.error or 'non configuré' }}.</li>
+        {% endif %}
+      </ul>
+    </section>
 
-      <section class="panel">
-        <h2>Configuration mail</h2>
-        <ul class="status-list">
-          {% if smtp_ok %}
-          <li class="ok">SMTP contact — envoi et notifications OK.</li>
-          {% else %}
-          <li class="warn">SMTP contact absent.</li>
-          {% endif %}
-          {% if imap_verify.ok %}
-          <li class="ok">IMAP {{ imap_status.host }}:{{ imap_status.port }} — dossier {{ imap_status.folder }}.</li>
-          {% else %}
-          <li class="warn">IMAP : {{ imap_verify.error or 'non configuré' }}.</li>
-          {% endif %}
-          <li class="ok">Répondez via le bouton « Répondre » (client mail).</li>
-        </ul>
-      </section>
-
-      <section class="panel">
-        <h2>💡 Bon à savoir</h2>
-        <ul class="status-list">
-          <li class="ok">Cliquez un message pour l'ouvrir — design HTML si disponible.</li>
-          <li class="ok">Marquer lu se fait à l'ouverture (sync IMAP).</li>
-          <li class="warn">La suppression IMAP est définitive sur le serveur mail.</li>
-        </ul>
-      </section>
-    </aside>
+    <section class="panel">
+      <h2>💡 Raccourcis</h2>
+      <ul class="status-list">
+        <li class="ok">Filtres → tri + ouverture du 1<sup>er</sup> message.</li>
+        <li class="ok">Lu automatique à l'ouverture.</li>
+        <li class="warn">Suppression définitive (IMAP).</li>
+      </ul>
+    </section>
   </div>
 </div>
 {% endblock %}
