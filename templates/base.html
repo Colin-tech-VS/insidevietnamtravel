@@ -340,19 +340,6 @@
              {% if lang == 'en' %}aria-current="true"{% endif %}>EN</a>
         </nav>
 
-        {% if partner_account %}
-        <a href="{{ url_for('partners.dashboard') }}" class="header-partner-link" title="{{ partner_account.business_name or partner_account.email }}">
-          {{ 'My space' if lang == 'en' else 'Mon espace' }}
-        </a>
-        <a href="{{ url_for('partners.logout') }}" class="header-partner-link header-partner-link--muted">
-          {{ 'Log out' if lang == 'en' else 'Déconnexion' }}
-        </a>
-        {% else %}
-        <a href="{{ url_for('partners.login') }}" class="header-partner-link">
-          {{ 'Partner' if lang == 'en' else 'Partenaire' }}
-        </a>
-        {% endif %}
-
         <button type="button" class="nav-toggle" aria-label="{{ t('nav.open_menu') }}" aria-expanded="false" aria-controls="main-nav" data-label-open="{{ t('nav.open_menu') }}" data-label-close="{{ t('nav.close_menu') }}">
           <span></span><span></span><span></span>
         </button>
