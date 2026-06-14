@@ -33,6 +33,7 @@ RÈGLES DESIGN & CONTENU (obligatoires pour valider) :
 - HTML corps : uniquement <p>, <h2>, <ul>, <li>, <strong>, <a href="…"> (pas de h1).
 - Ton professionnel mais humain, en français.
 - SEO : meta_title 50-65 car., meta_description 140-160 car.
+- profile_highlights : reprends et reformule les points forts du brouillon (highlights) — minimum 3 entrées courtes et concrètes, jamais vide si le brouillon en contient.
 - Adapte le SEO au type de partenaire (guide → tours privés, excursions ; influenceur → créateur contenu, Instagram ; blogueur → blog voyage, conseils ; agence → circuit sur mesure, DMC ; hôtel → hébergement, séjour).
 - Intègre des mots-clés naturels liés au Vietnam et au profil (sans bourrage).
 - La page doit compléter le site (pas dupliquer une destination existante mot pour mot).

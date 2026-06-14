@@ -282,6 +282,7 @@ def page_preview():
     """Aperçu privé de la page (obligatoire pour le compte test invisible)."""
     import config as site_config
     from admin.partner_seo import build_public_page_context
+    from admin.partner_portal_service import page_public_highlights
     from i18n_utils import lang_url
 
     partner = current_partner()
@@ -308,6 +309,7 @@ def page_preview():
             "og_image_alt": page.get("title") or "",
             "partner_city": (page.get("extra") or {}).get("city") or partner.get("city") or "",
             "partner_languages": (partner.get("languages") or "").strip(),
+            "partner_highlights": page_public_highlights(page),
         }
     return render_template(
         "partner_public.html",

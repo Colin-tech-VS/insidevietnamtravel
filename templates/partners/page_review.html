@@ -59,14 +59,9 @@
     {% endif %}
     {% include "partners/_fix_suggestions.html" %}
     <div class="partner-review__actions">
-      {% if can_publish %}
-      <form method="post" action="{{ url_for('partners.page_publish') }}">
-        <button type="submit" class="btn btn-primary">{% if is_hidden_account %}Publier quand même (privé){% else %}Publier ma page{% endif %}</button>
-      </form>
-      {% endif %}
       {% if ai_ready %}
       <form method="post" action="{{ url_for('partners.page_retry_ai') }}">
-        <button type="submit" class="btn btn-secondary">Relancer la vérification</button>
+        <button type="submit" class="btn btn-primary">Relancer la vérification</button>
       </form>
       {% endif %}
       <a href="{{ url_for('partners.page_edit') }}" class="btn btn-ghost">Modifier manuellement</a>
@@ -120,14 +115,9 @@
     {% endif %}
     {% include "partners/_fix_suggestions.html" %}
     <div class="partner-review__actions">
-      {% if can_publish %}
-      <form method="post" action="{{ url_for('partners.page_publish') }}">
-        <button type="submit" class="btn btn-primary">{% if is_hidden_account %}Publier (aperçu privé){% else %}Publier ma page{% endif %}</button>
-      </form>
-      {% endif %}
       {% if ai_ready %}
       <form method="post" action="{{ url_for('partners.page_retry_ai') }}">
-        <button type="submit" class="btn btn-secondary">Relancer la vérification</button>
+        <button type="submit" class="btn btn-primary">Relancer la vérification</button>
       </form>
       {% endif %}
       <a href="{{ url_for('partners.page_edit') }}" class="btn btn-secondary">Retour à l'éditeur</a>

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import config
-from admin.partner_portal_service import PROFILE_TYPE_LABELS, list_public_partners
+from admin.partner_portal_service import PROFILE_TYPE_LABELS, list_public_partners, page_public_highlights
 from i18n_utils import lang_url
 
 PROFILE_TYPE_I18N = {
@@ -281,6 +281,7 @@ def build_public_page_context(page: dict, partner: dict, lang: str, *, canonical
         "og_image_alt": page.get("seo_title") or page.get("title") or "",
         "partner_city": city,
         "partner_languages": (partner.get("languages") or "").strip(),
+        "partner_highlights": page_public_highlights(page),
     }
 
 

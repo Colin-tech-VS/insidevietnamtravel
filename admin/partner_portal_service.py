@@ -90,6 +90,38 @@ def _parse_json_field(raw: str | None) -> list | dict:
         return []
 
 
+def _highlights_from_extra(extra: dict | None) -> list[str]:
+    """Points forts affichables — profile_highlights (IA) ou brouillon highlights."""
+    extra = extra or {}
+    items: list[str] = []
+    raw_list = extra.get("profile_highlights")
+    if isinstance(raw_list, list):
+        items.extend(str(h).strip() for h in raw_list if str(h).strip())
+    elif raw_list:
+        items.append(str(raw_list).strip())
+    if not items:
+        raw = extra.get("highlights") or ""
+        for line in re.split(r"[\n,;]+", str(raw)):
+            line = line.strip()
+            if line:
+                items.append(line)
+    seen: set[str] = set()
+    out: list[str] = []
+    for item in items:
+        key = item.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(item)
+    return out[:8]
+
+
+def page_public_highlights(page: dict | None) -> list[str]:
+    if not page:
+        return []
+    return _highlights_from_extra(page.get("extra") or {})
+
+
 def _public_account(row: dict) -> dict:
     out = dict(row)
     out.pop("password_hash", None)
@@ -616,8 +648,6 @@ def apply_ai_page_result(partner_id: str, result: dict) -> dict:
             review["summary"] = "Page validée (compte test — aperçu privé)."
     elif approved:
         status = "published"
-    elif has_content and score >= 60:
-        status = "approved"
     else:
         status = "rejected"
 
@@ -630,7 +660,13 @@ def apply_ai_page_result(partner_id: str, result: dict) -> dict:
     image_url = (page_data.get("image_url") or "").strip()
     ai_review_json = json.dumps(review, ensure_ascii=False)
     extra = dict(page.get("extra") or {})
-    extra["profile_highlights"] = page_data.get("profile_highlights") or []
+    profile_highlights = page_data.get("profile_highlights") or []
+    if isinstance(profile_highlights, str):
+        profile_highlights = [profile_highlights]
+    profile_highlights = [str(h).strip() for h in profile_highlights if str(h).strip()]
+    if not profile_highlights:
+        profile_highlights = _highlights_from_extra(extra)
+    extra["profile_highlights"] = profile_highlights
     if review.get("fixes"):
         extra["pending_fixes"] = review["fixes"]
     else:
@@ -687,7 +723,7 @@ def partner_page_has_publishable_content(page: dict | None) -> bool:
 
 
 def publish_partner_page(partner_id: str) -> dict:
-    """Publication manuelle après vérification IA (contenu généré)."""
+    """Publication manuelle — uniquement après validation IA (statut approved)."""
     page = get_page_by_partner(partner_id)
     if not page:
         raise ValueError("Page introuvable.")
@@ -695,9 +731,12 @@ def publish_partner_page(partner_id: str) -> dict:
         return page
     if page.get("status") == "ai_review":
         raise ValueError("Vérification en cours — patientez.")
+    review = page.get("ai_review") or {}
+    if not review.get("approved") and page.get("status") != "approved":
+        raise ValueError("Publication impossible — la page doit d'abord être validée par l'IA.")
     if not partner_page_has_publishable_content(page):
-        raise ValueError("Contenu incomplet — lancez d'abord la vérification IA.")
-    if page.get("status") not in ("approved", "rejected", "draft"):
+        raise ValueError("Contenu incomplet — relancez la vérification IA.")
+    if page.get("status") not in ("approved",):
         raise ValueError("Publication impossible dans l'état actuel.")
     if not set_page_status(partner_id, "published"):
         raise ValueError("Échec de la publication.")

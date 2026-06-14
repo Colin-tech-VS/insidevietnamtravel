@@ -87,13 +87,13 @@
       </div>
       {% endif %}
 
-      {% if page.extra and page.extra.profile_highlights %}
+      {% if partner_highlights %}
       <section class="partner-vitrine-block partner-reveal" aria-labelledby="partner-highlights-title">
         <h2 id="partner-highlights-title" class="partner-vitrine-section-title">
           {% if lang == 'en' %}Why travellers choose this partner{% else %}Pourquoi choisir ce partenaire{% endif %}
         </h2>
         <ul class="partner-vitrine-highlights">
-          {% for h in page.extra.profile_highlights %}
+          {% for h in partner_highlights %}
           <li class="partner-vitrine-highlight-card" style="--reveal-delay: {{ loop.index0 * 80 }}ms">
             <span class="partner-vitrine-highlight-card__icon" aria-hidden="true">✓</span>
             <span>{{ h }}</span>
