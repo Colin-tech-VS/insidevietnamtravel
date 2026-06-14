@@ -92,8 +92,12 @@ def _parse_json_field(raw: str | None) -> list | dict:
         return []
 
 
-def _parse_extra_json(raw: str | None) -> dict:
+def _parse_extra_json(raw) -> dict:
     if not raw:
+        return {}
+    if isinstance(raw, dict):
+        return dict(raw)
+    if not isinstance(raw, str):
         return {}
     try:
         data = json.loads(raw)
@@ -102,7 +106,7 @@ def _parse_extra_json(raw: str | None) -> dict:
         return {}
 
 
-def _highlights_from_html(html: str | None) -> list[str]:
+def _highlights_from_html(html: str | None, *, max_len: int = 500) -> list[str]:
     if not html:
         return []
     from html import unescape
@@ -111,23 +115,39 @@ def _highlights_from_html(html: str | None) -> list[str]:
     for match in re.finditer(r"<li[^>]*>(.*?)</li>", html, re.I | re.S):
         text = unescape(re.sub(r"<[^>]+>", " ", match.group(1)))
         text = " ".join(text.split()).strip()
-        if text and len(text) <= 220:
+        if text and len(text) <= max_len:
             items.append(text)
     return items
 
 
+def _coerce_profile_highlights(raw) -> list[str]:
+    """Normalise profile_highlights (list, JSON string, texte multiligne)."""
+    if raw is None:
+        return []
+    if isinstance(raw, list):
+        return [str(h).strip() for h in raw if str(h).strip()]
+    if isinstance(raw, str):
+        text = raw.strip()
+        if not text:
+            return []
+        if text.startswith("["):
+            try:
+                parsed = json.loads(text)
+                if isinstance(parsed, list):
+                    return [str(h).strip() for h in parsed if str(h).strip()]
+            except Exception:  # noqa: BLE001
+                pass
+        return _parse_profile_highlights_lines(text)
+    return [str(raw).strip()] if str(raw).strip() else []
+
+
 def _highlights_from_extra(extra: dict | None) -> list[str]:
-    """Points forts affichables — profile_highlights (IA) ou brouillon highlights."""
+    """Points forts affichables — profile_highlights (IA/vitrine) ou brouillon highlights."""
     extra = extra or {}
-    items: list[str] = []
-    raw_list = extra.get("profile_highlights")
-    if isinstance(raw_list, list):
-        items.extend(str(h).strip() for h in raw_list if str(h).strip())
-    elif raw_list:
-        items.append(str(raw_list).strip())
+    items = _coerce_profile_highlights(extra.get("profile_highlights"))
     if not items:
         raw = extra.get("highlights") or ""
-        for line in re.split(r"[\n,;]+", str(raw)):
+        for line in re.split(r"[\n\r,;]+", str(raw)):
             line = line.strip()
             if line:
                 items.append(line)
@@ -185,13 +205,15 @@ def page_vitrine_checklist(page: dict | None) -> dict:
         }
     extra = page.get("extra") if isinstance(page.get("extra"), dict) else {}
     highlights = page_public_highlights(page)
-    stored = extra.get("profile_highlights") or []
-    if isinstance(stored, list):
-        highlights_text = "\n".join(str(h).strip() for h in stored if str(h).strip())
-    else:
+    stored = _coerce_profile_highlights(extra.get("profile_highlights"))
+    if stored:
+        highlights_text = "\n".join(stored)
+    elif highlights:
         highlights_text = "\n".join(highlights)
-    if not highlights_text and extra.get("highlights"):
+    elif extra.get("highlights"):
         highlights_text = str(extra.get("highlights") or "").replace(",", "\n")
+    else:
+        highlights_text = ""
     has_photo = bool((page.get("image_url") or "").strip())
     can_edit = page.get("status") != "ai_review"
     checklist = [
@@ -282,6 +304,10 @@ def save_page_vitrine(
                 "Ajoutez au moins 3 points pour « Pourquoi choisir ce partenaire » (une ligne par point)."
             )
         extra["profile_highlights"] = highlights
+    elif not _coerce_profile_highlights(extra.get("profile_highlights")):
+        wizard_hl = _highlights_from_extra({"highlights": extra.get("highlights") or ""})
+        if len(wizard_hl) >= 3:
+            extra["profile_highlights"] = wizard_hl
 
     if clear_image:
         new_image = ""
@@ -693,12 +719,10 @@ def list_pages(*, status: str = "") -> list[dict]:
         rows = cur.fetchall()
     out = []
     for r in rows:
-        p = _page_row_dict(r)
+        p = _normalize_page_record(_page_row_dict(r))
         account = get_account_by_id(p.get("partner_id"))
         if account and is_hidden_test_partner(account):
             continue
-        p["extra"] = _parse_json_field(p.get("extra_json"))
-        p["ai_review"] = _parse_json_field(p.get("ai_review_json"))
         out.append(p)
     return out
 
@@ -741,16 +765,18 @@ def save_page_draft(
     now = _now_iso()
     prev_extra = (existing or {}).get("extra") if isinstance((existing or {}).get("extra"), dict) else {}
     extra = {
+        **prev_extra,
         "pitch": pitch,
         "highlights": highlights,
         "offer_details": offer_details,
         "city": (city or account.get("city") or "").strip(),
         "contact_note": (contact_note or "").strip(),
     }
-    if prev_extra.get("profile_highlights"):
-        extra["profile_highlights"] = prev_extra["profile_highlights"]
-    elif highlights:
-        extra["profile_highlights"] = _highlights_from_extra({"highlights": highlights})
+    if "profile_highlights" not in extra or not _coerce_profile_highlights(extra.get("profile_highlights")):
+        if prev_extra.get("profile_highlights") is not None:
+            extra["profile_highlights"] = prev_extra["profile_highlights"]
+        elif highlights:
+            extra["profile_highlights"] = _highlights_from_extra({"highlights": highlights})
     extra_json = json.dumps(extra, ensure_ascii=False)
 
     if existing:
@@ -1003,13 +1029,10 @@ def apply_ai_page_result(partner_id: str, result: dict) -> dict:
     image_url = (page_data.get("image_url") or "").strip()
     ai_review_json = json.dumps(review, ensure_ascii=False)
     extra = dict(page.get("extra") or {})
-    profile_highlights = page_data.get("profile_highlights") or []
-    if isinstance(profile_highlights, str):
-        profile_highlights = [profile_highlights]
-    profile_highlights = [str(h).strip() for h in profile_highlights if str(h).strip()]
-    if not profile_highlights:
+    profile_highlights = _coerce_profile_highlights(page_data.get("profile_highlights"))
+    if len(profile_highlights) < 3:
         profile_highlights = _highlights_from_extra(extra)
-    if not profile_highlights:
+    if len(profile_highlights) < 3:
         profile_highlights = _highlights_from_html(page_data.get("services_html"))
     extra["profile_highlights"] = profile_highlights
     if review.get("fixes"):
@@ -1085,6 +1108,24 @@ def publish_partner_page(partner_id: str) -> dict:
         raise ValueError("Publication impossible — relancez la vérification IA si besoin.")
     if not partner_page_has_publishable_content(page):
         raise ValueError("Contenu incomplet — relancez la vérification IA.")
+    extra = dict(page.get("extra") or {})
+    highlights = _highlights_from_extra(extra)
+    if len(highlights) >= 3 and not _coerce_profile_highlights(extra.get("profile_highlights")):
+        extra["profile_highlights"] = highlights
+        now = _now_iso()
+        extra_json = json.dumps(extra, ensure_ascii=False)
+        with get_connection() as conn:
+            cur = conn.cursor()
+            if is_postgres():
+                cur.execute(
+                    "UPDATE partner_pages SET extra_json = %s, updated_at = %s WHERE partner_id = %s",
+                    (extra_json, now, partner_id),
+                )
+            else:
+                cur.execute(
+                    "UPDATE partner_pages SET extra_json = ?, updated_at = ? WHERE partner_id = ?",
+                    (extra_json, now, partner_id),
+                )
     if not set_page_status(partner_id, "published"):
         raise ValueError("Échec de la publication.")
     return get_page_by_partner(partner_id) or {}
