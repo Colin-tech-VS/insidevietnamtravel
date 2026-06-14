@@ -20,8 +20,9 @@
 {% endblock %}
 
 {% block head_preload %}
-{% if page.image_url and not is_private_preview %}
-<link rel="preload" as="image" href="{{ page.image_url if '://' in page.image_url else (site.SITE_URL ~ (page.image_url | static_v)) }}">
+{% set hero_src = hero_image if hero_image is defined and hero_image else page.image_url %}
+{% if hero_src and not is_private_preview %}
+<link rel="preload" as="image" href="{{ hero_src if '://' in hero_src else (site.SITE_URL ~ (hero_src | static_v)) }}">
 {% endif %}
 {% endblock %}
 
@@ -44,10 +45,11 @@
 </div>
 {% endif %}
 
-<header class="partner-vitrine-hero{% if page.image_url %} partner-vitrine-hero--image{% endif %}">
-  {% if page.image_url %}
+<header class="partner-vitrine-hero{% if hero_image is defined and hero_image or page.image_url %} partner-vitrine-hero--image{% endif %}">
+  {% set hero_src = hero_image if hero_image is defined and hero_image else page.image_url %}
+  {% if hero_src %}
   <div class="partner-vitrine-hero__media" aria-hidden="true">
-    <img src="{{ page.image_url if '://' in page.image_url else (site.SITE_URL ~ (page.image_url | static_v)) }}"
+    <img src="{{ hero_src if '://' in hero_src else (site.SITE_URL ~ (hero_src | static_v)) }}"
          alt="{{ page.title | e }}"
          width="1200" height="675" loading="eager" decoding="async" fetchpriority="high">
   </div>
@@ -82,9 +84,12 @@
   <div class="container partner-vitrine-layout">
     <article class="partner-vitrine-main">
       {% if page.overview_html %}
-      <div class="partner-vitrine-block partner-reveal">
+      <section class="partner-vitrine-block partner-reveal" aria-labelledby="partner-about-title">
+        <h2 id="partner-about-title" class="partner-vitrine-section-title">
+          {% if lang == 'en' %}About this partner{% else %}À propos{% endif %}
+        </h2>
         <div class="prose partner-vitrine-prose">{{ page.overview_html | safe }}</div>
-      </div>
+      </section>
       {% endif %}
 
       {% if partner_highlights %}
@@ -104,13 +109,16 @@
       {% endif %}
 
       {% if services_html_display is defined and services_html_display %}
-      <div class="partner-vitrine-block partner-reveal">
-        <div class="prose partner-vitrine-prose">{{ services_html_display | safe }}</div>
-      </div>
+      <section class="partner-vitrine-block partner-reveal partner-vitrine-services" aria-labelledby="partner-services-title">
+        <h2 id="partner-services-title" class="partner-vitrine-section-title partner-vitrine-services__fallback-title{% if '<h2' in services_html_display %} partner-vitrine-services__fallback-title--hidden{% endif %}">
+          {% if lang == 'en' %}Experiences & services{% else %}Expériences proposées{% endif %}
+        </h2>
+        <div class="prose partner-vitrine-prose partner-vitrine-prose--services">{{ services_html_display | safe }}</div>
+      </section>
       {% elif page.services_html %}
-      <div class="partner-vitrine-block partner-reveal">
-        <div class="prose partner-vitrine-prose">{{ page.services_html | safe }}</div>
-      </div>
+      <section class="partner-vitrine-block partner-reveal partner-vitrine-services">
+        <div class="prose partner-vitrine-prose partner-vitrine-prose--services">{{ page.services_html | safe }}</div>
+      </section>
       {% endif %}
 
       {% if related_partners %}
@@ -140,14 +148,24 @@
         <h2 class="partner-vitrine-contact__title">{% if lang == 'en' %}Get in touch{% else %}Contact{% endif %}</h2>
         <p class="partner-vitrine-contact__name">{{ partner.business_name or (partner.first_name ~ ' ' ~ partner.last_name) }}</p>
         {% if partner_city %}<p class="partner-vitrine-contact__city">{{ partner_city }}, Vietnam</p>{% endif %}
-        {% if page.extra and page.extra.contact_note %}
+        {% if contact_note is defined and contact_note %}
+        <p class="partner-vitrine-contact__note">{{ contact_note }}</p>
+        {% elif page.extra and page.extra.contact_note %}
         <p class="partner-vitrine-contact__note">{{ page.extra.contact_note }}</p>
         {% endif %}
-        {% if partner.website %}
-        <a class="btn btn-primary partner-vitrine-contact__cta" href="{{ partner.website }}" target="_blank" rel="noopener noreferrer">
-          {% if lang == 'en' %}Visit website{% else %}Visiter le site{% endif %} ↗
-        </a>
-        {% endif %}
+        <div class="partner-vitrine-contact__actions">
+          {% if contact_email is defined and contact_email %}
+          <a class="btn btn-primary partner-vitrine-contact__cta" href="mailto:{{ contact_email }}">
+            {% if lang == 'en' %}Send an email{% else %}Envoyer un email{% endif %}
+          </a>
+          {% endif %}
+          {% set site_url = contact_website if contact_website is defined and contact_website else partner.website %}
+          {% if site_url %}
+          <a class="btn btn-secondary partner-vitrine-contact__cta" href="{{ site_url }}" target="_blank" rel="noopener noreferrer">
+            {% if lang == 'en' %}Visit website{% else %}Visiter le site{% endif %} ↗
+          </a>
+          {% endif %}
+        </div>
       </div>
 
       <div class="partner-vitrine-cta card">

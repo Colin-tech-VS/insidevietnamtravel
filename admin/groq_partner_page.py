@@ -58,6 +58,9 @@ RÈGLES DESIGN & CONTENU (obligatoires pour valider) :
 - La page doit compléter le site (pas dupliquer une destination existante mot pour mot).
 - Accroche (pitch) : min. 30 caractères. Offre (offer_details) : min. 40 caractères.
 - page.title = nom affiché du partenaire (business_name ou prénom + nom), jamais le nom du site éditeur.
+- overview_html : 2 à 3 paragraphes <p> (présentation, approche, zone géographique) — min. 120 mots au total.
+- services_html : un <h2> titre des prestations + <ul> de 4 à 6 <li> détaillés. Chaque <li> : <strong>intitulé court</strong> puis 1–2 phrases concrètes (expériences, durées, publics). Ne pas répéter profile_highlights mot pour mot — ici le détail des offres.
+- profile_highlights : 3 à 5 puces courtes (résumé), distinctes du détail services_html.
 
 {FIX_GROUNDING_RULES}
 

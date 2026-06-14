@@ -9,7 +9,6 @@ from admin.partner_portal_service import (
     PROFILE_TYPE_LABELS,
     list_public_partners,
     page_public_highlights,
-    _highlights_from_html,
 )
 from i18n_utils import lang_url
 
@@ -30,6 +29,36 @@ PROFILE_SCHEMA_TYPE = {
     "hotel": "LodgingBusiness",
     "autre": "LocalBusiness",
 }
+
+# Hero par défaut si le partenaire n'a pas uploadé d'image
+_CITY_HERO_IMAGES: list[tuple[str, str]] = [
+    ("ho chi minh", "/static/images/destinations/ho-chi-minh-city-960.webp"),
+    ("hô chi minh", "/static/images/destinations/ho-chi-minh-city-960.webp"),
+    ("saigon", "/static/images/destinations/ho-chi-minh-city-960.webp"),
+    ("hanoi", "/static/images/destinations/hanoi-960.webp"),
+    ("hà nội", "/static/images/destinations/hanoi-960.webp"),
+    ("hoi an", "/static/images/destinations/hoi-an-960.webp"),
+    ("hội an", "/static/images/destinations/hoi-an-960.webp"),
+    ("da nang", "/static/images/destinations/da-nang-960.webp"),
+    ("đà nẵng", "/static/images/destinations/da-nang-960.webp"),
+    ("hue", "/static/images/destinations/hue-960.webp"),
+    ("huế", "/static/images/destinations/hue-960.webp"),
+    ("halong", "/static/images/destinations/halong-960.webp"),
+    ("ha long", "/static/images/destinations/halong-960.webp"),
+    ("sapa", "/static/images/destinations/sapa-960.webp"),
+    ("phu quoc", "/static/images/destinations/phu-quoc-960.webp"),
+    ("phú quốc", "/static/images/destinations/phu-quoc-960.webp"),
+    ("mekong", "/static/images/destinations/delta-du-mekong-960.webp"),
+    ("can tho", "/static/images/destinations/delta-du-mekong-960.webp"),
+    ("cần thơ", "/static/images/destinations/delta-du-mekong-960.webp"),
+]
+_DEFAULT_PARTNER_HERO = "/static/images/destinations/hanoi-960.webp"
+
+_HIGHLIGHTS_H2 = re.compile(
+    r"<h2[^>]*>\s*(?:Pourquoi|Why|Points?\s+forts|Highlights?|Atouts(?:\s+du\s+partenaire)?).*?</h2>\s*"
+    r"(?:<ul[^>]*>.*?</ul>\s*)?",
+    re.I | re.S,
+)
 
 KEYWORDS_BY_TYPE = {
     "guide": {
@@ -266,21 +295,41 @@ def json_ld_graph(page: dict, partner: dict, lang: str, *, canonical_url: str) -
     return [profile_page, entity]
 
 
+def partner_hero_image(page: dict, partner: dict, *, city: str = "") -> str:
+    """Image hero — upload partenaire ou photo destination par défaut."""
+    custom = (page.get("image_url") or "").strip()
+    if custom:
+        return custom
+    city_low = (city or "").lower()
+    for needle, path in _CITY_HERO_IMAGES:
+        if needle in city_low:
+            return path
+    return _DEFAULT_PARTNER_HERO
+
+
+def partner_contact_context(page: dict, partner: dict) -> dict:
+    """Email / site pour la colonne contact."""
+    extra = page.get("extra") or {}
+    note = (extra.get("contact_note") or "").strip()
+    email = (partner.get("email") or "").strip()
+    website = (partner.get("website") or "").strip()
+    if not email:
+        match = re.search(r"[\w.+-]+@[\w.-]+\.\w+", note)
+        if match:
+            email = match.group(0)
+    return {"contact_note": note, "contact_email": email, "contact_website": website}
+
+
 def _services_html_for_display(page: dict, highlights: list[str]) -> str:
+    """HTML prestations — retire seulement un bloc « Pourquoi choisir » dupliqué."""
     html = (page.get("services_html") or "").strip()
-    if not html or not highlights:
+    if not html:
         return html
-    if not _highlights_from_html(html):
-        return html
-    cleaned = re.sub(
-        r"<h2[^>]*>\s*(?:Pourquoi|Why|Points?\s+forts|Highlights?).*?</h2>\s*",
-        "",
-        html,
-        count=1,
-        flags=re.I | re.S,
-    )
-    cleaned = re.sub(r"<ul[^>]*>.*?</ul>", "", cleaned, count=1, flags=re.I | re.S)
-    return cleaned.strip() or html
+    if highlights and _HIGHLIGHTS_H2.search(html):
+        cleaned = _HIGHLIGHTS_H2.sub("", html, count=1).strip()
+        if cleaned:
+            return cleaned
+    return html
 
 
 def build_public_page_context(page: dict, partner: dict, lang: str, *, canonical_url: str) -> dict:
@@ -289,6 +338,9 @@ def build_public_page_context(page: dict, partner: dict, lang: str, *, canonical
     city = (extra.get("city") or partner.get("city") or "").strip()
     image = page.get("image_url") or ""
     highlights = page_public_highlights(page)
+    hero_image = partner_hero_image(page, partner, city=city)
+    contact = partner_contact_context(page, partner)
+    services_html = _services_html_for_display(page, highlights)
     return {
         "profile_badge": profile_badge(partner, lang),
         "profile_label": profile_type_label(partner, lang),
@@ -302,12 +354,14 @@ def build_public_page_context(page: dict, partner: dict, lang: str, *, canonical
             limit=4,
         ),
         "json_ld_schemas": json_ld_graph(page, partner, lang, canonical_url=canonical_url),
-        "og_image": image if image.startswith("http") else image or None,
+        "og_image": hero_image if hero_image.startswith("http") else hero_image or None,
         "og_image_alt": page.get("seo_title") or page.get("title") or "",
         "partner_city": city,
         "partner_languages": (partner.get("languages") or "").strip(),
         "partner_highlights": highlights,
-        "services_html_display": _services_html_for_display(page, highlights),
+        "services_html_display": services_html,
+        "hero_image": hero_image,
+        **contact,
     }
 
 
