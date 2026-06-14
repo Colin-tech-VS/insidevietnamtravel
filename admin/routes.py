@@ -1228,7 +1228,7 @@ def gsc_oauth_callback():
 
     err = request.args.get("error")
     if err:
-        flash(f"Connexion Google annulée : {err}", "error")
+        flash(gsc.oauth_error_help(err, request.args.get("error_description", "")), "error")
         return redirect(url_for("admin.gsc"))
 
     state = request.args.get("state", "")

@@ -1,10 +1,6 @@
 {% extends "base.html" %}
 {% from "macros/seo.html" import json_ld_graph with context %}
 
-{% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/partners.css') }}">
-{% endblock %}
-
 {% block structured_data %}
 {{ json_ld_graph([
   {
@@ -40,6 +36,10 @@
   'hotel': 'Accommodation' if is_en else 'Hébergement',
   'autre': 'Other professional' if is_en else 'Autre professionnel',
 } %}
+{% set type_icons = {
+  'guide': '🧭', 'influenceur': '📱', 'blogueur': '✍️',
+  'agence': '🏢', 'hotel': '🏨', 'autre': '✦'
+} %}
 {% set type_desc = {
   'guide': ('Private tours, themed experiences, on-the-ground expertise.' if is_en else 'Visites privées, expériences thématiques, expertise terrain.'),
   'influenceur': ('Sponsored content, UGC, affiliate campaigns on social.' if is_en else 'Contenus sponsorisés, UGC, campagnes affiliation.'),
@@ -49,291 +49,287 @@
   'autre': ('Other travel-related professional activity in Vietnam.' if is_en else 'Autre activité professionnelle liée au voyage au Vietnam.'),
 } %}
 
-<header class="pp-hero">
-  <div class="pp-hero__visual" aria-hidden="true">
+<header class="pillar-hero partner-program-hero">
+  <div class="pillar-hero__media" aria-hidden="true">
     <img src="{{ url_for('static', filename='images/destinations/hoi-an-960.webp') }}"
-         alt="" width="960" height="640" loading="eager" decoding="async">
-    <div class="pp-hero__visual-overlay"></div>
+         alt="" width="960" height="640" loading="eager" decoding="async" class="pillar-hero__img">
   </div>
-  <div class="container pp-hero__inner">
-    <div class="pp-hero__content">
-      <nav class="breadcrumb pp-hero__crumb" aria-label="Breadcrumb">
-        <ol>
-          <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
-          <li aria-current="page">{{ 'Partners' if is_en else 'Partenaires' }}</li>
-        </ol>
-      </nav>
-      <p class="pp-hero__eyebrow">{{ 'B2B partnership program' if is_en else 'Programme partenariat B2B' }}</p>
-      <h1 class="pp-hero__title">{{ 'Collaborate with Inside Vietnam Travel' if is_en else 'Collaborez avec Inside Vietnam Travel' }}</h1>
-      <p class="pp-hero__lead">{{ 'Join our partner network — guides, creators, bloggers and agencies. A dedicated page, editorial validation and co-marketing opportunities. For professionals only.' if is_en else 'Rejoignez notre réseau de partenaires — guides, créateurs, blogueurs et agences. Page dédiée, validation éditoriale et opportunités de co-marketing. Réservé aux professionnels.' }}</p>
-      <div class="pp-hero__actions">
-        <a href="#partner-apply-form" class="btn btn-primary btn-lg">{{ 'Apply now' if is_en else 'Candidater maintenant' }}</a>
-        <a href="{{ url_for('partners.login') }}" class="btn btn-ghost pp-hero__login">{{ 'Partner login' if is_en else 'Connexion partenaire' }}</a>
-      </div>
+  <div class="container partner-program-hero__inner">
+    <nav class="breadcrumb breadcrumb--light" aria-label="Breadcrumb">
+      <ol>
+        <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+        <li aria-current="page">{{ 'Partners' if is_en else 'Partenaires' }}</li>
+      </ol>
+    </nav>
+    <p class="pillar-hero__eyebrow">{{ 'B2B partnership program' if is_en else 'Programme partenariat B2B' }}</p>
+    <h1 class="pillar-hero__title">{{ 'Collaborate with Inside Vietnam Travel' if is_en else 'Collaborez avec Inside Vietnam Travel' }}</h1>
+    <p class="pillar-hero__lede partner-program-hero__lede">{{ 'Join our partner network — guides, creators, bloggers and agencies. A dedicated page, editorial validation and co-marketing opportunities. For professionals only.' if is_en else 'Rejoignez notre réseau de partenaires — guides, créateurs, blogueurs et agences. Page dédiée, validation éditoriale et opportunités de co-marketing. Réservé aux professionnels.' }}</p>
+    <ul class="prepare-hero__stats partner-program-hero__stats" aria-label="{{ 'Program highlights' if is_en else 'Points clés' }}">
+      <li><strong>{{ 'Free partner page' if is_en else 'Fiche partenaire gratuite' }}</strong></li>
+      <li><strong>{{ 'AI editorial review' if is_en else 'Validation IA éditoriale' }}</strong></li>
+      <li><strong>{{ 'Dashboard /partners' if is_en else 'Espace /partners' }}</strong></li>
+    </ul>
+    <div class="partner-program-hero__actions">
+      <a href="#partner-apply-form" class="btn btn-primary btn-lg">{{ 'Apply now' if is_en else 'Candidater maintenant' }}</a>
+      <a href="{{ url_for('partners.login') }}" class="btn btn-ghost btn-ghost--on-dark">{{ 'Partner login' if is_en else 'Connexion partenaire' }}</a>
     </div>
   </div>
 </header>
 
-<section class="pp-benefits" aria-label="{{ 'Program benefits' if is_en else 'Avantages du programme' }}">
-  <div class="container pp-benefits__grid">
-    <article class="pp-benefit">
-      <span class="pp-benefit__icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-      </span>
-      <h2>{{ 'Partner page' if is_en else 'Fiche partenaire' }}</h2>
-      <p>{{ 'Your own URL on insidevietnamtravel.fr after validation.' if is_en else 'Votre propre URL sur insidevietnamtravel.fr après validation.' }}</p>
-    </article>
-    <article class="pp-benefit">
-      <span class="pp-benefit__icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93L12 22l-.75-12.07A4.001 4.001 0 0 1 12 2z"/><path d="M9 6h6M8 10h8"/></svg>
-      </span>
-      <h2>{{ 'AI review' if is_en else 'Validation IA' }}</h2>
-      <p>{{ 'Quality, SEO and editorial check before publication.' if is_en else 'Contrôle qualité, SEO et éditorial avant publication.' }}</p>
-    </article>
-    <article class="pp-benefit">
-      <span class="pp-benefit__icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-      </span>
-      <h2>{{ 'Dashboard' if is_en else 'Espace dédié' }}</h2>
-      <p>{{ 'Manage your page at /partners — edit, submit, track status.' if is_en else 'Gérez votre fiche sur /partners — édition, soumission, suivi.' }}</p>
-    </article>
-    <article class="pp-benefit">
-      <span class="pp-benefit__icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      </span>
-      <h2>{{ 'Co-marketing' if is_en else 'Co-marketing' }}</h2>
-      <p>{{ 'Guest content, campaigns and long-term B2B collaborations.' if is_en else 'Contenus invités, campagnes et collaborations B2B durables.' }}</p>
-    </article>
+<section class="section partner-program-benefits" aria-label="{{ 'Program benefits' if is_en else 'Avantages du programme' }}">
+  <div class="container">
+    <div class="partner-program-benefits__grid">
+      <article class="partner-program-benefit">
+        <span class="contact-card__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        </span>
+        <h2>{{ 'Partner page' if is_en else 'Fiche partenaire' }}</h2>
+        <p>{{ 'Your own URL on insidevietnamtravel.fr after validation.' if is_en else 'Votre propre URL sur insidevietnamtravel.fr après validation.' }}</p>
+      </article>
+      <article class="partner-program-benefit">
+        <span class="contact-card__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93L12 22l-.75-12.07A4.001 4.001 0 0 1 12 2z"/></svg>
+        </span>
+        <h2>{{ 'AI review' if is_en else 'Validation IA' }}</h2>
+        <p>{{ 'Quality, SEO and editorial check before publication.' if is_en else 'Contrôle qualité, SEO et éditorial avant publication.' }}</p>
+      </article>
+      <article class="partner-program-benefit">
+        <span class="contact-card__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        </span>
+        <h2>{{ 'Dashboard' if is_en else 'Espace dédié' }}</h2>
+        <p>{{ 'Manage your page at /partners — edit, submit, track status.' if is_en else 'Gérez votre fiche sur /partners — édition, soumission, suivi.' }}</p>
+      </article>
+      <article class="partner-program-benefit">
+        <span class="contact-card__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </span>
+        <h2>{{ 'Co-marketing' if is_en else 'Co-marketing' }}</h2>
+        <p>{{ 'Guest content, campaigns and long-term B2B collaborations.' if is_en else 'Contenus invités, campagnes et collaborations B2B durables.' }}</p>
+      </article>
+    </div>
   </div>
 </section>
 
-<section class="pp-audience">
+<section class="section section--alt partner-program-audience">
   <div class="container">
-    <header class="pp-section-head">
-      <p class="pp-section-head__eyebrow">{{ 'Who we work with' if is_en else 'Avec qui nous collaborons' }}</p>
-      <h2>{{ 'Professionals rooted in Vietnam travel' if is_en else 'Des professionnels ancrés dans le voyage au Vietnam' }}</h2>
+    <header class="section-head section-head--center">
+      <p class="section-head__eyebrow">{{ 'Who we work with' if is_en else 'Avec qui nous collaborons' }}</p>
+      <h2 class="section-head__title">{{ 'Professionals rooted in Vietnam travel' if is_en else 'Des professionnels ancrés dans le voyage au Vietnam' }}</h2>
     </header>
-    <ul class="pp-audience__grid">
-      <li class="pp-audience__card">
-        <span class="pp-audience__num">01</span>
-        <strong>{{ 'Local guides' if is_en else 'Guides locaux' }}</strong>
-        <span>{{ 'Private tours & experiences' if is_en else 'Visites privées & expériences' }}</span>
+    <ul class="partner-program-audience__grid">
+      <li class="contact-card partner-program-audience__card">
+        <span class="partner-program-audience__num">01</span>
+        <h3>{{ 'Local guides' if is_en else 'Guides locaux' }}</h3>
+        <p class="contact-card__note">{{ 'Private tours & experiences' if is_en else 'Visites privées & expériences' }}</p>
       </li>
-      <li class="pp-audience__card">
-        <span class="pp-audience__num">02</span>
-        <strong>{{ 'Creators' if is_en else 'Créateurs' }}</strong>
-        <span>{{ 'Instagram, TikTok, YouTube' if is_en else 'Instagram, TikTok, YouTube' }}</span>
+      <li class="contact-card partner-program-audience__card">
+        <span class="partner-program-audience__num">02</span>
+        <h3>{{ 'Creators' if is_en else 'Créateurs' }}</h3>
+        <p class="contact-card__note">{{ 'Instagram, TikTok, YouTube' if is_en else 'Instagram, TikTok, YouTube' }}</p>
       </li>
-      <li class="pp-audience__card">
-        <span class="pp-audience__num">03</span>
-        <strong>{{ 'Bloggers & media' if is_en else 'Blogueurs & médias' }}</strong>
-        <span>{{ 'Editorial & SEO content' if is_en else 'Contenu éditorial & SEO' }}</span>
+      <li class="contact-card partner-program-audience__card">
+        <span class="partner-program-audience__num">03</span>
+        <h3>{{ 'Bloggers & media' if is_en else 'Blogueurs & médias' }}</h3>
+        <p class="contact-card__note">{{ 'Editorial & SEO content' if is_en else 'Contenu éditorial & SEO' }}</p>
       </li>
-      <li class="pp-audience__card">
-        <span class="pp-audience__num">04</span>
-        <strong>{{ 'Agencies & hotels' if is_en else 'Agences & hôtels' }}</strong>
-        <span>{{ 'B2B & local visibility' if is_en else 'B2B & visibilité locale' }}</span>
+      <li class="contact-card partner-program-audience__card">
+        <span class="partner-program-audience__num">04</span>
+        <h3>{{ 'Agencies & hotels' if is_en else 'Agences & hôtels' }}</h3>
+        <p class="contact-card__note">{{ 'B2B & local visibility' if is_en else 'B2B & visibilité locale' }}</p>
       </li>
     </ul>
   </div>
 </section>
 
-<section class="pp-apply" id="partner-apply-form">
-  <div class="container pp-apply__inner">
-    <header class="pp-section-head pp-section-head--center">
-      <p class="pp-section-head__eyebrow">{{ 'Application' if is_en else 'Candidature' }}</p>
-      <h2>{{ 'Partnership application' if is_en else 'Candidature partenariat' }}</h2>
-      <p class="pp-section-head__sub">{{ '4 quick steps · ~5 minutes' if is_en else '4 étapes · ~5 minutes' }}</p>
+<section class="section partner-program-apply prepare-trip" id="partner-apply-form">
+  <div class="container prepare-trip__inner">
+    <header class="section-head section-head--center partner-program-apply__head">
+      <p class="section-head__eyebrow">{{ 'Application' if is_en else 'Candidature' }}</p>
+      <h2 class="section-head__title">{{ 'Partnership application' if is_en else 'Candidature partenariat' }}</h2>
+      <p class="section-head__sub">{{ '4 quick steps · ~5 minutes' if is_en else '4 étapes · ~5 minutes' }}</p>
     </header>
 
-    <div class="pp-wizard" id="partner-wizard"
+    <div class="prepare-wizard partner-wizard" id="partner-wizard"
          data-register-url="{{ lang_url('become_partner_register') }}"
          data-dashboard-url="{{ url_for('partners.dashboard') }}"
          data-lang="{{ lang }}">
 
-      <div class="pp-wizard__bar">
-        <div class="pp-wizard__bar-track" aria-hidden="true">
-          <span class="pp-wizard__bar-fill" id="partner-progress-fill"></span>
-        </div>
-        <ol class="pp-stepper" aria-label="{{ 'Application progress' if is_en else 'Progression' }}">
-          <li class="pp-stepper__item is-active" data-step="1">
-            <span class="pp-stepper__dot"><span class="pp-stepper__num">1</span></span>
-            <span class="pp-stepper__label">{{ 'Profile' if is_en else 'Profil' }}</span>
-          </li>
-          <li class="pp-stepper__item" data-step="2">
-            <span class="pp-stepper__dot"><span class="pp-stepper__num">2</span></span>
-            <span class="pp-stepper__label">{{ 'Activity' if is_en else 'Activité' }}</span>
-          </li>
-          <li class="pp-stepper__item" data-step="3">
-            <span class="pp-stepper__dot"><span class="pp-stepper__num">3</span></span>
-            <span class="pp-stepper__label">{{ 'Details' if is_en else 'Détails' }}</span>
-          </li>
-          <li class="pp-stepper__item" data-step="4">
-            <span class="pp-stepper__dot"><span class="pp-stepper__num">4</span></span>
-            <span class="pp-stepper__label">{{ 'Account' if is_en else 'Compte' }}</span>
-          </li>
-        </ol>
+      <div class="partner-wizard__progress" aria-hidden="true">
+        <span class="partner-wizard__progress-fill" id="partner-progress-fill"></span>
       </div>
 
-      <div class="pp-wizard__body">
-        <div class="pp-wizard__error" id="partner-wizard-error" hidden role="alert"></div>
-
-        <!-- Step 1 -->
-        <div class="pp-step partner-step is-active" data-step="1">
-          <header class="pp-step__head">
-            <h3>{{ 'Your partnership profile' if is_en else 'Votre profil partenaire' }}</h3>
-            <p>{{ 'Select the category that best describes your professional activity.' if is_en else 'Sélectionnez la catégorie qui correspond le mieux à votre activité.' }}</p>
-          </header>
-          <div class="pp-types" role="radiogroup" aria-label="{{ 'Profile type' if is_en else 'Type de profil' }}">
-            {% for key, _label in profile_types %}
-            <label class="pp-type{% if loop.first %} is-selected{% endif %}">
-              <input type="radio" name="profile_type" value="{{ key }}" class="pp-type__input" {% if loop.first %}checked{% endif %}>
-              <span class="pp-type__check" aria-hidden="true">
-                <svg viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </span>
-              <span class="pp-type__content">
-                <span class="pp-type__label">{{ type_labels.get(key, _label) }}</span>
-                <span class="pp-type__desc">{{ type_desc.get(key, '') }}</span>
-              </span>
-            </label>
-            {% endfor %}
-          </div>
+      <nav class="prepare-progress prepare-progress--4 partner-wizard__steps" aria-label="{{ 'Application progress' if is_en else 'Progression candidature' }}">
+        <div class="prepare-progress__step partner-progress__step is-active" data-step="1">
+          <span class="prepare-progress__num">1</span>
+          <span class="prepare-progress__label">{{ 'Profile' if is_en else 'Profil' }}</span>
         </div>
+        <div class="prepare-progress__step partner-progress__step" data-step="2">
+          <span class="prepare-progress__num">2</span>
+          <span class="prepare-progress__label">{{ 'Activity' if is_en else 'Activité' }}</span>
+        </div>
+        <div class="prepare-progress__step partner-progress__step" data-step="3">
+          <span class="prepare-progress__num">3</span>
+          <span class="prepare-progress__label">{{ 'Details' if is_en else 'Détails' }}</span>
+        </div>
+        <div class="prepare-progress__step partner-progress__step" data-step="4">
+          <span class="prepare-progress__num">4</span>
+          <span class="prepare-progress__label">{{ 'Account' if is_en else 'Compte' }}</span>
+        </div>
+      </nav>
 
-        <!-- Step 2 -->
-        <div class="pp-step partner-step" data-step="2" hidden>
-          <header class="pp-step__head">
-            <h3>{{ 'Tell us about your activity' if is_en else 'Présentez votre activité' }}</h3>
-            <p>{{ 'This information helps us evaluate your partnership proposal.' if is_en else 'Ces informations nous aident à évaluer votre proposition de partenariat.' }}</p>
-          </header>
-          <div class="pp-form">
-            <div class="pp-form__group">
-              <label class="pp-field" for="pp-business">
-                <span class="pp-field__label">{{ 'Brand / business name' if is_en else 'Nom de marque / activité' }} <em>*</em></span>
-                <input type="text" id="pp-business" name="business_name" maxlength="120" required placeholder="Hanoi Insider Tours" autocomplete="organization">
-              </label>
-              <label class="pp-field" for="pp-city">
-                <span class="pp-field__label">{{ 'City or region in Vietnam' if is_en else 'Ville ou région au Vietnam' }}</span>
-                <input type="text" id="pp-city" name="city" maxlength="80" placeholder="Hanoï, Da Nang, Sapa…">
-              </label>
+      <p class="partner-wizard__error" id="partner-wizard-error" hidden role="alert"></p>
+
+      <div class="prepare-step partner-step is-active" data-step="1">
+        <header class="prepare-step__head">
+          <h2>{{ 'Your partnership profile' if is_en else 'Votre profil partenaire' }}</h2>
+          <p class="prepare-step__hint">{{ 'Select the category that best describes your professional activity.' if is_en else 'Sélectionnez la catégorie correspondant à votre activité professionnelle.' }}</p>
+        </header>
+        <div class="prepare-options prepare-options--grid partner-type-grid">
+          {% for key, _label in profile_types %}
+          <label class="prepare-option partner-type-card{% if loop.first %} is-selected{% endif %}">
+            <input type="radio" name="profile_type" value="{{ key }}" class="partner-type-card__input" {% if loop.first %}checked{% endif %}>
+            <span class="prepare-option__icon" aria-hidden="true">{{ type_icons.get(key, '✦') }}</span>
+            <span class="prepare-option__body">
+              <span class="prepare-option__label">{{ type_labels.get(key, _label) }}</span>
+              <span class="prepare-option__desc">{{ type_desc.get(key, '') }}</span>
+            </span>
+            <span class="prepare-option__check" aria-hidden="true">✓</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="prepare-step partner-step" data-step="2" hidden>
+        <header class="prepare-step__head">
+          <h2>{{ 'Tell us about your activity' if is_en else 'Présentez votre activité' }}</h2>
+          <p class="prepare-step__hint">{{ 'This information helps us evaluate your partnership proposal.' if is_en else 'Ces informations nous aident à évaluer votre proposition de partenariat.' }}</p>
+        </header>
+        <div class="partner-form-panel contact-form card">
+          <div class="contact-form__grid">
+            <div class="form-field">
+              <label for="pp-business">{{ 'Brand / business name' if is_en else 'Nom de marque / activité' }} *</label>
+              <input type="text" id="pp-business" name="business_name" maxlength="120" required placeholder="Hanoi Insider Tours" autocomplete="organization">
             </div>
-            <label class="pp-field pp-field--full" for="pp-bio">
-              <span class="pp-field__label">{{ 'Partnership pitch' if is_en else 'Proposition de partenariat' }} <em>*</em></span>
-              <textarea id="pp-bio" name="bio" rows="6" maxlength="2000" required placeholder="{{ 'Describe your niche, audience, past collaborations and what you offer…' if is_en else 'Décrivez votre niche, audience, collaborations passées et ce que vous proposez…' }}"></textarea>
-              <span class="pp-field__meta"><span id="pp-bio-count">0</span> / 2000 · {{ 'min. 40 characters' if is_en else 'min. 40 caractères' }}</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Step 3 -->
-        <div class="pp-step partner-step" data-step="3" hidden>
-          <header class="pp-step__head">
-            <h3>{{ 'Services & online presence' if is_en else 'Services & présence en ligne' }}</h3>
-            <p>{{ 'Optional — speeds up validation if provided.' if is_en else 'Optionnel — accélère la validation si renseigné.' }}</p>
-          </header>
-          <div class="pp-form">
-            <label class="pp-field pp-field--full" for="pp-services">
-              <span class="pp-field__label">{{ 'Services offered' if is_en else 'Services proposés' }}</span>
-              <textarea id="pp-services" name="services" rows="4" placeholder="{{ 'One per line: private tours, food walks, photo tours…' if is_en else 'Un par ligne : visites privées, food tours, photo tours…' }}"></textarea>
-            </label>
-            <label class="pp-field pp-field--full" for="pp-social">
-              <span class="pp-field__label">{{ 'Website & social links' if is_en else 'Site web & réseaux sociaux' }}</span>
-              <textarea id="pp-social" name="social_links" rows="3" placeholder="https://instagram.com/…&#10;https://…"></textarea>
-            </label>
-            <div class="pp-form__group">
-              <label class="pp-field" for="pp-phone">
-                <span class="pp-field__label">{{ 'Phone' if is_en else 'Téléphone' }}</span>
-                <input type="tel" id="pp-phone" name="phone" maxlength="40" placeholder="+84 …" autocomplete="tel">
-              </label>
-              <label class="pp-field" for="pp-langs">
-                <span class="pp-field__label">{{ 'Languages spoken' if is_en else 'Langues parlées' }}</span>
-                <input type="text" id="pp-langs" name="languages" maxlength="120" placeholder="Français, English, Tiếng Việt">
-              </label>
+            <div class="form-field">
+              <label for="pp-city">{{ 'City or region in Vietnam' if is_en else 'Ville ou région au Vietnam' }}</label>
+              <input type="text" id="pp-city" name="city" maxlength="80" placeholder="Hanoï, Da Nang, Sapa…">
             </div>
           </div>
-        </div>
-
-        <!-- Step 4 -->
-        <div class="pp-step partner-step" data-step="4" hidden>
-          <header class="pp-step__head">
-            <h3>{{ 'Create your partner account' if is_en else 'Créez votre compte partenaire' }}</h3>
-            <p>{{ 'Access your dashboard at insidevietnamtravel.fr/partners' if is_en else 'Accédez à votre espace sur insidevietnamtravel.fr/partners' }}</p>
-          </header>
-          <div class="pp-form">
-            <div class="pp-form__group">
-              <label class="pp-field" for="pp-first">
-                <span class="pp-field__label">{{ 'First name' if is_en else 'Prénom' }} <em>*</em></span>
-                <input type="text" id="pp-first" name="first_name" required autocomplete="given-name">
-              </label>
-              <label class="pp-field" for="pp-last">
-                <span class="pp-field__label">{{ 'Last name' if is_en else 'Nom' }} <em>*</em></span>
-                <input type="text" id="pp-last" name="last_name" required autocomplete="family-name">
-              </label>
-            </div>
-            <label class="pp-field pp-field--full" for="pp-email">
-              <span class="pp-field__label">{{ 'Professional email' if is_en else 'Email professionnel' }} <em>*</em></span>
-              <input type="email" id="pp-email" name="email" required autocomplete="email" placeholder="vous@activite.com">
-            </label>
-            <div class="pp-form__group">
-              <label class="pp-field" for="pp-pass">
-                <span class="pp-field__label">{{ 'Password' if is_en else 'Mot de passe' }} <em>*</em></span>
-                <input type="password" id="pp-pass" name="password" required minlength="8" autocomplete="new-password" placeholder="8+ {{ 'characters' if is_en else 'caractères' }}">
-              </label>
-              <label class="pp-field" for="pp-pass2">
-                <span class="pp-field__label">{{ 'Confirm password' if is_en else 'Confirmation' }} <em>*</em></span>
-                <input type="password" id="pp-pass2" name="password_confirm" required minlength="8" autocomplete="new-password">
-              </label>
-            </div>
-            <label class="pp-consent">
-              <input type="checkbox" name="consent_rgpd" value="1" required>
-              <span>{{ 'I accept the' if is_en else 'J\'accepte la' }} <a href="{{ lang_url('privacy') }}" target="_blank" rel="noopener">{{ t('newsletter.privacy_link') }}</a>.</span>
-            </label>
-            <input type="text" name="website" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <div class="form-field">
+            <label for="pp-bio">{{ 'Partnership pitch' if is_en else 'Proposition de partenariat' }} *</label>
+            <textarea id="pp-bio" name="bio" rows="6" maxlength="2000" required placeholder="{{ 'Describe your niche, audience, past collaborations and what you offer…' if is_en else 'Décrivez votre niche, audience, collaborations passées et ce que vous proposez…' }}"></textarea>
+            <span class="form-field__hint"><span id="pp-bio-count">0</span> / 2000 · {{ 'min. 40 characters' if is_en else 'min. 40 caractères' }}</span>
           </div>
         </div>
       </div>
 
-      <footer class="pp-wizard__footer">
-        <button type="button" class="btn btn-ghost" id="partner-prev" hidden>{{ 'Back' if is_en else 'Retour' }}</button>
-        <div class="pp-wizard__footer-right">
-          <span class="pp-wizard__step-hint muted">{{ 'Step' if is_en else 'Étape' }} <strong id="partner-step-current">1</strong>/4</span>
-          <button type="button" class="btn btn-primary" id="partner-next">{{ 'Continue' if is_en else 'Continuer' }}</button>
+      <div class="prepare-step partner-step" data-step="3" hidden>
+        <header class="prepare-step__head">
+          <h2>{{ 'Services & online presence' if is_en else 'Services & présence en ligne' }}</h2>
+          <p class="prepare-step__hint">{{ 'Optional — speeds up validation if provided.' if is_en else 'Optionnel — accélère la validation si renseigné.' }}</p>
+        </header>
+        <div class="partner-form-panel contact-form card">
+          <div class="form-field">
+            <label for="pp-services">{{ 'Services offered' if is_en else 'Services proposés' }}</label>
+            <textarea id="pp-services" name="services" rows="4" placeholder="{{ 'One per line: private tours, food walks…' if is_en else 'Un par ligne : visites privées, food tours…' }}"></textarea>
+          </div>
+          <div class="form-field">
+            <label for="pp-social">{{ 'Website & social links' if is_en else 'Site web & réseaux sociaux' }}</label>
+            <textarea id="pp-social" name="social_links" rows="3" placeholder="https://instagram.com/…"></textarea>
+          </div>
+          <div class="contact-form__grid">
+            <div class="form-field">
+              <label for="pp-phone">{{ 'Phone' if is_en else 'Téléphone' }}</label>
+              <input type="tel" id="pp-phone" name="phone" maxlength="40" placeholder="+84 …" autocomplete="tel">
+            </div>
+            <div class="form-field">
+              <label for="pp-langs">{{ 'Languages spoken' if is_en else 'Langues parlées' }}</label>
+              <input type="text" id="pp-langs" name="languages" maxlength="120" placeholder="Français, English, Tiếng Việt">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="prepare-step partner-step" data-step="4" hidden>
+        <header class="prepare-step__head">
+          <h2>{{ 'Create your partner account' if is_en else 'Créez votre compte partenaire' }}</h2>
+          <p class="prepare-step__hint">{{ 'Access your dashboard at insidevietnamtravel.fr/partners' if is_en else 'Accédez à votre espace sur insidevietnamtravel.fr/partners' }}</p>
+        </header>
+        <div class="partner-form-panel contact-form card">
+          <div class="contact-form__grid">
+            <div class="form-field">
+              <label for="pp-first">{{ 'First name' if is_en else 'Prénom' }} *</label>
+              <input type="text" id="pp-first" name="first_name" required autocomplete="given-name">
+            </div>
+            <div class="form-field">
+              <label for="pp-last">{{ 'Last name' if is_en else 'Nom' }} *</label>
+              <input type="text" id="pp-last" name="last_name" required autocomplete="family-name">
+            </div>
+          </div>
+          <div class="form-field">
+            <label for="pp-email">{{ 'Professional email' if is_en else 'Email professionnel' }} *</label>
+            <input type="email" id="pp-email" name="email" required autocomplete="email" placeholder="vous@activite.com">
+          </div>
+          <div class="contact-form__grid">
+            <div class="form-field">
+              <label for="pp-pass">{{ 'Password' if is_en else 'Mot de passe' }} *</label>
+              <input type="password" id="pp-pass" name="password" required minlength="8" autocomplete="new-password" placeholder="8+ {{ 'characters' if is_en else 'caractères' }}">
+            </div>
+            <div class="form-field">
+              <label for="pp-pass2">{{ 'Confirm password' if is_en else 'Confirmation' }} *</label>
+              <input type="password" id="pp-pass2" name="password_confirm" required minlength="8" autocomplete="new-password">
+            </div>
+          </div>
+          <label class="contact-form__consent">
+            <input type="checkbox" name="consent_rgpd" value="1" required>
+            <span>{{ 'I accept the' if is_en else 'J\'accepte la' }} <a href="{{ lang_url('privacy') }}" target="_blank" rel="noopener">{{ t('newsletter.privacy_link') }}</a>.</span>
+          </label>
+          <input type="text" name="website" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true">
+        </div>
+      </div>
+
+      <div class="prepare-wizard__nav partner-wizard__nav">
+        <button type="button" class="btn btn-ghost prepare-back" id="partner-prev" hidden>{{ 'Back' if is_en else 'Retour' }}</button>
+        <div class="partner-wizard__nav-right">
+          <span class="partner-wizard__step-label muted">{{ 'Step' if is_en else 'Étape' }} <strong id="partner-step-current">1</strong>/4</span>
+          <button type="button" class="btn btn-primary prepare-next" id="partner-next">{{ 'Continue' if is_en else 'Continuer' }} →</button>
           <button type="button" class="btn btn-primary btn-lg" id="partner-submit" hidden>{{ 'Create my account' if is_en else 'Créer mon compte' }}</button>
         </div>
-      </footer>
+      </div>
     </div>
 
-    <p class="pp-apply__login muted">
+    <p class="partner-program-apply__login muted">
       {{ 'Already a partner?' if is_en else 'Déjà partenaire ?' }}
       <a href="{{ url_for('partners.login') }}">{{ 'Sign in to /partners' if is_en else 'Connexion /partners' }}</a>
     </p>
   </div>
 </section>
 
-<section class="pp-process">
+<section class="section section--alt partner-program-process">
   <div class="container">
-    <header class="pp-section-head pp-section-head--center">
-      <p class="pp-section-head__eyebrow">{{ 'How it works' if is_en else 'Comment ça marche' }}</p>
-      <h2>{{ 'From application to published page' if is_en else 'De la candidature à la page publiée' }}</h2>
+    <header class="section-head section-head--center">
+      <p class="section-head__eyebrow">{{ 'How it works' if is_en else 'Comment ça marche' }}</p>
+      <h2 class="section-head__title">{{ 'From application to published page' if is_en else 'De la candidature à la page publiée' }}</h2>
     </header>
-    <ol class="pp-process__steps">
+    <ol class="partner-program-process__steps">
       <li>
-        <span class="pp-process__icon" aria-hidden="true">1</span>
+        <span class="partner-program-process__num">1</span>
         <strong>{{ 'Apply' if is_en else 'Candidature' }}</strong>
         <p>{{ 'Complete the 4-step form above.' if is_en else 'Complétez le formulaire en 4 étapes.' }}</p>
       </li>
       <li>
-        <span class="pp-process__icon" aria-hidden="true">2</span>
+        <span class="partner-program-process__num">2</span>
         <strong>{{ 'Create your page' if is_en else 'Créez votre fiche' }}</strong>
         <p>{{ 'Build your partner profile in the dashboard.' if is_en else 'Rédigez votre fiche dans l\'espace partenaire.' }}</p>
       </li>
       <li>
-        <span class="pp-process__icon" aria-hidden="true">3</span>
+        <span class="partner-program-process__num">3</span>
         <strong>{{ 'AI review' if is_en else 'Validation IA' }}</strong>
         <p>{{ 'Our AI checks quality, SEO and editorial fit.' if is_en else 'Notre IA vérifie qualité, SEO et cohérence éditoriale.' }}</p>
       </li>
       <li>
-        <span class="pp-process__icon" aria-hidden="true">4</span>
+        <span class="partner-program-process__num">4</span>
         <strong>{{ 'Go live' if is_en else 'Publication' }}</strong>
         <p>{{ 'Your page goes live on insidevietnamtravel.fr.' if is_en else 'Votre page est publiée sur insidevietnamtravel.fr.' }}</p>
       </li>

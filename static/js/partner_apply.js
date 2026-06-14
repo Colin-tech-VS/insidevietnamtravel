@@ -13,14 +13,14 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const steps = Array.from(root.querySelectorAll('.partner-step'));
-  const progress = Array.from(root.querySelectorAll('.pp-stepper__item'));
+  const progress = Array.from(root.querySelectorAll('.partner-progress__step'));
   const btnPrev = document.getElementById('partner-prev');
   const btnNext = document.getElementById('partner-next');
   const btnSubmit = document.getElementById('partner-submit');
   const errEl = document.getElementById('partner-wizard-error');
   const stepCurrentEl = document.getElementById('partner-step-current');
   const progressFill = document.getElementById('partner-progress-fill');
-  const typeCards = Array.from(root.querySelectorAll('.pp-type'));
+  const typeCards = Array.from(root.querySelectorAll('.partner-type-card'));
   const bioField = root.querySelector('#pp-bio');
   const bioCount = document.getElementById('pp-bio-count');
   let current = 1;
@@ -48,8 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const input = card.querySelector('input[type="radio"]');
     input?.addEventListener('change', syncTypeCards);
     card.addEventListener('click', () => {
-      const input = card.querySelector('input[type="radio"]');
-      if (input) input.checked = true;
+      const radio = card.querySelector('input[type="radio"]');
+      if (radio) radio.checked = true;
       syncTypeCards();
     });
   });
@@ -83,8 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
       progressFill.style.width = `${pct}%`;
     }
     showError('');
-    const applySection = document.getElementById('partner-apply-form');
-    applySection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('partner-apply-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function validateStep(step) {

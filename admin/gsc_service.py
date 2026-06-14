@@ -61,10 +61,38 @@ def oauth_configured() -> bool:
 
 
 def redirect_uri() -> str:
+    """URI de callback OAuth — doit correspondre EXACTEMENT à Google Cloud Console."""
     explicit = os.environ.get("GOOGLE_GSC_REDIRECT_URI", "").strip()
     if explicit:
         return explicit.rstrip("/")
-    return f"{config.SITE_URL.rstrip('/')}/admin/gsc/oauth/callback"
+    base = (config.SITE_CANONICAL_URL or config.SITE_URL).rstrip("/")
+    return f"{base}/admin/gsc/oauth/callback"
+
+
+def oauth_error_help(error: str, description: str = "") -> str:
+    """Message actionnable pour les erreurs OAuth Google (écran de consentement)."""
+    err = (error or "").strip().lower()
+    desc = (description or "").strip()
+    if err == "access_denied":
+        return (
+            "Accès refusé par Google (403 access_denied). Votre app OAuth est probablement "
+            "en mode « Test » : ajoutez votre adresse Gmail comme utilisateur test dans "
+            "Google Cloud Console → OAuth consent screen → Test users "
+            "(ex. coco.cayre@gmail.com), puis réessayez. "
+            "Utilisez le même compte Google que Search Console. "
+            "Pour un accès sans liste de testeurs, publiez l'app (Publishing status → In production) "
+            "— une vérification Google peut être requise pour l'API Search Console."
+        )
+    if err == "redirect_uri_mismatch":
+        uri = redirect_uri()
+        return (
+            f"URI de redirection incorrecte (redirect_uri_mismatch). "
+            f"Ajoutez exactement cette URL dans Google Cloud Console → Credentials → "
+            f"Authorized redirect URIs : {uri}"
+        )
+    if desc:
+        return f"Erreur Google OAuth ({error}) : {desc}"
+    return f"Erreur Google OAuth : {error or 'inconnue'}"
 
 
 def save_oauth_config(client_id: str, client_secret: str) -> None:
