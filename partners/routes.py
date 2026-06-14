@@ -31,6 +31,7 @@ from admin.partner_portal_service import (
     page_ai_review_stale,
     page_review_job_running,
     partner_page_has_publishable_content,
+    partner_page_can_preview,
     partner_page_publication,
     publish_partner_page,
     release_page_from_ai_review,
@@ -290,7 +291,7 @@ def page_preview():
 
     partner = current_partner()
     page = get_page_by_partner(partner["id"])
-    if not page or not (page.get("overview_html") or page.get("title")):
+    if not partner_page_can_preview(page) and not (page and (page.get("overview_html") or page.get("title"))):
         flash("Aucune page à prévisualiser — vérifiez d'abord votre page.", "error")
         return redirect(url_for("partners.page_edit"))
     lang = get_lang()
@@ -343,6 +344,7 @@ def page_review():
         job_status=job_status,
         show_loader=show_loader,
         can_publish=partner_page_has_publishable_content(page),
+        publication=partner_page_publication(page, is_hidden=is_hidden),
         is_hidden_account=is_hidden,
         page_status_labels=PAGE_STATUS_LABELS,
         ai_ready=ai_client.is_configured(),
@@ -357,13 +359,13 @@ def page_publish():
     try:
         page = publish_partner_page(partner["id"])
         if is_hidden:
-            flash("Page publiée en mode privé (aperçu uniquement).", "success")
+            flash("Page publiée — visible en aperçu privé (compte test, hors site public).", "success")
         else:
-            flash("Votre page partenaire est en ligne !", "success")
+            flash("Votre page est en ligne sur insidevietnamtravel.fr !", "success")
     except ValueError as exc:
         flash(str(exc), "error")
         return redirect(url_for("partners.page_review"))
-    return redirect(url_for("partners.page_review"))
+    return redirect(url_for("partners.dashboard"))
 
 
 @partners_bp.route("/page/apply-fixes", methods=["POST"])

@@ -152,62 +152,73 @@ def page_public_highlights(page: dict | None) -> list[str]:
     return items
 
 
+def _iso_date(raw) -> str | None:
+    if not raw:
+        return None
+    if isinstance(raw, datetime):
+        return raw.date().isoformat()
+    text = str(raw).strip()
+    return text[:10] if text else None
+
+
 def partner_page_publication(page: dict | None, *, is_hidden: bool = False) -> dict:
     """Résumé lisible pour le dashboard partenaire."""
     if not page:
         return {
-            "is_published": False,
-            "is_public": False,
+            "is_validated": False,
+            "is_published_public": False,
             "headline": "Aucune page",
             "detail": "Créez votre fiche pour commencer.",
             "badge": "none",
         }
     status = page.get("status") or "draft"
+    review_approved = bool((page.get("ai_review") or {}).get("approved"))
+
     if status == "published":
         if is_hidden:
             return {
-                "is_published": True,
-                "is_public": False,
-                "headline": "Publiée (aperçu privé)",
-                "detail": "Visible dans votre espace — non indexée sur le site public.",
+                "is_validated": True,
+                "is_published_public": False,
+                "headline": "Validée — aperçu privé uniquement",
+                "detail": "Compte test : la page n’apparaît pas sur le site public ni dans l’annuaire.",
                 "badge": "private",
             }
         return {
-            "is_published": True,
-            "is_public": True,
+            "is_validated": True,
+            "is_published_public": True,
             "headline": "Page publiée en ligne",
-            "detail": "Votre fiche est visible sur insidevietnamtravel.fr.",
+            "detail": "Votre fiche est visible sur insidevietnamtravel.fr et dans l’annuaire partenaires.",
             "badge": "live",
+        }
+    if status == "approved" or (review_approved and status not in ("rejected", "ai_review", "draft")):
+        return {
+            "is_validated": True,
+            "is_published_public": False,
+            "headline": "Validée par l’IA — pas encore en ligne",
+            "detail": "Aperçu privé disponible. Publiez en ligne pour rendre la page publique.",
+            "badge": "approved",
         }
     if status == "ai_review":
         return {
-            "is_published": False,
-            "is_public": False,
+            "is_validated": False,
+            "is_published_public": False,
             "headline": "Vérification en cours",
             "detail": "L’IA analyse votre page — patientez quelques instants.",
             "badge": "pending",
         }
-    if status == "approved":
-        return {
-            "is_published": False,
-            "is_public": False,
-            "headline": "Validée — à publier",
-            "detail": "L’IA a validé votre page. Confirmez la publication.",
-            "badge": "approved",
-        }
     if status == "rejected":
         return {
-            "is_published": False,
-            "is_public": False,
-            "headline": "Non publiée",
-            "detail": "Corrigez les points signalés puis relancez la vérification.",
+            "is_validated": False,
+            "is_published_public": False,
+            "headline": "Non validée",
+            "detail": "Corrigez les points signalés puis relancez la vérification IA.",
             "badge": "rejected",
         }
     return {
-        "is_published": False,
-        "is_public": False,
+        "is_validated": False,
+        "is_published_public": False,
         "headline": "Non publiée",
-        "detail": "Brouillon — lancez « Vérifier ma page » pour publication.",
+        "detail": "Brouillon — lancez « Vérifier ma page » (validation IA obligatoire).",
         "badge": "draft",
     }
 
@@ -222,6 +233,10 @@ def _normalize_page_record(page: dict) -> dict:
             page["ai_review"] = {}
     else:
         page["ai_review"] = {}
+    if page.get("published_at"):
+        page["published_at"] = _iso_date(page.get("published_at"))
+    if page.get("updated_at"):
+        page["updated_at"] = _iso_date(page.get("updated_at"))
     return page
 
 
@@ -736,19 +751,17 @@ def apply_ai_page_result(partner_id: str, result: dict) -> dict:
     overview_html = (page_data.get("overview_html") or "").strip()
     has_content = bool(title and overview_html)
 
-    if is_hidden_test_partner(account) and has_content:
-        status = "published"
-        approved = True
+    if is_hidden_test_partner(account) and has_content and approved:
         review = dict(review)
         review["approved"] = True
         if not review.get("summary"):
-            review["summary"] = "Page validée (compte test — aperçu privé)."
-    elif approved:
-        status = "published"
+            review["summary"] = "Page validée par l’IA — publiez en ligne quand vous êtes prêt."
+    if approved and has_content:
+        status = "approved"
+        published_at = None
     else:
         status = "rejected"
-
-    published_at = now if status == "published" else None
+        published_at = None
 
     tagline = (page_data.get("tagline") or "").strip()
     services_html = (page_data.get("services_html") or "").strip()
@@ -822,7 +835,7 @@ def partner_page_has_publishable_content(page: dict | None) -> bool:
 
 
 def publish_partner_page(partner_id: str) -> dict:
-    """Publication manuelle — uniquement après validation IA (statut approved)."""
+    """Publication publique — uniquement après validation IA (statut approved)."""
     page = get_page_by_partner(partner_id)
     if not page:
         raise ValueError("Page introuvable.")
@@ -831,15 +844,23 @@ def publish_partner_page(partner_id: str) -> dict:
     if page.get("status") == "ai_review":
         raise ValueError("Vérification en cours — patientez.")
     review = page.get("ai_review") or {}
-    if not review.get("approved") and page.get("status") != "approved":
-        raise ValueError("Publication impossible — la page doit d'abord être validée par l'IA.")
+    if not review.get("approved"):
+        raise ValueError("Publication impossible — la page doit d’abord être validée par l’IA.")
+    if page.get("status") != "approved":
+        raise ValueError("Publication impossible — relancez la vérification IA si besoin.")
     if not partner_page_has_publishable_content(page):
         raise ValueError("Contenu incomplet — relancez la vérification IA.")
-    if page.get("status") not in ("approved",):
-        raise ValueError("Publication impossible dans l'état actuel.")
     if not set_page_status(partner_id, "published"):
         raise ValueError("Échec de la publication.")
     return get_page_by_partner(partner_id) or {}
+
+
+def partner_page_can_preview(page: dict | None) -> bool:
+    if not page:
+        return False
+    if not partner_page_has_publishable_content(page):
+        return False
+    return page.get("status") in ("approved", "published") or bool((page.get("ai_review") or {}).get("approved"))
 
 
 def set_page_status(partner_id: str, status: str, *, admin_notes: str = "") -> bool:

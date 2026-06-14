@@ -14,28 +14,30 @@
 
   {% if page and page.status == 'published' %}
   <div class="partner-review__ok">
-    <h2>✅ Page validée{% if is_hidden_account %} (mode privé){% else %} et publiée{% endif %}</h2>
-    <p>{{ page.ai_review.summary if page.ai_review else 'Votre page est prête.' }}</p>
-    {% if is_hidden_account %}
-    <a href="{{ url_for('partners.page_preview') }}" class="btn btn-primary" target="_blank" rel="noopener">Aperçu privé ↗</a>
-    {% else %}
-    <a href="{{ url_for('partner_public_page', slug=page.slug) }}" class="btn btn-primary" target="_blank" rel="noopener">Voir ma page ↗</a>
-    {% endif %}
-    <a href="{{ url_for('partners.dashboard') }}" class="btn btn-secondary">Dashboard</a>
+    <h2>✅ {% if is_hidden_account %}Page publiée (aperçu privé){% elif page.slug %}Page publiée en ligne{% else %}Page publiée{% endif %}</h2>
+    <p>{{ page.ai_review.summary if page.ai_review else 'Votre page est en ligne.' }}</p>
+    <div class="partner-review__actions">
+      {% if not is_hidden_account and page.slug %}
+      <a href="{{ url_for('partner_public_page', slug=page.slug) }}" class="btn btn-primary" target="_blank" rel="noopener">Voir la page publique ↗</a>
+      {% else %}
+      <a href="{{ url_for('partners.page_preview') }}" class="btn btn-primary" target="_blank" rel="noopener">Aperçu privé ↗</a>
+      {% endif %}
+      <a href="{{ url_for('partners.dashboard') }}" class="btn btn-secondary">Dashboard</a>
+    </div>
   </div>
 
   {% elif page and page.status == 'approved' %}
   <div class="partner-review__ok partner-review__ok--left">
-    <h2>✅ Page validée — prête à publier</h2>
+    <h2>✅ Validée par l’IA — pas encore publique</h2>
     {% if page.ai_review and page.ai_review.score is not none %}
     <p class="partner-review__score muted">Score éditorial : <strong>{{ page.ai_review.score }}/100</strong></p>
     {% endif %}
-    <p class="partner-review__summary">{{ page.ai_review.summary if page.ai_review else 'Votre contenu est prêt.' }}</p>
+    <p class="partner-review__summary">{{ page.ai_review.summary if page.ai_review else 'Votre contenu est prêt. Publiez en ligne pour le rendre visible.' }}</p>
     <div class="partner-review__actions">
       <form method="post" action="{{ url_for('partners.page_publish') }}">
-        <button type="submit" class="btn btn-primary">{% if is_hidden_account %}Publier (aperçu privé){% else %}Publier ma page{% endif %}</button>
+        <button type="submit" class="btn btn-primary">{% if is_hidden_account %}Confirmer (aperçu privé){% else %}Publier en ligne{% endif %}</button>
       </form>
-      <a href="{{ url_for('partners.page_preview') }}" class="btn btn-secondary" target="_blank" rel="noopener">Aperçu ↗</a>
+      <a href="{{ url_for('partners.page_preview') }}" class="btn btn-secondary" target="_blank" rel="noopener">Aperçu privé ↗</a>
       <a href="{{ url_for('partners.page_edit') }}" class="btn btn-ghost">Modifier le brouillon</a>
     </div>
   </div>
