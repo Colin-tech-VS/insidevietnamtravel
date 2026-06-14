@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const chipButtons = Array.from(document.querySelectorAll('#highlight-chips .partner-chip'));
   const cityButtons = Array.from(document.querySelectorAll('#city-chips .partner-chip'));
-  const contactOptions = Array.from(document.querySelectorAll('.partner-contact-option'));
+  const contactOptions = Array.from(document.querySelectorAll('.partner-contact-card'));
 
   let current = 1;
   const total = steps.length;
@@ -53,8 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
       card.classList.toggle('is-selected', Boolean(input?.checked));
     });
   }
-
-  function parseSavedHighlights() {
     const raw = (data.savedHighlights || highlightsInput?.value || '').trim();
     if (!raw) return;
     const parts = raw.split(/[\n,;]+/).map((s) => s.trim()).filter(Boolean);
