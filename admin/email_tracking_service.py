@@ -557,3 +557,87 @@ def format_tracking_label(send: dict | None) -> str:
     if clicks:
         parts.append(f"{clicks} clic{'s' if clicks > 1 else ''}")
     return " · ".join(parts)
+
+
+EMAIL_TYPE_LABELS = {
+    "partenariat": "Partenariat",
+    "newsletter": "Newsletter",
+    "test": "Test",
+}
+
+
+def get_analytics_summary() -> dict:
+    """Totaux ouvertures / clics pour le dashboard admin."""
+    ensure_email_tracking_schema()
+    empty = {
+        "total_sends": 0,
+        "tracked_sends": 0,
+        "legacy_sends": 0,
+        "total_opens": 0,
+        "total_clicks": 0,
+        "opened_sends": 0,
+        "clicked_sends": 0,
+    }
+    try:
+        with get_connection() as conn:
+            cur = conn.cursor()
+            if is_postgres():
+                cur.execute("""
+                    SELECT
+                        COUNT(*)::int AS total,
+                        COUNT(*) FILTER (WHERE tracking_enabled)::int AS tracked,
+                        COALESCE(SUM(open_count), 0)::int AS opens,
+                        COALESCE(SUM(click_count), 0)::int AS clicks,
+                        COUNT(*) FILTER (WHERE tracking_enabled AND open_count > 0)::int AS opened,
+                        COUNT(*) FILTER (WHERE tracking_enabled AND click_count > 0)::int AS clicked
+                    FROM email_sends
+                """)
+            else:
+                cur.execute("""
+                    SELECT
+                        COUNT(*) AS total,
+                        SUM(CASE WHEN tracking_enabled = 1 THEN 1 ELSE 0 END) AS tracked,
+                        COALESCE(SUM(open_count), 0) AS opens,
+                        COALESCE(SUM(click_count), 0) AS clicks,
+                        SUM(CASE WHEN tracking_enabled = 1 AND open_count > 0 THEN 1 ELSE 0 END) AS opened,
+                        SUM(CASE WHEN tracking_enabled = 1 AND click_count > 0 THEN 1 ELSE 0 END) AS clicked
+                    FROM email_sends
+                """)
+            row = cur.fetchone()
+        if not row:
+            return empty
+        if isinstance(row, dict):
+            total = int(row.get("total") or 0)
+            tracked = int(row.get("tracked") or 0)
+            return {
+                "total_sends": total,
+                "tracked_sends": tracked,
+                "legacy_sends": total - tracked,
+                "total_opens": int(row.get("opens") or 0),
+                "total_clicks": int(row.get("clicks") or 0),
+                "opened_sends": int(row.get("opened") or 0),
+                "clicked_sends": int(row.get("clicked") or 0),
+            }
+        return {
+            "total_sends": int(row[0] or 0),
+            "tracked_sends": int(row[1] or 0),
+            "legacy_sends": int(row[0] or 0) - int(row[1] or 0),
+            "total_opens": int(row[2] or 0),
+            "total_clicks": int(row[3] or 0),
+            "opened_sends": int(row[4] or 0),
+            "clicked_sends": int(row[5] or 0),
+        }
+    except Exception:
+        logger.exception("Résumé analytics email indisponible")
+        return empty
+
+
+def get_sends_for_admin_table(limit: int = 100) -> list[dict]:
+    """Envois récents enrichis (URLs cliquées) pour la page admin."""
+    sends = get_recent_sends(limit)
+    for send in sends:
+        if send.get("click_count", 0) > 0:
+            send["click_urls"] = get_click_urls_for_send(send["id"], limit=5)
+        else:
+            send["click_urls"] = []
+    return sends

@@ -254,6 +254,14 @@ def partnership_stats() -> dict:
     }
 
 
+def get_partners_pending_contact() -> list[dict]:
+    """Partenaires avec email au statut « à contacter » (liste newsletter admin)."""
+    return [
+        p for p in get_partnerships()
+        if p.get("email") and p.get("status", "a_contacter") == "a_contacter"
+    ]
+
+
 # ── Recherche d'influenceurs (web + extraction email + IA) ────────────────
 
 def _extract_emails(text: str) -> list[str]:

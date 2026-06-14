@@ -8,7 +8,8 @@
 
 {% block content %}
 
-<p class="page-sub">Rédigez, prévisualisez le design Inside Vietnam Travel, puis envoyez depuis le dashboard.</p>
+<p class="page-sub">Rédigez, prévisualisez le design Inside Vietnam Travel, puis envoyez depuis le dashboard.
+<a href="{{ url_for('admin.email_stats') }}" class="email-stats-promo-link">📊 Voir le suivi ouvertures / clics →</a></p>
 
 
 
@@ -357,7 +358,7 @@
 
       {% if partners_to_contact %}
 
-      <p class="guides-stats-count"><strong>{{ partners_to_contact|length }}</strong> contact(s) avec email</p>
+      <p class="guides-stats-count"><strong>{{ partners_to_contact|length }}</strong> partenaire(s) à contacter</p>
 
       <ul class="subscriber-list">
         {% for p in partners_to_contact %}
@@ -397,46 +398,19 @@
         {% endfor %}
       </ul>
 
-      <p class="muted">L'envoi à un partenaire passe son statut à « contacté ». Gestion complète :
+      <p class="muted">L'envoi à un partenaire passe son statut à « contacté ».
+      <a href="{{ url_for('admin.email_stats') }}">Suivi ouvertures / clics</a> ·
       <a href="{{ url_for('admin.partnerships') }}">Partenariats</a>.</p>
 
       {% else %}
 
-      <p class="muted">Aucun partenaire avec email — trouvez-en sur la page
-      <a href="{{ url_for('admin.partnerships') }}">Partenariats</a> (recherche IA) ou via Linh.</p>
+      <p class="muted">Aucun partenaire à contacter pour l'instant — les déjà contactés sont sur
+      <a href="{{ url_for('admin.partnerships') }}">Partenariats</a>.
+      <a href="{{ url_for('admin.email_stats') }}">Suivi emails →</a></p>
 
       {% endif %}
 
     </section>
-
-    {% if recent_email_sends %}
-    <section class="panel guides-stats-panel">
-      <h2>📊 Suivi des envois</h2>
-      <p class="muted">Ouvertures et clics des derniers emails (partenariats et newsletter).</p>
-      <ul class="email-send-log">
-        {% for send in recent_email_sends %}
-        <li class="email-send-log__item">
-          <div class="email-send-log__main">
-            <strong>{{ send.recipient_name or send.recipient_email }}</strong>
-            <span class="email-send-log__meta">{{ send.sent_at[:10] }} · {{ send.email_type }}</span>
-          </div>
-          <div class="email-send-log__stats">
-            {% if send.tracking_enabled %}
-            <span title="Ouvertures">👁 {{ send.open_count }}</span>
-            <span title="Clics">🖱 {{ send.click_count }}</span>
-            {% if send.first_opened_at %}<span class="email-send-log__when" title="Première ouverture">↗ {{ send.first_opened_at[:16].replace('T', ' ') }}</span>{% endif %}
-            {% else %}
-            <span class="email-send-log__legacy">sans suivi</span>
-            {% endif %}
-          </div>
-          {% if send.subject %}
-          <p class="email-send-log__subject">{{ send.subject[:80] }}{% if send.subject|length > 80 %}…{% endif %}</p>
-          {% endif %}
-        </li>
-        {% endfor %}
-      </ul>
-    </section>
-    {% endif %}
 
   </aside>
 

@@ -1,0 +1,121 @@
+{% extends "admin/layout.html" %}
+{% block title %}Suivi emails{% endblock %}
+{% block page_title %}Suivi emails{% endblock %}
+
+{% block content %}
+<p class="page-sub">
+  Ouvertures (👁) et clics (🖱) de vos emails partenariat et newsletter.
+  Les envois <strong>trackés</strong> incluent un pixel invisible et des liens mesurés.
+  Les lignes « sans suivi » = contact enregistré avant cette fonctionnalité.
+</p>
+
+<div class="admin-page-layout">
+  <div class="admin-page-main">
+
+    <div class="kpi-grid">
+      <div class="kpi-card kpi-card--live">
+        <span class="kpi-card__label">Emails envoyés</span>
+        <span class="kpi-card__value">{{ summary.total_sends }}</span>
+        <span class="kpi-card__hint">{{ summary.tracked_sends }} tracké(s) · {{ summary.legacy_sends }} sans suivi</span>
+      </div>
+      <div class="kpi-card kpi-card--gold">
+        <span class="kpi-card__label">Ouvertures totales</span>
+        <span class="kpi-card__value">{{ summary.total_opens }}</span>
+        <span class="kpi-card__hint">{{ summary.opened_sends }} email(s) ouvert(s)</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-card__label">Clics totaux</span>
+        <span class="kpi-card__value">{{ summary.total_clicks }}</span>
+        <span class="kpi-card__hint">{{ summary.clicked_sends }} email(s) avec clic</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-card__label">Actions</span>
+        <span class="kpi-card__value" style="font-size:1.1rem;">✉</span>
+        <span class="kpi-card__hint">
+          <a href="{{ url_for('admin.newsletter_admin') }}">Rédiger / envoyer</a>
+          · <a href="{{ url_for('admin.partnerships') }}">Partenariats</a>
+        </span>
+      </div>
+    </div>
+
+    <section class="panel chart-panel">
+      <h2>Historique des envois</h2>
+
+      {% if sends %}
+      <div class="email-stats-table-wrap">
+        <table class="admin-table email-stats-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Destinataire</th>
+              <th>Objet</th>
+              <th>Type</th>
+              <th>👁 Ouvertures</th>
+              <th>🖱 Clics</th>
+              <th>1<sup>re</sup> ouverture</th>
+              <th>Suivi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for send in sends %}
+            <tr class="{% if not send.tracking_enabled %}email-stats-row--legacy{% elif send.open_count == 0 and send.click_count == 0 %}email-stats-row--pending{% endif %}">
+              <td class="email-stats-table__date">{{ send.sent_at[:10] if send.sent_at else '—' }}</td>
+              <td>
+                <strong>{{ send.recipient_name or send.recipient_email }}</strong>
+                {% if send.recipient_name %}
+                <br><span class="muted email-stats-table__email">{{ send.recipient_email }}</span>
+                {% endif %}
+              </td>
+              <td class="email-stats-table__subject">{{ send.subject or '—' }}</td>
+              <td>{{ email_type_labels.get(send.email_type, send.email_type) }}</td>
+              <td class="email-stats-table__num">
+                {% if send.tracking_enabled %}
+                <span class="email-stats-pill {% if send.open_count > 0 %}email-stats-pill--ok{% endif %}">{{ send.open_count }}</span>
+                {% else %}—{% endif %}
+              </td>
+              <td class="email-stats-table__num">
+                {% if send.tracking_enabled %}
+                <span class="email-stats-pill {% if send.click_count > 0 %}email-stats-pill--ok{% endif %}">{{ send.click_count }}</span>
+                {% if send.click_urls %}
+                <ul class="email-stats-clicks" title="Liens cliqués">
+                  {% for url in send.click_urls %}
+                  <li><a href="{{ url }}" target="_blank" rel="noopener">{{ url[:60] }}{% if url|length > 60 %}…{% endif %}</a></li>
+                  {% endfor %}
+                </ul>
+                {% endif %}
+                {% else %}—{% endif %}
+              </td>
+              <td class="email-stats-table__when">
+                {% if send.first_opened_at %}
+                {{ send.first_opened_at[:16].replace('T', ' ') }}
+                {% elif send.tracking_enabled %}
+                <span class="muted">Pas encore</span>
+                {% else %}
+                —
+                {% endif %}
+              </td>
+              <td>
+                {% if send.tracking_enabled %}
+                <span class="email-stats-badge email-stats-badge--ok">Actif</span>
+                {% else %}
+                <span class="email-stats-badge">Sans suivi</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="email-stats-empty">
+        <p><strong>Aucun envoi enregistré pour l'instant.</strong></p>
+        <p class="muted">Envoyez un email depuis
+          <a href="{{ url_for('admin.newsletter_admin') }}">Newsletter</a>
+          (partenaire ou abonné) — le suivi démarre automatiquement à l'envoi.</p>
+      </div>
+      {% endif %}
+    </section>
+
+  </div>
+</div>
+{% endblock %}

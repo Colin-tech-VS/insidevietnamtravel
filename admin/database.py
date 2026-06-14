@@ -312,6 +312,7 @@ def _init_postgres():
         _migrate_affiliate_clicks_columns(conn, postgres=True)
         _migrate_visitor_profile_table(conn, postgres=True)
         _migrate_mai_chat_table(conn, postgres=True)
+        _migrate_email_tracking_table(conn, postgres=True)
         conn.commit()
     finally:
         conn.close()
@@ -355,6 +356,79 @@ def _init_sqlite():
         _migrate_affiliate_clicks_columns(conn, postgres=False)
         _migrate_visitor_profile_table(conn, postgres=False)
         _migrate_mai_chat_table(conn, postgres=False)
+        _migrate_email_tracking_table(conn, postgres=False)
+
+
+def _migrate_email_tracking_table(conn, *, postgres: bool) -> None:
+    if postgres:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS email_sends (
+                    id SERIAL PRIMARY KEY,
+                    send_token TEXT NOT NULL UNIQUE,
+                    recipient_email TEXT NOT NULL,
+                    recipient_name TEXT,
+                    partner_id TEXT,
+                    subject TEXT,
+                    email_type TEXT NOT NULL DEFAULT 'newsletter',
+                    tracking_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+                    sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    open_count INTEGER NOT NULL DEFAULT 0,
+                    first_opened_at TIMESTAMPTZ,
+                    last_opened_at TIMESTAMPTZ,
+                    click_count INTEGER NOT NULL DEFAULT 0,
+                    first_clicked_at TIMESTAMPTZ,
+                    last_clicked_at TIMESTAMPTZ
+                )""")
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS email_click_events (
+                    id SERIAL PRIMARY KEY,
+                    send_id INTEGER NOT NULL REFERENCES email_sends(id) ON DELETE CASCADE,
+                    url TEXT NOT NULL,
+                    clicked_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )""")
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_email_sends_partner ON email_sends(partner_id)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_email_sends_recipient ON email_sends(recipient_email)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_email_clicks_send ON email_click_events(send_id)"
+            )
+    else:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS email_sends (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                send_token TEXT NOT NULL UNIQUE,
+                recipient_email TEXT NOT NULL,
+                recipient_name TEXT,
+                partner_id TEXT,
+                subject TEXT,
+                email_type TEXT NOT NULL DEFAULT 'newsletter',
+                tracking_enabled INTEGER NOT NULL DEFAULT 1,
+                sent_at TEXT NOT NULL,
+                open_count INTEGER NOT NULL DEFAULT 0,
+                first_opened_at TEXT,
+                last_opened_at TEXT,
+                click_count INTEGER NOT NULL DEFAULT 0,
+                first_clicked_at TEXT,
+                last_clicked_at TEXT
+            )""")
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS email_click_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                send_id INTEGER NOT NULL,
+                url TEXT NOT NULL,
+                clicked_at TEXT NOT NULL,
+                FOREIGN KEY (send_id) REFERENCES email_sends(id) ON DELETE CASCADE
+            )""")
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_email_sends_partner ON email_sends(partner_id)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_email_sends_recipient ON email_sends(recipient_email)"
+        )
 
 
 @contextmanager

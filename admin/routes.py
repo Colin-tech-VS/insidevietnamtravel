@@ -757,17 +757,15 @@ def newsletter_admin():
         format_tracking_label,
         get_latest_send_for_email,
         get_latest_sends_by_partner,
-        get_recent_sends,
     )
     ps.sync_contacted_status_from_history()
-    partners_to_contact = [p for p in ps.get_partnerships() if p.get("email")]
+    partners_to_contact = ps.get_partners_pending_contact()
     partner_ids = [p["id"] for p in partners_to_contact if p.get("id")]
     email_tracking_by_partner = get_latest_sends_by_partner(partner_ids)
     subscriber_tracking = {
         s["email"]: get_latest_send_for_email(s["email"])
         for s in subscribers
     }
-    recent_email_sends = get_recent_sends(25)
     return render_template(
         "admin/newsletter.html",
         subscribers=subscribers,
@@ -783,7 +781,6 @@ def newsletter_admin():
         partner_status_labels=ps.PARTNER_STATUS_LABELS,
         email_tracking_by_partner=email_tracking_by_partner,
         subscriber_tracking=subscriber_tracking,
-        recent_email_sends=recent_email_sends,
         format_tracking_label=format_tracking_label,
     )
 
@@ -796,6 +793,27 @@ def newsletter_preview():
     if not draft:
         return "Aucun brouillon.", 404
     return Response(render_newsletter_preview(draft), mimetype="text/html; charset=utf-8")
+
+
+@admin_bp.route("/email-stats")
+@login_required
+def email_stats():
+    from admin.email_tracking_service import (
+        EMAIL_TYPE_LABELS,
+        ensure_legacy_partner_sends,
+        get_analytics_summary,
+        get_sends_for_admin_table,
+    )
+    from admin import partners_service as ps
+
+    ps.sync_contacted_status_from_history()
+    ensure_legacy_partner_sends()
+    return render_template(
+        "admin/email_stats.html",
+        summary=get_analytics_summary(),
+        sends=get_sends_for_admin_table(100),
+        email_type_labels=EMAIL_TYPE_LABELS,
+    )
 
 
 @admin_bp.route("/contact", methods=["GET", "POST"])
