@@ -1,0 +1,10 @@
+<div class="partner-review__actions" id="partner-review-actions">
+  {% if ai_ready %}
+  <form method="post" action="{{ url_for('partners.page_retry_ai') }}" id="partner-review-retry-form">
+    <button type="submit" class="btn btn-primary" id="partner-review-retry-btn">Relancer la vérification</button>
+  </form>
+  {% endif %}
+  {% if edit_label %}
+  <a href="{{ url_for('partners.page_edit') }}" class="btn btn-ghost">{{ edit_label }}</a>
+  {% endif %}
+</div>

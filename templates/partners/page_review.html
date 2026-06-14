@@ -12,10 +12,12 @@
   </div>
   <h1>Vérification de votre page</h1>
 
+  {% include "partners/_workflow_steps.html" %}
+
   {% if page and page.status == 'published' %}
   <div class="partner-review__ok">
-    <h2>✅ {% if is_hidden_account %}Page publiée (aperçu privé){% elif page.slug %}Page publiée en ligne{% else %}Page publiée{% endif %}</h2>
-    <p>{{ page.ai_review.summary if page.ai_review else 'Votre page est en ligne.' }}</p>
+    <h2>✅ {% if is_hidden_account %}Aperçu privé confirmé{% elif page.slug %}Page publiée en ligne{% else %}Page publiée{% endif %}</h2>
+    <p>{{ page.ai_review.summary if page.ai_review else 'Votre page est prête.' }}</p>
     <div class="partner-review__actions">
       {% if not is_hidden_account and page.slug %}
       <a href="{{ url_for('partner_public_page', slug=page.slug) }}" class="btn btn-primary" target="_blank" rel="noopener">Voir la page publique ↗</a>
@@ -23,32 +25,40 @@
       <a href="{{ url_for('partners.page_preview') }}" class="btn btn-primary" target="_blank" rel="noopener">Aperçu privé ↗</a>
       {% endif %}
       <a href="{{ url_for('partners.dashboard') }}" class="btn btn-secondary">Dashboard</a>
+      <a href="{{ url_for('partners.page_edit') }}" class="btn btn-ghost">Modifier le brouillon</a>
     </div>
   </div>
 
   {% elif page and page.status == 'approved' %}
   <div class="partner-review__ok partner-review__ok--left">
-    <h2>✅ Validée par l’IA — pas encore publique</h2>
+    <h2>✅ Validée par l’IA</h2>
     {% if page.ai_review and page.ai_review.score is not none %}
     <p class="partner-review__score muted">Score éditorial : <strong>{{ page.ai_review.score }}/100</strong></p>
     {% endif %}
-    <p class="partner-review__summary">{{ page.ai_review.summary if page.ai_review else 'Votre contenu est prêt. Publiez en ligne pour le rendre visible.' }}</p>
+    <p class="partner-review__summary">{{ page.ai_review.summary if page.ai_review else 'Votre contenu est prêt.' }}</p>
+    <p class="partner-review__next muted">
+      {% if is_hidden_account %}
+      Étape suivante : consultez l’aperçu privé, puis confirmez. La page restera invisible sur le site public (compte test).
+      {% else %}
+      Étape suivante : consultez l’aperçu privé, puis publiez en ligne pour apparaître sur insidevietnamtravel.fr.
+      {% endif %}
+    </p>
     <div class="partner-review__actions">
+      <a href="{{ url_for('partners.page_preview') }}" class="btn btn-secondary" target="_blank" rel="noopener">Aperçu privé ↗</a>
       <form method="post" action="{{ url_for('partners.page_publish') }}">
         <button type="submit" class="btn btn-primary">{% if is_hidden_account %}Confirmer (aperçu privé){% else %}Publier en ligne{% endif %}</button>
       </form>
-      <a href="{{ url_for('partners.page_preview') }}" class="btn btn-secondary" target="_blank" rel="noopener">Aperçu privé ↗</a>
       <a href="{{ url_for('partners.page_edit') }}" class="btn btn-ghost">Modifier le brouillon</a>
     </div>
   </div>
 
   {% elif page and page.status == 'rejected' %}
   <div class="partner-review__ko partner-review__ko--left">
-    <h2>Page non publiée</h2>
+    <h2>Validation IA — corrections nécessaires</h2>
     {% if page.ai_review and page.ai_review.score is not none %}
     <p class="partner-review__score muted">Score éditorial : <strong>{{ page.ai_review.score }}/100</strong></p>
     {% endif %}
-    <p class="partner-review__summary">{{ page.ai_review.summary if page.ai_review else 'Le contenu ne correspond pas encore à nos critères.' }}</p>
+    <p class="partner-review__summary">{{ page.ai_review.summary if page.ai_review else 'Le contenu ne correspond pas encore à nos critères éditoriaux.' }}</p>
     {% if page.ai_review and page.ai_review.issues %}
     <div class="partner-review__issues">
       <h3>Pourquoi ?</h3>
@@ -60,14 +70,8 @@
     </div>
     {% endif %}
     {% include "partners/_fix_suggestions.html" %}
-    <div class="partner-review__actions">
-      {% if ai_ready %}
-      <form method="post" action="{{ url_for('partners.page_retry_ai') }}">
-        <button type="submit" class="btn btn-primary">Relancer la vérification</button>
-      </form>
-      {% endif %}
-      <a href="{{ url_for('partners.page_edit') }}" class="btn btn-ghost">Modifier manuellement</a>
-    </div>
+    {% set edit_label = "Modifier manuellement" %}
+    {% include "partners/_review_actions.html" %}
   </div>
 
   {% elif show_loader %}
@@ -98,35 +102,20 @@
     {% endif %}
     {% include "partners/_fix_suggestions.html" %}
     <p class="muted">Votre brouillon est conservé. Appliquez les corrections ou modifiez le contenu, puis relancez.</p>
-    <div class="partner-review__actions">
-      {% if ai_ready %}
-      <form method="post" action="{{ url_for('partners.page_retry_ai') }}">
-        <button type="submit" class="btn btn-primary">Relancer la vérification</button>
-      </form>
-      {% endif %}
-      <a href="{{ url_for('partners.page_edit') }}" class="btn btn-secondary">Modifier le brouillon</a>
-    </div>
+    {% set edit_label = "Modifier manuellement" %}
+    {% include "partners/_review_actions.html" %}
   </div>
 
   {% elif page and page.status == 'draft' and page.extra %}
   <div class="partner-review__ko partner-review__ko--left">
-    <h2>Vérification non terminée</h2>
+    <h2>Vérification interrompue</h2>
     <p class="muted">La vérification a été interrompue (session expirée ou redémarrage serveur). Votre brouillon est intact.</p>
     {% if page.ai_review and page.ai_review.summary %}
     <p class="partner-review__summary">{{ page.ai_review.summary }}</p>
     {% endif %}
     {% include "partners/_fix_suggestions.html" %}
-    <div class="partner-review__actions">
-      {% if ai_ready %}
-      <form method="post" action="{{ url_for('partners.page_retry_ai') }}">
-        <button type="submit" class="btn btn-primary">Relancer la vérification</button>
-      </form>
-      {% endif %}
-      <a href="{{ url_for('partners.page_edit') }}" class="btn btn-secondary">Retour à l'éditeur</a>
-    </div>
-  </div>
-
-  {% else %}
+    {% set edit_label = "Retour à l'éditeur" %}
+    {% include "partners/_review_actions.html" %}
   <div class="partner-review__ko">
     <p class="muted">Aucune vérification en cours. Commencez par rédiger votre page.</p>
     <a href="{{ url_for('partners.page_edit') }}" class="btn btn-primary">Créer ma page</a>

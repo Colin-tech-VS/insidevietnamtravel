@@ -82,6 +82,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (remaining === 0 && fixesDone) {
       fixesDone.hidden = false;
       if (fixesRoot) fixesRoot.classList.add('is-complete');
+      const retryBtn = document.getElementById('partner-review-retry-btn');
+      const actions = document.getElementById('partner-review-actions');
+      if (retryBtn) {
+        retryBtn.classList.add('is-highlight');
+        retryBtn.focus({ preventScroll: true });
+      }
+      if (actions) {
+        actions.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     }
   }
 

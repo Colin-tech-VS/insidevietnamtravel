@@ -1,0 +1,14 @@
+{% if workflow and workflow.steps %}
+<nav class="partner-flow" aria-label="Étapes de publication">
+  <ol class="partner-flow__steps">
+    {% for step in workflow.steps %}
+    <li class="partner-flow__step is-{{ step.state }}">
+      <span class="partner-flow__num" aria-hidden="true">
+        {% if step.state == 'done' %}✓{% else %}{{ loop.index }}{% endif %}
+      </span>
+      <span class="partner-flow__label">{{ step.label }}</span>
+    </li>
+    {% endfor %}
+  </ol>
+</nav>
+{% endif %}

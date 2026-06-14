@@ -18,6 +18,8 @@
     </a>
   </header>
 
+  {% include "partners/_workflow_steps.html" %}
+
   <article class="partner-publish-banner partner-publish-banner--{{ publication.badge }}">
     <div class="partner-publish-banner__icon" aria-hidden="true">
       {% if publication.is_published_public %}✓{% elif publication.is_validated %}◐{% else %}○{% endif %}
@@ -43,12 +45,12 @@
     </div>
     <div class="partner-publish-banner__actions">
       {% if page and page.status == 'approved' %}
+      <a href="{{ url_for('partners.page_preview') }}" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">Aperçu privé ↗</a>
       <form method="post" action="{{ url_for('partners.page_publish') }}">
         <button type="submit" class="btn btn-primary btn-sm">
           {% if is_hidden_account %}Confirmer (aperçu privé){% else %}Publier en ligne{% endif %}
         </button>
       </form>
-      <a href="{{ url_for('partners.page_preview') }}" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">Aperçu privé ↗</a>
       {% elif page and page.status == 'published' and page.slug %}
         {% if publication.is_published_public %}
         <a href="{{ url_for('partner_public_page', slug=page.slug) }}" class="btn btn-primary btn-sm" target="_blank" rel="noopener">Voir la page publique ↗</a>
@@ -73,8 +75,12 @@
           {% if publication.is_validated %}✅ Oui{% else %}❌ Non{% endif %}
         </li>
         <li>
+          <strong>Aperçu privé</strong>
+          {% if publication.is_validated %}✅ Disponible{% else %}❌ Non{% endif %}
+        </li>
+        <li>
           <strong>Publiée en ligne</strong>
-          {% if publication.is_published_public %}✅ Oui{% else %}❌ Non{% endif %}
+          {% if publication.is_published_public %}✅ Oui{% elif page.status == 'published' and is_hidden_account %}◐ Aperçu privé confirmé{% else %}❌ Non{% endif %}
         </li>
         <li><strong>Statut technique</strong> {{ page_status_labels.get(page.status, page.status) }}</li>
       </ul>
@@ -100,9 +106,10 @@
   <article class="card partner-help">
     <h2>Comment ça marche ?</h2>
     <ol>
-      <li>Rédigez votre page (accroche, offre, points forts).</li>
-      <li><strong>Vérifiez ma page</strong> — l’IA valide le contenu (obligatoire).</li>
-      <li>Consultez l’<strong>aperçu privé</strong>, puis cliquez <strong>Publier en ligne</strong> pour la rendre publique.</li>
+      <li><strong>Rédiger</strong> — accroche, atouts et offre (wizard 3 étapes).</li>
+      <li><strong>Vérification IA</strong> — contrôle éditorial obligatoire (score ≥ 65).</li>
+      <li><strong>Aperçu privé</strong> — consultez la page générée avant toute mise en ligne.</li>
+      <li><strong>Publication</strong> — {% if is_hidden_account %}confirmez l’aperçu privé (compte test, hors site public){% else %}publiez en ligne sur insidevietnamtravel.fr{% endif %}.</li>
     </ol>
   </article>
 </section>

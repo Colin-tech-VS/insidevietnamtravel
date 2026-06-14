@@ -223,6 +223,50 @@ def partner_page_publication(page: dict | None, *, is_hidden: bool = False) -> d
     }
 
 
+def partner_page_workflow(page: dict | None, *, publication: dict | None = None, is_hidden: bool = False) -> dict:
+    """Étapes du parcours partenaire (rédaction → IA → aperçu → publication)."""
+    pub = publication or partner_page_publication(page, is_hidden=is_hidden)
+    publish_label = "Confirmer l’aperçu" if is_hidden else "Publier en ligne"
+    steps = [
+        {"id": "draft", "label": "Rédiger", "state": "upcoming"},
+        {"id": "verify", "label": "Vérification IA", "state": "upcoming"},
+        {"id": "preview", "label": "Aperçu privé", "state": "upcoming"},
+        {"id": "publish", "label": publish_label, "state": "upcoming"},
+    ]
+    if not page:
+        steps[0]["state"] = "current"
+        return {"steps": steps, "current_id": "draft"}
+
+    status = page.get("status") or "draft"
+    extra = page.get("extra") if isinstance(page.get("extra"), dict) else {}
+    has_draft = bool((extra.get("pitch") or "").strip())
+
+    if has_draft or status not in ("draft",):
+        steps[0]["state"] = "done"
+
+    if status in ("approved", "published"):
+        steps[1]["state"] = "done"
+        if status == "approved":
+            steps[2]["state"] = "current"
+            steps[3]["state"] = "upcoming"
+        else:
+            steps[2]["state"] = "done"
+            steps[3]["state"] = "done"
+    elif status == "ai_review":
+        steps[1]["state"] = "current"
+    elif status == "rejected":
+        steps[1]["state"] = "current"
+    elif has_draft:
+        steps[1]["state"] = "current"
+    elif steps[0]["state"] != "done":
+        steps[0]["state"] = "current"
+
+    current_id = next((s["id"] for s in steps if s["state"] == "current"), steps[-1]["id"])
+    if pub.get("is_published_public") or (status == "published" and is_hidden):
+        current_id = "publish"
+    return {"steps": steps, "current_id": current_id}
+
+
 def _normalize_page_record(page: dict) -> dict:
     page["extra"] = _parse_extra_json(page.get("extra_json"))
     raw_review = page.get("ai_review_json")

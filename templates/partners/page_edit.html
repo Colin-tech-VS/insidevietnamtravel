@@ -6,6 +6,8 @@
 <div class="partner-page-wizard-wrap">
   {% if page and page.status == 'ai_review' %}
   <p class="flash flash--success partner-page-banner">Vérification en cours — patientez quelques minutes.</p>
+  {% elif page and page.status == 'approved' %}
+  <p class="flash flash--success partner-page-banner">Page validée par l’IA — consultez l’aperçu privé puis publiez en ligne.</p>
   {% elif page and page.status == 'published' %}
   <p class="flash flash--success partner-page-banner">Page publiée — modifiez puis resoumettez pour une nouvelle validation.</p>
   {% elif page and page.status == 'rejected' %}

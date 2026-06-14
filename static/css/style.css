@@ -4734,6 +4734,10 @@ a.article-category:hover { text-decoration: underline; }
   font-weight: 600;
   margin: 0 0 0.35rem;
 }
+.partner-fixes__done-hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.88rem;
+}
 .partner-fixes__title {
   font-size: 1rem;
   font-weight: 600;
@@ -4901,6 +4905,54 @@ a.article-category:hover { text-decoration: underline; }
 }
 .partner-review__actions form { margin: 0; }
 .partner-review__wait-note { font-size: 0.82rem; margin-top: 0.75rem; }
+.partner-review__next { margin: 0.5rem 0 0; line-height: 1.5; }
+#partner-review-retry-btn.is-highlight {
+  box-shadow: 0 0 0 3px rgba(var(--jade-rgb, 45, 106, 79), 0.35);
+}
+
+.partner-flow {
+  margin: 1.25rem 0 1.75rem;
+  padding: 0 0.25rem;
+}
+.partner-flow__steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.35rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  justify-content: center;
+}
+.partner-flow__step {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--rice-dark, #e8e4dc);
+  background: var(--rice, #faf8f4);
+  font-size: 0.78rem;
+  color: var(--ink-muted, #666);
+}
+.partner-flow__step.is-done {
+  border-color: rgba(var(--jade-rgb, 45, 106, 79), 0.35);
+  color: var(--jade, #2d6a4f);
+  background: rgba(var(--jade-rgb, 45, 106, 79), 0.08);
+}
+.partner-flow__step.is-current {
+  border-color: var(--jade, #2d6a4f);
+  background: var(--jade, #2d6a4f);
+  color: #fff;
+  font-weight: 600;
+}
+.partner-flow__num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
 
 .partner-public__contact { margin-top: 1.5rem; padding: 1.25rem; }
 .partner-highlights li { margin-bottom: 0.35rem; }

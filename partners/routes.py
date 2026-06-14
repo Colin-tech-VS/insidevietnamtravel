@@ -33,6 +33,7 @@ from admin.partner_portal_service import (
     partner_page_has_publishable_content,
     partner_page_can_preview,
     partner_page_publication,
+    partner_page_workflow,
     publish_partner_page,
     release_page_from_ai_review,
     review_job_token,
@@ -213,6 +214,7 @@ def dashboard():
     partner = current_partner()
     page = get_page_by_partner(partner["id"]) if partner else None
     is_hidden = is_hidden_test_partner(partner) if partner else False
+    publication = partner_page_publication(page, is_hidden=is_hidden)
     return render_template(
         "partners/dashboard.html",
         partner=partner,
@@ -220,7 +222,8 @@ def dashboard():
         is_hidden_account=is_hidden,
         profile_label=PROFILE_TYPE_LABELS.get(partner.get("profile_type"), ""),
         page_status_labels=PAGE_STATUS_LABELS,
-        publication=partner_page_publication(page, is_hidden=is_hidden),
+        publication=publication,
+        workflow=partner_page_workflow(page, publication=publication, is_hidden=is_hidden),
         ai_ready=ai_client.is_configured(),
     )
 
@@ -335,6 +338,7 @@ def page_review():
     job_token = _sync_job_token(page, session.get(_JOB_KEY))
     job_status = draft_store.status(job_token) if job_token else {"status": "missing", "error": "", "phase": ""}
     page, job_status, show_loader = _resolve_review_page(partner["id"], page, job_status)
+    publication = partner_page_publication(page, is_hidden=is_hidden)
 
     return render_template(
         "partners/page_review.html",
@@ -344,7 +348,8 @@ def page_review():
         job_status=job_status,
         show_loader=show_loader,
         can_publish=partner_page_has_publishable_content(page),
-        publication=partner_page_publication(page, is_hidden=is_hidden),
+        publication=publication,
+        workflow=partner_page_workflow(page, publication=publication, is_hidden=is_hidden),
         is_hidden_account=is_hidden,
         page_status_labels=PAGE_STATUS_LABELS,
         ai_ready=ai_client.is_configured(),
