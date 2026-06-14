@@ -1458,6 +1458,11 @@ def _exec_send_newsletter(params: dict) -> dict:
         raise ValueError("Aucun brouillon de newsletter — demandez d'abord une génération.")
     scope = params.get("scope") or "test"
     if scope == "all":
+        if draft.get("email_type") == "partenariat":
+            raise ValueError(
+                "Brouillon partenariat — envoyez-le à un partenaire depuis /admin/newsletter, "
+                "pas à toute la newsletter."
+            )
         subs = get_newsletter_subscribers()
         if not subs:
             raise ValueError("Aucun abonné à la newsletter.")

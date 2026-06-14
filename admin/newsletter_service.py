@@ -17,7 +17,7 @@ SITE_URL = config.SITE_URL
 PRIVACY_URL = f"{SITE_URL}/politique-confidentialite"
 
 
-from admin.mail_service import is_newsletter_smtp_configured, send_email
+from admin.mail_service import MailProfile, is_newsletter_smtp_configured, is_contact_smtp_configured, send_email
 
 
 def is_smtp_configured() -> bool:
@@ -133,6 +133,7 @@ def wrap_email_html(
     preheader: str = "",
     *,
     recipient_email: str | None = None,
+    email_type: str = "newsletter",
 ) -> str:
     """Template email responsive — charte Inside Vietnam Travel."""
     preheader_html = ""
@@ -142,13 +143,36 @@ def wrap_email_html(
             f"{preheader}</div>"
         )
 
+    is_partnership = email_type == "partenariat"
     unsub_block = ""
-    if recipient_email:
+    if recipient_email and not is_partnership:
         unsub_link = unsubscribe_url(recipient_email)
         unsub_block = f"""
               <p style="margin:12px 0 0;">
                 <a href="{unsub_link}" style="color:#7a7772;text-decoration:underline;">Se désinscrire de la newsletter</a>
               </p>"""
+
+    if is_partnership:
+        footer_intro = (
+            "<p style=\"margin:0 0 8px;\">"
+            "Inside Vietnam Travel — guide francophone indépendant du voyage au Vietnam."
+            "</p>"
+        )
+        cta_html = ""
+    else:
+        footer_intro = (
+            "<p style=\"margin:0 0 8px;\">"
+            "Vous recevez cet email car vous êtes inscrit(e) à la newsletter "
+            "<strong style=\"color:#1b4d4a;\">Inside Vietnam Travel</strong>."
+            "</p>"
+        )
+        cta_html = """
+          <!-- CTA -->
+          <tr>
+            <td style="padding:0 32px 28px;text-align:center;">
+              <a href="{site_url}" style="display:inline-block;background:#1b4d4a;color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:600;text-decoration:none;padding:14px 28px;border-radius:8px;">Explorer le site</a>
+            </td>
+          </tr>""".format(site_url=SITE_URL)
 
     return f"""<!DOCTYPE html>
 <html lang="fr" xmlns="http://www.w3.org/1999/xhtml">
@@ -187,18 +211,11 @@ def wrap_email_html(
               {body_html}
             </td>
           </tr>
-          <!-- CTA -->
-          <tr>
-            <td style="padding:0 32px 28px;text-align:center;">
-              <a href="{SITE_URL}" style="display:inline-block;background:#1b4d4a;color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:600;text-decoration:none;padding:14px 28px;border-radius:8px;">Explorer le site</a>
-            </td>
-          </tr>
+          {cta_html}
           <!-- Footer -->
           <tr>
             <td style="padding:24px 32px;background:#f0ebe3;border-top:1px solid #e8e4dc;font-family:'Segoe UI',Arial,sans-serif;font-size:12px;line-height:1.6;color:#7a7772;">
-              <p style="margin:0 0 8px;">
-                Vous recevez cet email car vous êtes inscrit(e) à la newsletter <strong style="color:#1b4d4a;">Inside Vietnam Travel</strong>.
-              </p>
+              {footer_intro}
               <p style="margin:0;">
                 <a href="{SITE_URL}" style="color:#1b4d4a;text-decoration:none;font-weight:600;">insidevietnamtravel.com</a>
                 &nbsp;&middot;&nbsp;
@@ -223,6 +240,7 @@ def render_newsletter_preview(draft: dict, *, sample_email: str = "lecteur@exemp
         draft.get("body_html", ""),
         draft.get("preheader", ""),
         recipient_email=sample_email,
+        email_type=draft.get("email_type") or "newsletter",
     )
 
 
@@ -257,6 +275,17 @@ def send_newsletter_email(
     sent = 0
     failed: list[str] = []
     send_ids: list[int] = []
+    all_errors: dict[str, str] = {}
+    last_from = ""
+    mail_profile: MailProfile = "contact" if email_type == "partenariat" else "newsletter"
+    reply_to = ""
+    if email_type == "partenariat":
+        if not is_contact_smtp_configured():
+            mail_profile = "newsletter"
+        reply_to = (
+            os.environ.get("CONTACT_SMTP_FROM")
+            or os.environ.get("LEGAL_CONTACT_EMAIL", "contact@insidevietnamtravel.fr")
+        )
 
     for addr in recipients:
         send_rec = None
@@ -268,27 +297,42 @@ def send_newsletter_email(
                 subject=subject,
                 email_type=email_type,
             )
-        full_html = wrap_email_html(body_html, preheader, recipient_email=addr)
+        full_html = wrap_email_html(
+            body_html, preheader, recipient_email=addr, email_type=email_type,
+        )
         if send_rec:
             full_html = inject_tracking(full_html, send_rec["send_token"])
         plain = _strip_html(body_html)
-        plain += f"\n\nSe désinscrire : {unsubscribe_url(addr)}"
-        extra = {"List-Unsubscribe": f"<{unsubscribe_url(addr)}>"}
+        if email_type != "partenariat":
+            plain += f"\n\nSe désinscrire : {unsubscribe_url(addr)}"
+            extra = {"List-Unsubscribe": f"<{unsubscribe_url(addr)}>"}
+        else:
+            extra = {}
         result = send_email(
-            profile="newsletter",
+            profile=mail_profile,
             to_addrs=[addr],
             subject=subject,
             html_body=full_html,
             plain_body=plain,
             extra_headers=extra,
+            reply_to=reply_to or None,
         )
         if result["sent"]:
             sent += 1
+            last_from = result.get("from_addr") or last_from
             if send_rec:
                 send_ids.append(send_rec["id"])
         else:
             failed.append(addr)
+            all_errors.update(result.get("errors") or {})
             if send_rec:
                 delete_email_send(send_rec["id"])
 
-    return {"sent": sent, "failed": failed, "total": len(recipients), "send_ids": send_ids}
+    return {
+        "sent": sent,
+        "failed": failed,
+        "total": len(recipients),
+        "send_ids": send_ids,
+        "errors": all_errors,
+        "from_addr": last_from,
+    }

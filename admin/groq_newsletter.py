@@ -179,6 +179,7 @@ def generate_newsletter_email(
     progress=None,
     partner_name: str = "",
     recipient_email: str = "",
+    partner_id: str = "",
 ) -> dict:
     ai_client.require_api_key()
     report = progress or (lambda *_: None)
@@ -257,4 +258,7 @@ def generate_newsletter_email(
         "manual": False,
         "email_type": email_type,
         "topic": topic,
+        "partner_id": (partner_id or "").strip(),
+        "partner_name": (partner_name or "").strip(),
+        "recipient_email": (recipient_email or "").strip().lower(),
     }

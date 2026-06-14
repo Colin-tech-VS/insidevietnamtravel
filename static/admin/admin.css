@@ -2890,6 +2890,46 @@ a.partners-stat:hover { border-color: var(--teal-light); color: var(--teal); }
   line-height: 1.35;
 }
 
+.smtp-status-panel {
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.15rem;
+  background: rgba(27, 77, 74, 0.05);
+  border: 1px solid rgba(27, 77, 74, 0.12);
+  border-radius: var(--radius-md, 8px);
+}
+.smtp-status-panel__title { margin: 0 0 0.35rem; font-size: 1rem; }
+.smtp-status-panel__intro { margin: 0 0 0.75rem; font-size: 0.82rem; }
+.smtp-status-list {
+  list-style: none;
+  margin: 0 0 0.85rem;
+  padding: 0;
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.smtp-ping-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.draft-partner-notice {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem 1rem;
+  font-size: 0.88rem;
+  background: rgba(27, 77, 74, 0.08);
+  border: 1px solid rgba(27, 77, 74, 0.2);
+  border-radius: var(--radius-md, 8px);
+  color: var(--teal-deep);
+}
+.draft-action-form--partner-send { margin-top: 0.5rem; }
+.guides-stats-panel--partners-first {
+  border: 2px solid rgba(27, 77, 74, 0.25);
+}
+.guides-stats-panel--muted { opacity: 0.92; }
+
 .email-stats-promo-link {
   display: inline-block;
   margin-left: 0.5rem;

@@ -101,6 +101,25 @@ def _draft_status(kind: str) -> dict:
     return draft_store.status(session.get(_draft_token_key(kind)))
 
 
+def _flash_email_send_result(result: dict, recipient: str) -> None:
+    """Message admin après tentative d'envoi SMTP."""
+    if result.get("sent"):
+        sender = result.get("from_addr") or "serveur mail"
+        flash(
+            f"Email accepté par le serveur SMTP ({sender}) → {recipient}. "
+            "Vérifiez la boîte de réception et les spams (délai possible : 1 à 5 min).",
+            "success",
+        )
+        return
+    detail = ""
+    errors = result.get("errors") or {}
+    if errors:
+        detail = " — " + next(iter(errors.values()))
+    elif result.get("failed"):
+        detail = " — le serveur SMTP a refusé l'envoi (vérifiez identifiants et DNS SPF/DKIM)."
+    flash(f"Échec d'envoi vers {recipient}{detail}", "error")
+
+
 _CONTENT_JOB_KEY = "content_job_token"
 
 
@@ -682,12 +701,23 @@ def newsletter_admin():
                     draft["subject"],
                     draft["body_html"],
                     preheader=draft.get("preheader", ""),
-                    email_type="test",
+                    email_type=draft.get("email_type") if draft.get("email_type") == "partenariat" else "test",
                 )
-                if result["sent"]:
-                    flash(f"Email de test envoyé à {test_email}.", "success")
-                else:
-                    flash(f"Échec d'envoi vers {test_email}.", "error")
+                _flash_email_send_result(result, test_email)
+            elif action == "smtp_ping":
+                test_email = (request.form.get("test_email") or "").strip().lower()
+                if not test_email or "@" not in test_email:
+                    flash("Indiquez une adresse pour le test SMTP.", "error")
+                    return redirect(url_for("admin.newsletter_admin"))
+                from admin.mail_service import send_email as _send_raw
+                ping = _send_raw(
+                    profile="newsletter",
+                    to_addrs=[test_email],
+                    subject="Test SMTP Inside Vietnam Travel",
+                    html_body="<p>Si vous recevez cet email, l'envoi SMTP fonctionne.</p>",
+                    plain_body="Si vous recevez cet email, l'envoi SMTP fonctionne.",
+                )
+                _flash_email_send_result(ping, test_email)
             elif action == "send_one":
                 draft = _get_draft("newsletter")
                 if not draft:
@@ -713,14 +743,19 @@ def newsletter_admin():
                     email_type=email_type,
                 )
                 if result["sent"]:
-                    flash(f"Email envoyé à {email}.", "success")
                     mark_partner_emailed(partner_id=partner_id, email=email)
-                else:
-                    flash(f"Échec d'envoi vers {email}.", "error")
+                _flash_email_send_result(result, email)
             elif action == "send_all":
                 draft = _get_draft("newsletter")
                 if not draft:
                     flash("Composez d'abord un email (IA ou manuel).", "error")
+                    return redirect(url_for("admin.newsletter_admin"))
+                if draft.get("email_type") == "partenariat":
+                    flash(
+                        "Cet email est un brouillon partenariat — envoyez-le à un partenaire "
+                        "(liste à droite ou bouton sous l'aperçu), pas à toute la newsletter.",
+                        "error",
+                    )
                     return redirect(url_for("admin.newsletter_admin"))
                 subs = get_newsletter_subscribers()
                 if not subs:
@@ -758,8 +793,13 @@ def newsletter_admin():
         get_latest_send_for_email,
         get_latest_sends_by_partner,
     )
+    from admin.mail_service import smtp_status, verify_smtp
     ps.sync_contacted_status_from_history()
-    partners_to_contact = ps.get_partners_pending_contact()
+    is_partner_draft = bool(draft and draft.get("email_type") == "partenariat")
+    if is_partner_draft:
+        partners_to_contact = [p for p in ps.get_partnerships() if p.get("email")]
+    else:
+        partners_to_contact = ps.get_partners_pending_contact()
     partner_ids = [p["id"] for p in partners_to_contact if p.get("id")]
     email_tracking_by_partner = get_latest_sends_by_partner(partner_ids)
     subscriber_tracking = {
@@ -782,6 +822,11 @@ def newsletter_admin():
         email_tracking_by_partner=email_tracking_by_partner,
         subscriber_tracking=subscriber_tracking,
         format_tracking_label=format_tracking_label,
+        is_partner_draft=is_partner_draft,
+        smtp_newsletter=smtp_status("newsletter"),
+        smtp_contact=smtp_status("contact"),
+        smtp_verify_newsletter=verify_smtp("newsletter"),
+        smtp_verify_contact=verify_smtp("contact"),
     )
 
 
@@ -916,21 +961,30 @@ def api_generate_newsletter():
     notes = (data.get("notes") or "").strip()
     partner_name = (data.get("partner_name") or "").strip()
     recipient_email = (data.get("recipient_email") or "").strip()
+    partner_id = (data.get("partner_id") or "").strip()
 
     if not ai_client.is_configured():
         return jsonify({"ok": False, "error": "Aucune clé IA configurée (GROQ_API_KEY ou MISTRAL_API_KEY)"}), 400
     if not topic:
         return jsonify({"ok": False, "error": "Sujet obligatoire"}), 400
 
-    _start_draft_job(
-        "newsletter",
-        lambda report: groq_newsletter.generate_newsletter_email(
+    def _generate(report):
+        draft = groq_newsletter.generate_newsletter_email(
             topic, email_type, notes,
             progress=report,
             partner_name=partner_name,
             recipient_email=recipient_email,
-        ),
-    )
+            partner_id=partner_id,
+        )
+        if email_type == "partenariat" and not draft.get("partner_id") and partner_id:
+            draft["partner_id"] = partner_id
+        if email_type == "partenariat" and not draft.get("recipient_email") and recipient_email:
+            draft["recipient_email"] = recipient_email
+        if email_type == "partenariat" and not draft.get("partner_name") and partner_name:
+            draft["partner_name"] = partner_name
+        return draft
+
+    _start_draft_job("newsletter", _generate)
     return jsonify({"ok": True, "started": True})
 
 

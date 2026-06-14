@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import smtplib
+import uuid
 from contextlib import contextmanager
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import formataddr, formatdate
 from typing import Iterator, Literal
+
+logger = logging.getLogger(__name__)
 
 MailProfile = Literal["newsletter", "contact"]
 
@@ -51,6 +56,36 @@ def is_contact_smtp_configured() -> bool:
     return bool(cfg["host"] and cfg["from_addr"] and cfg["user"] and cfg["password"])
 
 
+def smtp_status(profile: MailProfile = "newsletter") -> dict:
+    """Résumé config SMTP pour l'admin (sans mot de passe)."""
+    cfg = _profile_config(profile)
+    return {
+        "profile": profile,
+        "configured": bool(cfg["host"] and cfg["from_addr"] and cfg["user"] and cfg["password"]),
+        "host": cfg["host"],
+        "port": cfg["port"],
+        "user": cfg["user"],
+        "from_addr": cfg["from_addr"],
+        "from_name": cfg["from_name"],
+        "from_aligned": (cfg["from_addr"] or "").lower() == (cfg["user"] or "").lower(),
+        "use_ssl": cfg["use_ssl"],
+    }
+
+
+def verify_smtp(profile: MailProfile = "newsletter") -> dict:
+    """Test connexion + auth SMTP (sans envoyer d'email)."""
+    cfg = _profile_config(profile)
+    if not cfg["host"] or not cfg["user"] or not cfg["password"]:
+        return {"ok": False, "error": "Identifiants SMTP incomplets."}
+    try:
+        with _open_smtp(cfg) as server:
+            server.noop()
+        return {"ok": True, "host": cfg["host"], "user": cfg["user"]}
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("Échec verify_smtp(%s)", profile)
+        return {"ok": False, "error": str(exc)[:300]}
+
+
 def send_email(
     *,
     profile: MailProfile,
@@ -74,13 +109,17 @@ def send_email(
     plain = plain_body or _strip_tags(html_body)
     sent = 0
     failed: list[str] = []
+    errors: dict[str, str] = {}
 
     with _open_smtp(cfg) as server:
         for addr in recipients:
             msg = MIMEMultipart("alternative")
             msg["Subject"] = subject
-            msg["From"] = f"{cfg['from_name']} <{cfg['from_addr']}>"
+            msg["From"] = formataddr((cfg["from_name"], cfg["from_addr"]))
             msg["To"] = addr
+            msg["Date"] = formatdate(localtime=True)
+            msg["Message-ID"] = f"<{uuid.uuid4()}@{cfg['from_addr'].split('@')[-1]}>"
+            msg["MIME-Version"] = "1.0"
             if reply_to:
                 msg["Reply-To"] = reply_to
             if extra_headers:
@@ -91,10 +130,19 @@ def send_email(
             try:
                 server.sendmail(cfg["from_addr"], [addr], msg.as_string())
                 sent += 1
-            except Exception:
+                logger.info("Email envoyé %s → %s (profil %s)", cfg["from_addr"], addr, profile)
+            except Exception as exc:  # noqa: BLE001
                 failed.append(addr)
+                errors[addr] = str(exc)[:300]
+                logger.exception("Échec envoi SMTP %s → %s", cfg["from_addr"], addr)
 
-    return {"sent": sent, "failed": failed, "total": len(recipients)}
+    return {
+        "sent": sent,
+        "failed": failed,
+        "errors": errors,
+        "total": len(recipients),
+        "from_addr": cfg["from_addr"],
+    }
 
 
 @contextmanager

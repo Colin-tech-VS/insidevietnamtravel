@@ -162,6 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const notes = document.getElementById('nl-notes')?.value?.trim() || '';
       const partnerName = document.getElementById('nl-partner-name')?.value?.trim() || '';
       const recipientEmail = document.getElementById('nl-recipient-email')?.value?.trim() || '';
+      const partnerId = document.getElementById('nl-partner-id')?.value?.trim() || '';
       const emailType = form.querySelector('input[name="email_type"]:checked')?.value;
       if (!topic) {
         form.reportValidity();
@@ -183,6 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
             notes,
             partner_name: partnerName,
             recipient_email: recipientEmail,
+            partner_id: partnerId,
           }),
         });
         const data = await res.json();

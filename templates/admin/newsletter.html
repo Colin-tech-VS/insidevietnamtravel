@@ -63,6 +63,46 @@
 
 
 
+{% if smtp_ok %}
+
+<div class="panel smtp-status-panel">
+  <h2 class="smtp-status-panel__title">📡 Envoi SMTP</h2>
+  <p class="muted smtp-status-panel__intro">
+    « Envoyé » = accepté par <strong>{{ smtp_newsletter.host }}</strong>.
+    Si Gmail ne reçoit rien, vérifiez SPF/DKIM/DMARC sur votre domaine et les spams.
+  </p>
+  <ul class="smtp-status-list">
+    <li>
+      <strong>Newsletter :</strong>
+      {% if smtp_newsletter.configured %}
+      {{ smtp_newsletter.from_addr }}
+      {% if smtp_verify_newsletter.ok %}<span class="badge badge--ok">connexion OK</span>{% else %}
+      <span class="badge badge--warn" title="{{ smtp_verify_newsletter.error }}">connexion échouée</span>{% endif %}
+      {% else %}<span class="badge badge--warn">non configuré</span>{% endif %}
+    </li>
+    <li>
+      <strong>Partenariat :</strong>
+      {% if smtp_contact.configured %}
+      {{ smtp_contact.from_addr }} (Reply-To contact)
+      {% if smtp_verify_contact.ok %}<span class="badge badge--ok">connexion OK</span>{% else %}
+      <span class="badge badge--warn" title="{{ smtp_verify_contact.error }}">connexion échouée</span>{% endif %}
+      {% else %}<span class="badge badge--warn">contact@ non configuré — fallback noreply</span>{% endif %}
+    </li>
+  </ul>
+  <form method="post" class="smtp-ping-form">
+    <input type="hidden" name="action" value="smtp_ping">
+    <label for="smtp-ping-email" class="sr-only">Email test SMTP</label>
+    <input type="email" id="smtp-ping-email" name="test_email" required
+           value="{{ test_email_default }}" class="draft-test-input"
+           placeholder="votre@email.com">
+    <button type="submit" class="btn btn-secondary btn-sm">Test SMTP simple</button>
+  </form>
+</div>
+
+{% endif %}
+
+
+
 <div class="admin-page-layout admin-page-layout--wide">
 
   <div class="admin-page-main">
@@ -189,7 +229,11 @@
 
     <section class="panel draft-panel">
 
-      <span class="draft-badge">{% if draft.manual %}Brouillon manuel{% else %}Aperçu IA{% endif %}</span>
+      <span class="draft-badge">{% if draft.manual %}Brouillon manuel{% elif draft.email_type == 'partenariat' %}🤝 Email partenariat{% else %}Aperçu IA{% endif %}</span>
+
+      {% if draft.email_type == 'partenariat' %}
+      <p class="draft-partner-notice">Cet email est une <strong>proposition de partenariat</strong> — envoyez-le à un partenaire (liste à droite), pas aux abonnés newsletter.</p>
+      {% endif %}
 
       <h2>{{ draft.subject }}</h2>
 
@@ -245,7 +289,15 @@
 
         </form>
 
-        {% if subscribers %}
+        {% if draft.email_type == 'partenariat' and draft.recipient_email and smtp_ok %}
+        <form method="post" class="draft-action-form draft-action-form--partner-send"
+              onsubmit="return confirm('Envoyer ce brouillon partenariat à {{ draft.partner_name or draft.recipient_email|e }} ({{ draft.recipient_email }}) ?')">
+          <input type="hidden" name="action" value="send_one">
+          <input type="hidden" name="email" value="{{ draft.recipient_email }}">
+          {% if draft.partner_id %}<input type="hidden" name="partner_id" value="{{ draft.partner_id }}">{% endif %}
+          <button type="submit" class="btn btn-primary">Envoyer à {{ draft.partner_name or draft.recipient_email }}</button>
+        </form>
+        {% elif not is_partner_draft and subscribers %}
 
         <form method="post" class="draft-action-form" onsubmit="return confirm('Envoyer cet email à TOUS les {{ subscribers|length }} abonnés ?')">
 
@@ -277,9 +329,59 @@
 
   <aside class="admin-page-aside">
 
-    <section class="panel guides-stats-panel">
+    {% if is_partner_draft %}
+    <section class="panel guides-stats-panel guides-stats-panel--partners-first">
 
-      <h2>📬 Abonnés</h2>
+      <h2>🤝 Envoyer au partenaire</h2>
+
+      {% if partners_to_contact %}
+
+      <p class="guides-stats-count"><strong>{{ partners_to_contact|length }}</strong> partenaire(s) avec email</p>
+
+      <ul class="subscriber-list">
+        {% for p in partners_to_contact %}
+        <li class="subscriber-item">
+          <div class="subscriber-item__info">
+            <strong>{{ p.name }}</strong>
+            <span class="published-list__date">{{ partner_status_labels.get(p.status, p.status) }} · {{ p.email }}</span>
+            {% set tr = email_tracking_by_partner.get(p.id) %}
+            {% if tr %}
+            <span class="email-track-line{% if not tr.tracking_enabled %} email-track-line--legacy{% endif %}"
+                  title="{{ format_tracking_label(tr) }}">
+              {% if tr.tracking_enabled %}
+              👁 {{ tr.open_count }} · 🖱 {{ tr.click_count }} · {{ tr.sent_at[:10] }}
+              {% else %}
+              📧 {{ tr.sent_at[:10] }} (sans suivi)
+              {% endif %}
+            </span>
+            {% endif %}
+          </div>
+          <div class="subscriber-item__actions">
+            {% if draft and smtp_ok %}
+            <form method="post" class="subscriber-item__send"
+                  onsubmit="return confirm('Envoyer le brouillon partenariat à {{ p.name|e }} ({{ p.email }}) ?')">
+              <input type="hidden" name="action" value="send_one">
+              <input type="hidden" name="email" value="{{ p.email }}">
+              <input type="hidden" name="partner_id" value="{{ p.id }}">
+              <button type="submit" class="btn btn-primary btn-sm">Envoyer ici</button>
+            </form>
+            {% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+
+      {% else %}
+      <p class="muted">Aucun partenaire avec email — ajoutez-en sur <a href="{{ url_for('admin.partnerships') }}">Partenariats</a>.</p>
+      {% endif %}
+
+    </section>
+    {% endif %}
+
+    <section class="panel guides-stats-panel{% if is_partner_draft %} guides-stats-panel--muted{% endif %}">
+
+      <h2>📬 Abonnés newsletter</h2>
+      {% if is_partner_draft %}<p class="muted" style="margin:0 0 0.75rem;font-size:0.82rem;">Réservé aux emails newsletter — pas aux partenariats.</p>{% endif %}
 
       <p class="guides-stats-count"><strong>{{ subscribers|length }}</strong> inscrit(s)</p>
 
@@ -312,7 +414,7 @@
 
           <div class="subscriber-item__actions">
 
-            {% if draft and smtp_ok %}
+            {% if draft and smtp_ok and not is_partner_draft %}
 
             <form method="post" class="subscriber-item__send">
 
@@ -352,9 +454,10 @@
 
     </section>
 
+    {% if not is_partner_draft %}
     <section class="panel guides-stats-panel">
 
-      <h2>🤝 Partenaires</h2>
+      <h2>🤝 Partenaires à contacter</h2>
 
       {% if partners_to_contact %}
 
@@ -411,6 +514,7 @@
       {% endif %}
 
     </section>
+    {% endif %}
 
   </aside>
 
