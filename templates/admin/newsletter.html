@@ -336,7 +336,7 @@
 
       {% if partners_to_contact %}
 
-      <p class="guides-stats-count"><strong>{{ partners_to_contact|length }}</strong> partenaire(s) avec email</p>
+      <p class="guides-stats-count"><strong>{{ partners_to_contact|length }}</strong> partenaire(s) à contacter</p>
 
       <ul class="subscriber-list">
         {% for p in partners_to_contact %}
@@ -372,7 +372,8 @@
       </ul>
 
       {% else %}
-      <p class="muted">Aucun partenaire avec email — ajoutez-en sur <a href="{{ url_for('admin.partnerships') }}">Partenariats</a>.</p>
+      <p class="muted">Aucun partenaire à contacter — les déjà contactés sont sur
+      <a href="{{ url_for('admin.partnerships') }}">Partenariats</a>.</p>
       {% endif %}
 
     </section>

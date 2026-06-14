@@ -1480,7 +1480,8 @@ def _exec_send_newsletter(params: dict) -> dict:
     )
     if not result["sent"]:
         raise ValueError("Échec de l'envoi — vérifiez la configuration SMTP.")
-    if scope != "all":
+    email_type = params.get("email_type") or draft.get("email_type") or "newsletter"
+    if scope != "all" and email_type == "partenariat":
         from admin.partners_service import mark_partner_emailed
         mark_partner_emailed(
             partner_id=(params.get("partner_id") or "").strip(),

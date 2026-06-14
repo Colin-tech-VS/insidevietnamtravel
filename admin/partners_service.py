@@ -225,16 +225,21 @@ def mark_partner_emailed(*, partner_id: str = "", email: str = "") -> dict | Non
 
 def sync_contacted_status_from_history() -> None:
     """Partenaires avec envoi ou date de contact mais statut « à contacter » → « contacté »."""
-    from admin.email_tracking_service import get_latest_sends_by_partner
+    from admin.email_tracking_service import (
+        get_emails_with_partnership_sends,
+        get_latest_sends_by_partner,
+    )
 
     items = get_partnerships()
     ids = [p["id"] for p in items if p.get("id")]
     sends = get_latest_sends_by_partner(ids)
+    emailed = get_emails_with_partnership_sends()
     for p in items:
         if p.get("status") != "a_contacter":
             continue
         pid = p.get("id")
-        if sends.get(pid) or p.get("last_contacted_at"):
+        email = (p.get("email") or "").strip().lower()
+        if sends.get(pid) or p.get("last_contacted_at") or email in emailed:
             mark_partner_emailed(partner_id=pid)
 
 

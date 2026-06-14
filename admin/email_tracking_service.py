@@ -473,6 +473,28 @@ def get_latest_send_for_email(email: str) -> dict | None:
     return _normalize_send(_row_to_dict(row))
 
 
+def get_emails_with_partnership_sends() -> set[str]:
+    """Emails ayant déjà reçu un email partenariat (historique suivi)."""
+    ensure_email_tracking_schema()
+    with get_connection() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT DISTINCT LOWER(recipient_email) AS recipient_email
+            FROM email_sends
+            WHERE email_type = 'partenariat'
+            """
+        )
+        rows = cur.fetchall()
+    out: set[str] = set()
+    for row in rows:
+        d = _row_to_dict(row)
+        email = (d.get("recipient_email") or "").strip().lower()
+        if email:
+            out.add(email)
+    return out
+
+
 def get_recent_sends(limit: int = 30) -> list[dict]:
     ensure_email_tracking_schema()
     limit = max(1, min(limit, 100))

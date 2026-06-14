@@ -742,7 +742,7 @@ def newsletter_admin():
                     recipient_name=partner_name,
                     email_type=email_type,
                 )
-                if result["sent"]:
+                if result["sent"] and email_type == "partenariat":
                     mark_partner_emailed(partner_id=partner_id, email=email)
                 _flash_email_send_result(result, email)
             elif action == "send_all":
@@ -796,10 +796,7 @@ def newsletter_admin():
     from admin.mail_service import smtp_status, verify_smtp
     ps.sync_contacted_status_from_history()
     is_partner_draft = bool(draft and draft.get("email_type") == "partenariat")
-    if is_partner_draft:
-        partners_to_contact = [p for p in ps.get_partnerships() if p.get("email")]
-    else:
-        partners_to_contact = ps.get_partners_pending_contact()
+    partners_to_contact = ps.get_partners_pending_contact()
     partner_ids = [p["id"] for p in partners_to_contact if p.get("id")]
     email_tracking_by_partner = get_latest_sends_by_partner(partner_ids)
     subscriber_tracking = {

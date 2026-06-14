@@ -322,6 +322,10 @@ def send_newsletter_email(
             last_from = result.get("from_addr") or last_from
             if send_rec:
                 send_ids.append(send_rec["id"])
+            if email_type == "partenariat":
+                from admin.partners_service import mark_partner_emailed
+
+                mark_partner_emailed(partner_id=partner_id, email=addr)
         else:
             failed.append(addr)
             all_errors.update(result.get("errors") or {})

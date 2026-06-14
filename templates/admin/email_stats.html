@@ -9,7 +9,7 @@
   Les lignes « sans suivi » = contact enregistré avant cette fonctionnalité.
 </p>
 
-<div class="admin-page-layout">
+<div class="admin-page-layout admin-page-layout--wide">
   <div class="admin-page-main">
 
     <div class="kpi-grid">
@@ -42,50 +42,51 @@
       <h2>Historique des envois</h2>
 
       {% if sends %}
-      <div class="email-stats-table-wrap">
-        <table class="admin-table email-stats-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Destinataire</th>
-              <th>Objet</th>
-              <th>Type</th>
-              <th>👁 Ouvertures</th>
-              <th>🖱 Clics</th>
-              <th>1<sup>re</sup> ouverture</th>
-              <th>Suivi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for send in sends %}
-            <tr class="{% if not send.tracking_enabled %}email-stats-row--legacy{% elif send.open_count == 0 and send.click_count == 0 %}email-stats-row--pending{% endif %}">
-              <td class="email-stats-table__date">{{ send.sent_at[:10] if send.sent_at else '—' }}</td>
-              <td>
-                <strong>{{ send.recipient_name or send.recipient_email }}</strong>
-                {% if send.recipient_name %}
-                <br><span class="muted email-stats-table__email">{{ send.recipient_email }}</span>
-                {% endif %}
-              </td>
-              <td class="email-stats-table__subject">{{ send.subject or '—' }}</td>
-              <td>{{ email_type_labels.get(send.email_type, send.email_type) }}</td>
-              <td class="email-stats-table__num">
+      <ul class="email-stats-list">
+        {% for send in sends %}
+        <li class="email-stats-card{% if not send.tracking_enabled %} email-stats-card--legacy{% endif %}">
+          <div class="email-stats-card__head">
+            <div class="email-stats-card__who">
+              <strong class="email-stats-card__name">{{ send.recipient_name or send.recipient_email }}</strong>
+              {% if send.recipient_name %}
+              <span class="email-stats-card__email">{{ send.recipient_email }}</span>
+              {% endif %}
+            </div>
+            <div class="email-stats-card__meta">
+              <span class="email-stats-card__date">{{ send.sent_at[:10] if send.sent_at else '—' }}</span>
+              <span class="email-stats-card__type">{{ email_type_labels.get(send.email_type, send.email_type) }}</span>
+              {% if send.tracking_enabled %}
+              <span class="email-stats-badge email-stats-badge--ok">Suivi actif</span>
+              {% else %}
+              <span class="email-stats-badge">Sans suivi</span>
+              {% endif %}
+            </div>
+          </div>
+
+          {% if send.subject %}
+          <p class="email-stats-card__subject">{{ send.subject }}</p>
+          {% endif %}
+
+          <dl class="email-stats-card__metrics">
+            <div class="email-stats-card__metric">
+              <dt>👁 Ouvertures</dt>
+              <dd>
                 {% if send.tracking_enabled %}
                 <span class="email-stats-pill {% if send.open_count > 0 %}email-stats-pill--ok{% endif %}">{{ send.open_count }}</span>
                 {% else %}—{% endif %}
-              </td>
-              <td class="email-stats-table__num">
+              </dd>
+            </div>
+            <div class="email-stats-card__metric">
+              <dt>🖱 Clics</dt>
+              <dd>
                 {% if send.tracking_enabled %}
                 <span class="email-stats-pill {% if send.click_count > 0 %}email-stats-pill--ok{% endif %}">{{ send.click_count }}</span>
-                {% if send.click_urls %}
-                <ul class="email-stats-clicks" title="Liens cliqués">
-                  {% for url in send.click_urls %}
-                  <li><a href="{{ url }}" target="_blank" rel="noopener">{{ url[:60] }}{% if url|length > 60 %}…{% endif %}</a></li>
-                  {% endfor %}
-                </ul>
-                {% endif %}
                 {% else %}—{% endif %}
-              </td>
-              <td class="email-stats-table__when">
+              </dd>
+            </div>
+            <div class="email-stats-card__metric email-stats-card__metric--wide">
+              <dt>1<sup>re</sup> ouverture</dt>
+              <dd>
                 {% if send.first_opened_at %}
                 {{ send.first_opened_at[:16].replace('T', ' ') }}
                 {% elif send.tracking_enabled %}
@@ -93,19 +94,20 @@
                 {% else %}
                 —
                 {% endif %}
-              </td>
-              <td>
-                {% if send.tracking_enabled %}
-                <span class="email-stats-badge email-stats-badge--ok">Actif</span>
-                {% else %}
-                <span class="email-stats-badge">Sans suivi</span>
-                {% endif %}
-              </td>
-            </tr>
+              </dd>
+            </div>
+          </dl>
+
+          {% if send.click_urls %}
+          <ul class="email-stats-clicks">
+            {% for url in send.click_urls %}
+            <li><a href="{{ url }}" target="_blank" rel="noopener">{{ url }}</a></li>
             {% endfor %}
-          </tbody>
-        </table>
-      </div>
+          </ul>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
       {% else %}
       <div class="email-stats-empty">
         <p><strong>Aucun envoi enregistré pour l'instant.</strong></p>
