@@ -124,6 +124,7 @@
 
           <input type="hidden" id="nl-partner-name" name="partner_name" value="">
           <input type="hidden" id="nl-recipient-email" name="recipient_email" value="">
+          <input type="hidden" id="nl-partner-id" name="partner_id" value="">
 
           <button type="submit" class="btn btn-primary btn-generate" {% if not groq_ok %}disabled{% endif %}>Générer l'email avec IA</button>
 
@@ -380,7 +381,7 @@
           </div>
           <div class="subscriber-item__actions">
             <a class="btn btn-secondary btn-sm"
-               href="{{ url_for('admin.newsletter_admin', prefill=1, email_type='partenariat', partner_name=p.name, recipient_email=p.email, topic='Partenariat avec ' ~ p.name ~ (' (' ~ p.topics ~ ')' if p.topics else '')) }}"
+               href="{{ url_for('admin.newsletter_admin', prefill=1, email_type='partenariat', partner_id=p.id, partner_name=p.name, recipient_email=p.email, topic='Partenariat avec ' ~ p.name ~ (' (' ~ p.topics ~ ')' if p.topics else '')) }}"
                title="Préparer un email de partenariat IA pour {{ p.name }}">✦ Email IA</a>
             {% if draft and smtp_ok %}
             <form method="post" class="subscriber-item__send"

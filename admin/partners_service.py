@@ -83,6 +83,16 @@ def find_partnership(pid: str) -> dict | None:
     return next((p for p in get_partnerships() if p.get("id") == pid), None)
 
 
+def find_partnership_by_email(email: str) -> dict | None:
+    email = (email or "").strip().lower()
+    if not email or "@" not in email:
+        return None
+    return next(
+        (p for p in get_partnerships() if (p.get("email") or "").strip().lower() == email),
+        None,
+    )
+
+
 def is_generic_contact_email(email: str) -> bool:
     """True si l'adresse est un contact générique (info@, contact@…)."""
     email = (email or "").strip().lower()
@@ -194,16 +204,38 @@ def delete_partnership(pid: str) -> None:
 
 def mark_contacted(pid: str) -> None:
     """Après un envoi d'email réussi : statut « contacté » + date (best-effort)."""
+    mark_partner_emailed(partner_id=pid)
+
+
+def mark_partner_emailed(*, partner_id: str = "", email: str = "") -> dict | None:
+    """Met à jour last_contacted_at ; passe à « contacté » si encore « à contacter »."""
+    partner = find_partnership(partner_id) if partner_id else None
+    if not partner and email:
+        partner = find_partnership_by_email(email)
+    if not partner:
+        return None
     try:
-        p = find_partnership(pid)
-        if not p:
-            return
         fields = {"last_contacted_at": date.today().isoformat()}
-        if p.get("status") == "a_contacter":
+        if partner.get("status") == "a_contacter":
             fields["status"] = "contacte"
-        update_partnership(pid, fields)
+        return update_partnership(partner["id"], fields)
     except Exception:  # noqa: BLE001
-        pass
+        return None
+
+
+def sync_contacted_status_from_history() -> None:
+    """Partenaires avec envoi ou date de contact mais statut « à contacter » → « contacté »."""
+    from admin.email_tracking_service import get_latest_sends_by_partner
+
+    items = get_partnerships()
+    ids = [p["id"] for p in items if p.get("id")]
+    sends = get_latest_sends_by_partner(ids)
+    for p in items:
+        if p.get("status") != "a_contacter":
+            continue
+        pid = p.get("id")
+        if sends.get(pid) or p.get("last_contacted_at"):
+            mark_partner_emailed(partner_id=pid)
 
 
 def partnership_stats() -> dict:

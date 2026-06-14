@@ -1475,6 +1475,12 @@ def _exec_send_newsletter(params: dict) -> dict:
     )
     if not result["sent"]:
         raise ValueError("Échec de l'envoi — vérifiez la configuration SMTP.")
+    if scope != "all":
+        from admin.partners_service import mark_partner_emailed
+        mark_partner_emailed(
+            partner_id=(params.get("partner_id") or "").strip(),
+            email=recipients[0],
+        )
     return {"message": f"✅ Newsletter envoyée : {result['sent']}/{result['total']} email(s).", "url": "/admin/newsletter"}
 
 

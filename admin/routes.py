@@ -697,12 +697,12 @@ def newsletter_admin():
                 partner_id = (request.form.get("partner_id") or "").strip()
                 partner_name = ""
                 email_type = draft.get("email_type") or "newsletter"
-                if partner_id:
-                    from admin.partners_service import find_partnership
-                    partner = find_partnership(partner_id)
-                    if partner:
-                        partner_name = partner.get("name") or ""
-                        email_type = "partenariat"
+                from admin.partners_service import find_partnership, find_partnership_by_email, mark_partner_emailed
+                partner = find_partnership(partner_id) if partner_id else find_partnership_by_email(email)
+                if partner:
+                    partner_id = partner.get("id") or partner_id
+                    partner_name = partner.get("name") or ""
+                    email_type = "partenariat"
                 result = send_newsletter_email(
                     [email],
                     draft["subject"],
@@ -714,9 +714,7 @@ def newsletter_admin():
                 )
                 if result["sent"]:
                     flash(f"Email envoyé à {email}.", "success")
-                    if partner_id:
-                        from admin.partners_service import mark_contacted
-                        mark_contacted(partner_id)
+                    mark_partner_emailed(partner_id=partner_id, email=email)
                 else:
                     flash(f"Échec d'envoi vers {email}.", "error")
             elif action == "send_all":
@@ -761,6 +759,7 @@ def newsletter_admin():
         get_latest_sends_by_partner,
         get_recent_sends,
     )
+    ps.sync_contacted_status_from_history()
     partners_to_contact = [p for p in ps.get_partnerships() if p.get("email")]
     partner_ids = [p["id"] for p in partners_to_contact if p.get("id")]
     email_tracking_by_partner = get_latest_sends_by_partner(partner_ids)
@@ -1296,6 +1295,8 @@ def partnerships():
         return redirect(url_for("admin.partnerships"))
 
     from admin.email_tracking_service import format_tracking_label, get_latest_sends_by_partner
+
+    ps.sync_contacted_status_from_history()
 
     status_filter = request.args.get("status", "")
     type_filter = request.args.get("type", "")

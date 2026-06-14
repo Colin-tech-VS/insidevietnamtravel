@@ -163,7 +163,7 @@
             <button type="submit" name="action" value="update" class="btn btn-secondary btn-sm">Enregistrer</button>
             {% if p.email %}
             <a class="btn btn-primary btn-sm"
-               href="{{ url_for('admin.newsletter_admin', prefill=1, email_type='partenariat', partner_name=p.name, recipient_email=p.email, topic='Partenariat avec ' ~ p.name ~ (' (' ~ p.topics ~ ')' if p.topics else ''), notes='Type : ' ~ type_labels.get(p.type, p.type) ~ (' · Audience : ' ~ p.followers if p.followers else '')) }}"
+               href="{{ url_for('admin.newsletter_admin', prefill=1, email_type='partenariat', partner_id=p.id, partner_name=p.name, recipient_email=p.email, topic='Partenariat avec ' ~ p.name ~ (' (' ~ p.topics ~ ')' if p.topics else ''), notes='Type : ' ~ type_labels.get(p.type, p.type) ~ (' · Audience : ' ~ p.followers if p.followers else '')) }}"
                title="Préparer un email de partenariat IA pour {{ p.name }}">📧 Contacter</a>
             {% else %}
             <span class="social-hint" title="Ajoutez un email pour pouvoir contacter ce partenaire">sans email</span>
