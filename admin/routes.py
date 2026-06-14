@@ -682,6 +682,7 @@ def newsletter_admin():
                     draft["subject"],
                     draft["body_html"],
                     preheader=draft.get("preheader", ""),
+                    email_type="test",
                 )
                 if result["sent"]:
                     flash(f"Email de test envoyé à {test_email}.", "success")
@@ -693,15 +694,26 @@ def newsletter_admin():
                     flash("Composez d'abord un email (IA ou manuel).", "error")
                     return redirect(url_for("admin.newsletter_admin"))
                 email = (request.form.get("email") or "").strip().lower()
+                partner_id = (request.form.get("partner_id") or "").strip()
+                partner_name = ""
+                email_type = draft.get("email_type") or "newsletter"
+                if partner_id:
+                    from admin.partners_service import find_partnership
+                    partner = find_partnership(partner_id)
+                    if partner:
+                        partner_name = partner.get("name") or ""
+                        email_type = "partenariat"
                 result = send_newsletter_email(
                     [email],
                     draft["subject"],
                     draft["body_html"],
                     preheader=draft.get("preheader", ""),
+                    partner_id=partner_id,
+                    recipient_name=partner_name,
+                    email_type=email_type,
                 )
                 if result["sent"]:
                     flash(f"Email envoyé à {email}.", "success")
-                    partner_id = (request.form.get("partner_id") or "").strip()
                     if partner_id:
                         from admin.partners_service import mark_contacted
                         mark_contacted(partner_id)
@@ -721,6 +733,7 @@ def newsletter_admin():
                     draft["subject"],
                     draft["body_html"],
                     preheader=draft.get("preheader", ""),
+                    email_type=draft.get("email_type") or "newsletter",
                 )
                 msg = f"{result['sent']} email(s) envoyé(s) sur {result['total']}."
                 if result["failed"]:
@@ -742,7 +755,20 @@ def newsletter_admin():
     draft = _get_draft("newsletter")
     preview_html = render_newsletter_preview(draft) if draft else ""
     from admin import partners_service as ps
+    from admin.email_tracking_service import (
+        format_tracking_label,
+        get_latest_send_for_email,
+        get_latest_sends_by_partner,
+        get_recent_sends,
+    )
     partners_to_contact = [p for p in ps.get_partnerships() if p.get("email")]
+    partner_ids = [p["id"] for p in partners_to_contact if p.get("id")]
+    email_tracking_by_partner = get_latest_sends_by_partner(partner_ids)
+    subscriber_tracking = {
+        s["email"]: get_latest_send_for_email(s["email"])
+        for s in subscribers
+    }
+    recent_email_sends = get_recent_sends(25)
     return render_template(
         "admin/newsletter.html",
         subscribers=subscribers,
@@ -756,6 +782,10 @@ def newsletter_admin():
         test_email_default=os.environ.get("LEGAL_CONTACT_EMAIL", ""),
         partners_to_contact=partners_to_contact,
         partner_status_labels=ps.PARTNER_STATUS_LABELS,
+        email_tracking_by_partner=email_tracking_by_partner,
+        subscriber_tracking=subscriber_tracking,
+        recent_email_sends=recent_email_sends,
+        format_tracking_label=format_tracking_label,
     )
 
 
@@ -1265,6 +1295,8 @@ def partnerships():
             flash(f"Erreur : {e}", "error")
         return redirect(url_for("admin.partnerships"))
 
+    from admin.email_tracking_service import format_tracking_label, get_latest_sends_by_partner
+
     status_filter = request.args.get("status", "")
     type_filter = request.args.get("type", "")
     items = ps.get_partnerships()
@@ -1272,6 +1304,8 @@ def partnerships():
         items = [p for p in items if p.get("status") == status_filter]
     if type_filter:
         items = [p for p in items if p.get("type") == type_filter]
+
+    email_tracking_by_partner = get_latest_sends_by_partner([p["id"] for p in items if p.get("id")])
 
     return render_template(
         "admin/partnerships.html",
@@ -1285,6 +1319,8 @@ def partnerships():
         type_filter=type_filter,
         ai_ready=ai_client.is_configured(),
         smtp_ok=is_smtp_configured(),
+        email_tracking_by_partner=email_tracking_by_partner,
+        format_tracking_label=format_tracking_label,
     )
 
 

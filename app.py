@@ -3,7 +3,7 @@
 import threading
 from datetime import datetime
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import quote, unquote, urlparse
 
 from dotenv import load_dotenv
 from flask import (
@@ -1087,6 +1087,34 @@ def contact():
         meta_description=t("meta.contact.desc", lang),
         meta_keywords="contact Vietnam travel, Inside Vietnam Travel" if lang == "en" else "contact voyage Vietnam, Inside Vietnam Travel",
     )
+
+
+@app.route("/e/o/<token>.gif")
+def email_open_pixel(token):
+    from admin.email_tracking_service import PIXEL_GIF, record_open
+
+    record_open(unquote(token))
+    return Response(PIXEL_GIF, mimetype="image/gif", headers={
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        "Pragma": "no-cache",
+    })
+
+
+@app.route("/e/c/<token>")
+def email_click_redirect(token):
+    from admin.email_tracking_service import record_click, verify_click_target
+
+    send_token = unquote(token)
+    signed = (request.args.get("u") or "").strip()
+    target = verify_click_target(send_token, signed)
+    site_url = config.SITE_URL.rstrip("/")
+    if not target:
+        return redirect(site_url, code=302)
+    parsed = urlparse(target)
+    if parsed.scheme not in ("http", "https"):
+        return redirect(site_url, code=302)
+    record_click(send_token, target)
+    return redirect(target, code=302)
 
 
 @app.route("/newsletter/desinscription", methods=["GET", "POST"])

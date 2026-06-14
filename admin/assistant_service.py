@@ -1469,6 +1469,9 @@ def _exec_send_newsletter(params: dict) -> dict:
         recipients = [email]
     result = send_newsletter_email(
         recipients, draft["subject"], draft["body_html"], preheader=draft.get("preheader", ""),
+        email_type=params.get("email_type") or draft.get("email_type") or "newsletter",
+        partner_id=(params.get("partner_id") or "").strip(),
+        recipient_name=(params.get("partner_name") or params.get("recipient_name") or "").strip(),
     )
     if not result["sent"]:
         raise ValueError("Échec de l'envoi — vérifiez la configuration SMTP.")

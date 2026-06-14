@@ -232,7 +232,17 @@ def send_newsletter_email(
     body_html: str,
     *,
     preheader: str = "",
+    partner_id: str = "",
+    recipient_name: str = "",
+    email_type: str = "newsletter",
+    track: bool = True,
 ) -> dict:
+    from admin.email_tracking_service import (
+        create_email_send,
+        delete_email_send,
+        inject_tracking,
+    )
+
     recipients = [e.strip().lower() for e in recipients if e and "@" in e]
     if not recipients:
         raise ValueError("Aucun destinataire valide.")
@@ -246,9 +256,21 @@ def send_newsletter_email(
 
     sent = 0
     failed: list[str] = []
+    send_ids: list[int] = []
 
     for addr in recipients:
+        send_rec = None
+        if track:
+            send_rec = create_email_send(
+                recipient_email=addr,
+                recipient_name=recipient_name,
+                partner_id=partner_id,
+                subject=subject,
+                email_type=email_type,
+            )
         full_html = wrap_email_html(body_html, preheader, recipient_email=addr)
+        if send_rec:
+            full_html = inject_tracking(full_html, send_rec["send_token"])
         plain = _strip_html(body_html)
         plain += f"\n\nSe désinscrire : {unsubscribe_url(addr)}"
         extra = {"List-Unsubscribe": f"<{unsubscribe_url(addr)}>"}
@@ -262,7 +284,11 @@ def send_newsletter_email(
         )
         if result["sent"]:
             sent += 1
+            if send_rec:
+                send_ids.append(send_rec["id"])
         else:
             failed.append(addr)
+            if send_rec:
+                delete_email_send(send_rec["id"])
 
-    return {"sent": sent, "failed": failed, "total": len(recipients)}
+    return {"sent": sent, "failed": failed, "total": len(recipients), "send_ids": send_ids}

@@ -1,0 +1,559 @@
+"""Suivi ouvertures / clics des emails admin (pixel + redirections signées)."""
+
+from __future__ import annotations
+
+import base64
+import hashlib
+import hmac
+import logging
+import os
+import re
+import secrets
+from datetime import datetime, timezone
+from urllib.parse import quote, urlparse
+
+import config
+from admin.database import get_connection, is_postgres
+
+logger = logging.getLogger(__name__)
+
+SITE_URL = config.SITE_URL.rstrip("/")
+PIXEL_GIF = base64.b64decode(
+    "R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+)
+_HREF_RE = re.compile(r'(<a\b[^>]*\shref=")([^"]+)(")', re.I)
+_SCHEMA_READY = False
+
+
+def _secret() -> bytes:
+    return os.environ.get("SECRET_KEY", "dev-change-in-production").encode()
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def ensure_email_tracking_schema() -> None:
+    global _SCHEMA_READY
+    if _SCHEMA_READY:
+        return
+    try:
+        with get_connection() as conn:
+            if is_postgres():
+                cur = conn.cursor()
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS email_sends (
+                        id SERIAL PRIMARY KEY,
+                        send_token TEXT NOT NULL UNIQUE,
+                        recipient_email TEXT NOT NULL,
+                        recipient_name TEXT,
+                        partner_id TEXT,
+                        subject TEXT,
+                        email_type TEXT NOT NULL DEFAULT 'newsletter',
+                        tracking_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+                        sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                        open_count INTEGER NOT NULL DEFAULT 0,
+                        first_opened_at TIMESTAMPTZ,
+                        last_opened_at TIMESTAMPTZ,
+                        click_count INTEGER NOT NULL DEFAULT 0,
+                        first_clicked_at TIMESTAMPTZ,
+                        last_clicked_at TIMESTAMPTZ
+                    )""")
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS email_click_events (
+                        id SERIAL PRIMARY KEY,
+                        send_id INTEGER NOT NULL REFERENCES email_sends(id) ON DELETE CASCADE,
+                        url TEXT NOT NULL,
+                        clicked_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                    )""")
+                cur.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_email_sends_partner ON email_sends(partner_id)"
+                )
+                cur.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_email_sends_recipient ON email_sends(recipient_email)"
+                )
+                cur.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_email_clicks_send ON email_click_events(send_id)"
+                )
+            else:
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS email_sends (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        send_token TEXT NOT NULL UNIQUE,
+                        recipient_email TEXT NOT NULL,
+                        recipient_name TEXT,
+                        partner_id TEXT,
+                        subject TEXT,
+                        email_type TEXT NOT NULL DEFAULT 'newsletter',
+                        tracking_enabled INTEGER NOT NULL DEFAULT 1,
+                        sent_at TEXT NOT NULL,
+                        open_count INTEGER NOT NULL DEFAULT 0,
+                        first_opened_at TEXT,
+                        last_opened_at TEXT,
+                        click_count INTEGER NOT NULL DEFAULT 0,
+                        first_clicked_at TEXT,
+                        last_clicked_at TEXT
+                    )""")
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS email_click_events (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        send_id INTEGER NOT NULL,
+                        url TEXT NOT NULL,
+                        clicked_at TEXT NOT NULL,
+                        FOREIGN KEY (send_id) REFERENCES email_sends(id) ON DELETE CASCADE
+                    )""")
+                conn.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_email_sends_partner ON email_sends(partner_id)"
+                )
+                conn.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_email_sends_recipient ON email_sends(recipient_email)"
+                )
+        _SCHEMA_READY = True
+    except Exception:
+        logger.exception("Impossible d'initialiser le schéma email_sends")
+
+
+def _row_to_dict(row) -> dict:
+    if row is None:
+        return {}
+    if isinstance(row, dict):
+        return dict(row)
+    cols = (
+        "id", "send_token", "recipient_email", "recipient_name", "partner_id",
+        "subject", "email_type", "tracking_enabled", "sent_at",
+        "open_count", "first_opened_at", "last_opened_at",
+        "click_count", "first_clicked_at", "last_clicked_at",
+    )
+    return {k: row[i] for i, k in enumerate(cols) if i < len(row)}
+
+
+def _normalize_send(row: dict) -> dict:
+    out = dict(row)
+    out["tracking_enabled"] = bool(out.get("tracking_enabled", True))
+    for key in ("sent_at", "first_opened_at", "last_opened_at", "first_clicked_at", "last_clicked_at"):
+        if out.get(key) is not None:
+            out[key] = str(out[key])
+    return out
+
+
+def open_tracking_url(token: str) -> str:
+    return f"{SITE_URL}/e/o/{quote(token, safe='')}.gif"
+
+
+def _sign_click_target(send_token: str, url: str) -> str:
+    digest = hmac.new(_secret(), f"{send_token}:{url}".encode(), hashlib.sha256).hexdigest()[:20]
+    payload = base64.urlsafe_b64encode(url.encode()).decode().rstrip("=")
+    return f"{payload}.{digest}"
+
+
+def verify_click_target(send_token: str, signed: str) -> str | None:
+    if not send_token or not signed or "." not in signed:
+        return None
+    payload, digest = signed.rsplit(".", 1)
+    pad = "=" * (-len(payload) % 4)
+    try:
+        url = base64.urlsafe_b64decode(payload + pad).decode()
+    except Exception:
+        return None
+    expected = hmac.new(_secret(), f"{send_token}:{url}".encode(), hashlib.sha256).hexdigest()[:20]
+    if not hmac.compare_digest(expected, digest):
+        return None
+    return url
+
+
+def click_tracking_url(token: str, target_url: str) -> str:
+    absolute = _absolute_url(target_url)
+    signed = _sign_click_target(token, absolute)
+    return f"{SITE_URL}/e/c/{quote(token, safe='')}?u={quote(signed, safe='')}"
+
+
+def _absolute_url(url: str) -> str:
+    url = (url or "").strip()
+    if url.startswith("/"):
+        return f"{SITE_URL}{url}"
+    return url
+
+
+def _should_track_link(url: str) -> bool:
+    u = (url or "").strip().lower()
+    if not u or u.startswith("#") or u.startswith("mailto:"):
+        return False
+    if "/e/c/" in u or "/e/o/" in u:
+        return False
+    if "desinscription" in u or "unsubscribe" in u:
+        return False
+    return u.startswith("http://") or u.startswith("https://") or u.startswith("/")
+
+
+def inject_tracking(html: str, token: str) -> str:
+    """Pixel d'ouverture + réécriture des liens cliquables."""
+    if not html or not token:
+        return html
+
+    def repl(match: re.Match) -> str:
+        prefix, href, suffix = match.group(1), match.group(2), match.group(3)
+        if not _should_track_link(href):
+            return match.group(0)
+        return f"{prefix}{click_tracking_url(token, href)}{suffix}"
+
+    html = _HREF_RE.sub(repl, html)
+    pixel = (
+        f'<img src="{open_tracking_url(token)}" width="1" height="1" alt="" '
+        'style="display:block;width:1px;height:1px;border:0;margin:0;padding:0;" />'
+    )
+    if re.search(r"</body>", html, re.I):
+        html = re.sub(r"</body>", pixel + "</body>", html, count=1, flags=re.I)
+    else:
+        html += pixel
+    return html
+
+
+def create_email_send(
+    *,
+    recipient_email: str,
+    subject: str,
+    email_type: str = "newsletter",
+    recipient_name: str = "",
+    partner_id: str = "",
+    tracking_enabled: bool = True,
+    sent_at: str | None = None,
+) -> dict:
+    ensure_email_tracking_schema()
+    token = secrets.token_urlsafe(24)
+    email = recipient_email.strip().lower()
+    ts = sent_at or _now_iso()
+    with get_connection() as conn:
+        cur = conn.cursor()
+        if is_postgres():
+            cur.execute(
+                """
+                INSERT INTO email_sends (
+                    send_token, recipient_email, recipient_name, partner_id,
+                    subject, email_type, tracking_enabled, sent_at
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id, send_token, recipient_email, recipient_name, partner_id,
+                          subject, email_type, tracking_enabled, sent_at,
+                          open_count, first_opened_at, last_opened_at,
+                          click_count, first_clicked_at, last_clicked_at
+                """,
+                (
+                    token, email, (recipient_name or "")[:120], (partner_id or "")[:40],
+                    (subject or "")[:200], (email_type or "newsletter")[:40],
+                    tracking_enabled, ts,
+                ),
+            )
+            row = cur.fetchone()
+        else:
+            cur.execute(
+                """
+                INSERT INTO email_sends (
+                    send_token, recipient_email, recipient_name, partner_id,
+                    subject, email_type, tracking_enabled, sent_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    token, email, (recipient_name or "")[:120], (partner_id or "")[:40],
+                    (subject or "")[:200], (email_type or "newsletter")[:40],
+                    1 if tracking_enabled else 0, ts,
+                ),
+            )
+            cur.execute(
+                """
+                SELECT id, send_token, recipient_email, recipient_name, partner_id,
+                       subject, email_type, tracking_enabled, sent_at,
+                       open_count, first_opened_at, last_opened_at,
+                       click_count, first_clicked_at, last_clicked_at
+                FROM email_sends WHERE send_token = ?
+                """,
+                (token,),
+            )
+            row = cur.fetchone()
+    return _normalize_send(_row_to_dict(row))
+
+
+def delete_email_send(send_id: int) -> None:
+    ensure_email_tracking_schema()
+    with get_connection() as conn:
+        cur = conn.cursor()
+        ph = "%s" if is_postgres() else "?"
+        cur.execute(f"DELETE FROM email_sends WHERE id = {ph}", (send_id,))
+
+
+def _get_send_by_token(token: str) -> dict | None:
+    ensure_email_tracking_schema()
+    with get_connection() as conn:
+        cur = conn.cursor()
+        ph = "%s" if is_postgres() else "?"
+        cur.execute(
+            f"""
+            SELECT id, send_token, recipient_email, recipient_name, partner_id,
+                   subject, email_type, tracking_enabled, sent_at,
+                   open_count, first_opened_at, last_opened_at,
+                   click_count, first_clicked_at, last_clicked_at
+            FROM email_sends WHERE send_token = {ph}
+            """,
+            (token,),
+        )
+        row = cur.fetchone()
+    if not row:
+        return None
+    return _normalize_send(_row_to_dict(row))
+
+
+def record_open(token: str) -> bool:
+    send = _get_send_by_token(token)
+    if not send or not send.get("tracking_enabled"):
+        return False
+    now = _now_iso()
+    with get_connection() as conn:
+        cur = conn.cursor()
+        if is_postgres():
+            cur.execute(
+                """
+                UPDATE email_sends SET
+                    open_count = open_count + 1,
+                    first_opened_at = COALESCE(first_opened_at, %s),
+                    last_opened_at = %s
+                WHERE send_token = %s AND tracking_enabled = TRUE
+                """,
+                (now, now, token),
+            )
+        else:
+            cur.execute(
+                """
+                UPDATE email_sends SET
+                    open_count = open_count + 1,
+                    first_opened_at = COALESCE(first_opened_at, ?),
+                    last_opened_at = ?
+                WHERE send_token = ? AND tracking_enabled = 1
+                """,
+                (now, now, token),
+            )
+    return True
+
+
+def record_click(token: str, target_url: str) -> bool:
+    send = _get_send_by_token(token)
+    if not send or not send.get("tracking_enabled"):
+        return False
+    now = _now_iso()
+    send_id = send["id"]
+    url = (target_url or "")[:2000]
+    with get_connection() as conn:
+        cur = conn.cursor()
+        if is_postgres():
+            cur.execute(
+                "INSERT INTO email_click_events (send_id, url, clicked_at) VALUES (%s, %s, %s)",
+                (send_id, url, now),
+            )
+            cur.execute(
+                """
+                UPDATE email_sends SET
+                    click_count = click_count + 1,
+                    first_clicked_at = COALESCE(first_clicked_at, %s),
+                    last_clicked_at = %s
+                WHERE id = %s
+                """,
+                (now, now, send_id),
+            )
+        else:
+            cur.execute(
+                "INSERT INTO email_click_events (send_id, url, clicked_at) VALUES (?, ?, ?)",
+                (send_id, url, now),
+            )
+            cur.execute(
+                """
+                UPDATE email_sends SET
+                    click_count = click_count + 1,
+                    first_clicked_at = COALESCE(first_clicked_at, ?),
+                    last_clicked_at = ?
+                WHERE id = ?
+                """,
+                (now, now, send_id),
+            )
+    return True
+
+
+def _count_sends_for_partner(partner_id: str) -> int:
+    ensure_email_tracking_schema()
+    with get_connection() as conn:
+        cur = conn.cursor()
+        ph = "%s" if is_postgres() else "?"
+        cur.execute(
+            f"SELECT COUNT(*) AS n FROM email_sends WHERE partner_id = {ph}",
+            (partner_id,),
+        )
+        row = cur.fetchone()
+    if isinstance(row, dict):
+        return int(row.get("n") or 0)
+    return int(row[0] if row else 0)
+
+
+def ensure_legacy_partner_sends() -> None:
+    """Crée une entrée « sans suivi » pour les partenaires contactés avant le tracking."""
+    from admin.partners_service import get_partnerships
+
+    for p in get_partnerships():
+        pid = (p.get("id") or "").strip()
+        contacted = (p.get("last_contacted_at") or "").strip()
+        email = (p.get("email") or "").strip().lower()
+        if not pid or not contacted or not email:
+            continue
+        if _count_sends_for_partner(pid) > 0:
+            continue
+        try:
+            create_email_send(
+                recipient_email=email,
+                recipient_name=p.get("name") or "",
+                partner_id=pid,
+                subject="(email partenariat — envoyé avant suivi)",
+                email_type="partenariat",
+                tracking_enabled=False,
+                sent_at=f"{contacted}T12:00:00+00:00",
+            )
+        except Exception:
+            logger.exception("Backfill email send for partner %s", pid)
+
+
+def get_latest_sends_by_partner(partner_ids: list[str]) -> dict[str, dict]:
+    """Dernier envoi connu par partenaire (stats ouverture / clic)."""
+    ensure_email_tracking_schema()
+    ensure_legacy_partner_sends()
+    ids = [i for i in partner_ids if i]
+    if not ids:
+        return {}
+    out: dict[str, dict] = {}
+    with get_connection() as conn:
+        cur = conn.cursor()
+        for pid in ids:
+            ph = "%s" if is_postgres() else "?"
+            cur.execute(
+                f"""
+                SELECT id, send_token, recipient_email, recipient_name, partner_id,
+                       subject, email_type, tracking_enabled, sent_at,
+                       open_count, first_opened_at, last_opened_at,
+                       click_count, first_clicked_at, last_clicked_at
+                FROM email_sends
+                WHERE partner_id = {ph}
+                ORDER BY sent_at DESC
+                LIMIT 1
+                """,
+                (pid,),
+            )
+            row = cur.fetchone()
+            if row:
+                out[pid] = _normalize_send(_row_to_dict(row))
+    return out
+
+
+def get_latest_send_for_email(email: str) -> dict | None:
+    ensure_email_tracking_schema()
+    email = (email or "").strip().lower()
+    if not email:
+        return None
+    with get_connection() as conn:
+        cur = conn.cursor()
+        ph = "%s" if is_postgres() else "?"
+        cur.execute(
+            f"""
+            SELECT id, send_token, recipient_email, recipient_name, partner_id,
+                   subject, email_type, tracking_enabled, sent_at,
+                   open_count, first_opened_at, last_opened_at,
+                   click_count, first_clicked_at, last_clicked_at
+            FROM email_sends
+            WHERE recipient_email = {ph}
+            ORDER BY sent_at DESC
+            LIMIT 1
+            """,
+            (email,),
+        )
+        row = cur.fetchone()
+    if not row:
+        return None
+    return _normalize_send(_row_to_dict(row))
+
+
+def get_recent_sends(limit: int = 30) -> list[dict]:
+    ensure_email_tracking_schema()
+    limit = max(1, min(limit, 100))
+    with get_connection() as conn:
+        cur = conn.cursor()
+        if is_postgres():
+            cur.execute(
+                """
+                SELECT id, send_token, recipient_email, recipient_name, partner_id,
+                       subject, email_type, tracking_enabled, sent_at,
+                       open_count, first_opened_at, last_opened_at,
+                       click_count, first_clicked_at, last_clicked_at
+                FROM email_sends
+                ORDER BY sent_at DESC
+                LIMIT %s
+                """,
+                (limit,),
+            )
+        else:
+            cur.execute(
+                """
+                SELECT id, send_token, recipient_email, recipient_name, partner_id,
+                       subject, email_type, tracking_enabled, sent_at,
+                       open_count, first_opened_at, last_opened_at,
+                       click_count, first_clicked_at, last_clicked_at
+                FROM email_sends
+                ORDER BY sent_at DESC
+                LIMIT ?
+                """,
+                (limit,),
+            )
+        rows = cur.fetchall()
+    return [_normalize_send(_row_to_dict(r)) for r in rows]
+
+
+def get_click_urls_for_send(send_id: int, limit: int = 8) -> list[str]:
+    ensure_email_tracking_schema()
+    with get_connection() as conn:
+        cur = conn.cursor()
+        if is_postgres():
+            cur.execute(
+                """
+                SELECT url FROM email_click_events
+                WHERE send_id = %s
+                ORDER BY clicked_at DESC
+                LIMIT %s
+                """,
+                (send_id, limit),
+            )
+        else:
+            cur.execute(
+                """
+                SELECT url FROM email_click_events
+                WHERE send_id = ?
+                ORDER BY clicked_at DESC
+                LIMIT ?
+                """,
+                (send_id, limit),
+            )
+        rows = cur.fetchall()
+    urls = []
+    for row in rows:
+        url = row["url"] if isinstance(row, dict) else row[0]
+        if url and url not in urls:
+            urls.append(url)
+    return urls
+
+
+def format_tracking_label(send: dict | None) -> str:
+    if not send:
+        return ""
+    sent = (send.get("sent_at") or "")[:10]
+    if not send.get("tracking_enabled"):
+        return f"Envoyé {sent} (sans suivi)"
+    opens = int(send.get("open_count") or 0)
+    clicks = int(send.get("click_count") or 0)
+    parts = [f"Envoyé {sent}"]
+    if opens:
+        parts.append(f"{opens} ouverture{'s' if opens > 1 else ''}")
+    else:
+        parts.append("non ouvert")
+    if clicks:
+        parts.append(f"{clicks} clic{'s' if clicks > 1 else ''}")
+    return " · ".join(parts)

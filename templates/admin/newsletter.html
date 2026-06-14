@@ -294,6 +294,17 @@
             <strong>{{ s.email }}</strong>
 
             <span class="published-list__date">{{ s.subscribed_at[:10] if s.subscribed_at else '—' }}</span>
+            {% set tr = subscriber_tracking.get(s.email) %}
+            {% if tr %}
+            <span class="email-track-line{% if not tr.tracking_enabled %} email-track-line--legacy{% endif %}"
+                  title="{{ format_tracking_label(tr) }}">
+              {% if tr.tracking_enabled %}
+              👁 {{ tr.open_count }} · 🖱 {{ tr.click_count }} · {{ tr.sent_at[:10] }}
+              {% else %}
+              📧 {{ tr.sent_at[:10] }} (sans suivi)
+              {% endif %}
+            </span>
+            {% endif %}
 
           </div>
 
@@ -353,6 +364,19 @@
           <div class="subscriber-item__info">
             <strong>{{ p.name }}</strong>
             <span class="published-list__date">{{ partner_status_labels.get(p.status, p.status) }} · {{ p.email }}</span>
+            {% set tr = email_tracking_by_partner.get(p.id) %}
+            {% if tr %}
+            <span class="email-track-line{% if not tr.tracking_enabled %} email-track-line--legacy{% endif %}"
+                  title="{{ format_tracking_label(tr) }}">
+              {% if tr.tracking_enabled %}
+              👁 {{ tr.open_count }} ouverture{{ 's' if tr.open_count != 1 else '' }}
+              · 🖱 {{ tr.click_count }} clic{{ 's' if tr.click_count != 1 else '' }}
+              · {{ tr.sent_at[:10] }}
+              {% else %}
+              📧 Envoyé {{ tr.sent_at[:10] }} (sans suivi)
+              {% endif %}
+            </span>
+            {% endif %}
           </div>
           <div class="subscriber-item__actions">
             <a class="btn btn-secondary btn-sm"
@@ -383,6 +407,35 @@
       {% endif %}
 
     </section>
+
+    {% if recent_email_sends %}
+    <section class="panel guides-stats-panel">
+      <h2>📊 Suivi des envois</h2>
+      <p class="muted">Ouvertures et clics des derniers emails (partenariats et newsletter).</p>
+      <ul class="email-send-log">
+        {% for send in recent_email_sends %}
+        <li class="email-send-log__item">
+          <div class="email-send-log__main">
+            <strong>{{ send.recipient_name or send.recipient_email }}</strong>
+            <span class="email-send-log__meta">{{ send.sent_at[:10] }} · {{ send.email_type }}</span>
+          </div>
+          <div class="email-send-log__stats">
+            {% if send.tracking_enabled %}
+            <span title="Ouvertures">👁 {{ send.open_count }}</span>
+            <span title="Clics">🖱 {{ send.click_count }}</span>
+            {% if send.first_opened_at %}<span class="email-send-log__when" title="Première ouverture">↗ {{ send.first_opened_at[:16].replace('T', ' ') }}</span>{% endif %}
+            {% else %}
+            <span class="email-send-log__legacy">sans suivi</span>
+            {% endif %}
+          </div>
+          {% if send.subject %}
+          <p class="email-send-log__subject">{{ send.subject[:80] }}{% if send.subject|length > 80 %}…{% endif %}</p>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
 
   </aside>
 

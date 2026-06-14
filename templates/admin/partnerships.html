@@ -8,7 +8,9 @@
   <p class="social-intro">Influenceurs, blogueurs, guides locaux, agences… Cherchez des partenaires
   potentiels sur internet avec l'IA (email extrait quand il est public), suivez vos contacts par statut,
   puis écrivez-leur depuis la page <a href="{{ url_for('admin.newsletter_admin') }}">Newsletter</a>
-  (email IA « Proposition de partenariat » ou manuel).</p>
+  (email IA « Proposition de partenariat » ou manuel). Les envois récents affichent
+  <strong>ouvertures</strong> (👁) et <strong>clics</strong> (🖱) ; les emails envoyés avant cette
+  fonctionnalité apparaissent comme « sans suivi ».</p>
 
   <!-- Stats -->
   <div class="partners-stats">
@@ -145,7 +147,19 @@
           </div>
 
           <div class="partner-row__actions">
-            {% if p.last_contacted_at %}<span class="partner-row__contacted" title="Dernier contact">📧 {{ p.last_contacted_at }}</span>{% endif %}
+            {% set tr = email_tracking_by_partner.get(p.id) %}
+            {% if tr %}
+            <span class="email-track-badge{% if not tr.tracking_enabled %} email-track-badge--legacy{% endif %}"
+                  title="{{ format_tracking_label(tr) if format_tracking_label is defined else '' }}">
+              {% if tr.tracking_enabled %}
+              👁 {{ tr.open_count }} · 🖱 {{ tr.click_count }}
+              {% else %}
+              📧 {{ tr.sent_at[:10] }} <span class="email-track-badge__hint">sans suivi</span>
+              {% endif %}
+            </span>
+            {% elif p.last_contacted_at %}
+            <span class="partner-row__contacted" title="Dernier contact">📧 {{ p.last_contacted_at }}</span>
+            {% endif %}
             <button type="submit" name="action" value="update" class="btn btn-secondary btn-sm">Enregistrer</button>
             {% if p.email %}
             <a class="btn btn-primary btn-sm"
