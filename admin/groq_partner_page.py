@@ -115,6 +115,7 @@ def generate_and_review_partner_page(account: dict, page: dict, *, progress=None
         temperature=0.35,
         max_tokens=4096,
         json_mode=True,
+        vitrine=True,
     )
     raw = response.choices[0].message.content or ""
     report("Finalisation…")

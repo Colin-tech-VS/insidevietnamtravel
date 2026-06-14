@@ -1,15 +1,10 @@
-"""Dispatcher multi-fournisseur IA — Groq par défaut, Mistral en option, repli Groq.
+"""Dispatcher multi-fournisseur IA — Mistral par défaut, Groq en repli.
 
-Tout le contenu (guides, destinations, newsletter, traduction FR→EN, suggestions de
-sujets) passe désormais par ce module plutôt que d'appeler Groq directement. Le
-fournisseur actif est choisi dans l'admin (réglage `ai_provider`) ou, à défaut, via la
-variable d'environnement AI_PROVIDER. Si l'appel au fournisseur actif échoue (limite
-atteinte, clé absente, erreur), on bascule automatiquement sur Groq en repli quand sa
-clé est configurée — d'où « Mistral en parallèle, Groq en fallback ».
+Admin (guides, newsletters, destinations) : moteur choisi dans le dashboard
+(`ai_provider`), sinon `AI_PROVIDER`, sinon Mistral.
 
-Les appelants n'ont plus à connaître le fournisseur : ils passent `fast=True` pour le
-modèle rapide (traduction, suggestions, enrichissement) ou rien pour le modèle
-principal, et ce module résout le bon nom de modèle selon le fournisseur retenu.
+Vitrine publique (Mai, pages partenaires) : Mistral en priorité, puis Groq si
+Mistral indisponible — même logique de repli que l'admin.
 """
 
 from __future__ import annotations
@@ -27,7 +22,7 @@ from admin.store import get_settings
 
 PROVIDERS = {"groq": groq_client, "mistral": mistral_client}
 PROVIDER_LABELS = {"groq": "Groq", "mistral": "Mistral AI"}
-DEFAULT_PROVIDER = "groq"
+DEFAULT_PROVIDER = "mistral"
 FALLBACK_PROVIDER = "groq"
 
 # Échéance MURALE absolue d'un appel IA (toutes tentatives/repli compris). Les timeouts
@@ -172,8 +167,16 @@ def friendly_error(error: Exception) -> str:
     return _impl(provider()).friendly_error(error)
 
 
-def _provider_order() -> list[str]:
-    """Fournisseur actif d'abord, puis repli Groq s'il est distinct et configuré."""
+def _provider_order(*, vitrine: bool = False) -> list[str]:
+    """Ordre des fournisseurs : vitrine = Mistral d'abord ; admin = réglage actif."""
+    if vitrine:
+        order: list[str] = []
+        if _has_key("mistral"):
+            order.append("mistral")
+        if _has_key("groq"):
+            order.append("groq")
+        return order
+
     active = provider()
     order = [active]
     if FALLBACK_PROVIDER != active and _has_key(FALLBACK_PROVIDER):
@@ -193,27 +196,26 @@ def chat_completion(
     max_retries: int = 5,
     pause_before: float = 0,
     deadline: float | None = DEFAULT_DEADLINE,
+    vitrine: bool = False,
 ):
-    """Route l'appel vers le fournisseur actif, avec repli Groq automatique.
+    """Route l'appel vers le fournisseur actif, avec repli automatique.
 
-    `fast=True` sélectionne le modèle rapide du fournisseur (quota séparé, plus véloce) —
-    utilisé pour la traduction, l'enrichissement et les suggestions. `deadline` borne le
-    temps total de l'appel (voir DEFAULT_DEADLINE) : passé ce délai, on abandonne plutôt
-    que de laisser la génération pendre indéfiniment.
+    `vitrine=True` : Mai, pages partenaires — Mistral en priorité.
+    `fast=True` : modèle rapide (traduction, suggestions).
     """
 
     def _dispatch():
         last_error: Exception | None = None
         attempted = False
 
-        for idx, name in enumerate(_provider_order()):
+        for idx, name in enumerate(_provider_order(vitrine=vitrine)):
             if not _has_key(name):
                 continue
             impl = _impl(name)
             chosen_model = model or (impl.fast_model() if fast else impl.main_model())
             attempted = True
             t0 = time.time()
-            log(f"AI call provider={name} model={chosen_model} fast={fast} max_tokens={max_tokens} deadline={deadline}")
+            log(f"AI call provider={name} model={chosen_model} fast={fast} vitrine={vitrine} max_tokens={max_tokens} deadline={deadline}")
             try:
                 resp = impl.chat_completion(
                     model=chosen_model,

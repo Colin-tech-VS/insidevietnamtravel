@@ -1,4 +1,4 @@
-"""Widget IA public « Mai » — conseillère voyage (Mistral + index dynamique du site)."""
+"""Widget IA public « Mai » — conseillère voyage (Mistral prioritaire + index dynamique)."""
 
 from __future__ import annotations
 
@@ -35,8 +35,8 @@ _STOP = {
 
 
 def is_enabled() -> bool:
-    from admin import mistral_client
-    return mistral_client.has_api_key()
+    from admin import ai_client
+    return ai_client.is_configured()
 
 
 def _strip_html(text: str, max_len: int = 500) -> str:
@@ -1391,10 +1391,10 @@ def chat_reply(
     visitor_profile: dict | None = None,
     seen_photo_urls: list[str] | None = None,
 ) -> dict:
-    from admin import ai_client, mistral_client
+    from admin import ai_client
 
     if not is_enabled():
-        raise ValueError("Chat indisponible — clé MISTRAL_API_KEY manquante.")
+        raise ValueError("Chat indisponible — aucune clé IA configurée (MISTRAL_API_KEY recommandée).")
 
     message = (message or "").strip()
     if len(message) < 2:
@@ -1465,9 +1465,10 @@ def chat_reply(
             json_mode=True,
             fast=False,
             deadline=55,
+            vitrine=True,
         )
     except Exception as exc:
-        raise ValueError(mistral_client.friendly_error(exc)) from exc
+        raise ValueError(ai_client.friendly_error(exc)) from exc
 
     raw = resp.choices[0].message.content
     data = ai_client.parse_json(raw)

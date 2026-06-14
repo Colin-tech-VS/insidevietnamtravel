@@ -252,9 +252,9 @@ def dashboard():
 @admin_bp.route("/settings/ai", methods=["POST"])
 @login_required
 def settings_ai():
-    provider = (request.form.get("ai_provider") or "groq").strip().lower()
+    provider = (request.form.get("ai_provider") or "mistral").strip().lower()
     if provider not in ai_client.PROVIDERS:
-        provider = "groq"
+        provider = "mistral"
     save_settings({"ai_provider": provider})
     flash(f"Moteur IA : {ai_client.provider_label(provider)} sélectionné.", "success")
     return redirect(url_for("admin.dashboard"))
