@@ -861,26 +861,41 @@ def email_stats():
 @admin_bp.route("/contact", methods=["GET", "POST"])
 @login_required
 def contact_admin():
-    from admin.contact_service import (
-        delete_message,
-        get_contact_messages,
-        mark_message_read,
+    from admin.inbox_service import (
+        SOURCE_LABELS,
+        delete_inbox_message,
+        get_unified_inbox,
+        mark_inbox_read,
     )
+    from admin.imap_service import imap_status, verify_imap
     from admin.mail_service import is_contact_smtp_configured
 
     if request.method == "POST":
         action = request.form.get("action")
         msg_id = request.form.get("msg_id", "")
-        if action == "mark_read" and mark_message_read(msg_id):
+        form_id = (request.form.get("form_id") or "").strip()
+        if action == "mark_read" and mark_inbox_read(msg_id, form_id=form_id):
             flash("Message marqué comme lu.", "success")
-        elif action == "delete" and delete_message(msg_id):
+        elif action == "delete" and delete_inbox_message(msg_id):
+            if form_id:
+                from admin.contact_service import delete_message
+
+                delete_message(form_id)
             flash("Message supprimé.", "success")
         return redirect(url_for("admin.contact_admin"))
 
+    inbox = get_unified_inbox(limit=80)
     return render_template(
         "admin/contact.html",
-        messages=get_contact_messages(),
+        messages=inbox["messages"],
+        unread_count=inbox["unread"],
+        by_source=inbox["by_source"],
+        source_labels=SOURCE_LABELS,
         smtp_ok=is_contact_smtp_configured(),
+        imap_ok=inbox["imap_ok"],
+        imap_error=inbox.get("imap_error") or "",
+        imap_status=imap_status(),
+        imap_verify=verify_imap(),
     )
 
 

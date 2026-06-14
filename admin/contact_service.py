@@ -22,7 +22,12 @@ def _save_messages(messages: list[dict]):
 
 
 def count_unread_messages() -> int:
-    return sum(1 for m in get_contact_messages() if not m.get("read"))
+    try:
+        from admin.inbox_service import count_unread_inbox
+
+        return count_unread_inbox()
+    except Exception:  # noqa: BLE001
+        return sum(1 for m in get_contact_messages() if not m.get("read"))
 
 
 def mark_message_read(msg_id: str) -> bool:

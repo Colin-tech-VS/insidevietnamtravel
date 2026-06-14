@@ -3,29 +3,50 @@
 {% block page_title %}Contact{% endblock %}
 
 {% block content %}
-{% set unread_count = messages|selectattr('read', 'equalto', false)|list|length %}
-
 <div class="contact-admin">
   <p class="page-sub">
-    Messages reçus via le formulaire public
-    <a href="{{ url_for('contact') }}" target="_blank" rel="noopener">/contact</a>.
+    Boîte <strong>{{ imap_status.user or 'contact@' }}</strong> —
+    formulaire <a href="{{ url_for('contact') }}" target="_blank" rel="noopener">/contact</a>,
+    réponses à vos envois et emails externes.
   </p>
 
-  <div class="stat-grid stat-grid--3 contact-admin__stats">
+  {% if imap_error %}
+  <p class="flash flash--error contact-admin__alert">
+    Connexion IMAP impossible : {{ imap_error }}. Les messages formulaire restent visibles.
+  </p>
+  {% elif not imap_ok %}
+  <p class="flash flash--warn contact-admin__alert">
+    IMAP non configuré — seuls les messages du formulaire sont affichés.
+    Utilisez les identifiants <code>CONTACT_SMTP_*</code> (même mot de passe que l'envoi).
+  </p>
+  {% endif %}
+
+  <div class="stat-grid stat-grid--4 contact-admin__stats">
     <div class="stat-card">
-      <span class="stat-label">Messages reçus</span>
+      <span class="stat-label">Messages</span>
       <span class="stat-value">{{ messages|length }}</span>
-      <span class="stat-hint">Tous les envois enregistrés</span>
+      <span class="stat-hint">{% if imap_ok %}Boîte + formulaire{% else %}Formulaire uniquement{% endif %}</span>
     </div>
     <div class="stat-card{% if unread_count %} stat-card--live{% endif %}">
       <span class="stat-label">Non lus</span>
       <span class="stat-value">{{ unread_count }}</span>
-      <span class="stat-hint">{% if unread_count %}À traiter en priorité{% else %}Boîte à jour{% endif %}</span>
+      <span class="stat-hint">{% if unread_count %}À traiter{% else %}Boîte à jour{% endif %}</span>
     </div>
     <div class="stat-card">
-      <span class="stat-label">Notification email</span>
+      <span class="stat-label">IMAP</span>
+      <span class="stat-value stat-value--sm">{% if imap_verify.ok %}OK{% else %}Off{% endif %}</span>
+      <span class="stat-hint">
+        {% if imap_verify.ok %}
+        <span class="badge badge--ok">{{ imap_status.folder }}</span>
+        {% else %}
+        <span class="badge badge--warn">Non connecté</span>
+        {% endif %}
+      </span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">SMTP contact</span>
       <span class="stat-value stat-value--sm">{% if smtp_ok %}Actif{% else %}Off{% endif %}</span>
-      <span class="stat-hint">SMTP contact {% if smtp_ok %}<span class="badge badge--ok">OK</span>{% else %}<span class="badge badge--warn">Non configuré</span>{% endif %}</span>
+      <span class="stat-hint">Notifications formulaire</span>
     </div>
   </div>
 
@@ -42,6 +63,15 @@
             <button type="button" class="contact-filter__btn" data-filter="unread" role="tab" aria-selected="false">
               Non lus <span class="contact-filter__count">{{ unread_count }}</span>
             </button>
+            <button type="button" class="contact-filter__btn" data-filter="contact_form" role="tab" aria-selected="false">
+              Contact <span class="contact-filter__count">{{ by_source.contact_form|default(0) }}</span>
+            </button>
+            <button type="button" class="contact-filter__btn" data-filter="reply" role="tab" aria-selected="false">
+              Réponses <span class="contact-filter__count">{{ by_source.reply|default(0) }}</span>
+            </button>
+            <button type="button" class="contact-filter__btn" data-filter="external" role="tab" aria-selected="false">
+              Externes <span class="contact-filter__count">{{ by_source.external|default(0) }}</span>
+            </button>
           </div>
           {% endif %}
         </div>
@@ -49,15 +79,22 @@
         {% if messages %}
         <ul class="contact-inbox" id="contact-inbox">
           {% for m in messages %}
-          <li class="contact-msg{% if not m.read %} contact-msg--unread{% endif %}" data-read="{{ '1' if m.read else '0' }}">
+          <li class="contact-msg{% if not m.read %} contact-msg--unread{% endif %}"
+              data-read="{{ '1' if m.read else '0' }}"
+              data-source="{{ m.source }}">
             <header class="contact-msg__head">
               <div class="contact-msg__who">
                 <p class="contact-msg__name">{{ m.name }}</p>
                 <a class="contact-msg__email" href="mailto:{{ m.email }}">{{ m.email }}</a>
               </div>
               <div class="contact-msg__meta">
+                <span class="contact-source contact-source--{{ m.source }}" title="{{ m.source_label }}">
+                  {{ m.source_label }}
+                </span>
                 <time class="contact-msg__date" datetime="{{ m.created_at }}">{{ m.created_at[:16].replace('T', ' ') }}</time>
+                {% if m.lang %}
                 <span class="contact-msg__lang">{{ m.lang|upper }}</span>
+                {% endif %}
                 {% if m.read %}
                 <span class="contact-msg__status contact-msg__status--read">Lu</span>
                 {% else %}
@@ -77,12 +114,14 @@
               <form method="post" class="contact-msg__form">
                 <input type="hidden" name="action" value="mark_read">
                 <input type="hidden" name="msg_id" value="{{ m.id }}">
+                {% if m.form_id %}<input type="hidden" name="form_id" value="{{ m.form_id }}">{% endif %}
                 <button type="submit" class="btn btn-secondary btn-sm">Marquer lu</button>
               </form>
               {% endif %}
               <form method="post" class="contact-msg__form" onsubmit="return confirm('Supprimer ce message ?');">
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="msg_id" value="{{ m.id }}">
+                {% if m.form_id %}<input type="hidden" name="form_id" value="{{ m.form_id }}">{% endif %}
                 <button type="submit" class="btn btn-ghost btn-sm">Supprimer</button>
               </form>
             </footer>
@@ -90,13 +129,19 @@
           {% endfor %}
         </ul>
         <p class="contact-inbox__empty contact-inbox__empty--filtered muted" id="contact-inbox-empty" hidden>
-          Aucun message non lu.
+          Aucun message pour ce filtre.
         </p>
         {% else %}
         <div class="contact-empty">
           <div class="contact-empty__icon" aria-hidden="true">✉</div>
           <p class="contact-empty__title">Aucun message pour le moment</p>
-          <p class="contact-empty__hint">Les visiteurs peuvent vous écrire depuis la page contact du site.</p>
+          <p class="contact-empty__hint">
+            {% if imap_ok %}
+            La boîte {{ imap_status.user }} est vide pour l'instant.
+            {% else %}
+            Configurez IMAP ou attendez un message via le formulaire public.
+            {% endif %}
+          </p>
           <a href="{{ url_for('contact') }}" class="btn btn-secondary" target="_blank" rel="noopener">Voir le formulaire public</a>
         </div>
         {% endif %}
@@ -104,6 +149,15 @@
     </div>
 
     <aside class="admin-page-aside">
+      <section class="panel">
+        <h2>Origines des messages</h2>
+        <ul class="status-list contact-source-legend">
+          <li><span class="contact-source contact-source--contact_form">Formulaire contact</span> — page /contact du site</li>
+          <li><span class="contact-source contact-source--reply">Réponse email</span> — réponse à un email partenariat ou newsletter envoyé</li>
+          <li><span class="contact-source contact-source--external">Email externe</span> — écrit directement sur la boîte mail</li>
+        </ul>
+      </section>
+
       <section class="panel">
         <h2>Formulaire public</h2>
         <p class="contact-aside__text">Page visible par les visiteurs — bilingue FR/EN.</p>
@@ -113,12 +167,17 @@
       </section>
 
       <section class="panel">
-        <h2>Configuration SMTP</h2>
+        <h2>Configuration mail</h2>
         <ul class="status-list">
           {% if smtp_ok %}
-          <li class="ok">Les nouveaux messages déclenchent un email de notification.</li>
+          <li class="ok">SMTP contact — envoi et notifications OK.</li>
           {% else %}
-          <li class="warn">SMTP contact absent — les messages sont stockés ici uniquement.</li>
+          <li class="warn">SMTP contact absent.</li>
+          {% endif %}
+          {% if imap_verify.ok %}
+          <li class="ok">IMAP {{ imap_status.host }}:{{ imap_status.port }} — dossier {{ imap_status.folder }}.</li>
+          {% else %}
+          <li class="warn">IMAP : {{ imap_verify.error or 'non configuré' }}.</li>
           {% endif %}
           <li class="ok">Répondez via le bouton « Répondre » (client mail).</li>
         </ul>
@@ -127,8 +186,8 @@
       <section class="panel">
         <h2>💡 Bon à savoir</h2>
         <ul class="status-list">
-          <li class="ok">Marquez lu après traitement pour suivre la file.</li>
-          <li class="warn">La suppression est définitive (pas de corbeille).</li>
+          <li class="ok">Marquer lu synchronise la boîte IMAP quand disponible.</li>
+          <li class="warn">La suppression IMAP est définitive sur le serveur mail.</li>
         </ul>
       </section>
     </aside>
@@ -148,11 +207,13 @@
   function apply(filter) {
     var visible = 0;
     items.forEach(function (el) {
-      var show = filter === 'all' || el.dataset.read === '0';
+      var show = filter === 'all'
+        || (filter === 'unread' && el.dataset.read === '0')
+        || el.dataset.source === filter;
       el.hidden = !show;
       if (show) visible++;
     });
-    if (empty) empty.hidden = visible > 0 || filter === 'all';
+    if (empty) empty.hidden = visible > 0;
   }
 
   buttons.forEach(function (btn) {
