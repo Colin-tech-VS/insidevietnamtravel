@@ -1,54 +1,229 @@
 {% extends "partners/layout.html" %}
 {% block partner_content %}
-<section class="partner-page-edit card">
-  <header class="partner-page-edit__head">
-    <div>
-      <p class="partner-dash__eyebrow">{{ profile_label }}</p>
-      <h1>Ma page partenaire</h1>
-      <p class="muted">Contenu soumis à validation IA (SEO, ton éditorial, pertinence Vietnam).</p>
-    </div>
-    <a href="{{ url_for('partners.dashboard') }}" class="btn btn-secondary btn-sm">← Dashboard</a>
+{% set current_city = extra.city or partner.city or '' %}
+{% set status = page.status if page else 'new' %}
+
+<div class="partner-page-wizard-wrap">
+  {% if page and page.status == 'ai_review' %}
+  <p class="flash flash--success partner-page-banner">Validation IA en cours — patientez quelques minutes.</p>
+  {% elif page and page.status == 'published' %}
+  <p class="flash flash--success partner-page-banner">Page publiée — modifiez puis resoumettez pour une nouvelle validation.</p>
+  {% elif page and page.status == 'rejected' %}
+  <p class="flash flash--error partner-page-banner">Page non publiée — corrigez les points signalés puis resoumettez.</p>
+  {% endif %}
+
+  <header class="partner-page-wizard__intro">
+    <p class="partner-dash__eyebrow">{{ profile_label }}</p>
+    <h1>Créer ma page</h1>
+    <p class="muted">3 étapes · validation IA · publication sur insidevietnamtravel.fr</p>
   </header>
 
-  <form method="post" class="partner-page-form">
-    <div class="form-field">
-      <label for="pitch">Accroche publique *</label>
-      <textarea id="pitch" name="pitch" rows="2" required maxlength="500" placeholder="Une phrase qui résume votre proposition de valeur">{{ extra.pitch or '' }}</textarea>
-    </div>
-    <div class="form-field">
-      <label for="highlights">Points forts (expériences, certifications, niche…)</label>
-      <textarea id="highlights" name="highlights" rows="4" maxlength="2000">{{ extra.highlights or '' }}</textarea>
-    </div>
-    <div class="form-field">
-      <label for="offer_details">Votre offre en détail *</label>
-      <textarea id="offer_details" name="offer_details" rows="6" required maxlength="5000" placeholder="Services, tarifs indicatifs, zones couvertes, public cible…">{{ extra.offer_details or '' }}</textarea>
-    </div>
-    <div class="partner-form-grid">
-      <div class="form-field">
-        <label for="city">Ville / région</label>
-        <input type="text" id="city" name="city" value="{{ extra.city or partner.city or '' }}" maxlength="80">
+  <div class="prepare-wizard partner-page-wizard" id="partner-page-wizard"
+       data-pitch-min="30" data-offer-min="40"
+       data-ai-ready="{{ '1' if ai_ready else '0' }}"
+       data-ai-review="{{ '1' if page and page.status == 'ai_review' else '0' }}">
+
+    <div class="partner-page-readiness" aria-live="polite">
+      <div class="partner-page-readiness__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <span class="partner-page-readiness__fill" id="page-readiness-fill"></span>
       </div>
-      <div class="form-field">
-        <label for="contact_note">Comment vous contacter</label>
-        <input type="text" id="contact_note" name="contact_note" value="{{ extra.contact_note or '' }}" maxlength="200" placeholder="Email, WhatsApp, formulaire…">
+      <p class="partner-page-readiness__label">Page prête à <strong id="page-readiness-pct">0</strong>%</p>
+    </div>
+
+    <div class="prepare-progress prepare-progress--3 partner-page-progress" aria-label="Étapes">
+      <div class="prepare-progress__step is-active is-clickable" data-step="1" tabindex="0">
+        <span class="prepare-progress__num">1</span>
+        <span class="prepare-progress__label">Accroche</span>
+      </div>
+      <div class="prepare-progress__step is-clickable" data-step="2" tabindex="0">
+        <span class="prepare-progress__num">2</span>
+        <span class="prepare-progress__label">Atouts</span>
+      </div>
+      <div class="prepare-progress__step is-clickable" data-step="3" tabindex="0">
+        <span class="prepare-progress__num">3</span>
+        <span class="prepare-progress__label">Offre</span>
       </div>
     </div>
 
-    <div class="partner-page-form__actions">
-      <button type="submit" name="action" value="save" class="btn btn-secondary">Enregistrer brouillon</button>
-      {% if ai_ready %}
-      <button type="submit" name="action" value="submit_ai" class="btn btn-primary"
-              {% if page and page.status == 'ai_review' %}disabled{% endif %}>
-        Soumettre à l'IA
-      </button>
-      {% else %}
-      <p class="muted">Génération IA indisponible — enregistrez votre brouillon.</p>
-      {% endif %}
-    </div>
-  </form>
+    <p class="partner-wizard__error" id="page-wizard-error" hidden role="alert"></p>
 
-  {% if page and page.status == 'published' %}
-  <p class="partner-page-edit__note">Page publiée — modifiez puis resoumettez pour une nouvelle validation.</p>
-  {% endif %}
-</section>
+    <form method="post" class="partner-page-form" id="partner-page-form">
+      <div class="prepare-step partner-page-step is-active" data-step="1">
+        <header class="prepare-step__head">
+          <h2>Votre accroche</h2>
+          <p class="prepare-step__hint">Une phrase qui résume votre valeur — c’est la première chose que verront les voyageurs.</p>
+        </header>
+
+        <aside class="partner-page-tip">
+          <strong>Conseil</strong>
+          <p>Ex. : « Guide francophone à Hanoï — visites street food et quartiers authentiques en petit groupe. »</p>
+        </aside>
+
+        <div class="form-field">
+          <label for="pitch">Accroche publique *</label>
+          <textarea id="pitch" name="pitch" rows="3" required maxlength="500"
+                    placeholder="Guide local à Hội An — circuits photo, cuisine et artisanat en français.">{{ extra.pitch or '' }}</textarea>
+          <div class="partner-field-meta">
+            <span class="partner-field-meta__bar"><span class="partner-field-meta__fill" id="pitch-bar"></span></span>
+            <span class="form-field__hint partner-char-count" id="pitch-count-wrap">
+              <span id="pitch-count">0</span> / 500 · min. 30
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="prepare-step partner-page-step" data-step="2" hidden>
+        <header class="prepare-step__head">
+          <h2>Vos atouts</h2>
+          <p class="prepare-step__hint">Sélectionnez ce qui vous correspond — optionnel mais recommandé.</p>
+        </header>
+
+        <aside class="partner-page-tip">
+          <strong>Conseil</strong>
+          <p>3 à 5 atouts suffisent. L’IA les transformera en points forts lisibles sur votre fiche.</p>
+        </aside>
+
+        <div class="partner-chip-grid" id="highlight-chips">
+          {% for chip in [
+            'Visites privées', 'Petits groupes', 'Guide francophone', 'Guide anglophone',
+            'Food tour & gastronomie', 'Trek & nature', 'Familles & enfants',
+            'Expérience authentique', 'Certifié / licencié', 'Luxe & premium'
+          ] %}
+          <button type="button" class="partner-chip" data-chip="{{ chip }}">{{ chip }}</button>
+          {% endfor %}
+        </div>
+        <input type="hidden" name="highlights" id="highlights" value="{{ extra.highlights or '' }}">
+
+        <div class="form-field partner-page-step__optional">
+          <label for="highlights-extra">Autre atout (optionnel)</label>
+          <input type="text" id="highlights-extra" maxlength="200" placeholder="Ex. : Photographe professionnel, accès VIP…">
+          <span class="form-field__hint"><span id="highlights-count">0</span> atout(s) sélectionné(s)</span>
+        </div>
+      </div>
+
+      <div class="prepare-step partner-page-step" data-step="3" hidden>
+        <header class="prepare-step__head">
+          <h2>Votre offre</h2>
+          <p class="prepare-step__hint">Décrivez services, zones, public et tarifs indicatifs.</p>
+        </header>
+
+        <aside class="partner-page-tip">
+          <strong>Conseil</strong>
+          <p>Structurez : services · durée · zones · public cible · fourchette de prix · langues.</p>
+        </aside>
+
+        <div class="form-field">
+          <label for="offer_details">Offre en détail *</label>
+          <textarea id="offer_details" name="offer_details" rows="5" required maxlength="5000"
+                    placeholder="Visites ½ journée et journée complète à Hội An et environs. Tarifs à partir de 45 €/pers. Groupes de 2 à 8 personnes. Français & anglais.">{{ extra.offer_details or '' }}</textarea>
+          <div class="partner-field-meta">
+            <span class="partner-field-meta__bar"><span class="partner-field-meta__fill" id="offer-bar"></span></span>
+            <span class="form-field__hint partner-char-count" id="offer-count-wrap">
+              <span id="offer-count">0</span> / 5000 · min. 40
+            </span>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label>Ville / région *</label>
+          <div class="partner-chip-grid partner-chip-grid--select" id="city-chips">
+            {% for city in [
+              'Hanoï', 'Ho Chi Minh-Ville', 'Đà Nẵng', 'Hội An', 'Huế', 'Nha Trang',
+              'Phú Quốc', 'Sapa', 'Ha Long', 'Ninh Bình', 'Dalat', 'Phong Nha', 'Autre'
+            ] %}
+            <button type="button" class="partner-chip partner-chip--radio" data-city="{{ city }}"
+                    {% if current_city == city or (city == 'Autre' and current_city and current_city not in [
+                      'Hanoï', 'Ho Chi Minh-Ville', 'Đà Nẵng', 'Hội An', 'Huế', 'Nha Trang',
+                      'Phú Quốc', 'Sapa', 'Ha Long', 'Ninh Bình', 'Dalat', 'Phong Nha'
+                    ]) %}aria-pressed="true"{% endif %}>{{ city }}</button>
+            {% endfor %}
+          </div>
+          <input type="hidden" name="city" id="city" value="{{ current_city }}">
+          <div class="form-field partner-city-other" id="city-other-wrap" hidden>
+            <label for="city-other">Précisez la ville</label>
+            <input type="text" id="city-other" maxlength="80" placeholder="Mũi Né, Cần Thơ…"
+                   value="{{ current_city if current_city and current_city not in [
+                     'Hanoï', 'Ho Chi Minh-Ville', 'Đà Nẵng', 'Hội An', 'Huế', 'Nha Trang',
+                     'Phú Quốc', 'Sapa', 'Ha Long', 'Ninh Bình', 'Dalat', 'Phong Nha', 'Autre'
+                   ] else '' }}">
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label>Contact préféré *</label>
+          <div class="prepare-options prepare-options--duo partner-contact-options">
+            <label class="prepare-option partner-contact-option">
+              <input type="radio" name="contact_type" value="email" checked>
+              <span class="prepare-option__icon" aria-hidden="true">✉️</span>
+              <span class="prepare-option__body">
+                <span class="prepare-option__label">Email</span>
+                <span class="prepare-option__desc">{{ partner.email }}</span>
+              </span>
+              <span class="prepare-option__check" aria-hidden="true">✓</span>
+            </label>
+            <label class="prepare-option partner-contact-option">
+              <input type="radio" name="contact_type" value="whatsapp">
+              <span class="prepare-option__icon" aria-hidden="true">💬</span>
+              <span class="prepare-option__body">
+                <span class="prepare-option__label">WhatsApp</span>
+                <span class="prepare-option__desc">Numéro mobile</span>
+              </span>
+              <span class="prepare-option__check" aria-hidden="true">✓</span>
+            </label>
+            <label class="prepare-option partner-contact-option">
+              <input type="radio" name="contact_type" value="website">
+              <span class="prepare-option__icon" aria-hidden="true">🌐</span>
+              <span class="prepare-option__body">
+                <span class="prepare-option__label">Site web</span>
+                <span class="prepare-option__desc">{{ partner.website or 'Votre URL' }}</span>
+              </span>
+              <span class="prepare-option__check" aria-hidden="true">✓</span>
+            </label>
+            <label class="prepare-option partner-contact-option">
+              <input type="radio" name="contact_type" value="phone">
+              <span class="prepare-option__icon" aria-hidden="true">📞</span>
+              <span class="prepare-option__body">
+                <span class="prepare-option__label">Téléphone</span>
+                <span class="prepare-option__desc">Appel direct</span>
+              </span>
+              <span class="prepare-option__check" aria-hidden="true">✓</span>
+            </label>
+          </div>
+          <input type="hidden" name="contact_note" id="contact_note" value="{{ extra.contact_note or partner.email }}">
+          <div class="form-field partner-contact-detail" id="contact-detail-wrap" hidden>
+            <label for="contact-detail" id="contact-detail-label">WhatsApp</label>
+            <input type="text" id="contact-detail" maxlength="200" placeholder="+84 …">
+          </div>
+        </div>
+      </div>
+
+      <div class="prepare-wizard__nav partner-page-wizard__nav">
+        <button type="button" class="btn btn-ghost" id="page-prev" hidden>← Retour</button>
+        <div class="partner-wizard__nav-right">
+          <span class="partner-wizard__step-label muted">Étape <strong id="page-step-current">1</strong>/3</span>
+          <button type="button" class="btn btn-primary" id="page-next">Continuer →</button>
+          <button type="submit" name="action" value="save" class="btn btn-secondary" id="page-save" hidden>Enregistrer brouillon</button>
+          {% if ai_ready %}
+          <button type="submit" name="action" value="submit_ai" class="btn btn-primary btn-lg" id="page-submit"
+                  {% if page and page.status == 'ai_review' %}disabled{% endif %} hidden>
+            Soumettre à l'IA ✨
+          </button>
+          {% endif %}
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block partner_scripts %}
+<script>
+window.PARTNER_PAGE_DATA = {
+  email: {{ partner.email | tojson }},
+  website: {{ (partner.website or '') | tojson }},
+  savedHighlights: {{ (extra.highlights or '') | tojson }},
+  savedContact: {{ (extra.contact_note or '') | tojson }}
+};
+</script>
+<script src="{{ url_for('static', filename='js/partner_page_edit.js') }}" defer></script>
 {% endblock %}
