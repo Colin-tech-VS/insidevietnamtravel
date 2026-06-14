@@ -136,12 +136,15 @@ def build_site_analytics(days: int = 30) -> dict:
 
     realtime = db.get_realtime_stats()
     daily_views = db.get_daily_views(days)
+    daily_unique = db.get_daily_unique_visitors(days)
+    unique_visitors = db.get_unique_visitors_period(days)
     aff = db.get_affiliate_stats(days)
     geo_rows = db.get_geo_view_rows(days)
     geo = aggregate_geo_views(geo_rows)
     seo = aggregate_seo_views(db.get_seo_view_rows(days))
     countries = db.get_country_stats(days)
     cities = db.get_city_stats(days)
+    mai = db.get_mai_chat_stats(days, site_unique_visitors=unique_visitors)
 
     return {
         "days": days,
@@ -149,8 +152,10 @@ def build_site_analytics(days: int = 30) -> dict:
         "views_30m": realtime["views_30m"],
         "clicks_30m": realtime["clicks_30m"],
         "views_period": sum(d["views"] for d in daily_views),
+        "unique_visitors_period": unique_visitors,
         "clicks_period": aff["total_clicks"],
         "daily_views": daily_views,
+        "daily_unique_visitors": daily_unique,
         "daily_clicks": db.get_daily_affiliate_clicks(days),
         "top_pages": realtime["top_pages"],
         "recent": realtime["recent"],
@@ -158,4 +163,5 @@ def build_site_analytics(days: int = 30) -> dict:
         "cities": cities,
         "seo": seo,
         "geo": geo,
+        "mai": mai,
     }

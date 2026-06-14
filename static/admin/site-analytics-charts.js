@@ -3,17 +3,62 @@
 
   const viewsCtx = document.getElementById('viewsChart');
   if (viewsCtx && siteAnalyticsData.dailyViews.length) {
+    const uniqueMap = {};
+    (siteAnalyticsData.dailyUniqueVisitors || []).forEach((d) => {
+      uniqueMap[String(d.day).slice(0, 10)] = d.visitors;
+    });
     new Chart(viewsCtx, {
       type: 'line',
       data: {
         labels: siteAnalyticsData.dailyViews.map((d) => d.day.slice(5)),
+        datasets: [
+          {
+            label: 'Pages vues',
+            data: siteAnalyticsData.dailyViews.map((d) => d.views),
+            borderColor: '#1B4D4A',
+            backgroundColor: 'rgba(27, 77, 74, 0.08)',
+            fill: true,
+            tension: 0.35,
+            yAxisID: 'y',
+          },
+          {
+            label: 'Visiteurs uniques',
+            data: siteAnalyticsData.dailyViews.map((d) => uniqueMap[String(d.day).slice(0, 10)] || 0),
+            borderColor: '#C4654A',
+            backgroundColor: 'transparent',
+            borderDash: [4, 3],
+            tension: 0.35,
+            yAxisID: 'y',
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: true, position: 'bottom' } },
+        scales: {
+          x: { grid: { color: '#F0EBE3' }, ticks: { color: '#7A7772', maxTicksLimit: 12 } },
+          y: {
+            beginAtZero: true,
+            grid: { color: '#F0EBE3' },
+            ticks: { color: '#7A7772' },
+          },
+        },
+      },
+    });
+  }
+
+  const maiCtx = document.getElementById('maiMessagesChart');
+  if (maiCtx && siteAnalyticsData.mai && siteAnalyticsData.mai.daily_messages.length) {
+    new Chart(maiCtx, {
+      type: 'bar',
+      data: {
+        labels: siteAnalyticsData.mai.daily_messages.map((d) => String(d.day).slice(5)),
         datasets: [{
-          label: 'Pages vues',
-          data: siteAnalyticsData.dailyViews.map((d) => d.views),
-          borderColor: '#1B4D4A',
-          backgroundColor: 'rgba(27, 77, 74, 0.08)',
-          fill: true,
-          tension: 0.35,
+          label: 'Messages Mai',
+          data: siteAnalyticsData.mai.daily_messages.map((d) => d.n),
+          backgroundColor: 'rgba(27, 77, 74, 0.55)',
+          borderRadius: 4,
         }],
       },
       options: {
@@ -21,8 +66,8 @@
         maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          x: { grid: { color: '#F0EBE3' }, ticks: { color: '#7A7772', maxTicksLimit: 12 } },
-          y: { beginAtZero: true, grid: { color: '#F0EBE3' }, ticks: { color: '#7A7772' } },
+          x: { grid: { display: false }, ticks: { color: '#7A7772', maxTicksLimit: 14 } },
+          y: { beginAtZero: true, grid: { color: '#F0EBE3' }, ticks: { color: '#7A7772', precision: 0 } },
         },
       },
     });
@@ -310,8 +355,10 @@
       .then((d) => {
         const active = document.getElementById('rt-active');
         const views = document.getElementById('rt-views');
+        const unique30 = document.getElementById('rt-unique-30m');
         const clicks = document.getElementById('rt-clicks');
         if (active) active.textContent = d.active_visitors;
+        if (unique30) unique30.textContent = d.active_visitors;
         if (views) views.textContent = d.views_30m;
         if (clicks) clicks.textContent = d.clicks_30m;
         const feed = document.getElementById('live-feed');

@@ -6,6 +6,7 @@ from datetime import date, datetime
 from typing import Any
 
 from locales.ui import t as ui_t
+from i18n_utils import lang_url
 
 # Saison affichée : janvier 2026 → décembre 2027
 CALENDAR_START = date(2026, 1, 1)
@@ -647,6 +648,25 @@ EVENTS: list[dict] = [
 
 def _pick_list(block: dict, lang: str) -> list[str]:
     return list(block.get(lang, block.get("fr", [])))
+
+
+def _image_hd(path: str) -> str:
+    """Variante haute résolution pour le modal (évite le flou des vignettes)."""
+    if path.endswith("-640.webp"):
+        return path.replace("-640.webp", "-960.webp")
+    if path.endswith(".webp") and not path.endswith("-960.webp"):
+        return path.replace(".webp", "-960.webp")
+    return path
+
+
+def _status_label(status: str, lang: str) -> str:
+    key = {
+        "upcoming": "events.status_upcoming",
+        "ongoing": "events.status_ongoing",
+        "past": "events.status_past",
+        "recurring": "events.status_recurring",
+    }.get(status, "")
+    return ui_t(key, lang) if key else ""
 
 
 # Images + contenu enrichi par événement (clé = EVENTS[].key)
@@ -1524,6 +1544,7 @@ def build_events_calendar(
                 "event_key": ev["key"],
                 "icon": ev.get("icon", "✦"),
                 "image": image,
+                "image_hd": _image_hd(image),
                 "image_alt": _pick(enrich.get("image_alt", {}), lang) or _pick(ev["title"], lang),
                 "category": ev["category"],
                 "category_label": ui_t(f"events.cat.{ev['category']}", lang),
@@ -1545,12 +1566,20 @@ def build_events_calendar(
                 "regions": ev.get("regions") or [],
                 "region_labels": [ui_t(f"events.region.{r}", lang) for r in ev.get("regions") or []],
                 "destinations": [
-                    {"slug": s, "name": _dest_label(s, lang, destinations)}
+                    {
+                        "slug": s,
+                        "name": _dest_label(s, lang, destinations),
+                        "url": lang_url("destination_page", lang, slug=s),
+                    }
                     for s in dest_slugs
                 ],
                 "must_see": bool(ev.get("must_see")),
                 "recurring": is_recurring,
                 "status": "recurring" if is_recurring else _status(start, end, today),
+                "status_label": _status_label(
+                    "recurring" if is_recurring else _status(start, end, today), lang
+                ),
+                "must_see_label": ui_t("events.must_see", lang),
             })
 
     flat.sort(key=lambda x: (x["start"], x["title"]))

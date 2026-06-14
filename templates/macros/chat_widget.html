@@ -2,6 +2,7 @@
 {% if chat_enabled %}
 <div class="mai-chat" id="mai-chat"
      data-api-url="{{ url_for('api_chat') }}"
+     data-event-url="{{ url_for('api_chat_event') }}"
      data-lang="{{ lang }}"
      data-name="{{ t('chat.name') }}"
      data-greeting="{{ t('chat.greeting') }}"

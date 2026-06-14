@@ -522,3 +522,212 @@ def get_visitor_profile_stats(days: int = 30) -> dict:
     except Exception:
         pass
     return out
+
+
+def _user_key_sql() -> str:
+    """Identifiant visiteur : cookie profil prioritaire, sinon empreinte IP."""
+    return "COALESCE(NULLIF(visitor_hash, ''), NULLIF(ip_hash, ''))"
+
+
+def log_mai_chat_event(
+    event_type: str,
+    *,
+    ip_hash: str = "",
+    visitor_hash: str = "",
+    lang: str = "fr",
+    path: str = "",
+    had_profile: bool = False,
+    message_length: int = 0,
+    site_links_count: int = 0,
+    affiliate_links_count: int = 0,
+    error_code: str = "",
+):
+    event_type = (event_type or "").strip()[:20]
+    if event_type not in ("open", "message", "error"):
+        return
+    with get_connection() as conn:
+        _execute(
+            conn,
+            """INSERT INTO mai_chat_events
+               (event_type, ip_hash, visitor_hash, lang, path, had_profile,
+                message_length, site_links_count, affiliate_links_count, error_code, created_at)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+            """INSERT INTO mai_chat_events
+               (event_type, ip_hash, visitor_hash, lang, path, had_profile,
+                message_length, site_links_count, affiliate_links_count, error_code, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+            (
+                event_type,
+                (ip_hash or "")[:32],
+                (visitor_hash or "")[:32],
+                (lang or "fr")[:5],
+                (path or "")[:300],
+                bool(had_profile),
+                max(0, int(message_length or 0)),
+                max(0, int(site_links_count or 0)),
+                max(0, int(affiliate_links_count or 0)),
+                (error_code or "")[:40],
+                _now_iso(),
+            ),
+        )
+
+
+def get_unique_visitors_period(days: int = 30) -> int:
+    bot = _human_traffic_sql()
+    since = _since_days(days)
+    with get_connection() as conn:
+        row = _execute(
+            conn,
+            f"""SELECT COUNT(DISTINCT ip_hash) AS c FROM page_views
+                WHERE created_at >= %s AND COALESCE(ip_hash, '') <> ''{bot}""",
+            f"""SELECT COUNT(DISTINCT ip_hash) AS c FROM page_views
+                WHERE created_at >= ? AND COALESCE(ip_hash, '') <> ''{bot}""",
+            (since,),
+        ).fetchone()
+    return row["c"] if isinstance(row, dict) else row[0]
+
+
+def get_daily_unique_visitors(days: int = 30) -> list[dict]:
+    bot = _human_traffic_sql()
+    since = _since_days(days)
+    with get_connection() as conn:
+        rows = _execute(
+            conn,
+            f"""SELECT created_at::date AS day, COUNT(DISTINCT ip_hash) AS visitors
+                FROM page_views
+                WHERE created_at >= %s AND COALESCE(ip_hash, '') <> ''{bot}
+                GROUP BY day ORDER BY day""",
+            f"""SELECT date(created_at) AS day, COUNT(DISTINCT ip_hash) AS visitors
+                FROM page_views
+                WHERE created_at >= ? AND COALESCE(ip_hash, '') <> ''{bot}
+                GROUP BY day ORDER BY day""",
+            (since,),
+        ).fetchall()
+    return [_row_dict(r) for r in rows]
+
+
+def get_mai_chat_stats(days: int = 30, site_unique_visitors: int = 0) -> dict:
+    since = _since_days(days)
+    user_key = _user_key_sql()
+    out = {
+        "total_opens": 0,
+        "total_messages": 0,
+        "total_errors": 0,
+        "unique_users": 0,
+        "unique_messagers": 0,
+        "unique_openers": 0,
+        "messages_with_profile": 0,
+        "messages_without_profile": 0,
+        "active_30m": 0,
+        "usage_rate_pct": 0.0,
+        "daily_messages": [],
+        "by_lang": [],
+        "recent_errors": [],
+    }
+    try:
+        with get_connection() as conn:
+            for et, key in (("open", "total_opens"), ("message", "total_messages"), ("error", "total_errors")):
+                row = _execute(
+                    conn,
+                    "SELECT COUNT(*) AS c FROM mai_chat_events WHERE event_type = %s AND created_at >= %s",
+                    "SELECT COUNT(*) AS c FROM mai_chat_events WHERE event_type = ? AND created_at >= ?",
+                    (et, since),
+                ).fetchone()
+                out[key] = row["c"] if isinstance(row, dict) else row[0]
+
+            row = _execute(
+                conn,
+                f"""SELECT COUNT(DISTINCT {user_key}) AS c FROM mai_chat_events
+                    WHERE created_at >= %s AND {user_key} IS NOT NULL""",
+                f"""SELECT COUNT(DISTINCT {user_key}) AS c FROM mai_chat_events
+                    WHERE created_at >= ? AND {user_key} IS NOT NULL""",
+                (since,),
+            ).fetchone()
+            out["unique_users"] = row["c"] if isinstance(row, dict) else row[0]
+
+            row = _execute(
+                conn,
+                f"""SELECT COUNT(DISTINCT {user_key}) AS c FROM mai_chat_events
+                    WHERE event_type = 'message' AND created_at >= %s AND {user_key} IS NOT NULL""",
+                f"""SELECT COUNT(DISTINCT {user_key}) AS c FROM mai_chat_events
+                    WHERE event_type = 'message' AND created_at >= ? AND {user_key} IS NOT NULL""",
+                (since,),
+            ).fetchone()
+            out["unique_messagers"] = row["c"] if isinstance(row, dict) else row[0]
+
+            row = _execute(
+                conn,
+                f"""SELECT COUNT(DISTINCT {user_key}) AS c FROM mai_chat_events
+                    WHERE event_type = 'open' AND created_at >= %s AND {user_key} IS NOT NULL""",
+                f"""SELECT COUNT(DISTINCT {user_key}) AS c FROM mai_chat_events
+                    WHERE event_type = 'open' AND created_at >= ? AND {user_key} IS NOT NULL""",
+                (since,),
+            ).fetchone()
+            out["unique_openers"] = row["c"] if isinstance(row, dict) else row[0]
+
+            row = _execute(
+                conn,
+                """SELECT COUNT(*) AS c FROM mai_chat_events
+                   WHERE event_type = 'message' AND had_profile = %s AND created_at >= %s""",
+                """SELECT COUNT(*) AS c FROM mai_chat_events
+                   WHERE event_type = 'message' AND had_profile = ? AND created_at >= ?""",
+                (True if is_postgres() else 1, since),
+            ).fetchone()
+            out["messages_with_profile"] = row["c"] if isinstance(row, dict) else row[0]
+            out["messages_without_profile"] = max(
+                0, out["total_messages"] - out["messages_with_profile"]
+            )
+
+            row = _execute(
+                conn,
+                f"""SELECT COUNT(DISTINCT {user_key}) AS c FROM mai_chat_events
+                    WHERE created_at >= %s AND {user_key} IS NOT NULL""",
+                f"""SELECT COUNT(DISTINCT {user_key}) AS c FROM mai_chat_events
+                    WHERE created_at >= ? AND {user_key} IS NOT NULL""",
+                (_since(30),),
+            ).fetchone()
+            out["active_30m"] = row["c"] if isinstance(row, dict) else row[0]
+
+            rows = _execute(
+                conn,
+                """SELECT created_at::date AS day, COUNT(*) AS n FROM mai_chat_events
+                   WHERE event_type = 'message' AND created_at >= %s
+                   GROUP BY day ORDER BY day""",
+                """SELECT date(created_at) AS day, COUNT(*) AS n FROM mai_chat_events
+                   WHERE event_type = 'message' AND created_at >= ?
+                   GROUP BY day ORDER BY day""",
+                (since,),
+            ).fetchall()
+            out["daily_messages"] = [_row_dict(r) for r in rows]
+
+            rows = _execute(
+                conn,
+                """SELECT COALESCE(lang, 'fr') AS lang, COUNT(*) AS n FROM mai_chat_events
+                   WHERE event_type = 'message' AND created_at >= %s
+                   GROUP BY lang ORDER BY n DESC""",
+                """SELECT COALESCE(lang, 'fr') AS lang, COUNT(*) AS n FROM mai_chat_events
+                   WHERE event_type = 'message' AND created_at >= ?
+                   GROUP BY lang ORDER BY n DESC""",
+                (since,),
+            ).fetchall()
+            out["by_lang"] = [_row_dict(r) for r in rows]
+
+            rows = _execute(
+                conn,
+                """SELECT error_code, COUNT(*) AS n FROM mai_chat_events
+                   WHERE event_type = 'error' AND created_at >= %s
+                   GROUP BY error_code ORDER BY n DESC LIMIT 5""",
+                """SELECT error_code, COUNT(*) AS n FROM mai_chat_events
+                   WHERE event_type = 'error' AND created_at >= ?
+                   GROUP BY error_code ORDER BY n DESC LIMIT 5""",
+                (since,),
+            ).fetchall()
+            out["recent_errors"] = [_row_dict(r) for r in rows]
+    except Exception:
+        pass
+
+    if site_unique_visitors > 0 and out["unique_users"] > 0:
+        out["usage_rate_pct"] = round(
+            min(100.0, out["unique_users"] / site_unique_visitors * 100), 1
+        )
+    return out

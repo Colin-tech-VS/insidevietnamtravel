@@ -15,6 +15,7 @@
   var form = document.getElementById('mai-chat-form');
   var input = document.getElementById('mai-chat-input');
   var apiUrl = root.dataset.apiUrl;
+  var eventUrl = root.dataset.eventUrl;
   var lang = root.dataset.lang || 'fr';
   var history = [];
   var seenPhotos = []; // URLs déjà affichées — renvoyées au serveur pour ne jamais répéter une image
@@ -533,6 +534,27 @@
       .catch(function () {});
   }
 
+  function trackMaiOpenOnce() {
+    if (!eventUrl) return;
+    try {
+      if (sessionStorage.getItem('ivt_mai_open_tracked')) return;
+      sessionStorage.setItem('ivt_mai_open_tracked', '1');
+    } catch (e) { /* ignore */ }
+    var body = { type: 'open', lang: lang, path: location.pathname || '/' };
+    try {
+      if (window.IVTVisitorProfile && typeof window.IVTVisitorProfile.read === 'function') {
+        var prof = window.IVTVisitorProfile.read();
+        if (prof && prof.id) body.visitor_id = prof.id;
+      }
+    } catch (e) { /* ignore */ }
+    fetch(eventUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify(body),
+    }).catch(function () {});
+  }
+
   function openPanel() {
     panel.hidden = false;
     if (backdrop) {
@@ -543,6 +565,7 @@
     fab.setAttribute('aria-label', closeLabel);
     if (fabLabel) fabLabel.textContent = closeLabel;
     document.body.classList.add('mai-chat-open');
+    trackMaiOpenOnce();
     if (!opened) {
       opened = true;
       loadDynamicSuggestions();

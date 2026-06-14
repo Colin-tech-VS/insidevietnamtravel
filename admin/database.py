@@ -72,6 +72,23 @@ CREATE TABLE IF NOT EXISTS visitor_profile_snapshots (
 );
 CREATE INDEX IF NOT EXISTS idx_vps_created ON visitor_profile_snapshots(created_at);
 CREATE INDEX IF NOT EXISTS idx_vps_hash ON visitor_profile_snapshots(visitor_hash);
+CREATE TABLE IF NOT EXISTS mai_chat_events (
+    id SERIAL PRIMARY KEY,
+    event_type TEXT NOT NULL,
+    ip_hash TEXT,
+    visitor_hash TEXT,
+    lang TEXT,
+    path TEXT,
+    had_profile BOOLEAN NOT NULL DEFAULT FALSE,
+    message_length INTEGER DEFAULT 0,
+    site_links_count INTEGER DEFAULT 0,
+    affiliate_links_count INTEGER DEFAULT 0,
+    error_code TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_mai_created ON mai_chat_events(created_at);
+CREATE INDEX IF NOT EXISTS idx_mai_event ON mai_chat_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_mai_visitor ON mai_chat_events(visitor_hash);
 """
 
 
@@ -230,6 +247,57 @@ def _migrate_visitor_profile_table(conn, *, postgres: bool) -> None:
         )
 
 
+def _migrate_mai_chat_table(conn, *, postgres: bool) -> None:
+    if postgres:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS mai_chat_events (
+                    id SERIAL PRIMARY KEY,
+                    event_type TEXT NOT NULL,
+                    ip_hash TEXT,
+                    visitor_hash TEXT,
+                    lang TEXT,
+                    path TEXT,
+                    had_profile BOOLEAN NOT NULL DEFAULT FALSE,
+                    message_length INTEGER DEFAULT 0,
+                    site_links_count INTEGER DEFAULT 0,
+                    affiliate_links_count INTEGER DEFAULT 0,
+                    error_code TEXT,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )""")
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_mai_created ON mai_chat_events(created_at)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_mai_event ON mai_chat_events(event_type)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_mai_visitor ON mai_chat_events(visitor_hash)"
+            )
+    else:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS mai_chat_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                event_type TEXT NOT NULL,
+                ip_hash TEXT,
+                visitor_hash TEXT,
+                lang TEXT,
+                path TEXT,
+                had_profile INTEGER NOT NULL DEFAULT 0,
+                message_length INTEGER DEFAULT 0,
+                site_links_count INTEGER DEFAULT 0,
+                affiliate_links_count INTEGER DEFAULT 0,
+                error_code TEXT,
+                created_at TEXT NOT NULL
+            )""")
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_mai_created ON mai_chat_events(created_at)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_mai_event ON mai_chat_events(event_type)"
+        )
+
+
 def _init_postgres():
     import psycopg2
 
@@ -243,6 +311,7 @@ def _init_postgres():
         _migrate_page_views_columns(conn, postgres=True)
         _migrate_affiliate_clicks_columns(conn, postgres=True)
         _migrate_visitor_profile_table(conn, postgres=True)
+        _migrate_mai_chat_table(conn, postgres=True)
         conn.commit()
     finally:
         conn.close()
@@ -285,6 +354,7 @@ def _init_sqlite():
         _migrate_page_views_columns(conn, postgres=False)
         _migrate_affiliate_clicks_columns(conn, postgres=False)
         _migrate_visitor_profile_table(conn, postgres=False)
+        _migrate_mai_chat_table(conn, postgres=False)
 
 
 @contextmanager

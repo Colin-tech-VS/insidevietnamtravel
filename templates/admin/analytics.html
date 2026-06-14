@@ -3,7 +3,7 @@
 {% block page_title %}Analytics{% endblock %}
 
 {% block content %}
-<p class="page-sub">Trafic humain réel uniquement — robots, scanners, localhost et votre IP exclus.</p>
+<p class="page-sub">Trafic humain réel uniquement — robots, scanners, localhost et votre IP exclus. <strong>Pages vues</strong> = chargements ; <strong>visiteurs uniques</strong> = IP distinctes sur la période.</p>
 
 <div class="admin-page-layout">
   <div class="admin-page-main">
@@ -18,7 +18,7 @@
       </div>
       <div class="analytics-toolbar__live">
         <span class="live-dot" aria-hidden="true"></span>
-        <span><strong id="rt-active">{{ stats.active_visitors }}</strong> visiteurs actifs · 30 min</span>
+        <span><strong id="rt-active">{{ stats.active_visitors }}</strong> visiteurs uniques actifs · 30 min</span>
       </div>
     </div>
 
@@ -37,22 +37,32 @@
       <div class="kpi-card kpi-card--live">
         <span class="kpi-card__label">Pages vues</span>
         <span class="kpi-card__value" id="rt-views-period">{{ stats.views_period }}</span>
-        <span class="kpi-card__hint">{{ days }} derniers jours</span>
+        <span class="kpi-card__hint">Total chargements · {{ days }} jours</span>
+      </div>
+      <div class="kpi-card kpi-card--gold">
+        <span class="kpi-card__label">Visiteurs uniques</span>
+        <span class="kpi-card__value">{{ stats.unique_visitors_period }}</span>
+        <span class="kpi-card__hint">IP distinctes · {{ days }} jours</span>
       </div>
       <div class="kpi-card">
-        <span class="kpi-card__label">Pages vues</span>
+        <span class="kpi-card__label">Pages vues · 30 min</span>
         <span class="kpi-card__value" id="rt-views">{{ stats.views_30m }}</span>
-        <span class="kpi-card__hint">30 dernières minutes</span>
+        <span class="kpi-card__hint">Fenêtre glissante</span>
       </div>
       <div class="kpi-card">
-        <span class="kpi-card__label">Clics affiliés</span>
+        <span class="kpi-card__label">Visiteurs uniques · 30 min</span>
+        <span class="kpi-card__value" id="rt-unique-30m">{{ stats.active_visitors }}</span>
+        <span class="kpi-card__hint">IP distinctes en ligne</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-card__label">Clics affiliés · 30 min</span>
         <span class="kpi-card__value" id="rt-clicks">{{ stats.clicks_30m }}</span>
-        <span class="kpi-card__hint">30 dernières minutes · <a href="{{ url_for('admin.affiliates') }}">détail</a></span>
+        <span class="kpi-card__hint"><a href="{{ url_for('admin.affiliates') }}">détail partenaires</a></span>
       </div>
       <div class="kpi-card">
         <span class="kpi-card__label">Trafic réseaux sociaux</span>
         <span class="kpi-card__value">{{ social.total if social else 0 }}</span>
-        <span class="kpi-card__hint">via UTM · {{ days }} j · <a href="{{ url_for('admin.social') }}">publier</a></span>
+        <span class="kpi-card__hint">Pages vues UTM · {{ days }} j · <a href="{{ url_for('admin.social') }}">publier</a></span>
       </div>
     </div>
 
@@ -60,7 +70,7 @@
     <section class="chart-panel">
       <h2>Réseaux sociaux — campagnes UTM ({{ days }} j)</h2>
       <table class="admin-table">
-        <thead><tr><th>Campagne</th><th>Visites</th></tr></thead>
+        <thead><tr><th>Campagne</th><th>Pages vues</th></tr></thead>
         <tbody>
           {% for row in social.by_campaign %}
           <tr><td>{{ row.c }}</td><td>{{ row.n }}</td></tr>
@@ -69,6 +79,81 @@
       </table>
     </section>
     {% endif %}
+
+    <section class="chart-panel">
+      <h2>Mai AI — assistant voyage</h2>
+      <p class="muted">Utilisation du chat Mai par les visiteurs (ouverture du widget et messages envoyés).</p>
+      {% set mai = stats.mai %}
+      <div class="kpi-grid" style="margin-top:1rem">
+        <div class="kpi-card kpi-card--live">
+          <span class="kpi-card__label">Utilisateurs Mai uniques</span>
+          <span class="kpi-card__value">{{ mai.unique_users }}</span>
+          <span class="kpi-card__hint">
+            {% if mai.usage_rate_pct %}≈ {{ mai.usage_rate_pct }}% des visiteurs uniques du site{% else %}Sur {{ days }} j{% endif %}
+          </span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-card__label">Ont envoyé un message</span>
+          <span class="kpi-card__value">{{ mai.unique_messagers }}</span>
+          <span class="kpi-card__hint">{{ mai.total_messages }} message(s) au total</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-card__label">Ont ouvert Mai</span>
+          <span class="kpi-card__value">{{ mai.unique_openers }}</span>
+          <span class="kpi-card__hint">{{ mai.total_opens }} ouverture(s) enregistrée(s)</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-card__label">Mai actifs · 30 min</span>
+          <span class="kpi-card__value">{{ mai.active_30m }}</span>
+          <span class="kpi-card__hint">Utilisateurs uniques récents</span>
+        </div>
+      </div>
+      <div class="kpi-grid" style="margin-top:0.75rem">
+        <div class="kpi-card">
+          <span class="kpi-card__label">Messages avec profil perso</span>
+          <span class="kpi-card__value">{{ mai.messages_with_profile }}</span>
+          <span class="kpi-card__hint">Cookie personnalisation accepté</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-card__label">Messages sans profil</span>
+          <span class="kpi-card__value">{{ mai.messages_without_profile }}</span>
+          <span class="kpi-card__hint">Visiteurs anonymes</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-card__label">Erreurs / limites</span>
+          <span class="kpi-card__value">{{ mai.total_errors }}</span>
+          <span class="kpi-card__hint">Rate limit, validation, API</span>
+        </div>
+      </div>
+      {% if mai.by_lang %}
+      <h3 style="margin-top:1.25rem;font-size:1rem">Messages par langue</h3>
+      <table class="admin-table">
+        <thead><tr><th>Langue</th><th>Messages</th></tr></thead>
+        <tbody>
+          {% for row in mai.by_lang %}
+          <tr><td>{{ row.lang | upper }}</td><td>{{ row.n }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+      {% if mai.recent_errors %}
+      <h3 style="margin-top:1.25rem;font-size:1rem">Erreurs fréquentes</h3>
+      <table class="admin-table">
+        <thead><tr><th>Type</th><th>Occurrences</th></tr></thead>
+        <tbody>
+          {% for row in mai.recent_errors %}
+          <tr><td>{{ row.error_code or '—' }}</td><td>{{ row.n }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+      {% if mai.daily_messages %}
+      <h3 style="margin-top:1.25rem;font-size:1rem">Messages Mai par jour</h3>
+      <div class="chart-box chart-box--short"><canvas id="maiMessagesChart"></canvas></div>
+      {% elif mai.total_opens == 0 and mai.total_messages == 0 %}
+      <p class="muted" style="margin-top:1rem">Pas encore de données Mai — ouvrez le widget sur le site public pour commencer le suivi.</p>
+      {% endif %}
+    </section>
 
     {% if profile_stats and profile_stats.unique_visitors %}
     <section class="chart-panel">
@@ -111,7 +196,7 @@
 
     <div class="chart-grid">
       <section class="chart-panel chart-panel--wide">
-        <h2>Pages vues par jour</h2>
+        <h2>Pages vues & visiteurs uniques par jour</h2>
         <div class="chart-box"><canvas id="viewsChart"></canvas></div>
       </section>
       <section class="chart-panel">
@@ -152,12 +237,12 @@
     <section class="geo-analytics-section seo-analytics-section" aria-labelledby="seo-title">
       <header class="geo-analytics-header">
         <h2 id="seo-title">SEO — Trafic organique</h2>
-        <p class="page-sub">Visites depuis Google, Bing et autres moteurs (referrer) — indicateurs clés pour la croissance du site.</p>
+        <p class="page-sub">Pages vues depuis Google, Bing et autres moteurs (referrer) — indicateurs clés pour la croissance du site.</p>
       </header>
 
       <div class="kpi-grid">
         <div class="kpi-card kpi-card--gold">
-          <span class="kpi-card__label">Visites SEO</span>
+          <span class="kpi-card__label">Pages vues SEO</span>
           <span class="kpi-card__value">{{ stats.seo.total_organic_views }}</span>
           <span class="kpi-card__hint">{{ stats.seo.organic_share_pct }}% du trafic humain · {{ days }} jours</span>
         </div>
@@ -196,7 +281,7 @@
           {% endif %}
         </section>
         <section class="chart-panel chart-panel--wide">
-          <h2>Visites SEO par jour</h2>
+          <h2>Pages vues SEO par jour</h2>
           {% if stats.seo.daily_organic %}
           <div class="chart-box chart-box--short"><canvas id="seoDailyChart"></canvas></div>
           {% else %}
@@ -293,7 +378,7 @@
     <section class="geo-analytics-section" aria-labelledby="geo-title">
       <header class="geo-analytics-header">
         <h2 id="geo-title">GEO — Trafic moteurs IA</h2>
-        <p class="page-sub">Visites depuis ChatGPT, Claude, Perplexity, Copilot, Gemini et autres LLM (referrer + user-agent).</p>
+        <p class="page-sub">Pages vues depuis ChatGPT, Claude, Perplexity, Copilot, Gemini et autres LLM (referrer + user-agent).</p>
       </header>
 
       <div class="kpi-grid">
@@ -360,11 +445,13 @@
 <script>
   const siteAnalyticsData = {
     dailyViews: {{ stats.daily_views | tojson }},
+    dailyUniqueVisitors: {{ stats.daily_unique_visitors | tojson }},
     dailyClicks: {{ stats.daily_clicks | tojson }},
     countries: {{ stats.countries | tojson }},
     cities: {{ stats.cities | tojson }},
     seo: {{ stats.seo | tojson }},
     geo: {{ stats.geo | tojson }},
+    mai: {{ stats.mai | tojson }},
   };
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>

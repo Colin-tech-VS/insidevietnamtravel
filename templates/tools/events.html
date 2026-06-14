@@ -23,102 +23,40 @@
 {% endblock %}
 
 {% macro event_card(ev) %}
-<article class="events-card events-card--{{ ev.status }}"
-         id="event-{{ ev.id }}"
-         data-id="{{ ev.id }}"
-         data-year="{{ ev.year }}"
-         data-month="{{ ev.month }}"
-         data-category="{{ ev.category }}"
-         data-status="{{ ev.status }}"
-         data-recurring="{{ '1' if ev.recurring else '0' }}">
-  <div class="events-card__layout">
-    <figure class="events-card__media">
-      {{ responsive_img(ev.image, alt=ev.image_alt, width=640, height=400, loading='lazy',
-         class='events-card__img', sizes='(max-width:720px) 100vw, 280px') }}
-      <span class="events-card__icon" aria-hidden="true">{{ ev.icon }}</span>
-    </figure>
-    <div class="events-card__content">
-      <header class="events-card__header">
-        <div class="events-card__meta">
-          <span class="events-card__badge events-card__badge--{{ ev.category }}">{{ ev.category_label }}</span>
-          {% if ev.must_see %}
-          <span class="events-card__badge events-card__badge--star">{{ t('events.must_see') }}</span>
-          {% endif %}
-          {% if ev.status == 'ongoing' %}
-          <span class="events-card__badge events-card__badge--live">{{ t('events.status_ongoing') }}</span>
-          {% elif ev.status == 'past' %}
-          <span class="events-card__badge events-card__badge--past">{{ t('events.status_past') }}</span>
-          {% elif ev.recurring %}
-          <span class="events-card__badge events-card__badge--recurring">{{ t('events.status_recurring') }}</span>
-          {% endif %}
-        </div>
-        <h3 class="events-card__title">{{ ev.title }}</h3>
-        <div class="events-card__datebar">
-          <time datetime="{{ ev.start_date }}" class="events-card__date">
-            {{ ev.date_label }}
-          </time>
-          {% if ev.lunar_note %}
-          <span class="events-card__lunar">{{ ev.lunar_note }}</span>
-          {% endif %}
-        </div>
-        <p class="events-card__summary">{{ ev.summary }}</p>
-      </header>
-
-      {% if ev.highlights %}
-      <section class="events-card__section">
-        <h4 class="events-card__section-title">{{ t('events.section_highlights') }}</h4>
-        <ul class="events-card__list">
-          {% for item in ev.highlights %}
-          <li>{{ item }}</li>
-          {% endfor %}
-        </ul>
-      </section>
+<button type="button"
+        class="events-card events-card--{{ ev.status }}"
+        id="event-{{ ev.id }}"
+        data-event-open="{{ ev.id }}"
+        data-year="{{ ev.year }}"
+        data-month="{{ ev.month }}"
+        data-category="{{ ev.category }}"
+        data-status="{{ ev.status }}"
+        data-recurring="{{ '1' if ev.recurring else '0' }}"
+        aria-haspopup="dialog">
+  <span class="events-card__icon" aria-hidden="true">{{ ev.icon }}</span>
+  <div class="events-card__main">
+    <div class="events-card__meta">
+      <span class="events-card__badge events-card__badge--{{ ev.category }}">{{ ev.category_label }}</span>
+      {% if ev.must_see %}
+      <span class="events-card__badge events-card__badge--star">{{ t('events.must_see') }}</span>
       {% endif %}
-
-      {% if ev.experience %}
-      <section class="events-card__section">
-        <h4 class="events-card__section-title">{{ t('events.section_detail') }}</h4>
-        <p class="events-card__text">{{ ev.experience }}</p>
-      </section>
+      {% if ev.status == 'ongoing' %}
+      <span class="events-card__badge events-card__badge--live">{{ t('events.status_ongoing') }}</span>
+      {% elif ev.status == 'past' %}
+      <span class="events-card__badge events-card__badge--past">{{ t('events.status_past') }}</span>
+      {% elif ev.recurring %}
+      <span class="events-card__badge events-card__badge--recurring">{{ t('events.status_recurring') }}</span>
       {% endif %}
-
-      {% if ev.practical %}
-      <section class="events-card__section">
-        <h4 class="events-card__section-title">{{ t('events.section_practical') }}</h4>
-        <ul class="events-card__list events-card__list--practical">
-          {% for item in ev.practical %}
-          <li>{{ item }}</li>
-          {% endfor %}
-        </ul>
-      </section>
-      {% endif %}
-
-      <footer class="events-card__footer">
-        {% if ev.region_labels %}
-        <p class="events-card__regions">
-          <span class="events-card__footer-label">{{ t('events.regions') }}</span>
-          {{ ev.region_labels | join(' · ') }}
-        </p>
-        {% endif %}
-        {% if ev.destinations %}
-        <div class="events-card__dests">
-          <span class="events-card__footer-label">{{ t('events.destinations_label') }}</span>
-          <div class="events-card__dests-links">
-            {% for d in ev.destinations %}
-            <a class="events-card__dest" href="{{ lang_url('destination_page', slug=d.slug) }}">{{ d.name }}</a>
-            {% endfor %}
-          </div>
-        </div>
-        {% endif %}
-        {% if ev.tip %}
-        <aside class="events-card__tip">
-          <strong>{{ t('events.tip_label') }}</strong> {{ ev.tip }}
-        </aside>
-        {% endif %}
-      </footer>
     </div>
+    <h3 class="events-card__title">{{ ev.title }}</h3>
+    <p class="events-card__date">
+      <time datetime="{{ ev.start_date }}">{{ ev.date_label }}</time>
+      {% if ev.lunar_note %}<span class="events-card__lunar"> · {{ ev.lunar_note }}</span>{% endif %}
+    </p>
+    <p class="events-card__summary">{{ ev.summary }}</p>
   </div>
-</article>
+  <span class="events-card__cta" aria-hidden="true">{{ t('events.view_event') }} →</span>
+</button>
 {% endmacro %}
 
 {% block content %}
@@ -153,38 +91,57 @@
            data-lang="{{ lang }}"
            data-today="{{ calendar.today }}"
            data-msg-none="{{ t('events.filter_none') }}"
-           data-msg-count="{{ t('events.filter_count') }}">
+           data-msg-count="{{ t('events.filter_count') }}"
+           data-lbl-highlights="{{ t('events.section_highlights') }}"
+           data-lbl-detail="{{ t('events.section_detail') }}"
+           data-lbl-practical="{{ t('events.section_practical') }}"
+           data-lbl-regions="{{ t('events.regions') }}"
+           data-lbl-destinations="{{ t('events.destinations_label') }}"
+           data-lbl-tip="{{ t('events.tip_label') }}"
+           data-lbl-close="{{ t('events.close_modal') }}"
+           data-lbl-must-see="{{ t('events.must_see') }}">
         <div class="events-planner__controls">
-          <div class="form-field">
-            <label for="ev-year">{{ t('events.filter_year') }}</label>
-            <select id="ev-year">
-              <option value="all">{{ t('events.filter_all') }}</option>
-              <option value="2026">2026</option>
-              <option value="2027">2027</option>
-            </select>
+          <div class="events-filter-field">
+            <label class="events-filter-field__label" for="ev-year">{{ t('events.filter_year') }}</label>
+            <div class="events-filter-field__select-wrap">
+              <select class="events-filter-field__select" id="ev-year">
+                <option value="all">{{ t('events.filter_all') }}</option>
+                <option value="2026">2026</option>
+                <option value="2027">2027</option>
+              </select>
+            </div>
           </div>
-          <div class="form-field">
-            <label for="ev-month">{{ t('events.filter_month') }}</label>
-            <select id="ev-month">
-              <option value="all">{{ t('events.filter_all') }}</option>
-              {% for i in range(12) %}
-              <option value="{{ i + 1 }}">{{ calendar.month_labels[i] }}</option>
-              {% endfor %}
-            </select>
+          <div class="events-filter-field">
+            <label class="events-filter-field__label" for="ev-month">{{ t('events.filter_month') }}</label>
+            <div class="events-filter-field__select-wrap">
+              <select class="events-filter-field__select" id="ev-month">
+                <option value="all">{{ t('events.filter_all') }}</option>
+                {% for i in range(12) %}
+                <option value="{{ i + 1 }}">{{ calendar.month_labels[i] }}</option>
+                {% endfor %}
+              </select>
+            </div>
           </div>
-          <div class="form-field">
-            <label for="ev-category">{{ t('events.filter_category') }}</label>
-            <select id="ev-category">
-              <option value="all">{{ t('events.filter_all') }}</option>
-              {% for cat in calendar.categories %}
-              <option value="{{ cat.key }}">{{ cat.label }}</option>
-              {% endfor %}
-            </select>
+          <div class="events-filter-field">
+            <label class="events-filter-field__label" for="ev-category">{{ t('events.filter_category') }}</label>
+            <div class="events-filter-field__select-wrap">
+              <select class="events-filter-field__select" id="ev-category">
+                <option value="all">{{ t('events.filter_all') }}</option>
+                {% for cat in calendar.categories %}
+                <option value="{{ cat.key }}">{{ cat.label }}</option>
+                {% endfor %}
+              </select>
+            </div>
           </div>
-          <label class="events-planner__toggle">
-            <input type="checkbox" id="ev-upcoming" checked>
-            <span>{{ t('events.filter_upcoming') }}</span>
-          </label>
+          <div class="events-filter-field events-filter-field--switch">
+            <span class="events-filter-field__label">{{ t('events.filter_upcoming') }}</span>
+            <label class="events-filter-switch">
+              <input type="checkbox" class="events-filter-switch__input" id="ev-upcoming" checked>
+              <span class="events-filter-switch__track" aria-hidden="true">
+                <span class="events-filter-switch__thumb"></span>
+              </span>
+            </label>
+          </div>
         </div>
         <output class="events-planner__result" id="ev-result" aria-live="polite"></output>
       </div>
@@ -216,7 +173,7 @@
     </div>
     <div class="events-highlights">
       {% for ev in calendar.highlights %}
-      <a class="events-highlight" href="#event-{{ ev.id }}" data-event-id="{{ ev.id }}">
+      <button type="button" class="events-highlight" data-event-open="{{ ev.id }}" aria-haspopup="dialog">
         <figure class="events-highlight__media">
           {{ responsive_img(ev.image, alt=ev.image_alt, width=400, height=240, loading='lazy',
              class='events-highlight__img', sizes='(max-width:560px) 100vw, 320px') }}
@@ -228,7 +185,7 @@
           <p class="events-highlight__summary">{{ ev.summary }}</p>
           <span class="events-highlight__link">{{ t('events.view_event') }} →</span>
         </div>
-      </a>
+      </button>
       {% endfor %}
     </div>
   </div>
@@ -248,9 +205,11 @@
           <span class="events-year-heading__label">{{ t('events.year_label') }}</span>
           {{ group.year }}
         </h3>
-        {% for ev in group.events %}
-        {{ event_card(ev) }}
-        {% endfor %}
+        <div class="events-year-group__list">
+          {% for ev in group.events %}
+          {{ event_card(ev) }}
+          {% endfor %}
+        </div>
       </div>
       {% endfor %}
     </div>
@@ -263,8 +222,8 @@
   <div class="container">
     <div class="events-moon-panel">
       <figure class="events-moon-panel__media">
-        {{ responsive_img('/static/images/pool/1559592413-7cec4d0cae2b.webp',
-           alt=t('events.hoi_an_title'), width=640, height=400, loading='lazy',
+        {{ responsive_img('/static/images/pool/1559592413-7cec4d0cae2b-960.webp',
+           alt=t('events.hoi_an_title'), width=960, height=540, loading='lazy',
            class='events-moon-panel__img', sizes='(max-width:720px) 100vw, 320px') }}
       </figure>
       <div class="events-moon-panel__content">
@@ -312,6 +271,18 @@
     {{ pdf_banner() }}
   </div>
 </section>
+
+<div class="events-modal" id="events-modal" role="dialog" aria-modal="true"
+     aria-labelledby="events-modal-title" hidden>
+  <div class="events-modal__backdrop" data-events-modal-close tabindex="-1"></div>
+  <div class="events-modal__panel" role="document">
+    <button type="button" class="events-modal__close" data-events-modal-close
+            aria-label="{{ t('events.close_modal') }}">
+      <span aria-hidden="true">×</span>
+    </button>
+    <div class="events-modal__scroll" id="events-modal-content"></div>
+  </div>
+</div>
 
 <script type="application/json" id="events-calendar-data">{{ calendar.events | tojson }}</script>
 <script src="{{ url_for('static', filename='js/events-calendar.js') }}" defer></script>

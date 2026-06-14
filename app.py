@@ -180,6 +180,35 @@ def _log_page_view_async(path: str, referrer: str, user_agent: str, ip_hash: str
         pass
 
 
+def _log_mai_chat_event_async(**kwargs):
+    try:
+        analytics_db.log_mai_chat_event(**kwargs)
+    except Exception:
+        pass
+
+
+def _mai_request_context():
+    from urllib.parse import urlparse
+
+    from admin.analytics_filters import analytics_ip_hash
+    from data.visitor_profile import PROFILE_COOKIE, parse_cookie
+
+    client_ip = (request.remote_addr or "").strip()
+    profile = parse_cookie(request.cookies.get(PROFILE_COOKIE))
+    visitor_hash = ""
+    if profile and profile.get("id"):
+        visitor_hash = profile["id"][:32]
+    page_path = ""
+    ref = request.referrer or ""
+    if ref:
+        page_path = (urlparse(ref).path or "")[:300]
+    return {
+        "ip_hash": analytics_ip_hash(client_ip),
+        "visitor_hash": visitor_hash,
+        "path": page_path,
+    }
+
+
 @app.before_request
 def prepare_request():
     set_lang(detect_lang_from_path())
@@ -1459,12 +1488,98 @@ def api_chat():
             seen_photo_urls=seen_photos,
         )
     except ValueError as exc:
+        ctx = _mai_request_context()
+        err = str(exc).lower()
+        code = "rate_limit" if "limite" in err or "rate" in err or "trop" in err else "validation"
+        threading.Thread(
+            target=_log_mai_chat_event_async,
+            kwargs={
+                **ctx,
+                "event_type": "error",
+                "lang": lang,
+                "error_code": code,
+                "had_profile": bool(visitor_profile),
+                "message_length": len(message),
+            },
+            daemon=True,
+        ).start()
         return jsonify({"ok": False, "error": str(exc)}), 400
     except Exception as exc:  # noqa: BLE001
         from admin import ai_client
+        ctx = _mai_request_context()
+        threading.Thread(
+            target=_log_mai_chat_event_async,
+            kwargs={
+                **ctx,
+                "event_type": "error",
+                "lang": lang,
+                "error_code": "api_error",
+                "had_profile": bool(visitor_profile),
+                "message_length": len(message),
+            },
+            daemon=True,
+        ).start()
         return jsonify({"ok": False, "error": ai_client.friendly_error(exc)}), 502
 
+    ctx = _mai_request_context()
+    if not ctx.get("visitor_hash") and visitor_profile and visitor_profile.get("id"):
+        ctx["visitor_hash"] = str(visitor_profile["id"])[:32]
+    threading.Thread(
+        target=_log_mai_chat_event_async,
+        kwargs={
+            **ctx,
+            "event_type": "message",
+            "lang": lang,
+            "had_profile": bool(visitor_profile),
+            "message_length": len(message),
+            "site_links_count": len(result.get("site_links") or []),
+            "affiliate_links_count": len(result.get("affiliate_links") or []),
+        },
+        daemon=True,
+    ).start()
+
     return jsonify(result)
+
+
+@app.route("/api/chat/event", methods=["POST"])
+@app.route("/en/api/chat/event", methods=["POST"])
+def api_chat_event():
+    from flask import jsonify
+    from admin import chat_service
+
+    if not chat_service.is_enabled():
+        return jsonify({"ok": False}), 503
+
+    payload = request.get_json(silent=True) or {}
+    event_type = (payload.get("type") or payload.get("event_type") or "open").strip()
+    if event_type != "open":
+        return jsonify({"ok": False, "error": "invalid type"}), 400
+
+    lang = "en" if payload.get("lang") == "en" else get_lang()
+    ctx = _mai_request_context()
+    vid = (payload.get("visitor_id") or "").strip()[:32]
+    if vid:
+        ctx["visitor_hash"] = vid
+
+    from data.visitor_profile import PROFILE_COOKIE, parse_cookie
+    profile = parse_cookie(request.cookies.get(PROFILE_COOKIE))
+    if not profile and isinstance(payload.get("profile"), dict):
+        from data.visitor_profile import normalize_profile
+        profile = normalize_profile(payload["profile"])
+
+    path = (payload.get("path") or request.referrer or "")[:300]
+    threading.Thread(
+        target=_log_mai_chat_event_async,
+        kwargs={
+            **ctx,
+            "event_type": "open",
+            "lang": lang,
+            "path": path,
+            "had_profile": bool(profile),
+        },
+        daemon=True,
+    ).start()
+    return jsonify({"ok": True})
 
 
 @app.route("/en/api/chat", methods=["POST"])

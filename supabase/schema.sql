@@ -47,3 +47,35 @@ CREATE TABLE IF NOT EXISTS newsletter_subscribers (
 CREATE INDEX IF NOT EXISTS idx_pv_created ON page_views(created_at);
 CREATE INDEX IF NOT EXISTS idx_clicks_created ON affiliate_clicks(created_at);
 CREATE INDEX IF NOT EXISTS idx_newsletter_email ON newsletter_subscribers(email);
+
+CREATE TABLE IF NOT EXISTS visitor_profile_snapshots (
+    id SERIAL PRIMARY KEY,
+    visitor_hash TEXT NOT NULL,
+    trip_group TEXT,
+    trip_style TEXT,
+    trip_duration TEXT,
+    cities TEXT,
+    interests TEXT,
+    path TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_vps_created ON visitor_profile_snapshots(created_at);
+CREATE INDEX IF NOT EXISTS idx_vps_hash ON visitor_profile_snapshots(visitor_hash);
+
+CREATE TABLE IF NOT EXISTS mai_chat_events (
+    id SERIAL PRIMARY KEY,
+    event_type TEXT NOT NULL,
+    ip_hash TEXT,
+    visitor_hash TEXT,
+    lang TEXT,
+    path TEXT,
+    had_profile BOOLEAN NOT NULL DEFAULT FALSE,
+    message_length INTEGER DEFAULT 0,
+    site_links_count INTEGER DEFAULT 0,
+    affiliate_links_count INTEGER DEFAULT 0,
+    error_code TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_mai_created ON mai_chat_events(created_at);
+CREATE INDEX IF NOT EXISTS idx_mai_event ON mai_chat_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_mai_visitor ON mai_chat_events(visitor_hash);
