@@ -117,13 +117,25 @@ a:hover { color: var(--terracotta); }
   background: rgba(27, 77, 74, 0.38);
 }
 .admin-nav__label {
-  font-size: 0.7rem;
-  font-weight: 600;
+  font-size: 0.65rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   color: var(--ink-muted);
   padding: 0 0.85rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.admin-nav__group {
+  margin-bottom: 1.15rem;
+}
+
+.admin-nav__group:last-child {
+  margin-bottom: 0.35rem;
+}
+
+.admin-nav__group .admin-nav__link:last-child {
+  margin-bottom: 0;
 }
 .admin-nav__link {
   display: flex;

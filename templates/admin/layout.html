@@ -74,53 +74,77 @@
         </span>
       </a>
 
-      <nav class="admin-nav">
-        <p class="admin-nav__label">Menu</p>
-        <a href="{{ url_for('admin.dashboard') }}" class="admin-nav__link {% if request.endpoint == 'admin.dashboard' %}is-active{% endif %}">
-          <span class="admin-nav__icon" aria-hidden="true">◈</span> Dashboard
-        </a>
-        <a href="{{ url_for('admin.guides') }}" class="admin-nav__link {% if request.endpoint == 'admin.guides' %}is-active{% endif %}">
-          <span class="admin-nav__icon" aria-hidden="true">✦</span> Guides IA
-        </a>
-        <a href="{{ url_for('admin.destinations_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.destinations_admin' %}is-active{% endif %}">
-          <span class="admin-nav__icon" aria-hidden="true">🏙</span> Destinations
-        </a>
-        <a href="{{ url_for('admin.map_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.map_admin' %}is-active{% endif %}">
-          <span class="admin-nav__icon" aria-hidden="true">🗺</span> Carte
-        </a>
-        <a href="{{ url_for('admin.newsletter_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.newsletter_admin' %}is-active{% endif %}">
-          <span class="admin-nav__icon" aria-hidden="true">✉</span> Newsletter
-        </a>
-        <a href="{{ url_for('admin.email_stats') }}" class="admin-nav__link {% if request.endpoint == 'admin.email_stats' %}is-active{% endif %}">
-          <span class="admin-nav__icon" aria-hidden="true">📊</span> Suivi emails
-        </a>
-        <a href="{{ url_for('admin.social') }}" class="admin-nav__link {% if request.endpoint == 'admin.social' %}is-active{% endif %}">
-          <span class="admin-nav__icon" aria-hidden="true">📣</span> Réseaux sociaux
-        </a>
-        <a href="{{ url_for('admin.partnerships') }}" class="admin-nav__link {% if request.endpoint == 'admin.partnerships' %}is-active{% endif %}">
-          <span class="admin-nav__icon" aria-hidden="true">🤝</span> Partenariats
-        </a>
-        <a href="{{ url_for('admin.partner_portal_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.partner_portal_admin' %}is-active{% endif %}">
-          <span class="admin-nav__icon" aria-hidden="true">🌐</span> Espace partenaires
-        </a>
-        <a href="{{ url_for('admin.contact_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.contact_admin' %}is-active{% endif %}">
-          <span class="admin-nav__icon" aria-hidden="true">✉</span> Contact{% if contact_unread %} <span class="admin-nav__badge">{{ contact_unread }}</span>{% endif %}
-        </a>
-        <a href="{{ url_for('admin.reviews_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.reviews_admin' %}is-active{% endif %}">
-          <span class="admin-nav__icon" aria-hidden="true">★</span> Avis
-        </a>
-        <a href="{{ url_for('admin.affiliates') }}" class="admin-nav__link {% if request.endpoint == 'admin.affiliates' %}is-active{% endif %}">
-          <span class="admin-nav__icon" aria-hidden="true">◇</span> Affiliation
-        </a>
-        <a href="{{ url_for('admin.revenue') }}" class="admin-nav__link {% if request.endpoint == 'admin.revenue' %}is-active{% endif %}">
-          <span class="admin-nav__icon" aria-hidden="true">€</span> Revenus
-        </a>
-        <a href="{{ url_for('admin.analytics') }}" class="admin-nav__link {% if request.endpoint == 'admin.analytics' %}is-active{% endif %}">
-          <span class="admin-nav__icon" aria-hidden="true">↗</span> Analytics
-        </a>
-        <a href="{{ url_for('admin.gsc') }}" class="admin-nav__link {% if request.endpoint in ('admin.gsc', 'admin.gsc_settings', 'admin.gsc_oauth_start', 'admin.gsc_oauth_callback', 'admin.gsc_disconnect', 'admin.gsc_site') %}is-active{% endif %}">
-          <span class="admin-nav__icon" aria-hidden="true">🔍</span> Search Console
-        </a>
+      <nav class="admin-nav" aria-label="Navigation principale">
+        {% set gsc_active = request.endpoint in ('admin.gsc', 'admin.gsc_settings', 'admin.gsc_oauth_start', 'admin.gsc_oauth_callback', 'admin.gsc_disconnect', 'admin.gsc_site') %}
+
+        <div class="admin-nav__group">
+          <p class="admin-nav__label">Vue d'ensemble</p>
+          <a href="{{ url_for('admin.dashboard') }}" class="admin-nav__link {% if request.endpoint == 'admin.dashboard' %}is-active{% endif %}">
+            <span class="admin-nav__icon" aria-hidden="true">◈</span> Dashboard
+          </a>
+        </div>
+
+        <div class="admin-nav__group">
+          <p class="admin-nav__label">Contenu & site</p>
+          <a href="{{ url_for('admin.guides') }}" class="admin-nav__link {% if request.endpoint == 'admin.guides' %}is-active{% endif %}">
+            <span class="admin-nav__icon" aria-hidden="true">✦</span> Guides IA
+          </a>
+          <a href="{{ url_for('admin.destinations_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.destinations_admin' %}is-active{% endif %}">
+            <span class="admin-nav__icon" aria-hidden="true">🏙</span> Destinations
+          </a>
+          <a href="{{ url_for('admin.map_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.map_admin' %}is-active{% endif %}">
+            <span class="admin-nav__icon" aria-hidden="true">🗺</span> Carte
+          </a>
+          <a href="{{ url_for('admin.reviews_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.reviews_admin' %}is-active{% endif %}">
+            <span class="admin-nav__icon" aria-hidden="true">★</span> Avis
+          </a>
+        </div>
+
+        <div class="admin-nav__group">
+          <p class="admin-nav__label">Communication</p>
+          <a href="{{ url_for('admin.newsletter_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.newsletter_admin' %}is-active{% endif %}">
+            <span class="admin-nav__icon" aria-hidden="true">✉</span> Newsletter
+          </a>
+          <a href="{{ url_for('admin.email_stats') }}" class="admin-nav__link {% if request.endpoint == 'admin.email_stats' %}is-active{% endif %}">
+            <span class="admin-nav__icon" aria-hidden="true">📊</span> Suivi emails
+          </a>
+          <a href="{{ url_for('admin.social') }}" class="admin-nav__link {% if request.endpoint == 'admin.social' %}is-active{% endif %}">
+            <span class="admin-nav__icon" aria-hidden="true">📣</span> Réseaux sociaux
+          </a>
+          <a href="{{ url_for('admin.contact_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.contact_admin' %}is-active{% endif %}">
+            <span class="admin-nav__icon" aria-hidden="true">💬</span> Contact{% if contact_unread %} <span class="admin-nav__badge">{{ contact_unread }}</span>{% endif %}
+          </a>
+        </div>
+
+        <div class="admin-nav__group">
+          <p class="admin-nav__label">Partenaires</p>
+          <a href="{{ url_for('admin.partnerships') }}" class="admin-nav__link {% if request.endpoint == 'admin.partnerships' %}is-active{% endif %}">
+            <span class="admin-nav__icon" aria-hidden="true">🤝</span> Partenariats
+          </a>
+          <a href="{{ url_for('admin.partner_portal_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.partner_portal_admin' %}is-active{% endif %}">
+            <span class="admin-nav__icon" aria-hidden="true">🌐</span> Espace partenaires
+          </a>
+        </div>
+
+        <div class="admin-nav__group">
+          <p class="admin-nav__label">Monétisation</p>
+          <a href="{{ url_for('admin.affiliates') }}" class="admin-nav__link {% if request.endpoint == 'admin.affiliates' %}is-active{% endif %}">
+            <span class="admin-nav__icon" aria-hidden="true">◇</span> Affiliation
+          </a>
+          <a href="{{ url_for('admin.revenue') }}" class="admin-nav__link {% if request.endpoint == 'admin.revenue' %}is-active{% endif %}">
+            <span class="admin-nav__icon" aria-hidden="true">€</span> Revenus
+          </a>
+        </div>
+
+        <div class="admin-nav__group">
+          <p class="admin-nav__label">Statistiques & SEO</p>
+          <a href="{{ url_for('admin.analytics') }}" class="admin-nav__link {% if request.endpoint == 'admin.analytics' %}is-active{% endif %}">
+            <span class="admin-nav__icon" aria-hidden="true">↗</span> Analytics
+          </a>
+          <a href="{{ url_for('admin.gsc') }}" class="admin-nav__link {% if gsc_active %}is-active{% endif %}">
+            <span class="admin-nav__icon" aria-hidden="true">🔍</span> Search Console
+          </a>
+        </div>
       </nav>
 
       <div class="admin-sidebar__footer">
