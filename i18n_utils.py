@@ -276,6 +276,10 @@ ROUTE_PATHS: dict[str, dict[str, str]] = {
         "fr": "/itineraries/{slug}/guide",
         "en": "/en/itineraries/{slug}/guide",
     },
+    "prepare_trip_unlock": {
+        "fr": "/preparer-mon-voyage/unlock",
+        "en": "/en/plan-my-trip/unlock",
+    },
     "itinerary_guide_download": {
         "fr": "/itineraries/{slug}/guide/{token}",
         "en": "/en/itineraries/{slug}/guide/{token}",

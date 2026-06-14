@@ -3,9 +3,11 @@
   if (!catalog) return;
 
   const wizard = document.getElementById('prepare-wizard');
+  const emailGate = document.getElementById('prepare-email-gate');
   const resultsEl = document.getElementById('prepare-results');
-  if (!wizard || !resultsEl) return;
+  if (!wizard || !emailGate || !resultsEl) return;
 
+  const UNLOCK_KEY = 'ivt_prepare_unlocked';
   const TOTAL_STEPS = 4;
   const LANG = (document.documentElement.lang || 'fr').slice(0, 2);
   const state = { group: null, style: null, duration: null, cities: [], step: 1 };
@@ -27,6 +29,88 @@
     },
     duration: { short: '7', medium: '10', long: '14+' },
   };
+
+  function isUnlocked() {
+    try {
+      return sessionStorage.getItem(UNLOCK_KEY) === '1';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function setUnlocked() {
+    try {
+      sessionStorage.setItem(UNLOCK_KEY, '1');
+    } catch (e) { /* ignore */ }
+  }
+
+  function showEmailGate() {
+    wizard.hidden = true;
+    resultsEl.hidden = true;
+    emailGate.hidden = false;
+    emailGate.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const input = emailGate.querySelector('#prepare-email');
+    if (input) input.focus();
+  }
+
+  function hideEmailGate() {
+    emailGate.hidden = true;
+  }
+
+  function showEmailError(msg) {
+    const err = document.getElementById('prepare-email-error');
+    if (!err) return;
+    err.textContent = msg || '';
+    err.hidden = !msg;
+  }
+
+  async function submitEmailGate(form) {
+    const email = (form.email.value || '').trim();
+    const consent = form.consent_rgpd.checked;
+    if (!consent) {
+      showEmailError(labels.gate_error_consent || '');
+      return;
+    }
+    if (!email || !email.includes('@')) {
+      showEmailError(labels.gate_error_email || '');
+      return;
+    }
+
+    const btn = form.querySelector('.prepare-email-gate__submit');
+    if (btn) {
+      btn.disabled = true;
+      btn.setAttribute('aria-busy', 'true');
+    }
+    showEmailError('');
+
+    try {
+      const res = await fetch(catalog.unlock_url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ email, consent_rgpd: '1' }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        showEmailError(data.error || labels.gate_error_generic || '');
+        return;
+      }
+      setUnlocked();
+      hideEmailGate();
+      renderResults();
+    } catch (e) {
+      showEmailError(labels.gate_error_generic || '');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.removeAttribute('aria-busy');
+      }
+    }
+  }
+
+  function requestResults() {
+    if (isUnlocked()) renderResults();
+    else showEmailGate();
+  }
 
   function uniq(arr) {
     return [...new Set(arr)];
@@ -145,7 +229,9 @@
     const next = wizard.querySelector('.prepare-next');
     if (back) back.hidden = n === 1;
     if (next) {
-      next.textContent = n === TOTAL_STEPS ? (labels.results_title || 'Results') : (labels.next || 'Continue');
+      next.textContent = n === TOTAL_STEPS
+        ? (labels.view_results || labels.results_title || 'Results')
+        : (labels.next || 'Continue');
     }
     updateNextButton();
   }
@@ -385,6 +471,7 @@
       sections.filter(Boolean).join('') || `<p class="prepare-results__empty">${labels.empty || ''}</p>`;
 
     wizard.hidden = true;
+    hideEmailGate();
     resultsEl.hidden = false;
     resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
@@ -425,8 +512,23 @@
       const ready = field === 'cities' ? state.cities.length > 0 : Boolean(state[field]);
       if (!ready) return;
       if (state.step < TOTAL_STEPS) showStep(state.step + 1);
-      else renderResults();
+      else requestResults();
     });
+    const emailForm = document.getElementById('prepare-email-form');
+    if (emailForm) {
+      emailForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        submitEmailGate(emailForm);
+      });
+    }
+    const emailBack = emailGate.querySelector('.prepare-email-back');
+    if (emailBack) {
+      emailBack.addEventListener('click', () => {
+        hideEmailGate();
+        wizard.hidden = false;
+        showStep(TOTAL_STEPS);
+      });
+    }
     resultsEl.querySelector('.prepare-restart').addEventListener('click', () => {
       state.group = null;
       state.style = null;
@@ -436,6 +538,7 @@
       renderOptions(step2, catalog.styles, 'style');
       renderOptions(step3, catalog.durations, 'duration');
       if (step4) renderCityOptions(step4);
+      hideEmailGate();
       resultsEl.hidden = true;
       wizard.hidden = false;
       showStep(1);

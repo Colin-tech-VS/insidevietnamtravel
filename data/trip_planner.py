@@ -540,7 +540,16 @@ def build_planner_catalog(
         "durations": [
             {"id": d, "label": t_fn(f"prepare.duration.{d}", lang)} for d in DURATION_KEYS
         ],
+        "unlock_url": lang_url_fn("prepare_trip_unlock", lang),
         "labels": {
+            "view_results": t_fn("prepare.view_results", lang),
+            "gate_title": t_fn("prepare.gate.title", lang),
+            "gate_sub": t_fn("prepare.gate.sub", lang),
+            "gate_cta": t_fn("prepare.gate.cta", lang),
+            "gate_privacy": t_fn("prepare.gate.privacy", lang),
+            "gate_error_consent": t_fn("flash.consent", lang),
+            "gate_error_email": t_fn("flash.invalid_email", lang),
+            "gate_error_generic": t_fn("prepare.gate.error", lang),
             "results_title": t_fn("prepare.results.title", lang),
             "results_sub": t_fn("prepare.results.sub", lang),
             "itin_section": t_fn("prepare.results.itineraries", lang),

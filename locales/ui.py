@@ -152,6 +152,26 @@ UI: dict[str, dict[str, str]] = {
         "fr": "Choisissez une ou plusieurs villes (sélection multiple).",
         "en": "Pick one or more cities (multiple choice).",
     },
+    "prepare.view_results": {"fr": "Voir mes résultats", "en": "See my results"},
+    "prepare.gate.title": {
+        "fr": "Dernière étape : votre email",
+        "en": "Last step: your email",
+    },
+    "prepare.gate.sub": {
+        "fr": "Entrez votre adresse pour débloquer votre programme sur mesure. "
+              "Vous serez aussi inscrit(e) à notre newsletter (conseils voyage Vietnam, désinscription en un clic).",
+        "en": "Enter your address to unlock your tailored trip plan. "
+              "You'll also be subscribed to our newsletter (Vietnam travel tips, one-click unsubscribe).",
+    },
+    "prepare.gate.cta": {"fr": "Voir mon programme", "en": "View my trip plan"},
+    "prepare.gate.privacy": {
+        "fr": "Pas de spam. Désinscription en un clic.",
+        "en": "No spam. Unsubscribe in one click.",
+    },
+    "prepare.gate.error": {
+        "fr": "Une erreur est survenue. Réessayez dans un instant.",
+        "en": "Something went wrong. Please try again in a moment.",
+    },
 
     # Piliers SEO (hubs thématiques)
     "pillar.soon": {"fr": "Bientôt", "en": "Coming soon"},

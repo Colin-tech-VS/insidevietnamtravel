@@ -620,6 +620,28 @@ def prepare_trip():
     )
 
 
+@app.route("/preparer-mon-voyage/unlock", methods=["POST"])
+@app.route("/en/plan-my-trip/unlock", methods=["POST"])
+def prepare_trip_unlock():
+    """Inscription newsletter pour débloquer les résultats du trip planner."""
+    from flask import jsonify
+
+    from admin.newsletter_service import add_newsletter_subscriber
+
+    lang = get_lang()
+    payload = request.get_json(silent=True) or request.form
+
+    if not payload.get("consent_rgpd"):
+        return jsonify({"ok": False, "error": t("flash.consent", lang)}), 400
+
+    email = (payload.get("email") or "").strip().lower()
+    if not email or "@" not in email:
+        return jsonify({"ok": False, "error": t("flash.invalid_email", lang)}), 400
+
+    add_newsletter_subscriber(email)
+    return jsonify({"ok": True})
+
+
 # ── Outils voyageurs ──────────────────────────────────────────────────
 
 @app.route("/quand-partir-au-vietnam")

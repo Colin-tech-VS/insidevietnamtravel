@@ -99,6 +99,28 @@
       </div>
     </div>
 
+    <div class="prepare-email-gate" id="prepare-email-gate" hidden>
+      <header class="prepare-email-gate__head">
+        <span class="prepare-results__badge" aria-hidden="true">✉</span>
+        <h2 class="prepare-email-gate__title">{{ t('prepare.gate.title') }}</h2>
+        <p class="prepare-email-gate__sub">{{ t('prepare.gate.sub') }}</p>
+      </header>
+      <form class="prepare-email-gate__form" id="prepare-email-form" novalidate>
+        <label for="prepare-email" class="sr-only">Email</label>
+        <input type="email" id="prepare-email" name="email" required
+               placeholder="{{ newsletter.NEWSLETTER.placeholder }}"
+               autocomplete="email" class="prepare-email-gate__input">
+        <button type="submit" class="btn btn-primary prepare-email-gate__submit">{{ t('prepare.gate.cta') }}</button>
+        <label class="prepare-email-gate__consent">
+          <input type="checkbox" name="consent_rgpd" value="1" required>
+          <span>{{ t('newsletter.consent') }} <a href="{{ lang_url('privacy') }}" target="_blank" rel="noopener">{{ t('newsletter.privacy_link') }}</a>.</span>
+        </label>
+        <p class="prepare-email-gate__error" id="prepare-email-error" hidden role="alert"></p>
+      </form>
+      <p class="prepare-email-gate__privacy"><small>{{ t('prepare.gate.privacy') }} <a href="{{ lang_url('newsletter_unsubscribe') }}">{% if lang == 'en' %}Unsubscribe{% else %}Désinscription{% endif %}</a>.</small></p>
+      <button type="button" class="btn btn-ghost prepare-email-back">{{ t('prepare.back') }}</button>
+    </div>
+
     <div class="prepare-results" id="prepare-results" hidden>
       <header class="prepare-results__header">
         <span class="prepare-results__badge" aria-hidden="true">✦</span>
