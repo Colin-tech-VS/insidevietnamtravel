@@ -258,6 +258,7 @@ def send_newsletter_email(
     from admin.email_tracking_service import (
         create_email_send,
         delete_email_send,
+        inject_email_utm,
         inject_tracking,
     )
 
@@ -301,7 +302,20 @@ def send_newsletter_email(
             body_html, preheader, recipient_email=addr, email_type=email_type,
         )
         if send_rec:
-            full_html = inject_tracking(full_html, send_rec["send_token"])
+            full_html = inject_tracking(
+                full_html,
+                send_rec["send_token"],
+                email_type=email_type,
+                subject=subject,
+                partner_id=partner_id,
+            )
+        else:
+            full_html = inject_email_utm(
+                full_html,
+                email_type=email_type,
+                subject=subject,
+                partner_id=partner_id,
+            )
         plain = _strip_html(body_html)
         if email_type != "partenariat":
             plain += f"\n\nSe désinscrire : {unsubscribe_url(addr)}"

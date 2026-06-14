@@ -77,60 +77,60 @@
         </div>
 
         {% if messages %}
-        <ul class="contact-inbox" id="contact-inbox">
+        <div class="contact-mailbox" id="contact-mailbox"
+             data-mark-read-url="{{ url_for('admin.api_contact_mark_read') }}">
+          <div class="contact-mailbox__list-wrap">
+            <ul class="contact-mail-list" id="contact-mail-list">
+              {% for m in messages %}
+              <li class="contact-mail-row{% if not m.read %} contact-mail-row--unread{% endif %}"
+                  data-id="{{ m.id }}"
+                  data-read="{{ '1' if m.read else '0' }}"
+                  data-source="{{ m.source }}"
+                  role="button"
+                  tabindex="0"
+                  aria-label="Ouvrir : {{ m.subject|e }}">
+                <span class="contact-mail-row__dot" {% if m.read %}hidden{% endif %} aria-hidden="true"></span>
+                <div class="contact-mail-row__main">
+                  <div class="contact-mail-row__line1">
+                    <span class="contact-mail-row__from">{{ m.name }}</span>
+                    <time class="contact-mail-row__date" datetime="{{ m.created_at }}">{{ m.created_at[:10] }}</time>
+                  </div>
+                  <div class="contact-mail-row__line2">
+                    <span class="contact-mail-row__subject">{{ m.subject }}</span>
+                    <span class="contact-source contact-source--{{ m.source }} contact-mail-row__badge">{{ m.source_label }}</span>
+                  </div>
+                  <p class="contact-mail-row__snippet">{{ m.snippet }}</p>
+                </div>
+              </li>
+              {% endfor %}
+            </ul>
+            <p class="contact-inbox__empty contact-inbox__empty--filtered muted" id="contact-inbox-empty" hidden>
+              Aucun message pour ce filtre.
+            </p>
+          </div>
+          <div class="contact-mailbox__detail" id="contact-mail-detail"></div>
+        </div>
+
+        <div class="contact-mail-templates" hidden aria-hidden="true">
           {% for m in messages %}
-          <li class="contact-msg{% if not m.read %} contact-msg--unread{% endif %}"
-              data-read="{{ '1' if m.read else '0' }}"
-              data-source="{{ m.source }}">
-            <header class="contact-msg__head">
-              <div class="contact-msg__who">
-                <p class="contact-msg__name">{{ m.name }}</p>
-                <a class="contact-msg__email" href="mailto:{{ m.email }}">{{ m.email }}</a>
-              </div>
-              <div class="contact-msg__meta">
-                <span class="contact-source contact-source--{{ m.source }}" title="{{ m.source_label }}">
-                  {{ m.source_label }}
-                </span>
-                <time class="contact-msg__date" datetime="{{ m.created_at }}">{{ m.created_at[:16].replace('T', ' ') }}</time>
-                {% if m.lang %}
-                <span class="contact-msg__lang">{{ m.lang|upper }}</span>
-                {% endif %}
-                {% if m.read %}
-                <span class="contact-msg__status contact-msg__status--read">Lu</span>
-                {% else %}
-                <span class="contact-msg__status contact-msg__status--new">Nouveau</span>
-                {% endif %}
-              </div>
-            </header>
-
-            <h3 class="contact-msg__subject">{{ m.subject }}</h3>
-
-            <div class="contact-msg__body">{{ m.message }}</div>
-
-            <footer class="contact-msg__actions">
-              <a href="mailto:{{ m.email }}?subject={{ ('Re: ' ~ m.subject)|urlencode }}"
-                 class="btn btn-primary btn-sm">Répondre</a>
-              {% if not m.read %}
-              <form method="post" class="contact-msg__form">
-                <input type="hidden" name="action" value="mark_read">
-                <input type="hidden" name="msg_id" value="{{ m.id }}">
-                {% if m.form_id %}<input type="hidden" name="form_id" value="{{ m.form_id }}">{% endif %}
-                <button type="submit" class="btn btn-secondary btn-sm">Marquer lu</button>
-              </form>
-              {% endif %}
-              <form method="post" class="contact-msg__form" onsubmit="return confirm('Supprimer ce message ?');">
-                <input type="hidden" name="action" value="delete">
-                <input type="hidden" name="msg_id" value="{{ m.id }}">
-                {% if m.form_id %}<input type="hidden" name="form_id" value="{{ m.form_id }}">{% endif %}
-                <button type="submit" class="btn btn-ghost btn-sm">Supprimer</button>
-              </form>
-            </footer>
-          </li>
+          <template class="contact-mail-template"
+                    data-id="{{ m.id }}"
+                    data-read="{{ '1' if m.read else '0' }}"
+                    data-source="{{ m.source }}"
+                    data-source-label="{{ m.source_label }}"
+                    data-name="{{ m.name }}"
+                    data-email="{{ m.email }}"
+                    data-subject="{{ m.subject }}"
+                    data-date="{{ m.created_at[:16].replace('T', ' ') }}"
+                    data-date-iso="{{ m.created_at }}"
+                    data-lang="{{ m.lang or '' }}"
+                    data-has-html="{{ '1' if m.has_html else '0' }}"
+                    data-html-b64="{{ m.message_html_b64 }}"
+                    data-form-id="{{ m.form_id or '' }}">
+            <div class="contact-mail-plain">{{ m.message }}</div>
+          </template>
           {% endfor %}
-        </ul>
-        <p class="contact-inbox__empty contact-inbox__empty--filtered muted" id="contact-inbox-empty" hidden>
-          Aucun message pour ce filtre.
-        </p>
+        </div>
         {% else %}
         <div class="contact-empty">
           <div class="contact-empty__icon" aria-hidden="true">✉</div>
@@ -186,7 +186,8 @@
       <section class="panel">
         <h2>💡 Bon à savoir</h2>
         <ul class="status-list">
-          <li class="ok">Marquer lu synchronise la boîte IMAP quand disponible.</li>
+          <li class="ok">Cliquez un message pour l'ouvrir — design HTML si disponible.</li>
+          <li class="ok">Marquer lu se fait à l'ouverture (sync IMAP).</li>
           <li class="warn">La suppression IMAP est définitive sur le serveur mail.</li>
         </ul>
       </section>
@@ -197,35 +198,6 @@
 
 {% block scripts %}
 {% if messages %}
-<script>
-(function () {
-  var buttons = document.querySelectorAll('.contact-filter__btn');
-  var items = document.querySelectorAll('.contact-msg');
-  var empty = document.getElementById('contact-inbox-empty');
-  if (!buttons.length) return;
-
-  function apply(filter) {
-    var visible = 0;
-    items.forEach(function (el) {
-      var show = filter === 'all'
-        || (filter === 'unread' && el.dataset.read === '0')
-        || el.dataset.source === filter;
-      el.hidden = !show;
-      if (show) visible++;
-    });
-    if (empty) empty.hidden = visible > 0;
-  }
-
-  buttons.forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      buttons.forEach(function (b) {
-        b.classList.toggle('is-active', b === btn);
-        b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
-      });
-      apply(btn.dataset.filter);
-    });
-  });
-})();
-</script>
+<script src="{{ url_for('static', filename='admin/contact-inbox.js') }}"></script>
 {% endif %}
 {% endblock %}

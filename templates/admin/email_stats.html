@@ -5,7 +5,9 @@
 {% block content %}
 <p class="page-sub">
   Ouvertures (👁) et clics (🖱) de vos emails partenariat et newsletter.
-  Les envois <strong>trackés</strong> incluent un pixel invisible et des liens mesurés.
+  Les envois <strong>trackés</strong> incluent un pixel invisible, des liens mesurés
+  et des <strong>UTM invisibles</strong> sur les liens du site (comme les réseaux sociaux —
+  comptabilisés en analytics, retirés de l’URL côté visiteur).
   Les lignes « sans suivi » = contact enregistré avant cette fonctionnalité.
 </p>
 
@@ -37,6 +39,36 @@
         </span>
       </div>
     </div>
+
+    {% if email_traffic and email_traffic.total %}
+    <section class="panel chart-panel" style="margin-bottom:1.25rem;">
+      <h2>Trafic site depuis les emails (30 j)</h2>
+      <p class="muted" style="margin:0 0 0.75rem;font-size:0.88rem;">
+        Pages vues avec UTM email — {{ email_traffic.total }} visite(s) ·
+        <code>utm_medium=email</code>
+      </p>
+      <div class="stat-grid stat-grid--2">
+        <div>
+          <h3 class="muted" style="font-size:0.9rem;margin:0 0 0.5rem;">Par type d'email</h3>
+          <ul class="status-list">
+            {% for row in email_traffic.by_source %}
+            <li class="ok"><strong>{{ row.s }}</strong> — {{ row.n }} vue(s)</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% if email_traffic.by_campaign %}
+        <div>
+          <h3 class="muted" style="font-size:0.9rem;margin:0 0 0.5rem;">Par campagne (objet)</h3>
+          <ul class="status-list">
+            {% for row in email_traffic.by_campaign %}
+            <li class="ok"><strong>{{ row.c }}</strong> — {{ row.n }} vue(s)</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+      </div>
+    </section>
+    {% endif %}
 
     <section class="panel chart-panel">
       <h2>Historique des envois</h2>

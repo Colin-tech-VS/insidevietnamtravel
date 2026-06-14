@@ -127,6 +127,47 @@ def get_social_traffic(days: int = 30):
     return out
 
 
+def get_email_traffic(days: int = 30) -> dict:
+    """Pages vues depuis les emails (UTM utm_medium=email via utm_source newsletter/partenariat…)."""
+    from admin.email_tracking_service import EMAIL_UTM_SOURCES
+
+    since = _since_days(days)
+    bot = _human_traffic_sql()
+    sources = tuple(sorted(EMAIL_UTM_SOURCES))
+    placeholders_pg = ",".join(["%s"] * len(sources))
+    placeholders_sql = ",".join(["?"] * len(sources))
+    out = {"total": 0, "by_source": [], "by_campaign": []}
+    with get_connection() as conn:
+        cur = _execute(
+            conn,
+            f"SELECT COALESCE(utm_source,'') AS s, COUNT(*) AS n FROM page_views "
+            f"WHERE created_at >= %s AND COALESCE(utm_source,'') IN ({placeholders_pg}) {bot} "
+            f"GROUP BY s ORDER BY n DESC",
+            f"SELECT COALESCE(utm_source,'') AS s, COUNT(*) AS n FROM page_views "
+            f"WHERE created_at >= ? AND COALESCE(utm_source,'') IN ({placeholders_sql}) {bot} "
+            f"GROUP BY s ORDER BY n DESC",
+            (since, *sources),
+        )
+        rows = [_row_dict(r) for r in cur.fetchall()]
+        out["by_source"] = rows
+        out["total"] = sum(r.get("n", 0) for r in rows)
+
+        cur = _execute(
+            conn,
+            f"SELECT COALESCE(utm_campaign,'') AS c, COUNT(*) AS n FROM page_views "
+            f"WHERE created_at >= %s AND COALESCE(utm_campaign,'') <> '' "
+            f"AND COALESCE(utm_source,'') IN ({placeholders_pg}) {bot} "
+            f"GROUP BY c ORDER BY n DESC LIMIT 15",
+            f"SELECT COALESCE(utm_campaign,'') AS c, COUNT(*) AS n FROM page_views "
+            f"WHERE created_at >= ? AND COALESCE(utm_campaign,'') <> '' "
+            f"AND COALESCE(utm_source,'') IN ({placeholders_sql}) {bot} "
+            f"GROUP BY c ORDER BY n DESC LIMIT 15",
+            (since, *sources),
+        )
+        out["by_campaign"] = [_row_dict(r) for r in cur.fetchall()]
+    return out
+
+
 def log_affiliate_click(
     provider: str,
     target_url: str,

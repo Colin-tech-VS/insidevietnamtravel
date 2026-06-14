@@ -202,7 +202,8 @@ def _extract_addresses(msg: Message) -> tuple[str, str, str]:
     return from_email, from_name, reply_email or from_email
 
 
-def _extract_body(msg: Message) -> str:
+def _extract_body_parts(msg: Message) -> tuple[str, str]:
+    """Retourne (texte brut, html) du corps du message."""
     plain = ""
     html = ""
     if msg.is_multipart():
@@ -231,8 +232,13 @@ def _extract_body(msg: Message) -> str:
             else:
                 plain = text
 
-    body = plain.strip() or _strip_tags(html)
-    return re.sub(r"\n{3,}", "\n\n", body).strip()[:8000]
+    plain = re.sub(r"\n{3,}", "\n\n", plain.strip())
+    return plain[:8000], html[:120000]
+
+
+def _extract_body(msg: Message) -> str:
+    plain, html = _extract_body_parts(msg)
+    return plain or _strip_tags(html)
 
 
 def _parse_contact_notification(body: str, html_hint: str = "") -> tuple[str, str]:
@@ -263,19 +269,23 @@ def _parse_raw_message(raw: bytes, *, uid: str, read: bool) -> dict | None:
     from_email, from_name, reply_email = _extract_addresses(msg)
     in_reply_to = (msg.get("In-Reply-To") or "").strip()
     references = (msg.get("References") or "").strip()
-    body = _extract_body(msg)
+    plain_body, html_body = _extract_body_parts(msg)
+    body = plain_body or _strip_tags(html_body)
 
     display_email = reply_email or from_email
     display_name = from_name
+    message_html = html_body.strip()
 
     clean_subject = subject
     if subject.startswith(CONTACT_SUBJECT_PREFIX):
         clean_subject = subject[len(CONTACT_SUBJECT_PREFIX) :].strip()
-        parsed_name, parsed_body = _parse_contact_notification(body)
+        parsed_name, parsed_body = _parse_contact_notification(body, html_body)
         if parsed_name:
             display_name = parsed_name
         if parsed_body:
             body = parsed_body
+            if html_body and not message_html:
+                message_html = html_body
         display_email = reply_email or from_email
 
     if not display_email:
@@ -289,6 +299,7 @@ def _parse_raw_message(raw: bytes, *, uid: str, read: bool) -> dict | None:
         "email": display_email,
         "subject": clean_subject[:200],
         "message": body or "(message vide)",
+        "message_html": message_html,
         "created_at": _message_datetime(msg),
         "read": read,
         "in_reply_to": in_reply_to,

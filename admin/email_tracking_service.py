@@ -10,10 +10,11 @@ import os
 import re
 import secrets
 from datetime import datetime, timezone
-from urllib.parse import quote, urlparse
+from urllib.parse import parse_qsl, quote, urlencode, urlparse, urlunparse
 
 import config
 from admin.database import get_connection, is_postgres
+from admin.facebook_service import sanitize_campaign
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,12 @@ PIXEL_GIF = base64.b64decode(
 )
 _HREF_RE = re.compile(r'(<a\b[^>]*\shref=")([^"]+)(")', re.I)
 _SCHEMA_READY = False
+
+EMAIL_UTM_MEDIUM = "email"
+EMAIL_UTM_SOURCES = frozenset({
+    "newsletter", "partenariat", "test", "email-test",
+    "actualite", "nouveau_guide", "conseils", "promo_pdf", "saison",
+})
 
 
 def _secret() -> bytes:
@@ -174,6 +181,106 @@ def _absolute_url(url: str) -> str:
     return url
 
 
+def _is_our_site_url(url: str) -> bool:
+    absolute = _absolute_url(url)
+    try:
+        host = (urlparse(absolute).netloc or "").lower()
+    except Exception:  # noqa: BLE001
+        return False
+    if not host:
+        return absolute.startswith(SITE_URL)
+    site_host = (urlparse(SITE_URL).netloc or "").lower()
+    allowed = {
+        site_host,
+        "www.insidevietnamtravel.fr",
+        "insidevietnamtravel.fr",
+        "www.insidevietnamtravel.com",
+        "insidevietnamtravel.com",
+    }
+    return host in allowed or host.endswith(".insidevietnamtravel.fr")
+
+
+def email_utm_params(
+    *,
+    email_type: str = "newsletter",
+    subject: str = "",
+    send_token: str = "",
+    partner_id: str = "",
+) -> dict[str, str]:
+    """Nomenclature UTM email — même logique que les réseaux sociaux (invisible côté visiteur)."""
+    source = sanitize_campaign(email_type or "newsletter")[:40]
+    campaign = sanitize_campaign(subject or email_type or "newsletter")[:80]
+    params = {
+        "utm_source": source,
+        "utm_medium": EMAIL_UTM_MEDIUM,
+        "utm_campaign": campaign,
+    }
+    if send_token:
+        params["utm_content"] = sanitize_campaign(send_token)[:24]
+    elif partner_id:
+        params["utm_content"] = sanitize_campaign(partner_id)[:40]
+    return params
+
+
+def add_email_utm(
+    url: str,
+    *,
+    email_type: str = "newsletter",
+    subject: str = "",
+    send_token: str = "",
+    partner_id: str = "",
+) -> str:
+    """Ajoute UTM aux liens du site (préservant la query existante)."""
+    if not url or not _is_our_site_url(url):
+        return url
+    low = url.lower()
+    if "desinscription" in low or "unsubscribe" in low:
+        return url
+    absolute = _absolute_url(url)
+    parts = urlparse(absolute)
+    query = dict(parse_qsl(parts.query, keep_blank_values=True))
+    for key, val in email_utm_params(
+        email_type=email_type,
+        subject=subject,
+        send_token=send_token,
+        partner_id=partner_id,
+    ).items():
+        query[key] = val
+    rebuilt = urlunparse(parts._replace(query=urlencode(query)))
+    if url.startswith("/"):
+        parsed = urlparse(rebuilt)
+        return parsed.path + (f"?{parsed.query}" if parsed.query else "") + (parsed.fragment or "")
+    return rebuilt
+
+
+def inject_email_utm(
+    html: str,
+    *,
+    email_type: str = "newsletter",
+    subject: str = "",
+    send_token: str = "",
+    partner_id: str = "",
+) -> str:
+    """UTM invisibles sur tous les liens internes (retirés ensuite par main.js)."""
+    if not html:
+        return html
+
+    def repl(match: re.Match) -> str:
+        prefix, href, suffix = match.group(1), match.group(2), match.group(3)
+        if not _should_track_link(href) or not _is_our_site_url(href):
+            return match.group(0)
+        tagged = add_email_utm(
+            href,
+            email_type=email_type,
+            subject=subject,
+            send_token=send_token,
+            partner_id=partner_id,
+        )
+        return f"{prefix}{tagged}{suffix}"
+
+    return _HREF_RE.sub(repl, html)
+
+
 def _should_track_link(url: str) -> bool:
     u = (url or "").strip().lower()
     if not u or u.startswith("#") or u.startswith("mailto:"):
@@ -185,10 +292,25 @@ def _should_track_link(url: str) -> bool:
     return u.startswith("http://") or u.startswith("https://") or u.startswith("/")
 
 
-def inject_tracking(html: str, token: str) -> str:
-    """Pixel d'ouverture + réécriture des liens cliquables."""
+def inject_tracking(
+    html: str,
+    token: str,
+    *,
+    email_type: str = "newsletter",
+    subject: str = "",
+    partner_id: str = "",
+) -> str:
+    """UTM internes + pixel d'ouverture + réécriture des liens cliquables."""
     if not html or not token:
         return html
+
+    html = inject_email_utm(
+        html,
+        email_type=email_type,
+        subject=subject,
+        send_token=token,
+        partner_id=partner_id,
+    )
 
     def repl(match: re.Match) -> str:
         prefix, href, suffix = match.group(1), match.group(2), match.group(3)

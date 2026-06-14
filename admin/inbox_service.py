@@ -26,6 +26,34 @@ SOURCE_LABELS = {
 
 _REPLY_SUBJECT_RE = re.compile(r"^(re|fw|fwd|aw|tr|ré|ref)\s*:", re.I)
 _OUR_DOMAIN = "insidevietnamtravel.fr"
+_SNIPPET_LEN = 140
+
+
+def _snippet(text: str, *, max_len: int = _SNIPPET_LEN) -> str:
+    one_line = re.sub(r"\s+", " ", (text or "").strip())
+    if len(one_line) <= max_len:
+        return one_line
+    return one_line[: max_len - 1].rstrip() + "…"
+
+
+def _enrich_message(msg: dict) -> dict:
+    import base64
+
+    out = dict(msg)
+    plain = (out.get("message") or "").strip()
+    html = (out.get("message_html") or "").strip()
+    if not plain and html:
+        from admin.mail_service import _strip_tags
+
+        plain = _strip_tags(html)
+        out["message"] = plain
+    out["has_html"] = bool(html)
+    out["snippet"] = _snippet(plain)
+    if html:
+        out["message_html_b64"] = base64.b64encode(html.encode("utf-8")).decode("ascii")
+    else:
+        out["message_html_b64"] = ""
+    return out
 
 
 def get_unified_inbox(*, limit: int = 80) -> dict:
@@ -43,6 +71,7 @@ def get_unified_inbox(*, limit: int = 80) -> dict:
     known_recipients = _sent_recipient_emails()
     merged = _merge_inbox(form_messages, imap_messages, known_recipients)
     merged.sort(key=lambda m: m.get("created_at") or "", reverse=True)
+    merged = [_enrich_message(m) for m in merged]
 
     by_source = {key: 0 for key in SOURCE_LABELS}
     for m in merged:
@@ -175,6 +204,7 @@ def _merge_inbox(
             "email": fm.get("email") or "",
             "subject": fm.get("subject") or "",
             "message": fm.get("message") or "",
+            "message_html": "",
             "lang": fm.get("lang") or "fr",
             "created_at": fm.get("created_at") or "",
             "read": bool(fm.get("read")),

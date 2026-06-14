@@ -840,6 +840,7 @@ def newsletter_preview():
 @admin_bp.route("/email-stats")
 @login_required
 def email_stats():
+    from admin import db as analytics_db
     from admin.email_tracking_service import (
         EMAIL_TYPE_LABELS,
         ensure_legacy_partner_sends,
@@ -855,6 +856,7 @@ def email_stats():
         summary=get_analytics_summary(),
         sends=get_sends_for_admin_table(100),
         email_type_labels=EMAIL_TYPE_LABELS,
+        email_traffic=analytics_db.get_email_traffic(30),
     )
 
 
@@ -897,6 +899,20 @@ def contact_admin():
         imap_status=imap_status(),
         imap_verify=verify_imap(),
     )
+
+
+@admin_bp.route("/api/contact/mark-read", methods=["POST"])
+@login_required
+def api_contact_mark_read():
+    from admin.inbox_service import mark_inbox_read
+
+    data = request.get_json(silent=True) or {}
+    msg_id = (data.get("msg_id") or request.form.get("msg_id") or "").strip()
+    form_id = (data.get("form_id") or request.form.get("form_id") or "").strip()
+    if not msg_id:
+        return jsonify({"ok": False, "error": "msg_id manquant"}), 400
+    ok = mark_inbox_read(msg_id, form_id=form_id)
+    return jsonify({"ok": ok})
 
 
 @admin_bp.route("/reviews", methods=["GET", "POST"])
