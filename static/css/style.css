@@ -4535,6 +4535,19 @@ a.article-category:hover { text-decoration: underline; }
   padding-top: 1.25rem;
   border-top: 1px solid var(--rice-dark);
 }
+.partner-page-final-actions {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rice-dark);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+.partner-page-final-actions__hint {
+  margin: 0;
+  font-size: 0.9rem;
+}
 .partner-page-wizard .partner-wizard__nav-right {
   display: flex;
   flex-wrap: wrap;

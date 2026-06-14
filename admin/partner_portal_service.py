@@ -25,8 +25,8 @@ PROFILE_TYPE_LABELS = dict(PROFILE_TYPES)
 
 PAGE_STATUSES = [
     ("draft", "Brouillon"),
-    ("ai_review", "Analyse IA"),
-    ("approved", "Validé IA"),
+    ("ai_review", "Vérification en cours"),
+    ("approved", "Validé"),
     ("published", "Publié"),
     ("rejected", "Refusé"),
 ]

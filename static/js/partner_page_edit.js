@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const progressSteps = Array.from(root.querySelectorAll('.partner-page-progress .prepare-progress__step'));
   const btnPrev = document.getElementById('page-prev');
   const btnNext = document.getElementById('page-next');
-  const btnSave = document.getElementById('page-save');
   const btnSubmit = document.getElementById('page-submit');
   const errEl = document.getElementById('page-wizard-error');
   const stepCurrentEl = document.getElementById('page-step-current');
@@ -53,6 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
       card.classList.toggle('is-selected', Boolean(input?.checked));
     });
   }
+
+  function parseSavedHighlights() {
     const raw = (data.savedHighlights || highlightsInput?.value || '').trim();
     if (!raw) return;
     const parts = raw.split(/[\n,;]+/).map((s) => s.trim()).filter(Boolean);
@@ -306,8 +307,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     if (btnPrev) btnPrev.hidden = current <= 1;
     if (btnNext) btnNext.hidden = current >= total;
-    if (btnSave) btnSave.hidden = current < total;
-    if (btnSubmit) btnSubmit.hidden = current < total;
     if (stepCurrentEl) stepCurrentEl.textContent = String(current);
     showError('');
     updateReadiness();
@@ -348,7 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (aiReview && e.submitter?.value === 'submit_ai') {
       e.preventDefault();
-      showError('Validation IA déjà en cours.');
+      showError('Vérification déjà en cours.');
     }
   });
 

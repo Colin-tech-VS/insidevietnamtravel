@@ -2,7 +2,7 @@
 {% block partner_content %}
 <section class="partner-review card" id="partner-review"
          data-state-url="{{ url_for('partners.api_page_review_state') }}">
-  <h1>Analyse de votre page</h1>
+  <h1>Vérification de votre page</h1>
 
   {% if page and page.status == 'published' %}
   <div class="partner-review__ok">
@@ -34,19 +34,19 @@
   <div class="partner-review__loader" aria-live="polite">
     <div class="partner-review__spinner" aria-hidden="true"></div>
     <p id="partner-review-phase">{{ job_status.phase or 'Analyse en cours…' }}</p>
-    <p class="muted">Notre IA rédige votre fiche, vérifie le SEO et la cohérence éditoriale (30–90 s).</p>
+    <p class="muted">Rédaction de votre fiche et contrôle SEO (30–90 s).</p>
     <p class="muted partner-review__wait-note">Ne fermez pas cette page — elle se mettra à jour automatiquement.</p>
   </div>
 
   {% elif job_status.status == 'error' %}
   <div class="partner-review__ko">
-    <h2>Analyse interrompue</h2>
-    <p class="flash flash--error">{{ job_status.error or 'Erreur lors de l\'analyse IA.' }}</p>
-    <p class="muted">Votre brouillon est conservé. Vous pouvez relancer l'analyse ou modifier le contenu.</p>
+    <h2>Vérification interrompue</h2>
+    <p class="flash flash--error">{{ job_status.error or 'Erreur lors de la vérification.' }}</p>
+    <p class="muted">Votre brouillon est conservé. Vous pouvez relancer la vérification ou modifier le contenu.</p>
     <div class="partner-review__actions">
       {% if ai_ready %}
       <form method="post" action="{{ url_for('partners.page_retry_ai') }}">
-        <button type="submit" class="btn btn-primary">Relancer l'analyse</button>
+        <button type="submit" class="btn btn-primary">Relancer la vérification</button>
       </form>
       {% endif %}
       <a href="{{ url_for('partners.page_edit') }}" class="btn btn-secondary">Modifier le brouillon</a>
@@ -55,12 +55,12 @@
 
   {% elif page and page.status == 'draft' and page.extra %}
   <div class="partner-review__ko">
-    <h2>Analyse non terminée</h2>
-    <p class="muted">L'analyse a été interrompue (session expirée ou redémarrage serveur). Votre brouillon est intact.</p>
+    <h2>Vérification non terminée</h2>
+    <p class="muted">La vérification a été interrompue (session expirée ou redémarrage serveur). Votre brouillon est intact.</p>
     <div class="partner-review__actions">
       {% if ai_ready %}
       <form method="post" action="{{ url_for('partners.page_retry_ai') }}">
-        <button type="submit" class="btn btn-primary">Relancer l'analyse IA</button>
+        <button type="submit" class="btn btn-primary">Relancer la vérification</button>
       </form>
       {% endif %}
       <a href="{{ url_for('partners.page_edit') }}" class="btn btn-secondary">Retour à l'éditeur</a>
@@ -69,7 +69,7 @@
 
   {% else %}
   <div class="partner-review__ko">
-    <p class="muted">Aucune analyse en cours. Commencez par rédiger votre page.</p>
+    <p class="muted">Aucune vérification en cours. Commencez par rédiger votre page.</p>
     <a href="{{ url_for('partners.page_edit') }}" class="btn btn-primary">Créer ma page</a>
   </div>
   {% endif %}

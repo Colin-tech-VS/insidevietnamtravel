@@ -43,8 +43,8 @@ _JOB_KEY = "partner_page_job_token"
 
 _PARTNER_META = {
     "partners.login": ("Connexion partenaire", "Connectez-vous à votre espace partenaire Inside Vietnam Travel."),
-    "partners.dashboard": ("Espace partenaire", "Gérez votre page partenaire et suivez la validation IA."),
-    "partners.page_edit": ("Ma page partenaire", "Rédigez et soumettez votre fiche partenaire."),
+    "partners.dashboard": ("Espace partenaire", "Gérez votre page partenaire et suivez la vérification."),
+    "partners.page_edit": ("Ma page partenaire", "Rédigez votre fiche puis vérifiez-la avant publication."),
     "partners.page_review": ("Validation IA", "Suivi de l'analyse éditoriale de votre page partenaire."),
 }
 
@@ -178,7 +178,7 @@ def page_edit():
                         contact_note=request.form.get("contact_note", ""),
                     )
                     _start_page_job(partner["id"])
-                    flash("Analyse IA lancée — patientez quelques instants.", "success")
+                    flash("Vérification lancée — patientez quelques instants.", "success")
                     return redirect(url_for("partners.page_review"))
         except ValueError as e:
             flash(str(e), "error")
@@ -203,7 +203,7 @@ def page_preview():
     partner = current_partner()
     page = get_page_by_partner(partner["id"])
     if not page or not (page.get("overview_html") or page.get("title")):
-        flash("Aucune page à prévisualiser — soumettez d'abord à l'IA.", "error")
+        flash("Aucune page à prévisualiser — vérifiez d'abord votre page.", "error")
         return redirect(url_for("partners.page_edit"))
     return render_template(
         "partner_public.html",

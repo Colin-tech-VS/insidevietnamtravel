@@ -5,7 +5,7 @@
 
 <div class="partner-page-wizard-wrap">
   {% if page and page.status == 'ai_review' %}
-  <p class="flash flash--success partner-page-banner">Validation IA en cours — patientez quelques minutes.</p>
+  <p class="flash flash--success partner-page-banner">Vérification en cours — patientez quelques minutes.</p>
   {% elif page and page.status == 'published' %}
   <p class="flash flash--success partner-page-banner">Page publiée — modifiez puis resoumettez pour une nouvelle validation.</p>
   {% elif page and page.status == 'rejected' %}
@@ -15,7 +15,7 @@
   <header class="partner-page-wizard__intro">
     <p class="partner-dash__eyebrow">{{ profile_label }}</p>
     <h1>Créer ma page</h1>
-    <p class="muted">3 étapes · validation IA · publication sur insidevietnamtravel.fr</p>
+    <p class="muted">3 étapes · vérification éditoriale · publication sur insidevietnamtravel.fr</p>
   </header>
 
   <div class="prepare-wizard partner-page-wizard" id="partner-page-wizard"
@@ -203,6 +203,19 @@
             <input type="text" id="contact-detail" maxlength="200" placeholder="+84 …">
           </div>
         </div>
+
+        <div class="partner-page-final-actions">
+          {% if ai_ready %}
+          <button type="submit" name="action" value="submit_ai" class="btn btn-primary btn-lg" id="page-submit"
+                  {% if page and page.status == 'ai_review' %}disabled{% endif %}>
+            Vérifier ma page
+          </button>
+          <p class="muted partner-page-final-actions__hint">Contrôle éditorial, SEO et cohérence — publication si validé.</p>
+          {% else %}
+          <p class="muted">Vérification automatique indisponible — enregistrez votre brouillon.</p>
+          {% endif %}
+          <button type="submit" name="action" value="save" class="btn btn-ghost btn-sm" id="page-save">Enregistrer brouillon</button>
+        </div>
       </div>
 
       <div class="prepare-wizard__nav partner-page-wizard__nav">
@@ -210,13 +223,6 @@
         <div class="partner-wizard__nav-right">
           <span class="partner-wizard__step-label muted">Étape <strong id="page-step-current">1</strong>/3</span>
           <button type="button" class="btn btn-primary" id="page-next">Continuer →</button>
-          <button type="submit" name="action" value="save" class="btn btn-secondary" id="page-save" hidden>Enregistrer brouillon</button>
-          {% if ai_ready %}
-          <button type="submit" name="action" value="submit_ai" class="btn btn-primary btn-lg" id="page-submit"
-                  {% if page and page.status == 'ai_review' %}disabled{% endif %} hidden>
-            Soumettre à l'IA ✨
-          </button>
-          {% endif %}
         </div>
       </div>
     </form>
