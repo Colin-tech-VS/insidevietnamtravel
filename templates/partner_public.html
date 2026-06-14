@@ -103,7 +103,11 @@
       </section>
       {% endif %}
 
-      {% if page.services_html %}
+      {% if services_html_display is defined and services_html_display %}
+      <div class="partner-vitrine-block partner-reveal">
+        <div class="prose partner-vitrine-prose">{{ services_html_display | safe }}</div>
+      </div>
+      {% elif page.services_html %}
       <div class="partner-vitrine-block partner-reveal">
         <div class="prose partner-vitrine-prose">{{ page.services_html | safe }}</div>
       </div>

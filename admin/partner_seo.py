@@ -2,8 +2,15 @@
 
 from __future__ import annotations
 
+import re
+
 import config
-from admin.partner_portal_service import PROFILE_TYPE_LABELS, list_public_partners, page_public_highlights
+from admin.partner_portal_service import (
+    PROFILE_TYPE_LABELS,
+    list_public_partners,
+    page_public_highlights,
+    _highlights_from_html,
+)
 from i18n_utils import lang_url
 
 PROFILE_TYPE_I18N = {
@@ -259,11 +266,29 @@ def json_ld_graph(page: dict, partner: dict, lang: str, *, canonical_url: str) -
     return [profile_page, entity]
 
 
+def _services_html_for_display(page: dict, highlights: list[str]) -> str:
+    html = (page.get("services_html") or "").strip()
+    if not html or not highlights:
+        return html
+    if not _highlights_from_html(html):
+        return html
+    cleaned = re.sub(
+        r"<h2[^>]*>\s*(?:Pourquoi|Why|Points?\s+forts|Highlights?).*?</h2>\s*",
+        "",
+        html,
+        count=1,
+        flags=re.I | re.S,
+    )
+    cleaned = re.sub(r"<ul[^>]*>.*?</ul>", "", cleaned, count=1, flags=re.I | re.S)
+    return cleaned.strip() or html
+
+
 def build_public_page_context(page: dict, partner: dict, lang: str, *, canonical_url: str) -> dict:
     """Variables template pour partner_public.html."""
     extra = page.get("extra") or {}
     city = (extra.get("city") or partner.get("city") or "").strip()
     image = page.get("image_url") or ""
+    highlights = page_public_highlights(page)
     return {
         "profile_badge": profile_badge(partner, lang),
         "profile_label": profile_type_label(partner, lang),
@@ -281,7 +306,8 @@ def build_public_page_context(page: dict, partner: dict, lang: str, *, canonical
         "og_image_alt": page.get("seo_title") or page.get("title") or "",
         "partner_city": city,
         "partner_languages": (partner.get("languages") or "").strip(),
-        "partner_highlights": page_public_highlights(page),
+        "partner_highlights": highlights,
+        "services_html_display": _services_html_for_display(page, highlights),
     }
 
 

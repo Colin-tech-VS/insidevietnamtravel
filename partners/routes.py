@@ -31,6 +31,7 @@ from admin.partner_portal_service import (
     page_ai_review_stale,
     page_review_job_running,
     partner_page_has_publishable_content,
+    partner_page_publication,
     publish_partner_page,
     release_page_from_ai_review,
     review_job_token,
@@ -218,6 +219,7 @@ def dashboard():
         is_hidden_account=is_hidden,
         profile_label=PROFILE_TYPE_LABELS.get(partner.get("profile_type"), ""),
         page_status_labels=PAGE_STATUS_LABELS,
+        publication=partner_page_publication(page, is_hidden=is_hidden),
         ai_ready=ai_client.is_configured(),
     )
 

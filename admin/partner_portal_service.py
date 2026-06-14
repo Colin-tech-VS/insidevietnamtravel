@@ -90,6 +90,30 @@ def _parse_json_field(raw: str | None) -> list | dict:
         return []
 
 
+def _parse_extra_json(raw: str | None) -> dict:
+    if not raw:
+        return {}
+    try:
+        data = json.loads(raw)
+        return dict(data) if isinstance(data, dict) else {}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def _highlights_from_html(html: str | None) -> list[str]:
+    if not html:
+        return []
+    from html import unescape
+
+    items: list[str] = []
+    for match in re.finditer(r"<li[^>]*>(.*?)</li>", html, re.I | re.S):
+        text = unescape(re.sub(r"<[^>]+>", " ", match.group(1)))
+        text = " ".join(text.split()).strip()
+        if text and len(text) <= 220:
+            items.append(text)
+    return items
+
+
 def _highlights_from_extra(extra: dict | None) -> list[str]:
     """Points forts affichables — profile_highlights (IA) ou brouillon highlights."""
     extra = extra or {}
@@ -119,7 +143,86 @@ def _highlights_from_extra(extra: dict | None) -> list[str]:
 def page_public_highlights(page: dict | None) -> list[str]:
     if not page:
         return []
-    return _highlights_from_extra(page.get("extra") or {})
+    extra = page.get("extra") if isinstance(page.get("extra"), dict) else {}
+    items = _highlights_from_extra(extra)
+    if not items:
+        items = _highlights_from_html(page.get("services_html"))
+    if not items:
+        items = _highlights_from_html(page.get("overview_html"))
+    return items
+
+
+def partner_page_publication(page: dict | None, *, is_hidden: bool = False) -> dict:
+    """Résumé lisible pour le dashboard partenaire."""
+    if not page:
+        return {
+            "is_published": False,
+            "is_public": False,
+            "headline": "Aucune page",
+            "detail": "Créez votre fiche pour commencer.",
+            "badge": "none",
+        }
+    status = page.get("status") or "draft"
+    if status == "published":
+        if is_hidden:
+            return {
+                "is_published": True,
+                "is_public": False,
+                "headline": "Publiée (aperçu privé)",
+                "detail": "Visible dans votre espace — non indexée sur le site public.",
+                "badge": "private",
+            }
+        return {
+            "is_published": True,
+            "is_public": True,
+            "headline": "Page publiée en ligne",
+            "detail": "Votre fiche est visible sur insidevietnamtravel.fr.",
+            "badge": "live",
+        }
+    if status == "ai_review":
+        return {
+            "is_published": False,
+            "is_public": False,
+            "headline": "Vérification en cours",
+            "detail": "L’IA analyse votre page — patientez quelques instants.",
+            "badge": "pending",
+        }
+    if status == "approved":
+        return {
+            "is_published": False,
+            "is_public": False,
+            "headline": "Validée — à publier",
+            "detail": "L’IA a validé votre page. Confirmez la publication.",
+            "badge": "approved",
+        }
+    if status == "rejected":
+        return {
+            "is_published": False,
+            "is_public": False,
+            "headline": "Non publiée",
+            "detail": "Corrigez les points signalés puis relancez la vérification.",
+            "badge": "rejected",
+        }
+    return {
+        "is_published": False,
+        "is_public": False,
+        "headline": "Non publiée",
+        "detail": "Brouillon — lancez « Vérifier ma page » pour publication.",
+        "badge": "draft",
+    }
+
+
+def _normalize_page_record(page: dict) -> dict:
+    page["extra"] = _parse_extra_json(page.get("extra_json"))
+    raw_review = page.get("ai_review_json")
+    if raw_review:
+        try:
+            page["ai_review"] = json.loads(raw_review) if isinstance(raw_review, str) else raw_review
+        except Exception:  # noqa: BLE001
+            page["ai_review"] = {}
+    else:
+        page["ai_review"] = {}
+    return page
 
 
 def _public_account(row: dict) -> dict:
@@ -329,17 +432,7 @@ def get_page_by_partner(partner_id: str) -> dict | None:
         row = cur.fetchone()
     if not row:
         return None
-    page = _page_row_dict(row)
-    page["extra"] = _parse_json_field(page.get("extra_json"))
-    raw_review = page.get("ai_review_json")
-    if raw_review:
-        try:
-            page["ai_review"] = json.loads(raw_review) if isinstance(raw_review, str) else raw_review
-        except Exception:  # noqa: BLE001
-            page["ai_review"] = {}
-    else:
-        page["ai_review"] = {}
-    return page
+    return _normalize_page_record(_page_row_dict(row))
 
 
 def get_page_by_slug(slug: str) -> dict | None:
@@ -359,11 +452,10 @@ def get_page_by_slug(slug: str) -> dict | None:
         row = cur.fetchone()
     if not row:
         return None
-    page = _page_row_dict(row)
+    page = _normalize_page_record(_page_row_dict(row))
     account = get_account_by_id(page.get("partner_id"))
     if account and is_hidden_test_partner(account):
         return None
-    page["extra"] = _parse_json_field(page.get("extra_json"))
     return page
 
 
@@ -432,6 +524,7 @@ def save_page_draft(
 
     existing = get_page_by_partner(partner_id)
     now = _now_iso()
+    prev_extra = (existing or {}).get("extra") if isinstance((existing or {}).get("extra"), dict) else {}
     extra = {
         "pitch": pitch,
         "highlights": highlights,
@@ -439,6 +532,10 @@ def save_page_draft(
         "city": (city or account.get("city") or "").strip(),
         "contact_note": (contact_note or "").strip(),
     }
+    if prev_extra.get("profile_highlights"):
+        extra["profile_highlights"] = prev_extra["profile_highlights"]
+    elif highlights:
+        extra["profile_highlights"] = _highlights_from_extra({"highlights": highlights})
     extra_json = json.dumps(extra, ensure_ascii=False)
 
     if existing:
@@ -666,6 +763,8 @@ def apply_ai_page_result(partner_id: str, result: dict) -> dict:
     profile_highlights = [str(h).strip() for h in profile_highlights if str(h).strip()]
     if not profile_highlights:
         profile_highlights = _highlights_from_extra(extra)
+    if not profile_highlights:
+        profile_highlights = _highlights_from_html(page_data.get("services_html"))
     extra["profile_highlights"] = profile_highlights
     if review.get("fixes"):
         extra["pending_fixes"] = review["fixes"]

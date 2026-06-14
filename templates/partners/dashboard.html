@@ -18,6 +18,46 @@
     </a>
   </header>
 
+  <article class="partner-publish-banner partner-publish-banner--{{ publication.badge }}">
+    <div class="partner-publish-banner__icon" aria-hidden="true">
+      {% if publication.is_published %}✓{% else %}○{% endif %}
+    </div>
+    <div class="partner-publish-banner__body">
+      <p class="partner-publish-banner__label">
+        {% if publication.is_public %}
+        En ligne sur le site
+        {% elif publication.is_published %}
+        Publiée (privé)
+        {% else %}
+        Pas encore en ligne
+        {% endif %}
+      </p>
+      <h2 class="partner-publish-banner__title">{{ publication.headline }}</h2>
+      <p class="partner-publish-banner__detail">{{ publication.detail }}</p>
+      {% if page %}
+      <p class="partner-publish-banner__status muted">
+        Statut technique : <strong>{{ page_status_labels.get(page.status, page.status) }}</strong>
+        {% if page.published_at %} · publiée le {{ page.published_at[:10] }}{% endif %}
+      </p>
+      {% endif %}
+    </div>
+    <div class="partner-publish-banner__actions">
+      {% if page and page.status == 'published' and page.slug %}
+        {% if is_hidden_account %}
+        <a href="{{ url_for('partners.page_preview') }}" class="btn btn-primary btn-sm" target="_blank" rel="noopener">Aperçu privé ↗</a>
+        {% else %}
+        <a href="{{ url_for('partner_public_page', slug=page.slug) }}" class="btn btn-primary btn-sm" target="_blank" rel="noopener">Voir ma page ↗</a>
+        {% endif %}
+      {% elif page and page.status == 'approved' %}
+      <a href="{{ url_for('partners.page_review') }}" class="btn btn-primary btn-sm">Publier →</a>
+      {% elif page and page.status in ('rejected', 'draft') %}
+      <a href="{{ url_for('partners.page_review') }}" class="btn btn-secondary btn-sm">Vérifier ma page</a>
+      {% elif not page %}
+      <a href="{{ url_for('partners.page_edit') }}" class="btn btn-primary btn-sm">Créer ma page</a>
+      {% endif %}
+    </div>
+  </article>
+
   <div class="partner-dash__grid">
     <article class="card partner-stat-card">
       <h2>Statut de votre page</h2>
@@ -25,15 +65,14 @@
       <p class="partner-stat-card__value partner-stat-card__value--{{ page.status }}">
         {{ page_status_labels.get(page.status, page.status) }}{% if is_hidden_account and page.status == 'published' %} (privé){% endif %}
       </p>
-      {% if page.status == 'published' and page.slug %}
+      {% if page.status == 'published' %}
+      <p class="partner-stat-card__ok">
         {% if is_hidden_account %}
-        <p><a href="{{ url_for('partners.page_preview') }}" target="_blank" rel="noopener">Aperçu privé ↗</a> <span class="muted">— non indexé</span></p>
+        ✅ Publiée en mode privé — visible via aperçu uniquement.
         {% else %}
-        <p><a href="{{ url_for('partner_public_page', slug=page.slug) }}" target="_blank" rel="noopener">Voir la page publique ↗</a></p>
+        ✅ Publiée — votre fiche est accessible publiquement.
         {% endif %}
-      {% elif page.status == 'approved' %}
-      <p class="partner-stat-card__ok">Votre page est validée — il ne reste qu'à la publier.</p>
-      <p><a href="{{ url_for('partners.page_review') }}" class="btn btn-primary btn-sm">Publier ma page →</a></p>
+      </p>
       {% elif page.status == 'rejected' and page.ai_review %}
       <p class="partner-stat-card__warn">{{ page.ai_review.summary or 'Contenu non conforme — modifiez et relancez.' }}</p>
       {% if page.ai_review.issues %}
@@ -67,7 +106,7 @@
     <ol>
       <li>Rédigez votre page (accroche, offre, points forts).</li>
       <li>Vérifiez votre page — contrôle éditorial, SEO et cohérence avec le site.</li>
-      <li>Si validé, votre page est publiée{% if is_hidden_account %} en mode privé (aperçu uniquement){% else %} sur <code>/partenaire/votre-slug</code>{% endif %}.</li>
+      <li>Si validé par l’IA, votre page est publiée{% if is_hidden_account %} en mode privé (aperçu uniquement){% else %} sur <code>/partenaire/votre-slug</code>{% endif %}.</li>
     </ol>
   </article>
 </section>
