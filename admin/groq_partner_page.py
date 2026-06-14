@@ -18,11 +18,30 @@ FIELD_LABELS = {
     "contact_note": "Contact",
 }
 
-SYSTEM_PROMPT = """Tu es éditeur SEO pour « Inside Vietnam Travel », guide voyage Vietnam en français.
+MIN_FIELD_LEN = {
+    "pitch": 30,
+    "offer_details": 40,
+}
+
+MIN_PUBLISH_SCORE = 65
+
+FIX_GROUNDING_RULES = """
+RÈGLES CORRECTIONS (fixes) — OBLIGATOIRES :
+- Chaque « suggested » doit être une AMÉLIORATION du texte « current » / brouillon : conserve les faits, villes, langues, activités et spécificités déjà saisis par le partenaire.
+- Ne remplace pas par un texte générique ou un autre métier : reformule, structure, corrige orthographe/SEO et complète ce qui manque.
+- Utilise le nom de marque exact du profil (business_name) — ne dupliques pas « Travel », ne mélange pas avec « Inside Vietnam Travel » (c’est le site éditeur, pas le partenaire).
+- Si bio inscription ou services déclarés existent, intègre-les dans pitch/offre/highlights quand le brouillon est vide ou faible.
+- contact_note : inclure email et site web du profil s’ils existent.
+- highlights : 3 à 6 points courts, distincts, sans redondance (une puce = un atout).
+- L’objectif des corrections : après application, une nouvelle vérification doit pouvoir atteindre score ≥ 70 et approved=true si le Vietnam et le profil sont cohérents.
+- suggested = texte final prêt à coller (pas de placeholder, pas de « … », pas de consigne entre crochets).
+"""
+
+SYSTEM_PROMPT = f"""Tu es éditeur SEO pour « Inside Vietnam Travel », guide voyage Vietnam en français.
 
 Tu reçois le profil d'un partenaire (guide, influenceur, blogueur, agence, hôtel…) et son brouillon.
 Tu dois :
-1) Rédiger une page partenaire cohérente avec le site (ton chaleureux, expert, honnête).
+1) Rédiger une page partenaire cohérente avec le site (ton chaleureux, expert, honnête) EN T'APPUYANT SUR LE BROUILLON ET LE PROFIL.
 2) Vérifier que le contenu respecte les règles éditoriales du site.
 3) Si la page n'est PAS validée, proposer des corrections concrètes sur le BROUILLON (champs pitch, highlights, offer_details, city, contact_note).
 
@@ -38,26 +57,29 @@ RÈGLES DESIGN & CONTENU (obligatoires pour valider) :
 - Intègre des mots-clés naturels liés au Vietnam et au profil (sans bourrage).
 - La page doit compléter le site (pas dupliquer une destination existante mot pour mot).
 - Accroche (pitch) : min. 30 caractères. Offre (offer_details) : min. 40 caractères.
+- page.title = nom affiché du partenaire (business_name ou prénom + nom), jamais le nom du site éditeur.
+
+{FIX_GROUNDING_RULES}
 
 JSON strict :
-{
-  "review": {
+{{
+  "review": {{
     "approved": true|false,
     "score": 0-100,
     "issues": ["problème 1", "…"],
     "summary": "1-2 phrases expliquant la décision",
     "fixes": [
-      {
+      {{
         "id": "fix_pitch",
         "field": "pitch|highlights|offer_details|city|contact_note",
         "label": "Libellé court",
         "reason": "Pourquoi corriger ce champ",
         "current": "extrait actuel",
         "suggested": "texte corrigé prêt à remplacer le champ"
-      }
+      }}
     ]
-  },
-  "page": {
+  }},
+  "page": {{
     "title": "Nom affiché",
     "tagline": "Accroche courte",
     "overview_html": "<p>…</p>",
@@ -65,42 +87,54 @@ JSON strict :
     "seo_title": "…",
     "seo_description": "…",
     "profile_highlights": ["point fort 1", "…"]
-  }
-}
+  }}
+}}
 
-approved=true seulement si score >= 65 et aucun problème bloquant (hors-sujet, spam, mensonge).
+approved=true seulement si score >= {MIN_PUBLISH_SCORE} et aucun problème bloquant (hors-sujet, spam, mensonge).
+Si le brouillon est Vietnam + cohérent avec le profil après corrections, privilégie approved=true plutôt qu'un refus perfectionniste.
 Si approved=false : issues non vide ET fixes avec au moins 1 entrée (suggested respecte les minimums de caractères).
 """
 
-FIXES_ONLY_PROMPT = """Tu es éditeur pour Inside Vietnam Travel (guide voyage Vietnam, FR).
+FIXES_ONLY_PROMPT = f"""Tu es éditeur pour Inside Vietnam Travel (guide voyage Vietnam, FR).
 
 Un partenaire a soumis un brouillon de fiche partenaire. La vérification automatique a échoué ou est incomplète.
 Analyse le brouillon et la raison de l'échec, puis propose des corrections concrètes sur les champs éditables.
 
 Champs autorisés : pitch (accroche, min 30 car.), highlights (points forts), offer_details (offre, min 40 car.), city, contact_note.
 
+{FIX_GROUNDING_RULES}
+
+Propose 1 à 5 corrections actionnables couvrant tous les problèmes bloquants.
+Chaque suggested doit permettre d'atteindre score ≥ 70 à la prochaine vérification.
+
 JSON strict :
-{
-  "review": {
+{{
+  "review": {{
     "approved": false,
     "score": 0-100,
     "issues": ["…"],
     "summary": "Explication claire de pourquoi la vérification a échoué",
     "fixes": [
-      {
+      {{
         "id": "fix_pitch",
         "field": "pitch",
         "label": "Accroche",
         "reason": "…",
         "current": "…",
         "suggested": "…"
-      }
+      }}
     ]
-  }
-}
-
-Propose 1 à 5 corrections actionnables. suggested doit être du texte final utilisable tel quel (pas de placeholder).
+  }}
+}}
 """
+
+
+def _display_name(account: dict) -> str:
+    business = (account.get("business_name") or "").strip()
+    if business:
+        return business
+    parts = [account.get("first_name") or "", account.get("last_name") or ""]
+    return " ".join(p.strip() for p in parts if p and str(p).strip()).strip() or "Partenaire"
 
 
 def _partner_context(account: dict, page: dict) -> str:
@@ -108,26 +142,70 @@ def _partner_context(account: dict, page: dict) -> str:
     profile_label = PROFILE_TYPE_LABELS.get(account.get("profile_type"), account.get("profile_type"))
     services = account.get("services") or []
     social = account.get("social_links") or []
-    return (
-        f"Type de partenaire : {profile_label}\n"
-        f"Nom / marque : {account.get('business_name') or account.get('first_name')} "
-        f"{account.get('last_name', '')}\n"
-        f"Ville : {extra.get('city') or account.get('city') or '—'}\n"
-        f"Site : {account.get('website') or '—'}\n"
-        f"Langues : {account.get('languages') or '—'}\n"
-        f"Bio inscription : {account.get('bio') or '—'}\n"
-        f"Services déclarés : {', '.join(services) if services else '—'}\n"
-        f"Réseaux : {', '.join(social) if social else '—'}\n\n"
-        f"BROUILLON PAGE :\n"
-        f"- Accroche (pitch) : {extra.get('pitch') or '—'}\n"
-        f"- Points forts (highlights) : {extra.get('highlights') or '—'}\n"
-        f"- Offre détaillée (offer_details) : {extra.get('offer_details') or '—'}\n"
-        f"- Ville (city) : {extra.get('city') or '—'}\n"
-        f"- Contact (contact_note) : {extra.get('contact_note') or '—'}\n"
-    )
+    display_name = _display_name(account)
+    lines = [
+        f"Type de partenaire : {profile_label}",
+        f"Nom affiché (à utiliser pour title/page) : {display_name}",
+        f"Prénom / nom : {account.get('first_name') or '—'} {account.get('last_name') or ''}".strip(),
+        f"Ville profil : {account.get('city') or '—'}",
+        f"Email contact : {account.get('email') or '—'}",
+        f"Site web : {account.get('website') or '—'}",
+        f"Langues : {account.get('languages') or '—'}",
+        f"Bio inscription : {account.get('bio') or '—'}",
+        f"Services déclarés : {', '.join(services) if services else '—'}",
+        f"Réseaux : {', '.join(social) if social else '—'}",
+        "",
+        "BROUILLON PAGE (source de vérité — enrichir, ne pas jeter) :",
+        f"- Accroche (pitch) : {extra.get('pitch') or '—'}",
+        f"- Points forts (highlights) : {extra.get('highlights') or '—'}",
+        f"- Offre détaillée (offer_details) : {extra.get('offer_details') or '—'}",
+        f"- Ville (city) : {extra.get('city') or '—'}",
+        f"- Contact (contact_note) : {extra.get('contact_note') or '—'}",
+    ]
+    if extra.get("ai_fixes_applied"):
+        lines.append("")
+        lines.append(
+            "NOTE : le partenaire a déjà appliqué des corrections IA. "
+            "Évalue le brouillon ACTUEL ci-dessus : si Vietnam + profil cohérents "
+            f"(pitch ≥30 car., offer ≥40 car.), valide (approved=true, score ≥ 70)."
+        )
+    return "\n".join(lines) + "\n"
 
 
-def _parse_fixes(raw_fixes, extra: dict) -> list[dict]:
+def _enrich_fix_suggested(field: str, suggested: str, current: str, account: dict, extra: dict) -> str:
+    suggested = (suggested or "").strip()
+    current = (current or "").strip()
+    if not suggested:
+        return current
+    if field == "contact_note":
+        bits = [suggested]
+        email = (account.get("email") or "").strip()
+        website = (account.get("website") or "").strip()
+        low = suggested.lower()
+        if email and email.lower() not in low:
+            bits.append(f"Email : {email}")
+        if website and website.lower() not in low:
+            bits.append(f"Site : {website}")
+        return "\n".join(bits)
+    if field == "city" and not suggested and (extra.get("city") or account.get("city")):
+        return (extra.get("city") or account.get("city") or "").strip()
+    return suggested
+
+
+def _fix_meets_minimum(field: str, suggested: str) -> bool:
+    min_len = MIN_FIELD_LEN.get(field)
+    if min_len and len((suggested or "").strip()) < min_len:
+        return False
+    if not (suggested or "").strip():
+        return False
+    placeholder_markers = ("...", "[", "]", "à compléter", "placeholder", "exemple :", "ex :")
+    low = suggested.lower()
+    if any(m in low for m in placeholder_markers):
+        return False
+    return True
+
+
+def _parse_fixes(raw_fixes, extra: dict, account: dict | None = None) -> list[dict]:
     out: list[dict] = []
     seen: set[str] = set()
     for idx, item in enumerate(raw_fixes or []):
@@ -139,11 +217,15 @@ def _parse_fixes(raw_fixes, extra: dict) -> list[dict]:
         suggested = str(item.get("suggested") or "").strip()
         if not suggested:
             continue
+        current = str(item.get("current") or extra.get(field) or "").strip()
+        if account:
+            suggested = _enrich_fix_suggested(field, suggested, current, account, extra)
+        if not _fix_meets_minimum(field, suggested):
+            continue
         fix_id = (item.get("id") or f"fix_{field}_{idx}").strip()[:40]
         if fix_id in seen:
             fix_id = f"{fix_id}_{idx}"
         seen.add(fix_id)
-        current = str(item.get("current") or extra.get(field) or "").strip()
         out.append({
             "id": fix_id,
             "field": field,
@@ -155,16 +237,18 @@ def _parse_fixes(raw_fixes, extra: dict) -> list[dict]:
     return out[:6]
 
 
-def _normalize_review(review: dict, extra: dict) -> dict:
+def _normalize_review(review: dict, extra: dict, account: dict | None = None) -> dict:
     review = dict(review or {})
     review["approved"] = bool(review.get("approved"))
     try:
         review["score"] = int(review.get("score", 0))
     except (TypeError, ValueError):
         review["score"] = 0
+    if review["approved"] and review["score"] < MIN_PUBLISH_SCORE:
+        review["approved"] = False
     review["issues"] = [str(i).strip() for i in (review.get("issues") or []) if str(i).strip()][:8]
     review["summary"] = str(review.get("summary") or "").strip()[:500]
-    review["fixes"] = _parse_fixes(review.get("fixes"), extra)
+    review["fixes"] = _parse_fixes(review.get("fixes"), extra, account)
     return review
 
 
@@ -178,9 +262,9 @@ def _ensure_html(text: str) -> str:
     return "".join(parts) if parts else f"<p>{text}</p>"
 
 
-def _parse_response(raw: str, extra: dict | None = None) -> dict:
+def _parse_response(raw: str, extra: dict | None = None, account: dict | None = None) -> dict:
     data = ai_client.parse_json(raw)
-    review = _normalize_review(data.get("review") or {}, extra or {})
+    review = _normalize_review(data.get("review") or {}, extra or {}, account)
     page = data.get("page") or {}
     if "approved" not in (data.get("review") or {}):
         raise ValueError("Réponse IA incomplète (review)")
@@ -193,9 +277,9 @@ def _parse_response(raw: str, extra: dict | None = None) -> dict:
     return {"review": review, "page": page}
 
 
-def _parse_fixes_response(raw: str, extra: dict) -> dict:
+def _parse_fixes_response(raw: str, extra: dict, account: dict | None = None) -> dict:
     data = ai_client.parse_json(raw)
-    review = _normalize_review(data.get("review") or {}, extra)
+    review = _normalize_review(data.get("review") or {}, extra, account)
     if not review["summary"]:
         review["summary"] = "La vérification n'a pas pu aboutir — voici les corrections proposées."
     if not review["issues"] and not review["fixes"]:
@@ -211,8 +295,10 @@ def generate_and_review_partner_page(account: dict, page: dict, *, progress=None
     extra = page.get("extra") or {}
     user_msg = (
         _partner_context(account, page)
-        + "\nRédige la page ET décide si elle peut être publiée sur insidevietnamtravel.fr/partenaire/… "
-        "Si tu refuses (approved=false), liste les problèmes ET des fixes actionnables sur le brouillon. "
+        + "\nRédige la page EN T'INSPIRANT DU BROUILLON (reformule, structure, complète — ne remplace pas par un profil générique). "
+        f"title = « {_display_name(account)} ». "
+        "Décide si elle peut être publiée sur insidevietnamtravel.fr/partenaire/… "
+        "Si tu refuses (approved=false), liste les problèmes ET des fixes actionnables ancrés dans le brouillon actuel. "
         "Réponds en JSON strict."
     )
 
@@ -229,7 +315,7 @@ def generate_and_review_partner_page(account: dict, page: dict, *, progress=None
     )
     raw = response.choices[0].message.content or ""
     report("Finalisation…")
-    result = _parse_response(raw, extra)
+    result = _parse_response(raw, extra, account)
     if not result["review"].get("approved") and not result["review"].get("fixes"):
         try:
             hints = suggest_partner_page_fixes(
@@ -257,7 +343,7 @@ def suggest_partner_page_fixes(account: dict, page: dict, *, reason: str = "") -
     user_msg = (
         _partner_context(account, page)
         + (f"\nRAISON DE L'ÉCHEC : {err}\n" if err else "\n")
-        + "Explique pourquoi la vérification a échoué et propose des corrections sur le brouillon. "
+        + "Propose des corrections ANCRÉES dans le brouillon actuel (reformulation, pas remplacement générique). "
         "JSON strict."
     )
     response = ai_client.chat_completion(
@@ -271,4 +357,4 @@ def suggest_partner_page_fixes(account: dict, page: dict, *, reason: str = "") -
         vitrine=True,
     )
     raw = response.choices[0].message.content or ""
-    return _parse_fixes_response(raw, extra)
+    return _parse_fixes_response(raw, extra, account)

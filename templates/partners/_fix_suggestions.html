@@ -3,7 +3,7 @@
   <div class="partner-fixes__head">
     <div>
       <h3 class="partner-fixes__title">Corrections proposées</h3>
-      <p class="muted partner-fixes__lead">L'IA suggère ces modifications sur votre brouillon — appliquez-les sans quitter cette page.</p>
+      <p class="muted partner-fixes__lead">L'IA suggère des améliorations basées sur votre brouillon — reformulation et compléments, pas un texte générique.</p>
     </div>
     <button type="button" class="btn btn-primary" id="partner-fixes-apply-all" data-apply-all="1">
       Tout appliquer (<span id="partner-fixes-count">{{ page_fixes|length }}</span>)
@@ -37,7 +37,7 @@
   </div>
   <div class="partner-fixes__done" id="partner-fixes-done" hidden>
     <p class="partner-fixes__done-msg">✅ Toutes les corrections ont été appliquées à votre brouillon.</p>
-    <p class="muted partner-fixes__done-hint">Relancez la vérification ci-dessous pour valider votre page.</p>
+    <p class="muted partner-fixes__done-hint">Relance automatique de la vérification pour valider votre page…</p>
   </div>
 </div>
 {% endif %}

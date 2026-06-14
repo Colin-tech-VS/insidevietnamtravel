@@ -115,6 +115,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  async function relaunchVerification() {
+    const retryUrl = root.dataset.retryUrl;
+    if (!retryUrl || root.classList.contains('is-busy')) return;
+    showOverlay(
+      'Relance de la vérification IA…',
+      'Analyse du brouillon corrigé — patientez 30 à 120 s.',
+    );
+    try {
+      const res = await fetch(retryUrl, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json' },
+      });
+      if (res.redirected) {
+        window.location.href = res.url;
+        return;
+      }
+      if (res.ok) {
+        window.location.reload();
+        return;
+      }
+      throw new Error('Impossible de relancer la vérification.');
+    } catch (err) {
+      hideOverlay();
+      setFeedback(err.message || 'Erreur lors de la relance.', false);
+      const retryBtn = document.getElementById('partner-review-retry-btn');
+      if (retryBtn) retryBtn.classList.add('is-highlight');
+    }
+  }
+
   async function applyFixes({ fixId, label, labels, applyAll }) {
     if (!applyUrl || root.classList.contains('is-busy')) return;
 
@@ -170,6 +200,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if ((data.remaining_fixes || []).length === 0 && fixesDone) {
         fixesDone.hidden = false;
         if (fixesRoot) fixesRoot.classList.add('is-complete');
+      }
+
+      if (data.should_relaunch) {
+        await sleep(600);
+        await relaunchVerification();
       }
     } catch (err) {
       setFeedback(err.message || 'Erreur lors de l\'application.', false);

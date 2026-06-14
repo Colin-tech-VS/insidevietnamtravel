@@ -714,6 +714,28 @@ def _set_review_fixes(partner_id: str, fixes: list[dict]) -> None:
             )
 
 
+def _patch_page_extra(partner_id: str, patch: dict) -> None:
+    page = get_page_by_partner(partner_id)
+    if not page:
+        return
+    extra = dict(page.get("extra") or {})
+    extra.update({k: v for k, v in patch.items() if v is not None})
+    now = _now_iso()
+    extra_json = json.dumps(extra, ensure_ascii=False)
+    with get_connection() as conn:
+        cur = conn.cursor()
+        if is_postgres():
+            cur.execute(
+                "UPDATE partner_pages SET extra_json = %s, updated_at = %s WHERE partner_id = %s",
+                (extra_json, now, partner_id),
+            )
+        else:
+            cur.execute(
+                "UPDATE partner_pages SET extra_json = ?, updated_at = ? WHERE partner_id = ?",
+                (extra_json, now, partner_id),
+            )
+
+
 def apply_partner_fixes(
     partner_id: str,
     *,
@@ -761,6 +783,10 @@ def apply_partner_fixes(
     save_page_draft(partner_id, **fields)
     remaining = [f for f in fixes if f.get("id") not in applied_ids]
     _set_review_fixes(partner_id, remaining)
+    patch: dict = {"ai_fixes_applied": True, "ai_fixes_applied_at": _now_iso()}
+    if not remaining:
+        patch["ai_fixes_ready_for_recheck"] = True
+    _patch_page_extra(partner_id, patch)
     applied_labels = [
         str(f.get("label") or f.get("field") or "")
         for f in selected
@@ -772,6 +798,7 @@ def apply_partner_fixes(
         "applied_labels": applied_labels,
         "remaining_fixes": remaining,
         "draft": fields,
+        "should_relaunch": not remaining,
     }
 
 
@@ -787,6 +814,12 @@ def apply_ai_page_result(partner_id: str, result: dict) -> dict:
         score = int(review.get("score", 0))
     except (TypeError, ValueError):
         score = 0
+    if approved and score < 65:
+        approved = False
+        review = dict(review)
+        review["approved"] = False
+        if not review.get("issues"):
+            review["issues"] = [f"Score insuffisant ({score}/100) — minimum 65 requis pour publier."]
     page_data = result.get("page") or {}
     now = _now_iso()
 
@@ -830,6 +863,8 @@ def apply_ai_page_result(partner_id: str, result: dict) -> dict:
     extra.pop("last_verification_error", None)
     extra.pop("ai_job_token", None)
     extra.pop("ai_job_started_at", None)
+    if status == "approved":
+        extra.pop("ai_fixes_ready_for_recheck", None)
 
     with get_connection() as conn:
         cur = conn.cursor()
