@@ -405,6 +405,7 @@ def page_preview():
     try:
         ctx = build_public_page_context(page, partner, lang, canonical_url=canonical)
     except Exception:
+        from admin.partner_seo import contact_note_display, format_partner_languages
         ctx = {
             "profile_badge": PROFILE_TYPE_LABELS.get(partner.get("profile_type"), "Partenaire"),
             "profile_label": PROFILE_TYPE_LABELS.get(partner.get("profile_type"), "Partenaire"),
@@ -415,8 +416,18 @@ def page_preview():
             "og_image": page.get("image_url") or None,
             "og_image_alt": page.get("title") or "",
             "partner_city": (page.get("extra") or {}).get("city") or partner.get("city") or "",
-            "partner_languages": (partner.get("languages") or "").strip(),
+            "partner_languages": format_partner_languages(partner.get("languages") or ""),
             "partner_highlights": page_public_highlights(page),
+            "services_html_display": page.get("services_html") or "",
+            "hero_image": page.get("image_url") or "",
+            "contact_note": (page.get("extra") or {}).get("contact_note") or "",
+            "contact_note_display": contact_note_display(
+                (page.get("extra") or {}).get("contact_note") or "",
+                email=partner.get("email") or "",
+                website=partner.get("website") or "",
+            ),
+            "contact_email": partner.get("email") or "",
+            "contact_website": partner.get("website") or "",
         }
     return render_template(
         "partner_public.html",

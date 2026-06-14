@@ -317,7 +317,72 @@ def partner_contact_context(page: dict, partner: dict) -> dict:
         match = re.search(r"[\w.+-]+@[\w.-]+\.\w+", note)
         if match:
             email = match.group(0)
-    return {"contact_note": note, "contact_email": email, "contact_website": website}
+    return {
+        "contact_note": note,
+        "contact_note_display": contact_note_display(note, email=email, website=website),
+        "contact_email": email,
+        "contact_website": website,
+    }
+
+
+def contact_note_display(note: str, *, email: str = "", website: str = "") -> str:
+    """Texte contact sans email/URL bruts — le bouton mail suffit."""
+    text = (note or "").strip()
+    if not text:
+        return ""
+    if email:
+        text = re.sub(re.escape(email), "", text, flags=re.I)
+    text = re.sub(r"[\w.+-]+@[\w.-]+\.\w+", "", text)
+    if website:
+        text = re.sub(re.escape(website), "", text, flags=re.I)
+    text = re.sub(r"https?://\S+", "", text)
+    text = re.sub(
+        r"(?i)\b("
+        r"contactez?[-\s]?moi(?: par email)?(?: à| a)?|"
+        r"ou via le formulaire sur|"
+        r"send an email to|"
+        r"contact me (?:by email )?(?:at|à|a)?|"
+        r"reach (?:out )?(?:at|à|a)?"
+        r")\b",
+        "",
+        text,
+    )
+    text = re.sub(r"\s{2,}", " ", text).strip(" .,;—–-|")
+    pour = re.search(r"(?i)\b(pour [^.!?]+[.!?]?)\s*$", text)
+    if pour:
+        text = pour.group(1).strip()
+    if len(text) < 12:
+        return ""
+    return text[0].upper() + text[1:] if text else ""
+
+
+def format_partner_languages(raw: str) -> str:
+    """Affichage propre des langues (Français, Anglais…)."""
+    if not (raw or "").strip():
+        return ""
+    labels = {
+        "francais": "Français",
+        "français": "Français",
+        "french": "Français",
+        "anglais": "Anglais",
+        "english": "Anglais",
+        "vietnamien": "Vietnamien",
+        "vietnamese": "Vietnamien",
+    }
+    parts = re.split(r"[,;/|]+", raw)
+    out: list[str] = []
+    seen: set[str] = set()
+    for part in parts:
+        key = part.strip().lower()
+        if not key:
+            continue
+        label = labels.get(key, part.strip().capitalize())
+        low = label.lower()
+        if low in seen:
+            continue
+        seen.add(low)
+        out.append(label)
+    return ", ".join(out)
 
 
 def _services_html_for_display(page: dict, highlights: list[str]) -> str:
@@ -357,7 +422,7 @@ def build_public_page_context(page: dict, partner: dict, lang: str, *, canonical
         "og_image": hero_image if hero_image.startswith("http") else hero_image or None,
         "og_image_alt": page.get("seo_title") or page.get("title") or "",
         "partner_city": city,
-        "partner_languages": (partner.get("languages") or "").strip(),
+        "partner_languages": format_partner_languages(partner.get("languages") or ""),
         "partner_highlights": highlights,
         "services_html_display": services_html,
         "hero_image": hero_image,

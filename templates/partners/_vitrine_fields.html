@@ -1,30 +1,101 @@
 <div class="partner-vitrine-form__grid">
-  <div class="partner-vitrine-form__photo">
-    <label class="partner-vitrine-form__label" for="partner-photo-file">Photo de couverture</label>
-    <p class="muted partner-vitrine-form__help">Format paysage recommandé (1200×675). JPG, PNG ou WebP.</p>
-    {% if vitrine.image_url %}
-    <div class="partner-vitrine-form__preview">
-      <img src="{{ vitrine.image_url if '://' in vitrine.image_url else url_for('static', filename=vitrine.image_url.removeprefix('/static/')) }}"
-           alt="Aperçu photo de couverture" width="320" height="180" loading="lazy">
-    </div>
-    <label class="partner-vitrine-form__clear">
-      <input type="checkbox" name="clear_image" value="1"> Utiliser la photo par défaut (ville)
-    </label>
-    {% else %}
-    <p class="muted partner-vitrine-form__placeholder">Aucune photo — une image de la ville est utilisée par défaut.</p>
-    {% endif %}
-    <input type="file" id="partner-photo-file" name="photo_file" accept="image/jpeg,image/png,image/webp,image/gif">
-    <div class="form-field partner-vitrine-form__url">
-      <label for="partner-photo-url">Ou URL d’image</label>
-      <input type="url" id="partner-photo-url" name="image_url" placeholder="https://…" maxlength="500">
-    </div>
-  </div>
+  <section class="partner-vitrine-panel partner-vitrine-panel--photo" aria-labelledby="vitrine-photo-title">
+    <header class="partner-vitrine-panel__head">
+      <span class="partner-vitrine-panel__icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.75"/><path d="M21 16l-5.5-5.5L5 19"/></svg>
+      </span>
+      <div class="partner-vitrine-panel__intro">
+        <h3 class="partner-vitrine-panel__title" id="vitrine-photo-title">Photo de couverture</h3>
+        <p class="partner-vitrine-panel__lead">Format paysage recommandé (1200×675). JPG, PNG ou WebP.</p>
+      </div>
+      {% if vitrine.image_url %}
+      <span class="partner-vitrine-panel__status partner-vitrine-panel__status--ok">Photo ajoutée</span>
+      {% else %}
+      <span class="partner-vitrine-panel__status">Par défaut (ville)</span>
+      {% endif %}
+    </header>
 
-  <div class="partner-vitrine-form__highlights">
-    <label class="partner-vitrine-form__label" for="profile_highlights">Pourquoi choisir ce partenaire</label>
-    <p class="muted partner-vitrine-form__help">3 à 8 points courts — une ligne par atout (affichés sur votre page publique).</p>
-    <textarea id="profile_highlights" name="profile_highlights" rows="8" maxlength="2000"
-              placeholder="Guide francophone à Hô Chi Minh-Ville&#10;Visites privées et sur mesure&#10;Street food et quartiers authentiques">{{ vitrine.highlights_text }}</textarea>
-    <span class="form-field__hint"><span id="vitrine-hl-count">{{ vitrine.highlights_count }}</span> point(s) · min. 3 lignes</span>
-  </div>
+    <div class="partner-vitrine-upload">
+      <div class="partner-vitrine-upload__frame" id="partner-photo-preview" data-has-custom="{{ '1' if vitrine.image_url else '0' }}">
+        {% if vitrine.image_url %}
+        <img src="{{ vitrine.image_url if '://' in vitrine.image_url else url_for('static', filename=vitrine.image_url.removeprefix('/static/')) }}"
+             alt="Aperçu photo de couverture" width="640" height="360" loading="lazy" id="partner-photo-preview-img">
+        <span class="partner-vitrine-upload__badge">Photo personnalisée</span>
+        {% else %}
+        <div class="partner-vitrine-upload__empty" id="partner-photo-empty">
+          <span class="partner-vitrine-upload__empty-icon" aria-hidden="true">🏙️</span>
+          <p class="partner-vitrine-upload__empty-title">Aucune photo personnalisée</p>
+          <p class="partner-vitrine-upload__empty-text">Une image de la ville est utilisée par défaut sur votre fiche publique.</p>
+        </div>
+        {% endif %}
+      </div>
+
+      {% if vitrine.image_url %}
+      <label class="partner-vitrine-upload__reset">
+        <input type="checkbox" name="clear_image" value="1" id="partner-photo-clear">
+        <span>Revenir à la photo par défaut (ville)</span>
+      </label>
+      {% endif %}
+
+      <label class="partner-vitrine-dropzone" for="partner-photo-file" id="partner-photo-dropzone">
+        <span class="partner-vitrine-dropzone__icon" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0l-4 4m4-4l4 4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+        </span>
+        <span class="partner-vitrine-dropzone__text">Glissez une image ici ou <strong>parcourir</strong></span>
+        <span class="partner-vitrine-dropzone__hint" id="partner-photo-filename">JPG, PNG ou WebP</span>
+        <input type="file" id="partner-photo-file" name="photo_file" accept="image/jpeg,image/png,image/webp,image/gif" class="partner-vitrine-dropzone__input">
+      </label>
+
+      <div class="partner-vitrine-divider" aria-hidden="true"><span>ou</span></div>
+
+      <div class="partner-vitrine-url-field">
+        <label class="partner-vitrine-url-field__label" for="partner-photo-url">URL d’image</label>
+        <div class="partner-vitrine-url-field__wrap">
+          <span class="partner-vitrine-url-field__prefix" aria-hidden="true">https://</span>
+          <input type="url" id="partner-photo-url" name="image_url" class="partner-vitrine-url-field__input"
+                 placeholder="exemple.com/photo.jpg" maxlength="500"
+                 value="{% if vitrine.image_url and '://' in vitrine.image_url %}{{ vitrine.image_url | replace('https://', '') | replace('http://', '') }}{% endif %}">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="partner-vitrine-panel partner-vitrine-panel--highlights" aria-labelledby="vitrine-hl-title">
+    <header class="partner-vitrine-panel__head">
+      <span class="partner-vitrine-panel__icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7L12 16.8 5.7 21l2.3-7-6-4.6h7.6L12 2z"/></svg>
+      </span>
+      <div class="partner-vitrine-panel__intro">
+        <h3 class="partner-vitrine-panel__title" id="vitrine-hl-title">Pourquoi choisir ce partenaire</h3>
+        <p class="partner-vitrine-panel__lead">3 à 8 points courts — une ligne par atout, affichés sur votre page publique.</p>
+      </div>
+      <span class="partner-vitrine-panel__status{% if vitrine.highlights_ok %} partner-vitrine-panel__status--ok{% endif %}" id="vitrine-hl-status">
+        {{ vitrine.highlights_count }} point{{ 's' if vitrine.highlights_count != 1 else '' }}
+      </span>
+    </header>
+
+    <div class="partner-vitrine-highlights-edit">
+      <label class="sr-only" for="profile_highlights">Points forts</label>
+      <textarea id="profile_highlights" name="profile_highlights" rows="7" maxlength="2000"
+                class="partner-vitrine-highlights-edit__textarea"
+                placeholder="Guide francophone à Hô Chi Minh-Ville&#10;Visites privées et sur mesure&#10;Street food et quartiers authentiques">{{ vitrine.highlights_text }}</textarea>
+
+      <div class="partner-vitrine-hl-meter{% if vitrine.highlights_ok %} is-complete{% endif %}" id="vitrine-hl-meter">
+        <div class="partner-vitrine-hl-meter__track" role="progressbar"
+             aria-valuemin="0" aria-valuemax="8" aria-valuenow="{{ vitrine.highlights_count }}"
+             aria-label="Nombre de points forts">
+          <div class="partner-vitrine-hl-meter__fill" id="vitrine-hl-fill" style="width: {{ [100, (vitrine.highlights_count / 3 * 100)|int]|min }}%;"></div>
+        </div>
+        <p class="partner-vitrine-hl-meter__label">
+          <span id="vitrine-hl-count">{{ vitrine.highlights_count }}</span> / 8 points
+          <span class="partner-vitrine-hl-meter__min" id="vitrine-hl-min-hint">{% if vitrine.highlights_ok %}✓ minimum atteint{% else %}· minimum 3 lignes{% endif %}</span>
+        </p>
+      </div>
+
+      <div class="partner-vitrine-hl-preview" id="vitrine-hl-preview"{% if not vitrine.highlights_count %} hidden{% endif %}>
+        <p class="partner-vitrine-hl-preview__title">Aperçu sur la fiche publique</p>
+        <ul class="partner-vitrine-hl-preview__list" id="vitrine-hl-preview-list"></ul>
+      </div>
+    </div>
+  </section>
 </div>
