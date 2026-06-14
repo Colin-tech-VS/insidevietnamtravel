@@ -310,7 +310,12 @@
               <li><a href="{{ lang_url('contact') }}" {% if request.endpoint == 'contact' %}aria-current="page"{% endif %}>{{ t('nav.contact') }}</a></li>
               <li><a href="{{ lang_url('become_partner') }}" {% if request.endpoint == 'become_partner' %}aria-current="page"{% endif %}>{{ 'Become a partner' if lang == 'en' else 'Devenir partenaire' }}</a></li>
               <li><a href="{{ lang_url('partners_index') }}" {% if request.endpoint == 'partners_index' %}aria-current="page"{% endif %}>{{ 'Our partners' if lang == 'en' else 'Nos partenaires' }}</a></li>
-              <li><a href="{{ url_for('partners.login') }}" {% if request.endpoint and request.endpoint.startswith('partners.') %}aria-current="page"{% endif %}>{{ 'Partner login' if lang == 'en' else 'Espace partenaire' }}</a></li>
+              {% if partner_account %}
+              <li><a href="{{ url_for('partners.dashboard') }}" {% if request.endpoint and request.endpoint.startswith('partners.') %}aria-current="page"{% endif %}>{{ 'My partner space' if lang == 'en' else 'Mon espace partenaire' }}</a></li>
+              <li><a href="{{ url_for('partners.logout') }}">{{ 'Partner log out' if lang == 'en' else 'Déconnexion partenaire' }}</a></li>
+              {% else %}
+              <li><a href="{{ url_for('partners.login') }}" {% if request.endpoint == 'partners.login' %}aria-current="page"{% endif %}>{{ 'Partner login' if lang == 'en' else 'Connexion partenaire' }}</a></li>
+              {% endif %}
             </ul>
           </li>
         </ul>
@@ -334,6 +339,19 @@
              class="lang-switch__btn{% if lang == 'en' %} is-active{% endif %}"
              {% if lang == 'en' %}aria-current="true"{% endif %}>EN</a>
         </nav>
+
+        {% if partner_account %}
+        <a href="{{ url_for('partners.dashboard') }}" class="header-partner-link" title="{{ partner_account.business_name or partner_account.email }}">
+          {{ 'My space' if lang == 'en' else 'Mon espace' }}
+        </a>
+        <a href="{{ url_for('partners.logout') }}" class="header-partner-link header-partner-link--muted">
+          {{ 'Log out' if lang == 'en' else 'Déconnexion' }}
+        </a>
+        {% else %}
+        <a href="{{ url_for('partners.login') }}" class="header-partner-link">
+          {{ 'Partner' if lang == 'en' else 'Partenaire' }}
+        </a>
+        {% endif %}
 
         <button type="button" class="nav-toggle" aria-label="{{ t('nav.open_menu') }}" aria-expanded="false" aria-controls="main-nav" data-label-open="{{ t('nav.open_menu') }}" data-label-close="{{ t('nav.close_menu') }}">
           <span></span><span></span><span></span>

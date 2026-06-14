@@ -197,10 +197,11 @@ def login():
     )
 
 
-@partners_bp.route("/logout", methods=["POST"])
+@partners_bp.route("/logout", methods=["GET", "POST"])
 def logout():
     do_partner_logout()
     session.pop(_JOB_KEY, None)
+    flash("Vous êtes déconnecté de l'espace partenaire.", "success")
     return redirect(url_for("partners.login"))
 
 

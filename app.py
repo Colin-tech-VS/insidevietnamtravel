@@ -291,6 +291,11 @@ def inject_globals():
     settings = get_settings()
     lang = get_lang()
     dests = _destinations(lang)
+    try:
+        from partners.auth import current_partner
+        partner_account = current_partner()
+    except Exception:
+        partner_account = None
     return {
         "site": app.config,
         "lang": lang,
@@ -325,6 +330,7 @@ def inject_globals():
         "og_locale": "en_GB" if lang == "en" else "fr_FR",
         "llms_txt_url": config.SITE_URL.rstrip("/") + "/llms.txt",
         "chat_enabled": _chat_enabled(),
+        "partner_account": partner_account,
     }
 
 

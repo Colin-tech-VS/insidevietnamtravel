@@ -4,11 +4,11 @@
 {% block body_class %}partner-portal-page{% endblock %}
 
 {% block content %}
-{% if partner %}
 <nav class="partner-portal-subnav" aria-label="Espace partenaire">
   <div class="container partner-portal-subnav__inner">
     <span class="partner-portal-subnav__label">Espace partenaire</span>
     <ul class="partner-portal-subnav__links">
+      {% if partner %}
       <li>
         <a href="{{ url_for('partners.dashboard') }}" class="partner-portal-subnav__link {% if request.endpoint == 'partners.dashboard' %}is-active{% endif %}">Dashboard</a>
       </li>
@@ -19,18 +19,30 @@
       <li>
         <a href="{{ url_for('partner_public_page', slug=partner_page.slug) }}" class="partner-portal-subnav__link" target="_blank" rel="noopener">Page publique ↗</a>
       </li>
-      {% elif is_hidden_account|default(false) %}
+      {% elif is_hidden_account|default(false) and partner_page and (partner_page.overview_html or partner_page.title) %}
       <li>
         <a href="{{ url_for('partners.page_preview') }}" class="partner-portal-subnav__link" target="_blank" rel="noopener">Aperçu privé ↗</a>
       </li>
       {% endif %}
+      {% else %}
+      <li>
+        <a href="{{ url_for('partners.login') }}" class="partner-portal-subnav__link {% if request.endpoint == 'partners.login' %}is-active{% endif %}">Connexion</a>
+      </li>
+      <li>
+        <a href="{{ url_for('become_partner') }}" class="partner-portal-subnav__link">Devenir partenaire</a>
+      </li>
+      {% endif %}
+      <li>
+        <a href="{{ lang_url('index') }}" class="partner-portal-subnav__link partner-portal-subnav__link--site">← Site</a>
+      </li>
     </ul>
-    <form method="post" action="{{ url_for('partners.logout') }}" class="partner-portal-subnav__logout">
-      <button type="submit" class="btn btn-ghost btn-sm">Déconnexion</button>
-    </form>
+    {% if partner %}
+    <a href="{{ url_for('partners.logout') }}" class="btn btn-ghost btn-sm partner-portal-subnav__logout">Déconnexion</a>
+    {% else %}
+    <a href="{{ url_for('partners.login') }}" class="btn btn-ghost btn-sm partner-portal-subnav__logout">Se connecter</a>
+    {% endif %}
   </div>
 </nav>
-{% endif %}
 
 <section class="section partner-portal-section">
   <div class="container partner-portal-section__inner">
