@@ -152,6 +152,160 @@ def page_public_highlights(page: dict | None) -> list[str]:
     return items
 
 
+def _parse_profile_highlights_lines(text: str) -> list[str]:
+    items: list[str] = []
+    for line in re.split(r"[\n\r]+", text or ""):
+        line = " ".join(line.split()).strip()
+        if line:
+            items.append(line[:220])
+    seen: set[str] = set()
+    out: list[str] = []
+    for item in items:
+        key = item.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(item)
+    return out[:8]
+
+
+def page_vitrine_checklist(page: dict | None) -> dict:
+    """État vitrine publique pour le dashboard partenaire."""
+    if not page:
+        return {
+            "has_custom_photo": False,
+            "highlights_count": 0,
+            "highlights_ok": False,
+            "highlights_text": "",
+            "can_edit": False,
+            "items": [],
+            "image_url": "",
+        }
+    extra = page.get("extra") if isinstance(page.get("extra"), dict) else {}
+    highlights = page_public_highlights(page)
+    stored = extra.get("profile_highlights") or []
+    if isinstance(stored, list):
+        highlights_text = "\n".join(str(h).strip() for h in stored if str(h).strip())
+    else:
+        highlights_text = "\n".join(highlights)
+    if not highlights_text and extra.get("highlights"):
+        highlights_text = str(extra.get("highlights") or "").replace(",", "\n")
+    has_photo = bool((page.get("image_url") or "").strip())
+    can_edit = page.get("status") != "ai_review"
+    items = [
+        {
+            "id": "photo",
+            "label": "Photo de couverture",
+            "ok": has_photo,
+            "hint": "Ajoutée" if has_photo else "Par défaut (ville) — ajoutez la vôtre",
+        },
+        {
+            "id": "highlights",
+            "label": "Pourquoi choisir ce partenaire",
+            "ok": len(highlights) >= 3,
+            "hint": f"{len(highlights)} point(s) — min. 3 recommandés",
+        },
+        {
+            "id": "content",
+            "label": "Texte & offre (wizard)",
+            "ok": bool((extra.get("pitch") or "").strip() and (extra.get("offer_details") or "").strip()),
+            "hint": "Accroche et offre détaillée",
+        },
+    ]
+    return {
+        "has_custom_photo": has_photo,
+        "highlights_count": len(highlights),
+        "highlights_ok": len(highlights) >= 3,
+        "highlights_text": highlights_text,
+        "can_edit": can_edit,
+        "items": items,
+        "image_url": (page.get("image_url") or "").strip(),
+    }
+
+
+def _store_partner_image(slug: str, *, file_bytes: bytes | None = None, image_url: str = "") -> str:
+    from pathlib import Path
+
+    from admin.image_service import (
+        IMAGE_ENCODE_DEADLINE,
+        _run_with_deadline,
+        _to_webp,
+        _write_remote_webp,
+        _write_webp_fast,
+        resolve_direct_image_url,
+    )
+
+    slug = _SLUG_RE.sub("-", slugify(slug or "partenaire")).strip("-")[:60] or "partenaire"
+    out_dir = Path(__file__).resolve().parent.parent / "static" / "images" / "partners"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / f"{slug}.webp"
+    if file_bytes:
+        try:
+            _run_with_deadline(_to_webp, IMAGE_ENCODE_DEADLINE, file_bytes, out_path)
+        except Exception:  # noqa: BLE001
+            _write_webp_fast(file_bytes, out_path)
+    elif image_url.strip():
+        resolved = resolve_direct_image_url(image_url.strip()) or image_url.strip()
+        _write_remote_webp(resolved, out_path)
+    else:
+        raise ValueError("Photo manquante — uploadez un fichier ou indiquez une URL.")
+    return f"/static/images/partners/{slug}.webp"
+
+
+def save_page_vitrine(
+    partner_id: str,
+    *,
+    profile_highlights_text: str = "",
+    image_url: str = "",
+    image_file: bytes | None = None,
+    clear_image: bool = False,
+) -> dict:
+    """Photo + points « Pourquoi choisir » — conserve le statut (publié/validé)."""
+    page = get_page_by_partner(partner_id)
+    if not page:
+        raise ValueError("Créez d'abord votre page (wizard étapes 1–3).")
+    if page.get("status") == "ai_review":
+        raise ValueError("Vérification en cours — patientez.")
+
+    slug = (page.get("slug") or "partenaire").strip()
+    now = _now_iso()
+    extra = dict(page.get("extra") or {})
+    new_image = (page.get("image_url") or "").strip()
+
+    text = (profile_highlights_text or "").strip()
+    if text:
+        highlights = _parse_profile_highlights_lines(text)
+        if len(highlights) < 3:
+            raise ValueError(
+                "Ajoutez au moins 3 points pour « Pourquoi choisir ce partenaire » (une ligne par point)."
+            )
+        extra["profile_highlights"] = highlights
+
+    if clear_image:
+        new_image = ""
+    elif image_file:
+        new_image = _store_partner_image(slug, file_bytes=image_file)
+    elif (image_url or "").strip():
+        new_image = _store_partner_image(slug, image_url=image_url.strip())
+
+    extra_json = json.dumps(extra, ensure_ascii=False)
+    with get_connection() as conn:
+        cur = conn.cursor()
+        if is_postgres():
+            cur.execute(
+                """UPDATE partner_pages SET extra_json = %s, image_url = %s, updated_at = %s
+                   WHERE partner_id = %s""",
+                (extra_json, new_image, now, partner_id),
+            )
+        else:
+            cur.execute(
+                """UPDATE partner_pages SET extra_json = ?, image_url = ?, updated_at = ?
+                   WHERE partner_id = ?""",
+                (extra_json, new_image, now, partner_id),
+            )
+    return get_page_by_partner(partner_id) or {}
+
+
 def _iso_date(raw) -> str | None:
     if not raw:
         return None

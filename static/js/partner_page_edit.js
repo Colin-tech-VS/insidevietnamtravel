@@ -289,6 +289,15 @@ document.addEventListener('DOMContentLoaded', () => {
         return false;
       }
     }
+    if (step === 4) {
+      const hlField = document.getElementById('profile_highlights');
+      const lines = (hlField?.value || '').split(/\n+/).map((s) => s.trim()).filter(Boolean);
+      if (lines.length > 0 && lines.length < 3) {
+        showError('Minimum 3 points pour « Pourquoi choisir ce partenaire ».');
+        hlField?.focus();
+        return false;
+      }
+    }
     showError('');
     return true;
   }
@@ -341,7 +350,18 @@ document.addEventListener('DOMContentLoaded', () => {
     updateContactNote();
     const action = e.submitter?.value || e.submitter?.getAttribute?.('value') || '';
     const isVerify = action === 'submit_ai';
-    for (let s = 1; s <= total; s += 1) {
+    const isVitrineSave = action === 'save_vitrine';
+
+    if (isVitrineSave) {
+      if (!validateStep(4)) {
+        e.preventDefault();
+        go(4);
+      }
+      return;
+    }
+
+    const lastStep = isVerify ? 3 : total;
+    for (let s = 1; s <= lastStep; s += 1) {
       if (!validateStep(s)) {
         e.preventDefault();
         go(s);
@@ -360,5 +380,6 @@ document.addEventListener('DOMContentLoaded', () => {
   parseSavedHighlights();
   initCity();
   initContact();
-  go(1);
+  const initialStep = Number(data.initialStep || root.dataset.initialStep) || 1;
+  go(Math.min(initialStep, total));
 });

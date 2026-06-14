@@ -106,11 +106,43 @@
   <article class="card partner-help">
     <h2>Comment ça marche ?</h2>
     <ol>
-      <li><strong>Rédiger</strong> — accroche, atouts et offre (wizard 3 étapes).</li>
+      <li><strong>Rédiger</strong> — accroche, atouts et offre (wizard 4 étapes).</li>
+      <li><strong>Vitrine</strong> — photo de couverture et « Pourquoi choisir ce partenaire ».</li>
       <li><strong>Vérification IA</strong> — contrôle éditorial obligatoire (score ≥ 65).</li>
-      <li><strong>Aperçu privé</strong> — consultez la page générée avant toute mise en ligne.</li>
-      <li><strong>Publication</strong> — {% if is_hidden_account %}confirmez l’aperçu privé (compte test, hors site public){% else %}publiez en ligne sur insidevietnamtravel.fr{% endif %}.</li>
+      <li><strong>Publication</strong> — {% if is_hidden_account %}aperçu privé confirmé{% else %}mise en ligne sur insidevietnamtravel.fr{% endif %}.</li>
     </ol>
   </article>
+
+  {% if page %}
+  <article class="card partner-vitrine-dash">
+    <header class="partner-vitrine-dash__head">
+      <div>
+        <h2>Vitrine publique</h2>
+        <p class="muted">Complétez la photo et les points forts visibles sur votre fiche.</p>
+      </div>
+      {% if page.status in ('approved', 'published') %}
+      <a href="{{ url_for('partners.page_preview') }}" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">Aperçu ↗</a>
+      {% endif %}
+    </header>
+
+    <ul class="partner-vitrine-checklist">
+      {% for item in page_vitrine.items %}
+      <li class="partner-vitrine-checklist__item{% if item.ok %} is-ok{% endif %}">
+        <span class="partner-vitrine-checklist__icon" aria-hidden="true">{% if item.ok %}✓{% else %}○{% endif %}</span>
+        <span class="partner-vitrine-checklist__body">
+          <strong>{{ item.label }}</strong>
+          <span class="muted">{{ item.hint }}</span>
+        </span>
+      </li>
+      {% endfor %}
+    </ul>
+
+    {% include "partners/_vitrine_form.html" %}
+  </article>
+  {% endif %}
 </section>
+{% endblock %}
+
+{% block partner_scripts %}
+<script src="{{ url_for('static', filename='js/partner_vitrine.js') }}" defer></script>
 {% endblock %}

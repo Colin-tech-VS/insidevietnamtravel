@@ -13,7 +13,7 @@
         <a href="{{ url_for('partners.dashboard') }}" class="partner-portal-subnav__link {% if request.endpoint == 'partners.dashboard' %}is-active{% endif %}">Dashboard</a>
       </li>
       <li>
-        <a href="{{ url_for('partners.page_edit') }}" class="partner-portal-subnav__link {% if request.endpoint in ('partners.page_edit', 'partners.page_review') %}is-active{% endif %}">Ma page</a>
+        <a href="{{ url_for('partners.page_edit') }}" class="partner-portal-subnav__link {% if request.endpoint in ('partners.page_edit', 'partners.page_review', 'partners.page_vitrine') %}is-active{% endif %}">Ma page</a>
       </li>
       {% if partner_page and partner_page.status == 'published' and partner_page.slug and not is_hidden_account|default(false) %}
       <li>

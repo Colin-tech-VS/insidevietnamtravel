@@ -1,0 +1,15 @@
+{% set vitrine = vitrine if vitrine is defined else page_vitrine %}
+<form method="post" action="{{ form_action | default(url_for('partners.page_vitrine')) }}"
+      class="partner-vitrine-form" enctype="multipart/form-data" id="partner-vitrine-form">
+  {% if not vitrine.can_edit %}
+  <p class="flash flash--success">Vérification en cours — modification de la vitrine indisponible.</p>
+  {% else %}
+  {% include "partners/_vitrine_fields.html" %}
+  <div class="partner-vitrine-form__actions">
+    <button type="submit" class="btn btn-primary">Enregistrer la vitrine</button>
+    {% if page and page.status in ('approved', 'published') %}
+    <a href="{{ url_for('partners.page_preview') }}" class="btn btn-secondary" target="_blank" rel="noopener">Aperçu privé ↗</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</form>

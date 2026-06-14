@@ -17,13 +17,14 @@
   <header class="partner-page-wizard__intro">
     <p class="partner-dash__eyebrow">{{ profile_label }}</p>
     <h1>Créer ma page</h1>
-    <p class="muted">3 étapes · vérification éditoriale · publication sur insidevietnamtravel.fr</p>
+    <p class="muted">4 étapes · vitrine · vérification · publication sur insidevietnamtravel.fr</p>
   </header>
 
   <div class="prepare-wizard partner-page-wizard" id="partner-page-wizard"
        data-pitch-min="30" data-offer-min="40"
        data-ai-ready="{{ '1' if ai_ready else '0' }}"
-       data-ai-review="{{ '1' if page and page.status == 'ai_review' else '0' }}">
+       data-ai-review="{{ '1' if page and page.status == 'ai_review' else '0' }}"
+       data-initial-step="{{ wizard_step | default(1) }}">
 
     <div class="partner-page-readiness" aria-live="polite">
       <div class="partner-page-readiness__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
@@ -32,8 +33,8 @@
       <p class="partner-page-readiness__label">Page prête à <strong id="page-readiness-pct">0</strong>%</p>
     </div>
 
-    <div class="prepare-progress prepare-progress--3 partner-page-progress" aria-label="Étapes">
-      <div class="prepare-progress__step is-active is-clickable" data-step="1" tabindex="0">
+    <div class="prepare-progress prepare-progress--4 partner-page-progress" aria-label="Étapes">
+      <div class="prepare-progress__step is-clickable" data-step="1" tabindex="0">
         <span class="prepare-progress__num">1</span>
         <span class="prepare-progress__label">Accroche</span>
       </div>
@@ -45,11 +46,15 @@
         <span class="prepare-progress__num">3</span>
         <span class="prepare-progress__label">Offre</span>
       </div>
+      <div class="prepare-progress__step is-clickable" data-step="4" tabindex="0">
+        <span class="prepare-progress__num">4</span>
+        <span class="prepare-progress__label">Vitrine</span>
+      </div>
     </div>
 
     <p class="partner-wizard__error" id="page-wizard-error" hidden role="alert"></p>
 
-    <form method="post" class="partner-page-form" id="partner-page-form" novalidate>
+    <form method="post" class="partner-page-form" id="partner-page-form" enctype="multipart/form-data" novalidate>
       <div class="prepare-step partner-page-step is-active" data-step="1">
         <header class="prepare-step__head">
           <h2>Votre accroche</h2>
@@ -212,10 +217,27 @@
         </div>
       </div>
 
+      <div class="prepare-step partner-page-step" data-step="4" hidden>
+        <header class="prepare-step__head">
+          <h2>Vitrine publique</h2>
+          <p class="prepare-step__hint">Photo de couverture et points « Pourquoi choisir ce partenaire » — visibles sur votre fiche en ligne.</p>
+        </header>
+        {% if page_vitrine.can_edit %}
+        {% set vitrine = page_vitrine %}
+        {% include "partners/_vitrine_fields.html" %}
+        <div class="partner-vitrine-form__actions">
+          <button type="submit" name="action" value="save_vitrine" class="btn btn-primary">Enregistrer la vitrine</button>
+        </div>
+        <p class="muted">Enregistrement direct — sans relancer la vérification IA.</p>
+        {% else %}
+        <p class="flash flash--success">Vérification en cours — patientez.</p>
+        {% endif %}
+      </div>
+
       <div class="prepare-wizard__nav partner-page-wizard__nav">
         <button type="button" class="btn btn-ghost" id="page-prev" hidden>← Retour</button>
         <div class="partner-wizard__nav-right">
-          <span class="partner-wizard__step-label muted">Étape <strong id="page-step-current">1</strong>/3</span>
+          <span class="partner-wizard__step-label muted">Étape <strong id="page-step-current">1</strong>/4</span>
           <button type="button" class="btn btn-primary" id="page-next">Continuer →</button>
           {% if ai_ready %}
           <button type="submit" name="action" value="submit_ai" class="btn btn-primary btn-lg" id="page-submit" hidden
@@ -236,8 +258,10 @@ window.PARTNER_PAGE_DATA = {
   email: {{ partner.email | tojson }},
   website: {{ (partner.website or '') | tojson }},
   savedHighlights: {{ (extra.highlights or '') | tojson }},
-  savedContact: {{ (extra.contact_note or '') | tojson }}
+  savedContact: {{ (extra.contact_note or '') | tojson }},
+  initialStep: {{ wizard_step | default(1) }}
 };
 </script>
+<script src="{{ url_for('static', filename='js/partner_vitrine.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/partner_page_edit.js') }}" defer></script>
 {% endblock %}

@@ -39,6 +39,8 @@ from admin.partner_portal_service import (
     review_job_token,
     save_page_draft,
     save_page_review_hints,
+    save_page_vitrine,
+    page_vitrine_checklist,
 )
 from i18n_utils import get_lang
 from partners.auth import (
@@ -224,6 +226,7 @@ def dashboard():
         page_status_labels=PAGE_STATUS_LABELS,
         publication=publication,
         workflow=partner_page_workflow(page, publication=publication, is_hidden=is_hidden),
+        page_vitrine=page_vitrine_checklist(page),
         ai_ready=ai_client.is_configured(),
     )
 
@@ -247,6 +250,20 @@ def page_edit():
                     contact_note=request.form.get("contact_note", ""),
                 )
                 flash("Brouillon enregistré.", "success")
+            elif action == "save_vitrine":
+            photo = request.files.get("photo_file")
+            file_bytes = photo.read() if photo and photo.filename else None
+            if file_bytes and len(file_bytes) > 5 * 1024 * 1024:
+                raise ValueError("Photo trop volumineuse (max 5 Mo).")
+            page = save_page_vitrine(
+                    partner["id"],
+                    profile_highlights_text=request.form.get("profile_highlights", ""),
+                    image_url=request.form.get("image_url", ""),
+                    image_file=file_bytes,
+                    clear_image=request.form.get("clear_image") == "1",
+                )
+                flash("Vitrine enregistrée.", "success")
+                return redirect(url_for("partners.page_edit", step=4))
             elif action == "submit_ai":
                 if not ai_client.is_configured():
                     flash("Génération IA indisponible — contactez l'équipe.", "error")
@@ -271,6 +288,10 @@ def page_edit():
             release_page_from_ai_review(partner["id"])
             page = get_page_by_partner(partner["id"])
     extra = (page or {}).get("extra") or {}
+    vitrine = page_vitrine_checklist(page)
+    wizard_step = request.args.get("step", type=int) or 1
+    if wizard_step < 1 or wizard_step > 4:
+        wizard_step = 1
     return render_template(
         "partners/page_edit.html",
         partner=partner,
@@ -280,6 +301,43 @@ def page_edit():
         profile_label=PROFILE_TYPE_LABELS.get(partner.get("profile_type"), ""),
         profile_types=PROFILE_TYPES,
         ai_ready=ai_client.is_configured(),
+        page_vitrine=vitrine,
+        wizard_step=wizard_step,
+    )
+
+
+@partners_bp.route("/page/vitrine", methods=["GET", "POST"])
+@partner_login_required
+def page_vitrine():
+    partner = current_partner()
+    page = get_page_by_partner(partner["id"])
+    if not page:
+        flash("Créez d'abord votre page (accroche, atouts, offre).", "error")
+        return redirect(url_for("partners.page_edit"))
+    if request.method == "POST":
+        try:
+            photo = request.files.get("photo_file")
+            file_bytes = photo.read() if photo and photo.filename else None
+            if file_bytes and len(file_bytes) > 5 * 1024 * 1024:
+                raise ValueError("Photo trop volumineuse (max 5 Mo).")
+            save_page_vitrine(
+                partner["id"],
+                profile_highlights_text=request.form.get("profile_highlights", ""),
+                image_url=request.form.get("image_url", ""),
+                image_file=file_bytes,
+                clear_image=request.form.get("clear_image") == "1",
+            )
+            flash("Vitrine enregistrée — visible sur votre page publique.", "success")
+            return redirect(url_for("partners.page_vitrine"))
+        except ValueError as exc:
+            flash(str(exc), "error")
+        page = get_page_by_partner(partner["id"])
+    return render_template(
+        "partners/page_vitrine.html",
+        partner=partner,
+        page=page,
+        profile_label=PROFILE_TYPE_LABELS.get(partner.get("profile_type"), ""),
+        vitrine=page_vitrine_checklist(page),
     )
 
 

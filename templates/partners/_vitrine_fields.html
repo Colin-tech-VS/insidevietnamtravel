@@ -1,0 +1,30 @@
+<div class="partner-vitrine-form__grid">
+  <div class="partner-vitrine-form__photo">
+    <label class="partner-vitrine-form__label" for="partner-photo-file">Photo de couverture</label>
+    <p class="muted partner-vitrine-form__help">Format paysage recommandé (1200×675). JPG, PNG ou WebP.</p>
+    {% if vitrine.image_url %}
+    <div class="partner-vitrine-form__preview">
+      <img src="{{ vitrine.image_url if '://' in vitrine.image_url else url_for('static', filename=vitrine.image_url.removeprefix('/static/')) }}"
+           alt="Aperçu photo de couverture" width="320" height="180" loading="lazy">
+    </div>
+    <label class="partner-vitrine-form__clear">
+      <input type="checkbox" name="clear_image" value="1"> Utiliser la photo par défaut (ville)
+    </label>
+    {% else %}
+    <p class="muted partner-vitrine-form__placeholder">Aucune photo — une image de la ville est utilisée par défaut.</p>
+    {% endif %}
+    <input type="file" id="partner-photo-file" name="photo_file" accept="image/jpeg,image/png,image/webp,image/gif">
+    <div class="form-field partner-vitrine-form__url">
+      <label for="partner-photo-url">Ou URL d’image</label>
+      <input type="url" id="partner-photo-url" name="image_url" placeholder="https://…" maxlength="500">
+    </div>
+  </div>
+
+  <div class="partner-vitrine-form__highlights">
+    <label class="partner-vitrine-form__label" for="profile_highlights">Pourquoi choisir ce partenaire</label>
+    <p class="muted partner-vitrine-form__help">3 à 8 points courts — une ligne par atout (affichés sur votre page publique).</p>
+    <textarea id="profile_highlights" name="profile_highlights" rows="8" maxlength="2000"
+              placeholder="Guide francophone à Hô Chi Minh-Ville&#10;Visites privées et sur mesure&#10;Street food et quartiers authentiques">{{ vitrine.highlights_text }}</textarea>
+    <span class="form-field__hint"><span id="vitrine-hl-count">{{ vitrine.highlights_count }}</span> point(s) · min. 3 lignes</span>
+  </div>
+</div>
