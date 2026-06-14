@@ -15,19 +15,22 @@ from flask import (
 
 from admin import ai_client
 from admin import draft_store
-from admin.groq_partner_page import generate_and_review_partner_page
+from admin.groq_partner_page import generate_and_review_partner_page, suggest_partner_page_fixes
 from admin.partner_portal_service import (
     PAGE_STATUS_LABELS,
     PROFILE_TYPE_LABELS,
     PROFILE_TYPES,
     apply_ai_page_result,
+    apply_partner_fixes,
     authenticate_partner,
     get_page_by_partner,
+    get_page_fixes,
     is_hidden_test_partner,
     mark_page_ai_review,
     page_ai_review_stale,
     release_page_from_ai_review,
     save_page_draft,
+    save_page_review_hints,
 )
 from partners.auth import (
     current_partner,
@@ -88,8 +91,23 @@ def _start_page_job(partner_id: str) -> str:
             result = generate_and_review_partner_page(account, fresh_page, progress=report)
             apply_ai_page_result(partner_id, result)
             return result
-        except Exception:
+        except Exception as exc:
             release_page_from_ai_review(partner_id)
+            try:
+                fresh_page = get_page_by_partner(partner_id)
+                if fresh_page:
+                    hints = suggest_partner_page_fixes(
+                        account,
+                        fresh_page,
+                        reason=str(exc),
+                    )
+                    save_page_review_hints(
+                        partner_id,
+                        hints.get("review") or {},
+                        error_reason=str(exc),
+                    )
+            except Exception:
+                pass
             raise
 
     draft_store.start_job(
@@ -258,12 +276,35 @@ def page_review():
         "partners/page_review.html",
         partner=partner,
         page=page,
+        page_fixes=get_page_fixes(page),
         job_status=job_status,
         show_loader=show_loader,
         is_hidden_account=is_hidden,
         page_status_labels=PAGE_STATUS_LABELS,
         ai_ready=ai_client.is_configured(),
     )
+
+
+@partners_bp.route("/page/apply-fixes", methods=["POST"])
+@partner_login_required
+def page_apply_fixes():
+    partner = current_partner()
+    fix_id = (request.form.get("fix_id") or "").strip()
+    apply_all = request.form.get("apply_all") == "1"
+    try:
+        count = apply_partner_fixes(
+            partner["id"],
+            fix_ids=[fix_id] if fix_id else None,
+            apply_all=apply_all,
+        )
+        flash(
+            f"{count} correction(s) appliquée(s) au brouillon — relancez la vérification quand vous êtes prêt.",
+            "success",
+        )
+    except ValueError as exc:
+        flash(str(exc), "error")
+        return redirect(url_for("partners.page_review"))
+    return redirect(url_for("partners.page_edit"))
 
 
 @partners_bp.route("/page/retry-ai", methods=["POST"])

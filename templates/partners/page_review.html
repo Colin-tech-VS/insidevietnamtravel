@@ -1,5 +1,6 @@
 {% extends "partners/layout.html" %}
 {% block partner_content %}
+{% set extra = page.extra if page and page.extra else {} %}
 <section class="partner-review card" id="partner-review"
          data-state-url="{{ url_for('partners.api_page_review_state') }}">
   <h1>Vérification de votre page</h1>
@@ -17,17 +18,31 @@
   </div>
 
   {% elif page and page.status == 'rejected' %}
-  <div class="partner-review__ko">
+  <div class="partner-review__ko partner-review__ko--left">
     <h2>Page non publiée</h2>
-    <p>{{ page.ai_review.summary if page.ai_review else 'Le contenu ne correspond pas encore à nos critères.' }}</p>
-    {% if page.ai_review and page.ai_review.issues %}
-    <ul class="partner-issues">
-      {% for issue in page.ai_review.issues %}
-      <li>{{ issue }}</li>
-      {% endfor %}
-    </ul>
+    {% if page.ai_review and page.ai_review.score is not none %}
+    <p class="partner-review__score muted">Score éditorial : <strong>{{ page.ai_review.score }}/100</strong></p>
     {% endif %}
-    <a href="{{ url_for('partners.page_edit') }}" class="btn btn-primary">Modifier et réessayer</a>
+    <p class="partner-review__summary">{{ page.ai_review.summary if page.ai_review else 'Le contenu ne correspond pas encore à nos critères.' }}</p>
+    {% if page.ai_review and page.ai_review.issues %}
+    <div class="partner-review__issues">
+      <h3>Pourquoi ?</h3>
+      <ul class="partner-issues">
+        {% for issue in page.ai_review.issues %}
+        <li>{{ issue }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    {% include "partners/_fix_suggestions.html" %}
+    <div class="partner-review__actions">
+      {% if ai_ready %}
+      <form method="post" action="{{ url_for('partners.page_retry_ai') }}">
+        <button type="submit" class="btn btn-primary">Relancer la vérification</button>
+      </form>
+      {% endif %}
+      <a href="{{ url_for('partners.page_edit') }}" class="btn btn-secondary">Modifier manuellement</a>
+    </div>
   </div>
 
   {% elif show_loader %}
@@ -38,11 +53,26 @@
     <p class="muted partner-review__wait-note">Ne fermez pas cette page — elle se mettra à jour automatiquement.</p>
   </div>
 
-  {% elif job_status.status == 'error' %}
-  <div class="partner-review__ko">
-    <h2>Vérification interrompue</h2>
-    <p class="flash flash--error">{{ job_status.error or 'Erreur lors de la vérification.' }}</p>
-    <p class="muted">Votre brouillon est conservé. Vous pouvez relancer la vérification ou modifier le contenu.</p>
+  {% elif job_status.status == 'error' or page_fixes or extra.get('last_verification_error') %}
+  <div class="partner-review__ko partner-review__ko--left">
+    <h2>Vérification incomplète</h2>
+    {% set err_msg = job_status.error or extra.get('last_verification_error') or (page.ai_review.error_reason if page.ai_review else '') %}
+    <p class="flash flash--error partner-review__error-detail">{{ err_msg or 'Erreur lors de la vérification.' }}</p>
+    {% if page.ai_review and page.ai_review.summary and page.ai_review.summary != err_msg %}
+    <p class="partner-review__summary">{{ page.ai_review.summary }}</p>
+    {% endif %}
+    {% if page.ai_review and page.ai_review.issues %}
+    <div class="partner-review__issues">
+      <h3>Pourquoi ?</h3>
+      <ul class="partner-issues">
+        {% for issue in page.ai_review.issues %}
+        <li>{{ issue }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    {% include "partners/_fix_suggestions.html" %}
+    <p class="muted">Votre brouillon est conservé. Appliquez les corrections ou modifiez le contenu, puis relancez.</p>
     <div class="partner-review__actions">
       {% if ai_ready %}
       <form method="post" action="{{ url_for('partners.page_retry_ai') }}">
@@ -54,9 +84,13 @@
   </div>
 
   {% elif page and page.status == 'draft' and page.extra %}
-  <div class="partner-review__ko">
+  <div class="partner-review__ko partner-review__ko--left">
     <h2>Vérification non terminée</h2>
     <p class="muted">La vérification a été interrompue (session expirée ou redémarrage serveur). Votre brouillon est intact.</p>
+    {% if page.ai_review and page.ai_review.summary %}
+    <p class="partner-review__summary">{{ page.ai_review.summary }}</p>
+    {% endif %}
+    {% include "partners/_fix_suggestions.html" %}
     <div class="partner-review__actions">
       {% if ai_ready %}
       <form method="post" action="{{ url_for('partners.page_retry_ai') }}">

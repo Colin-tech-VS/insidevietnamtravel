@@ -40,6 +40,7 @@
         {% endfor %}
       </ul>
       {% endif %}
+      <p><a href="{{ url_for('partners.page_review') }}">Voir les corrections proposées →</a></p>
       {% elif page.overview_html or page.title %}
       <p><a href="{{ url_for('partners.page_preview') }}" target="_blank" rel="noopener">Aperçu privé du brouillon ↗</a></p>
       {% endif %}

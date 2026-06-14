@@ -4611,6 +4611,85 @@ a.article-category:hover { text-decoration: underline; }
   padding-left: 1.1rem;
   font-size: 0.88rem;
   color: var(--ink-muted);
+  text-align: left;
+}
+
+.partner-review__ko--left { text-align: left; }
+.partner-review__summary { margin: 0.75rem 0; line-height: 1.55; }
+.partner-review__score { margin: 0.25rem 0 0.5rem; }
+.partner-review__error-detail { text-align: left; margin: 0.75rem 0; }
+.partner-review__issues { margin: 1rem 0; }
+.partner-review__issues h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 0.35rem;
+}
+
+.partner-fixes {
+  margin: 1.25rem 0;
+  padding-top: 1.15rem;
+  border-top: 1px solid var(--rice-dark);
+  text-align: left;
+}
+.partner-fixes__title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.35rem;
+}
+.partner-fixes__lead { margin: 0 0 1rem; font-size: 0.88rem; }
+.partner-fixes__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.partner-fix-card {
+  background: var(--rice);
+  border: 1px solid var(--rice-dark);
+  border-radius: var(--radius-md, 10px);
+  padding: 1rem 1.1rem;
+}
+.partner-fix-card__head h4 {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.partner-fix-card__reason {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  line-height: 1.45;
+}
+.partner-fix-card__block {
+  margin-top: 0.75rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+.partner-fix-card__block p {
+  margin: 0.25rem 0 0;
+  white-space: pre-wrap;
+}
+.partner-fix-card__label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
+.partner-fix-card__block--before p {
+  color: var(--ink-muted);
+  text-decoration: line-through;
+  text-decoration-color: rgba(155, 28, 28, 0.35);
+}
+.partner-fix-card__block--after p {
+  color: var(--ink);
+  font-weight: 500;
+}
+.partner-fix-card__form { margin-top: 0.85rem; }
+.partner-fixes__all {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed var(--rice-dark);
 }
 
 .partner-profile-list {

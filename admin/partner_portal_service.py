@@ -437,6 +437,130 @@ def save_page_draft(
     return get_page_by_partner(partner_id) or {}
 
 
+def get_page_fixes(page: dict | None) -> list[dict]:
+    """Corrections IA proposées pour le brouillon partenaire."""
+    if not page:
+        return []
+    review = page.get("ai_review") or {}
+    fixes = review.get("fixes") or []
+    if fixes:
+        return fixes
+    return (page.get("extra") or {}).get("pending_fixes") or []
+
+
+def save_page_review_hints(partner_id: str, review: dict, *, error_reason: str = "") -> None:
+    """Enregistre issues/fixes sans publier (après échec technique de vérification)."""
+    page = get_page_by_partner(partner_id)
+    if not page:
+        return
+    review = dict(review or {})
+    review.setdefault("approved", False)
+    if error_reason:
+        review["error_reason"] = str(error_reason).strip()[:800]
+    if not review.get("summary"):
+        review["summary"] = review.get("error_reason") or "Vérification incomplète — corrections proposées."
+    now = _now_iso()
+    extra = dict(page.get("extra") or {})
+    if error_reason:
+        extra["last_verification_error"] = str(error_reason).strip()[:800]
+    if review.get("fixes"):
+        extra["pending_fixes"] = review["fixes"]
+    ai_review_json = json.dumps(review, ensure_ascii=False)
+    extra_json = json.dumps(extra, ensure_ascii=False)
+    with get_connection() as conn:
+        cur = conn.cursor()
+        if is_postgres():
+            cur.execute(
+                """UPDATE partner_pages SET status = 'draft', extra_json = %s,
+                   ai_review_json = %s, updated_at = %s WHERE partner_id = %s""",
+                (extra_json, ai_review_json, now, partner_id),
+            )
+        else:
+            cur.execute(
+                """UPDATE partner_pages SET status = 'draft', extra_json = ?,
+                   ai_review_json = ?, updated_at = ? WHERE partner_id = ?""",
+                (extra_json, ai_review_json, now, partner_id),
+            )
+
+
+def _set_review_fixes(partner_id: str, fixes: list[dict]) -> None:
+    page = get_page_by_partner(partner_id)
+    if not page:
+        return
+    review = dict(page.get("ai_review") or {})
+    review["fixes"] = fixes
+    extra = dict(page.get("extra") or {})
+    if fixes:
+        extra["pending_fixes"] = fixes
+    else:
+        extra.pop("pending_fixes", None)
+    now = _now_iso()
+    with get_connection() as conn:
+        cur = conn.cursor()
+        if is_postgres():
+            cur.execute(
+                """UPDATE partner_pages SET ai_review_json = %s, extra_json = %s,
+                   updated_at = %s WHERE partner_id = %s""",
+                (json.dumps(review, ensure_ascii=False), json.dumps(extra, ensure_ascii=False), now, partner_id),
+            )
+        else:
+            cur.execute(
+                """UPDATE partner_pages SET ai_review_json = ?, extra_json = ?,
+                   updated_at = ? WHERE partner_id = ?""",
+                (json.dumps(review, ensure_ascii=False), json.dumps(extra, ensure_ascii=False), now, partner_id),
+            )
+
+
+def apply_partner_fixes(
+    partner_id: str,
+    *,
+    fix_ids: list[str] | None = None,
+    apply_all: bool = False,
+) -> int:
+    """Applique une ou plusieurs corrections IA au brouillon."""
+    page = get_page_by_partner(partner_id)
+    if not page:
+        raise ValueError("Page introuvable.")
+    fixes = get_page_fixes(page)
+    if not fixes:
+        raise ValueError("Aucune correction disponible.")
+
+    if apply_all:
+        selected = fixes
+    else:
+        ids = {i.strip() for i in (fix_ids or []) if i and i.strip()}
+        if not ids:
+            raise ValueError("Correction introuvable.")
+        selected = [f for f in fixes if f.get("id") in ids]
+        if not selected:
+            raise ValueError("Correction introuvable.")
+
+    extra = dict(page.get("extra") or {})
+    fields = {
+        "pitch": extra.get("pitch") or "",
+        "highlights": extra.get("highlights") or "",
+        "offer_details": extra.get("offer_details") or "",
+        "city": extra.get("city") or "",
+        "contact_note": extra.get("contact_note") or "",
+    }
+    applied_ids: set[str] = set()
+    for fix in selected:
+        field = fix.get("field")
+        suggested = (fix.get("suggested") or "").strip()
+        if field not in fields or not suggested:
+            continue
+        fields[field] = suggested
+        applied_ids.add(fix.get("id", ""))
+
+    if not applied_ids:
+        raise ValueError("Aucune correction applicable.")
+
+    save_page_draft(partner_id, **fields)
+    remaining = [f for f in fixes if f.get("id") not in applied_ids]
+    _set_review_fixes(partner_id, remaining)
+    return len(applied_ids)
+
+
 def apply_ai_page_result(partner_id: str, result: dict) -> dict:
     """Persiste le résultat IA (contenu + décision)."""
     page = get_page_by_partner(partner_id)
@@ -461,6 +585,11 @@ def apply_ai_page_result(partner_id: str, result: dict) -> dict:
     ai_review_json = json.dumps(review, ensure_ascii=False)
     extra = dict(page.get("extra") or {})
     extra["profile_highlights"] = page_data.get("profile_highlights") or []
+    if review.get("fixes"):
+        extra["pending_fixes"] = review["fixes"]
+    else:
+        extra.pop("pending_fixes", None)
+    extra.pop("last_verification_error", None)
 
     with get_connection() as conn:
         cur = conn.cursor()
