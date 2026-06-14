@@ -84,6 +84,7 @@ CREATE TABLE IF NOT EXISTS mai_chat_events (
     site_links_count INTEGER DEFAULT 0,
     affiliate_links_count INTEGER DEFAULT 0,
     error_code TEXT,
+    question_text TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_mai_created ON mai_chat_events(created_at);
@@ -274,6 +275,9 @@ def _migrate_mai_chat_table(conn, *, postgres: bool) -> None:
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_mai_visitor ON mai_chat_events(visitor_hash)"
             )
+            cur.execute(
+                "ALTER TABLE mai_chat_events ADD COLUMN IF NOT EXISTS question_text TEXT"
+            )
     else:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS mai_chat_events (
@@ -296,6 +300,10 @@ def _migrate_mai_chat_table(conn, *, postgres: bool) -> None:
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_mai_event ON mai_chat_events(event_type)"
         )
+        try:
+            conn.execute("ALTER TABLE mai_chat_events ADD COLUMN question_text TEXT")
+        except Exception:
+            pass
 
 
 def _init_postgres():

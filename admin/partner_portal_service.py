@@ -494,6 +494,12 @@ def apply_ai_page_result(partner_id: str, result: dict) -> dict:
                     now, published_at, partner_id,
                 ),
             )
+    if approved:
+        try:
+            from admin import chat_service
+            chat_service.invalidate_cache()
+        except Exception:
+            pass
     return get_page_by_partner(partner_id) or {}
 
 
@@ -518,7 +524,14 @@ def set_page_status(partner_id: str, status: str, *, admin_notes: str = "") -> b
                    WHERE partner_id = ?""",
                 (status, (admin_notes or "").strip(), now, published_at, partner_id),
             )
-        return cur.rowcount > 0
+        ok = cur.rowcount > 0
+    if ok and status == "published":
+        try:
+            from admin import chat_service
+            chat_service.invalidate_cache()
+        except Exception:
+            pass
+    return ok
 
 
 def mark_page_ai_review(partner_id: str) -> bool:

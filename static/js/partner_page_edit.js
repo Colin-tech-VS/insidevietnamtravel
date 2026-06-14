@@ -307,6 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     if (btnPrev) btnPrev.hidden = current <= 1;
     if (btnNext) btnNext.hidden = current >= total;
+    if (btnSubmit) btnSubmit.hidden = current < total;
     if (stepCurrentEl) stepCurrentEl.textContent = String(current);
     showError('');
     updateReadiness();
@@ -338,6 +339,8 @@ document.addEventListener('DOMContentLoaded', () => {
   form.addEventListener('submit', (e) => {
     syncHighlightsField();
     updateContactNote();
+    const action = e.submitter?.value || e.submitter?.getAttribute?.('value') || '';
+    const isVerify = action === 'submit_ai';
     for (let s = 1; s <= total; s += 1) {
       if (!validateStep(s)) {
         e.preventDefault();
@@ -345,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
     }
-    if (aiReview && e.submitter?.value === 'submit_ai') {
+    if (isVerify && aiReview) {
       e.preventDefault();
       showError('Vérification déjà en cours.');
     }

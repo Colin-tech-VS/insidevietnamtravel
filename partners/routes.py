@@ -183,6 +183,10 @@ def page_edit():
         except ValueError as e:
             flash(str(e), "error")
         page = get_page_by_partner(partner["id"])
+    elif request.method == "GET" and page and page.get("status") == "ai_review":
+        if page_ai_review_stale(page):
+            release_page_from_ai_review(partner["id"])
+            page = get_page_by_partner(partner["id"])
     extra = (page or {}).get("extra") or {}
     return render_template(
         "partners/page_edit.html",

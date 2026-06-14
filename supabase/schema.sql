@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS mai_chat_events (
     site_links_count INTEGER DEFAULT 0,
     affiliate_links_count INTEGER DEFAULT 0,
     error_code TEXT,
+    question_text TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_mai_created ON mai_chat_events(created_at);

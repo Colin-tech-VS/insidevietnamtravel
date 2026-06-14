@@ -186,6 +186,10 @@ def _log_mai_chat_event_async(**kwargs):
         pass
 
 
+def _mai_question_log_text(message: str) -> str:
+    return (message or "").strip()[:500]
+
+
 def _mai_request_context():
     from urllib.parse import urlparse
 
@@ -1633,6 +1637,7 @@ def api_chat():
                 "error_code": code,
                 "had_profile": bool(visitor_profile),
                 "message_length": len(message),
+                "question_text": _mai_question_log_text(message),
             },
             daemon=True,
         ).start()
@@ -1649,6 +1654,7 @@ def api_chat():
                 "error_code": "api_error",
                 "had_profile": bool(visitor_profile),
                 "message_length": len(message),
+                "question_text": _mai_question_log_text(message),
             },
             daemon=True,
         ).start()
@@ -1665,6 +1671,7 @@ def api_chat():
             "lang": lang,
             "had_profile": bool(visitor_profile),
             "message_length": len(message),
+            "question_text": _mai_question_log_text(message),
             "site_links_count": len(result.get("site_links") or []),
             "affiliate_links_count": len(result.get("affiliate_links") or []),
         },

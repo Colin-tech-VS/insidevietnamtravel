@@ -6,7 +6,8 @@ priorités et calendrier, toujours avec un objectif SEO. Elle connaît :
 - toutes les pages /admin (inventaire DYNAMIQUE depuis l'url_map : une nouvelle
   page admin apparaît automatiquement dans sa connaissance) ;
 - l'état réel du site (articles, destinations, analytics, SEO, GEO/LLM,
-  affiliation, revenus, newsletter, avis, contact, configuration IA/Facebook).
+  affiliation, revenus, newsletter, avis, contact, partenariats CRM, portail
+  partenaire self-service, emails trackés, configuration IA/Facebook/GSC).
 
 Elle peut aussi AGIR (tout ce que l'admin peut faire) : générer un guide, une
 destination, une newsletter ou un post Facebook, ajouter des points sur la
@@ -135,12 +136,14 @@ _ADMIN_PAGE_NOTES = {
     "admin.map_admin": ("Carte", "Points d'intérêt et pins affiliés (hôtels, activités) sur les cartes interactives des destinations."),
     "admin.newsletter_admin": ("Newsletter", "Composition d'emails (IA ou manuel), envoi test / abonné / tous, gestion des abonnés, contact direct des partenaires."),
     "admin.social": ("Réseaux sociaux", "Publication multi-réseaux avec rédaction IA adaptée et suivi UTM : Facebook, Pinterest, Reddit, Telegram, X (Twitter), Threads, Instagram (TikTok : audit API requis). Configuration des connexions API de chaque réseau."),
-    "admin.partnerships": ("Partenariats", "Gestion des partenaires (influenceurs, blogueurs, guides, agences) : recherche IA d'influenceurs voyage Vietnam avec extraction d'email, statuts de contact (à contacter → actif), envoi d'emails via la page Newsletter."),
+    "admin.partnerships": ("Partenariats CRM", "Prospection partenaires (influenceurs, blogueurs, guides, agences) : recherche IA d'influenceurs voyage Vietnam avec extraction d'email, statuts de contact (à contacter → actif), envoi d'emails via la page Newsletter avec tracking ouvertures/clics."),
+    "admin.partner_portal_admin": ("Espace partenaire", "Portail self-service : inscriptions via /devenir-partenaire, comptes partenaires, création de fiche par l'IA, vérification éditoriale, publication sur /partenaire/slug. Modération : suspendre, publier, refuser, dépublier."),
     "admin.contact_admin": ("Contact", "Messages reçus via le formulaire de contact public (lu / suppression)."),
     "admin.reviews_admin": ("Avis", "Gestion des témoignages voyageurs affichés sur le site."),
     "admin.affiliates": ("Affiliation", "IDs partenaires (Booking, Agoda, GetYourGuide, eSIM…), vérification du tracking, stats de clics."),
     "admin.revenue": ("Revenus", "Saisie des commissions reçues, estimé vs confirmé, historique."),
-    "admin.analytics": ("Analytics", "Trafic (7/30/90 j), temps réel, SEO organique, GEO (trafic depuis ChatGPT/Perplexity…), pays/villes, profils visiteurs."),
+    "admin.analytics": ("Analytics", "Trafic (7/30/90 j), temps réel, SEO organique, GEO (trafic depuis ChatGPT/Perplexity…), pays/villes, profils visiteurs, stats Mai AI (dont questions posées)."),
+    "admin.gsc": ("Google Search Console", "Connexion OAuth GSC, performances SEO (requêtes, pages, CTR), propriété verrouillée insidevietnamtravel.fr."),
 }
 
 
@@ -266,6 +269,8 @@ def build_site_snapshot() -> dict:
             "avg": round(sum(r.get("rating", 0) for r in reviews) / len(reviews), 1) if reviews else 0,
         },
         "partnerships": _safe(_partnership_stats, {}),
+        "partner_portal": _safe(_partner_portal_snapshot, {}),
+        "email_tracking": _safe(_email_tracking_snapshot, {}),
         "config": {
             "ai_provider": _safe(ai_client.provider, "?"),
             "ai_status": _safe(ai_client.provider_status, {}),
@@ -305,6 +310,50 @@ def _connected_networks() -> list[str]:
 def _partnership_stats() -> dict:
     from admin.partners_service import partnership_stats
     return partnership_stats()
+
+
+def _partner_portal_snapshot() -> dict:
+    from admin.partner_portal_service import (
+        PAGE_STATUS_LABELS,
+        PROFILE_TYPE_LABELS,
+        get_account_by_id,
+        list_accounts,
+        list_pages,
+        portal_stats,
+    )
+
+    stats = portal_stats()
+    accounts = list_accounts()
+    pages = list_pages()
+    published = []
+    for pg in [p for p in pages if p.get("status") == "published"][:20]:
+        acc = get_account_by_id(pg.get("partner_id")) or {}
+        published.append({
+            "slug": pg.get("slug", ""),
+            "title": pg.get("title") or acc.get("business_name") or acc.get("email", ""),
+            "city": ((pg.get("extra") or {}).get("city") or acc.get("city") or "").strip(),
+            "type": PROFILE_TYPE_LABELS.get(acc.get("profile_type"), ""),
+        })
+    pending = []
+    for pg in [p for p in pages if p.get("status") != "published"][:15]:
+        acc = get_account_by_id(pg.get("partner_id")) or {}
+        pending.append({
+            "slug": pg.get("slug", ""),
+            "title": pg.get("title") or acc.get("business_name") or acc.get("email", ""),
+            "status": PAGE_STATUS_LABELS.get(pg.get("status"), pg.get("status", "")),
+            "email": acc.get("email", ""),
+        })
+    return {
+        **stats,
+        "accounts_active": sum(1 for a in accounts if a.get("status") == "active"),
+        "published_pages": published,
+        "pending_pages": pending,
+    }
+
+
+def _email_tracking_snapshot() -> dict:
+    from admin.email_tracking_service import get_analytics_summary
+    return get_analytics_summary()
 
 
 # ── Audit déterministe (bugs / manques / SEO) ────────────────────────────────
@@ -483,11 +532,28 @@ def _format_snapshot(snap: dict) -> str:
         f"Config: moteur IA {snap.get('config', {}).get('ai_provider')}, Facebook {'connecté' if snap.get('config', {}).get('facebook_ok') else 'NON connecté'}"
         + ", réseaux sociaux connectés: "
         + (", ".join(snap.get("config", {}).get("social_networks") or []) or "aucun (voir /admin/social)"),
-        "Partenariats: "
-        + (f"{snap.get('partnerships', {}).get('total', 0)} partenaire(s) "
+        "Partenariats CRM (/admin/partnerships): "
+        + (f"{snap.get('partnerships', {}).get('total', 0)} contact(s) "
            f"({snap.get('partnerships', {}).get('with_email', 0)} avec email) — "
            + ", ".join(f"{k}:{v}" for k, v in (snap.get('partnerships', {}).get('by_status') or {}).items() if v)
-           if snap.get("partnerships", {}).get("total") else "aucun partenaire enregistré (/admin/partnerships)"),
+           if snap.get("partnerships", {}).get("total") else "aucun contact CRM enregistré"),
+        "Espace partenaire self-service (/admin/partner-portal, /devenir-partenaire): "
+        + (
+            f"{snap.get('partner_portal', {}).get('accounts', 0)} compte(s) "
+            f"({snap.get('partner_portal', {}).get('accounts_active', 0)} actifs), "
+            f"{snap.get('partner_portal', {}).get('pages_published', 0)} page(s) publiée(s) "
+            f"(/partenaire/slug), {snap.get('partner_portal', {}).get('pages_pending', 0)} en attente, "
+            f"{snap.get('partner_portal', {}).get('pages_rejected', 0)} refusée(s)"
+            if snap.get("partner_portal", {}).get("accounts") is not None
+            else "portail partenaire actif"
+        ),
+        "Emails trackés (newsletter & partenariat): "
+        + (
+            f"{snap.get('email_tracking', {}).get('total_sends', 0)} envoi(s), "
+            f"{snap.get('email_tracking', {}).get('total_opens', 0)} ouverture(s), "
+            f"{snap.get('email_tracking', {}).get('total_clicks', 0)} clic(s)"
+            if snap.get("email_tracking") else "suivi email actif via /admin/newsletter"
+        ),
     ]
     arts = snap.get("articles", [])
     lines.append(f"Articles publiés ({len(arts)}):")
@@ -508,6 +574,22 @@ def _format_snapshot(snap: dict) -> str:
         f"Destinations publiées ({len(dests)}, avec leur région nord/centre/sud): "
         + ", ".join(f"{d['slug']} [{d.get('region', '?')}]" for d in dests)
     )
+    pp = snap.get("partner_portal") or {}
+    pub = pp.get("published_pages") or []
+    if pub:
+        lines.append(
+            "Fiches partenaires publiques: "
+            + ", ".join(
+                f"/partenaire/{p['slug']} « {p['title']} » ({p.get('type', '?')}, {p.get('city', '?')})"
+                for p in pub[:12]
+            )
+        )
+    pend = pp.get("pending_pages") or []
+    if pend:
+        lines.append(
+            "Pages partenaires en modération: "
+            + ", ".join(f"{p.get('title', p.get('slug', '?'))} [{p.get('status', '?')}]" for p in pend[:8])
+        )
     return "\n".join(lines)
 
 
@@ -603,12 +685,16 @@ def _system_prompt() -> str:
         "bio »). tiktok est listé mais non publiable par API (audit TikTok 2-4 semaines). "
         "Les réseaux connectés sont dans ÉTAT DU SITE (Config) ; la connexion (clés API) se "
         "fait sur /admin/social. "
-        "PARTENARIATS (/admin/partnerships) : base des partenaires potentiels (influenceurs, "
-        "blogueurs, guides, agences) avec email, statut (à contacter → contacté → en "
-        "discussion → actif) et notes. Tu peux en CHERCHER sur internet (find_influencers) "
-        "et en ENREGISTRER (add_partner). Le contact se fait depuis /admin/newsletter "
-        "(email IA type « partenariat » ou manuel) — propose le lien prefill "
-        "/admin/newsletter?prefill=1&topic=…&email_type=partenariat quand l'admin veut écrire à un partenaire. "
+        "PARTENARIATS — deux systèmes distincts : "
+        "1) CRM (/admin/partnerships) : prospection influenceurs/blogueurs avec emails, statuts, "
+        "envoi d'emails partenariat via /admin/newsletter (tracking ouvertures/clics). "
+        "Outils find_influencers et add_partner. "
+        "2) PORTAIL PARTENAIRE (/admin/partner-portal) : comptes self-service inscrits via "
+        "/devenir-partenaire, fiches créées par les partenaires, vérification IA, publication "
+        "sur /partenaire/slug. Tu vois les stats et fiches dans ÉTAT DU SITE. "
+        "Pour modérer (publier/refuser/suspendre), dirige l'admin vers /admin/partner-portal. "
+        "Pour écrire à un contact CRM, propose /admin/newsletter?prefill=1&topic=…&email_type=partenariat. "
+        "Mai (widget public) connaît les fiches partenaires publiées et la page devenir-partenaire. "
         "OUTILS disponibles (champ \"tool\", sinon null) :\n"
         '- {"name":"web_search","params":{"query":"…"}} — rechercher sur internet (DuckDuckGo) : '
         "actualités/réglementation Vietnam (visa, prix, événements), concurrence, tendances SEO, "

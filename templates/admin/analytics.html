@@ -147,6 +147,34 @@
         </tbody>
       </table>
       {% endif %}
+      {% if mai.recent_questions %}
+      <h3 style="margin-top:1.25rem;font-size:1rem">Questions posées à Mai</h3>
+      <p class="muted">Derniers messages visiteurs ({{ days }} j) — texte tronqué à 500 caractères.</p>
+      <div class="admin-table-wrap" style="margin-top:0.75rem;max-height:420px;overflow:auto">
+        <table class="admin-table admin-table--compact">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Langue</th>
+              <th>Page</th>
+              <th>Question</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in mai.recent_questions %}
+            <tr>
+              <td class="nowrap">{{ row.created_at[:16] if row.created_at else '—' }}</td>
+              <td>{{ (row.lang or 'fr') | upper }}</td>
+              <td><code>{{ row.path or '—' }}</code></td>
+              <td>{{ row.question_text }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% elif mai.total_messages > 0 %}
+      <p class="muted" style="margin-top:1rem">Les questions seront enregistrées à partir des prochains messages Mai.</p>
+      {% endif %}
       {% if mai.daily_messages %}
       <h3 style="margin-top:1.25rem;font-size:1rem">Messages Mai par jour</h3>
       <div class="chart-box chart-box--short"><canvas id="maiMessagesChart"></canvas></div>

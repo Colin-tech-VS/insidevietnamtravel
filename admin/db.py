@@ -582,6 +582,7 @@ def log_mai_chat_event(
     site_links_count: int = 0,
     affiliate_links_count: int = 0,
     error_code: str = "",
+    question_text: str = "",
 ):
     event_type = (event_type or "").strip()[:20]
     if event_type not in ("open", "message", "error"):
@@ -591,12 +592,12 @@ def log_mai_chat_event(
             conn,
             """INSERT INTO mai_chat_events
                (event_type, ip_hash, visitor_hash, lang, path, had_profile,
-                message_length, site_links_count, affiliate_links_count, error_code, created_at)
-               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                message_length, site_links_count, affiliate_links_count, error_code, question_text, created_at)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
             """INSERT INTO mai_chat_events
                (event_type, ip_hash, visitor_hash, lang, path, had_profile,
-                message_length, site_links_count, affiliate_links_count, error_code, created_at)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+                message_length, site_links_count, affiliate_links_count, error_code, question_text, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 event_type,
                 (ip_hash or "")[:32],
@@ -608,6 +609,7 @@ def log_mai_chat_event(
                 max(0, int(site_links_count or 0)),
                 max(0, int(affiliate_links_count or 0)),
                 (error_code or "")[:40],
+                (question_text or "")[:500],
                 _now_iso(),
             ),
         )
@@ -664,6 +666,7 @@ def get_mai_chat_stats(days: int = 30, site_unique_visitors: int = 0) -> dict:
         "daily_messages": [],
         "by_lang": [],
         "recent_errors": [],
+        "recent_questions": [],
     }
     try:
         with get_connection() as conn:
@@ -764,6 +767,22 @@ def get_mai_chat_stats(days: int = 30, site_unique_visitors: int = 0) -> dict:
                 (since,),
             ).fetchall()
             out["recent_errors"] = [_row_dict(r) for r in rows]
+
+            rows = _execute(
+                conn,
+                """SELECT created_at, lang, path, question_text, message_length
+                   FROM mai_chat_events
+                   WHERE event_type = 'message' AND COALESCE(question_text, '') <> ''
+                     AND created_at >= %s
+                   ORDER BY created_at DESC LIMIT 50""",
+                """SELECT created_at, lang, path, question_text, message_length
+                   FROM mai_chat_events
+                   WHERE event_type = 'message' AND COALESCE(question_text, '') <> ''
+                     AND created_at >= ?
+                   ORDER BY created_at DESC LIMIT 50""",
+                (since,),
+            ).fetchall()
+            out["recent_questions"] = [_row_dict(r) for r in rows]
     except Exception:
         pass
 

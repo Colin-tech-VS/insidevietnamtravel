@@ -11,6 +11,7 @@ image — sert au sélecteur de l'admin, à la génération IA et au lien publi�
 from __future__ import annotations
 
 import json
+import re
 from datetime import date
 
 import config
@@ -30,6 +31,12 @@ def _img(url: str | None) -> str:
     if not url:
         return _abs(DEFAULT_OG)
     return _abs(url)
+
+
+def _strip_html(text: str, limit: int = 400) -> str:
+    clean = re.sub(r"<[^>]+>", " ", text or "")
+    clean = re.sub(r"\s+", " ", clean).strip()
+    return clean[:limit] if limit else clean
 
 
 def page_inventory(lang: str = "fr") -> list[dict]:
@@ -120,6 +127,58 @@ def page_inventory(lang: str = "fr") -> list[dict]:
             "title": title, "summary": summary,
             "image": _img(DEFAULT_OG),
         })
+
+    partner_group = "Partenaires" if lang == "fr" else "Partners"
+    become_title = (
+        "Become a partner — collaboration program"
+        if lang == "en"
+        else "Devenir partenaire — programme de collaboration"
+    )
+    become_summary = (
+        "Apply to collaborate with Inside Vietnam Travel: local guides, travel influencers, "
+        "bloggers and agencies. Free validated partner page on the site after editorial review."
+        if lang == "en"
+        else "Rejoignez le programme partenaires : guides locaux, influenceurs, blogueurs et agences. "
+        "Page partenaire gratuite sur le site après validation éditoriale."
+    )
+    items.append({
+        "id": "become-partner",
+        "group": partner_group,
+        "label": become_title,
+        "url": _abs(lang_url("become_partner", lang)),
+        "title": become_title,
+        "summary": become_summary,
+        "image": _img(DEFAULT_OG),
+    })
+
+    try:
+        from admin.partner_portal_service import PROFILE_TYPE_LABELS, get_account_by_id, list_pages
+
+        for pg in list_pages(status="published"):
+            slug = (pg.get("slug") or "").strip()
+            if not slug:
+                continue
+            account = get_account_by_id(pg.get("partner_id")) or {}
+            title = pg.get("title") or account.get("business_name") or account.get("email") or slug
+            tagline = (pg.get("tagline") or "").strip()
+            pitch = ((pg.get("extra") or {}).get("pitch") or "").strip()
+            profile = PROFILE_TYPE_LABELS.get(account.get("profile_type"), "")
+            city = ((pg.get("extra") or {}).get("city") or account.get("city") or "").strip()
+            summary = " · ".join(filter(None, [profile, city, tagline or pitch]))
+            overview = _strip_html(pg.get("overview_html") or "", 280)
+            if overview:
+                summary = f"{summary}. {overview}" if summary else overview
+            items.append({
+                "id": f"partner:{slug}",
+                "group": partner_group,
+                "label": title,
+                "url": _abs(lang_url("partner_public", lang, slug=slug)),
+                "title": title,
+                "summary": summary or tagline or pitch,
+                "image": _img(pg.get("image_url") or DEFAULT_OG),
+            })
+    except Exception:
+        pass
 
     return items
 

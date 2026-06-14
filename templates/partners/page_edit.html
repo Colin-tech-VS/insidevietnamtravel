@@ -47,7 +47,7 @@
 
     <p class="partner-wizard__error" id="page-wizard-error" hidden role="alert"></p>
 
-    <form method="post" class="partner-page-form" id="partner-page-form">
+    <form method="post" class="partner-page-form" id="partner-page-form" novalidate>
       <div class="prepare-step partner-page-step is-active" data-step="1">
         <header class="prepare-step__head">
           <h2>Votre accroche</h2>
@@ -61,7 +61,7 @@
 
         <div class="form-field">
           <label for="pitch">Accroche publique *</label>
-          <textarea id="pitch" name="pitch" rows="3" required maxlength="500"
+          <textarea id="pitch" name="pitch" rows="3" maxlength="500"
                     placeholder="Guide local à Hội An — circuits photo, cuisine et artisanat en français.">{{ extra.pitch or '' }}</textarea>
           <div class="partner-field-meta">
             <span class="partner-field-meta__bar"><span class="partner-field-meta__fill" id="pitch-bar"></span></span>
@@ -114,7 +114,7 @@
 
         <div class="form-field">
           <label for="offer_details">Offre en détail *</label>
-          <textarea id="offer_details" name="offer_details" rows="5" required maxlength="5000"
+          <textarea id="offer_details" name="offer_details" rows="5" maxlength="5000"
                     placeholder="Visites ½ journée et journée complète à Hội An et environs. Tarifs à partir de 45 €/pers. Groupes de 2 à 8 personnes. Français & anglais.">{{ extra.offer_details or '' }}</textarea>
           <div class="partner-field-meta">
             <span class="partner-field-meta__bar"><span class="partner-field-meta__fill" id="offer-bar"></span></span>
@@ -205,15 +205,7 @@
         </div>
 
         <div class="partner-page-final-actions">
-          {% if ai_ready %}
-          <button type="submit" name="action" value="submit_ai" class="btn btn-primary btn-lg" id="page-submit"
-                  {% if page and page.status == 'ai_review' %}disabled{% endif %}>
-            Vérifier ma page
-          </button>
           <p class="muted partner-page-final-actions__hint">Contrôle éditorial, SEO et cohérence — publication si validé.</p>
-          {% else %}
-          <p class="muted">Vérification automatique indisponible — enregistrez votre brouillon.</p>
-          {% endif %}
           <button type="submit" name="action" value="save" class="btn btn-ghost btn-sm" id="page-save">Enregistrer brouillon</button>
         </div>
       </div>
@@ -223,6 +215,12 @@
         <div class="partner-wizard__nav-right">
           <span class="partner-wizard__step-label muted">Étape <strong id="page-step-current">1</strong>/3</span>
           <button type="button" class="btn btn-primary" id="page-next">Continuer →</button>
+          {% if ai_ready %}
+          <button type="submit" name="action" value="submit_ai" class="btn btn-primary btn-lg" id="page-submit" hidden
+                  {% if page and page.status == 'ai_review' %}disabled{% endif %}>
+            Vérifier ma page
+          </button>
+          {% endif %}
         </div>
       </div>
     </form>
