@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% from "macros/seo.html" import json_ld_graph with context %}
+
+{% block structured_data %}
+{{ json_ld_graph(json_ld_schemas + [
+  seo_breadcrumb([
+    (t('nav.home'), site.SITE_URL ~ lang_url('index')),
+    ('Partners' if lang == 'en' else 'Partenaires', None),
+  ]),
+]) }}
+{% endblock %}
+
+{% block content %}
+{% set is_en = (lang == 'en') %}
+{% set type_labels = {
+  'guide': 'Local guide' if is_en else 'Guide local',
+  'influenceur': 'Influencer' if is_en else 'Influenceur',
+  'blogueur': 'Blogger' if is_en else 'Blogueur',
+  'agence': 'Agency' if is_en else 'Agence',
+  'hotel': 'Accommodation' if is_en else 'Hébergement',
+  'autre': 'Partner' if is_en else 'Partenaire',
+} %}
+
+<header class="pillar-hero partner-directory-hero">
+  <div class="pillar-hero__media" aria-hidden="true">
+    <img src="{{ url_for('static', filename='images/destinations/hoi-an-960.webp') }}"
+         alt="" width="960" height="640" loading="eager" decoding="async" class="pillar-hero__img">
+  </div>
+  <div class="container partner-directory-hero__inner">
+    <nav class="breadcrumb breadcrumb--light" aria-label="Breadcrumb">
+      <ol>
+        <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+        <li aria-current="page">{{ 'Partners' if is_en else 'Partenaires' }}</li>
+      </ol>
+    </nav>
+    <p class="pillar-hero__eyebrow">{{ 'Verified network' if is_en else 'Réseau vérifié' }}</p>
+    <h1 class="pillar-hero__title">{{ 'Our Vietnam travel partners' if is_en else 'Nos partenaires voyage Vietnam' }}</h1>
+    <p class="pillar-hero__lede">{{ 'Local guides, travel influencers, bloggers and agencies we collaborate with — find the right expert for your Vietnam trip.' if is_en else 'Guides locaux, influenceurs voyage, blogueurs et agences avec lesquels nous collaborons — trouvez l\'expert idéal pour votre séjour au Vietnam.' }}</p>
+    <p class="partner-directory-hero__count"><strong>{{ partners|length }}</strong> {{ 'published partners' if is_en else 'partenaires publiés' }}</p>
+  </div>
+</header>
+
+<section class="section partner-directory" aria-label="{{ 'Partner directory' if is_en else 'Annuaire partenaires' }}">
+  <div class="container">
+    {% if partners %}
+    <div class="partner-directory__filters partner-reveal" role="group" aria-label="{{ 'Filter by type' if is_en else 'Filtrer par type' }}">
+      <button type="button" class="partner-directory__filter is-active" data-filter="all">{{ 'All' if is_en else 'Tous' }}</button>
+      {% for key, label in type_labels.items() %}
+      <button type="button" class="partner-directory__filter" data-filter="{{ key }}">{{ label }}</button>
+      {% endfor %}
+    </div>
+
+    <ul class="partner-directory__grid">
+      {% for entry in partners %}
+      {% set p = entry.partner or {} %}
+      {% set ptype = p.profile_type or 'autre' %}
+      <li class="partner-directory__card partner-reveal" data-type="{{ ptype }}" style="--reveal-delay: {{ loop.index0 * 60 }}ms">
+        <a href="{{ lang_url('partner_public', slug=entry.slug) }}" class="partner-directory__card-link">
+          {% if entry.image_url %}
+          <div class="partner-directory__card-media">
+            <img src="{{ entry.image_url if '://' in entry.image_url else url_for('static', filename=entry.image_url.lstrip('/static/')) }}"
+                 alt="{{ entry.title | e }}" width="400" height="225" loading="lazy" decoding="async">
+          </div>
+          {% else %}
+          <div class="partner-directory__card-media partner-directory__card-media--placeholder" aria-hidden="true">
+            <span>{{ type_labels.get(ptype, '✦')[:1] }}</span>
+          </div>
+          {% endif %}
+          <div class="partner-directory__card-body">
+            <span class="partner-directory__card-badge">{{ profile_badge_fn(p, lang) }}</span>
+            <h2 class="partner-directory__card-title">{{ entry.title }}</h2>
+            {% if entry.tagline %}<p class="partner-directory__card-tagline">{{ entry.tagline }}</p>{% endif %}
+            {% if p.city or (entry.extra and entry.extra.city) %}
+            <p class="partner-directory__card-city">📍 {{ entry.extra.city if entry.extra and entry.extra.city else p.city }}</p>
+            {% endif %}
+          </div>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="partner-directory__empty partner-reveal">
+      <h2>{{ 'Partners coming soon' if is_en else 'Partenaires bientôt disponibles' }}</h2>
+      <p>{{ 'Our partner directory is being built. Are you a guide, creator or agency in Vietnam?' if is_en else 'Notre annuaire se construit. Vous êtes guide, créateur ou agence au Vietnam ?' }}</p>
+      <a href="{{ lang_url('become_partner') }}" class="btn btn-primary">{{ 'Become a partner' if is_en else 'Devenir partenaire' }}</a>
+    </div>
+    {% endif %}
+
+    <nav class="partner-directory__footer partner-reveal" aria-label="{{ 'Related pages' if is_en else 'Pages associées' }}">
+      <a href="{{ lang_url('become_partner') }}">{{ 'Join the program' if is_en else 'Rejoindre le programme' }}</a>
+      <a href="{{ lang_url('prepare_trip') }}">{{ 'Plan your trip' if is_en else 'Préparer son voyage' }}</a>
+      <a href="{{ lang_url('about') }}">{{ t('nav.about') }}</a>
+    </nav>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/partner_public.js') }}" defer></script>
+{% endblock %}

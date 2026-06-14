@@ -1148,6 +1148,8 @@ def become_partner_register():
 @app.route("/en/partner/<slug>")
 def partner_public_page(slug):
     from admin.partner_portal_service import get_account_by_id, get_page_by_slug, is_hidden_test_partner
+    from admin.partner_seo import build_public_page_context
+    from i18n_utils import canonical_for_request
 
     lang = get_lang()
     page = get_page_by_slug(slug)
@@ -1156,15 +1158,43 @@ def partner_public_page(slug):
     partner = get_account_by_id(page.get("partner_id"))
     if not partner or partner.get("status") != "active" or is_hidden_test_partner(partner):
         abort(404)
-    is_en = lang == "en"
+    if page.get("status") != "published":
+        abort(404)
     title = page.get("seo_title") or page.get("title") or partner.get("business_name")
     desc = page.get("seo_description") or page.get("tagline") or ""
+    canonical = canonical_for_request(lang)
+    ctx = build_public_page_context(page, partner, lang, canonical_url=canonical)
     return render_template(
         "partner_public.html",
         page=page,
         partner=partner,
         meta_title=title,
         meta_description=desc,
+        is_private_preview=False,
+        **ctx,
+    )
+
+
+@app.route("/partenaires-vietnam")
+@app.route("/en/vietnam-travel-partners")
+def partners_index():
+    from admin.partner_portal_service import list_public_partners
+    from admin.partner_seo import partners_index_json_ld, partners_index_meta, profile_badge, profile_type_label
+    from i18n_utils import canonical_for_request
+
+    lang = get_lang()
+    partners = list_public_partners()
+    meta = partners_index_meta(lang)
+    canonical = canonical_for_request(lang)
+    return render_template(
+        "partners_index.html",
+        partners=partners,
+        meta_title=meta["meta_title"],
+        meta_description=meta["meta_description"],
+        meta_keywords=meta["meta_keywords"],
+        json_ld_schemas=partners_index_json_ld(partners, lang, canonical_url=canonical),
+        profile_badge_fn=profile_badge,
+        profile_label_fn=profile_type_label,
     )
 
 

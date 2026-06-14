@@ -86,6 +86,28 @@ def build_catalog(exclude_slug: str | None = None) -> list[dict]:
     except Exception:
         pass
 
+    try:
+        from admin.partner_portal_service import list_public_partners
+        from admin.partner_seo import profile_type_label
+
+        for page in list_public_partners():
+            slug = page.get("slug")
+            title = (page.get("title") or "").strip()
+            partner = page.get("partner") or {}
+            if not slug or not title:
+                continue
+            ptype = profile_type_label(partner, "fr")
+            catalog.append({
+                "url": f"/partenaire/{slug}",
+                "title": f"{title} ({ptype})",
+            })
+        catalog.append({
+            "url": "/partenaires-vietnam",
+            "title": "Partenaires voyage Vietnam — Inside Vietnam Travel",
+        })
+    except Exception:
+        pass
+
     # Dédoublonnage par URL.
     seen: set[str] = set()
     out: list[dict] = []

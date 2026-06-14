@@ -27,7 +27,8 @@ SITEMAP_STATIC: dict[str, dict[str, str]] = {
     "phrases_guide": {"priority": "0.82", "changefreq": "monthly"},
     "events_calendar": {"priority": "0.88", "changefreq": "weekly"},
     "about": {"priority": "0.5", "changefreq": "monthly"},
-    "contact": {"priority": "0.5", "changefreq": "monthly"},
+    "become_partner": {"priority": "0.65", "changefreq": "monthly"},
+    "partners_index": {"priority": "0.75", "changefreq": "weekly"},
     "privacy": {"priority": "0.4", "changefreq": "yearly"},
     "legal_notices": {"priority": "0.4", "changefreq": "yearly"},
 }
@@ -83,6 +84,19 @@ def _pillar_entries() -> list[tuple[str, str | None]]:
     return [(slug, None) for slug in hub_slugs()]
 
 
+def _partner_page_entries() -> list[tuple[str, str | None, str | None]]:
+    from admin.partner_portal_service import list_public_partners
+
+    entries: list[tuple[str, str | None, str | None]] = []
+    for page in list_public_partners():
+        slug = (page.get("slug") or "").strip()
+        if not slug:
+            continue
+        lastmod = page.get("published_at") or page.get("updated_at")
+        entries.append((slug, lastmod, _abs_image(page.get("image_url"))))
+    return entries
+
+
 SITEMAP_DYNAMIC: dict[str, dict] = {
     "article": {
         "priority": "0.8",
@@ -113,6 +127,12 @@ SITEMAP_DYNAMIC: dict[str, dict] = {
         "changefreq": "weekly",
         "param": "slug",
         "items": _pillar_entries,
+    },
+    "partner_public": {
+        "priority": "0.72",
+        "changefreq": "monthly",
+        "param": "slug",
+        "items": _partner_page_entries,
     },
 }
 

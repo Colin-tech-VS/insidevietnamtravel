@@ -269,6 +269,7 @@ ROUTE_PATHS: dict[str, dict[str, str]] = {
         "en": "/en/become-a-partner/register",
     },
     "partner_public": {"fr": "/partenaire/{slug}", "en": "/en/partner/{slug}"},
+    "partners_index": {"fr": "/partenaires-vietnam", "en": "/en/vietnam-travel-partners"},
     "privacy": {"fr": "/politique-confidentialite", "en": "/en/privacy"},
     "legal_notices": {"fr": "/mentions-legales", "en": "/en/legal"},
     "newsletter_unsubscribe": {
@@ -356,6 +357,10 @@ def switch_lang_url() -> str:
         return lang_url("destination_page", alt, slug=view_args.get("slug", ""))
     if base_endpoint == "pillar":
         return lang_url("pillar", alt, slug=view_args.get("slug", ""))
+    if base_endpoint in ("partner_public", "partner_public_page"):
+        return lang_url("partner_public", alt, slug=view_args.get("slug", ""))
+    if base_endpoint == "partners_index":
+        return lang_url("partners_index", alt)
 
     if base_endpoint in ROUTE_PATHS:
         return lang_url(base_endpoint, alt)
@@ -363,9 +368,18 @@ def switch_lang_url() -> str:
     return lang_url("index", alt)
 
 
+def _route_endpoint(endpoint: str) -> str:
+    endpoint = (endpoint or "").replace("_en", "")
+    aliases = {
+        "partner_public_page": "partner_public",
+        "partners_index": "partners_index",
+    }
+    return aliases.get(endpoint, endpoint)
+
+
 def canonical_for_request(lang: str | None = None) -> str:
     lang = lang or get_lang()
-    endpoint = (request.endpoint or "").replace("_en", "")
+    endpoint = _route_endpoint(request.endpoint or "")
     view_args = dict(request.view_args or {})
     base = config.SITE_URL.rstrip("/")
 
@@ -378,7 +392,7 @@ def canonical_for_request(lang: str | None = None) -> str:
 
 
 def hreflang_urls() -> list[dict[str, str]]:
-    endpoint = (request.endpoint or "").replace("_en", "")
+    endpoint = _route_endpoint(request.endpoint or "")
     if endpoint in ("affiliate_redirect", "robots", "sitemap", "newsletter_subscribe"):
         return []
     view_args = dict(request.view_args or {})

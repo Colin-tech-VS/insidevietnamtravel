@@ -222,11 +222,17 @@ def page_edit():
 @partner_login_required
 def page_preview():
     """Aperçu privé de la page (obligatoire pour le compte test invisible)."""
+    from admin.partner_seo import build_public_page_context
+    from i18n_utils import canonical_for_request
+
     partner = current_partner()
     page = get_page_by_partner(partner["id"])
     if not page or not (page.get("overview_html") or page.get("title")):
         flash("Aucune page à prévisualiser — vérifiez d'abord votre page.", "error")
         return redirect(url_for("partners.page_edit"))
+    lang = get_lang()
+    canonical = canonical_for_request(lang)
+    ctx = build_public_page_context(page, partner, lang, canonical_url=canonical)
     return render_template(
         "partner_public.html",
         page=page,
@@ -234,6 +240,7 @@ def page_preview():
         meta_title=(page.get("seo_title") or page.get("title") or "Aperçu"),
         meta_description=page.get("seo_description") or page.get("tagline") or "",
         is_private_preview=True,
+        **ctx,
     )
 
 
@@ -288,23 +295,62 @@ def page_review():
 @partners_bp.route("/page/apply-fixes", methods=["POST"])
 @partner_login_required
 def page_apply_fixes():
+    """Fallback formulaire — préférer l'API JSON côté front."""
     partner = current_partner()
     fix_id = (request.form.get("fix_id") or "").strip()
     apply_all = request.form.get("apply_all") == "1"
     try:
-        count = apply_partner_fixes(
+        result = apply_partner_fixes(
             partner["id"],
             fix_ids=[fix_id] if fix_id else None,
             apply_all=apply_all,
         )
         flash(
-            f"{count} correction(s) appliquée(s) au brouillon — relancez la vérification quand vous êtes prêt.",
+            f"{result['applied_count']} correction(s) appliquée(s) au brouillon — relancez la vérification quand vous êtes prêt.",
             "success",
         )
     except ValueError as exc:
         flash(str(exc), "error")
         return redirect(url_for("partners.page_review"))
     return redirect(url_for("partners.page_edit"))
+
+
+@partners_bp.route("/api/apply-fixes", methods=["POST"])
+@partner_login_required
+def api_apply_fixes():
+    partner = current_partner()
+    payload = request.get_json(silent=True) or {}
+    fix_id = (payload.get("fix_id") or request.form.get("fix_id") or "").strip()
+    apply_all = bool(payload.get("apply_all")) or request.form.get("apply_all") == "1"
+    try:
+        result = apply_partner_fixes(
+            partner["id"],
+            fix_ids=[fix_id] if fix_id else None,
+            apply_all=apply_all,
+        )
+        return jsonify({"ok": True, **result})
+    except ValueError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+
+
+@partners_bp.route("/api/page-fixes")
+@partner_login_required
+def api_page_fixes():
+    partner = current_partner()
+    page = get_page_by_partner(partner["id"])
+    fixes = get_page_fixes(page)
+    extra = (page or {}).get("extra") or {}
+    return jsonify({
+        "ok": True,
+        "fixes": fixes,
+        "draft": {
+            "pitch": extra.get("pitch") or "",
+            "highlights": extra.get("highlights") or "",
+            "offer_details": extra.get("offer_details") or "",
+            "city": extra.get("city") or "",
+            "contact_note": extra.get("contact_note") or "",
+        },
+    })
 
 
 @partners_bp.route("/page/retry-ai", methods=["POST"])

@@ -1,25 +1,36 @@
 {% extends "base.html" %}
-{% from "macros/seo.html" import json_ld_graph with context %}
+{% from "macros/seo.html" import json_ld_graph, og_image_tags with context %}
+{% from "macros/travel_guide.html" import guide_related_links with context %}
 
-{% block head %}
-{% if is_private_preview %}
-<meta name="robots" content="noindex, nofollow">
+{% block meta_keywords %}
+{% if meta_keywords and not is_private_preview %}
+<meta name="keywords" content="{{ meta_keywords }}">
+{% endif %}
+{% endblock %}
+
+{% block og_type %}profile{% endblock %}
+
+{% block og_image %}
+{% if og_image %}
+{% set og_abs = og_image if '://' in og_image else (site.SITE_URL ~ (og_image | static_v)) %}
+{{ og_image_tags(og_abs, alt=og_image_alt) }}
+{% else %}
+{{ super() }}
+{% endif %}
+{% endblock %}
+
+{% block head_preload %}
+{% if page.image_url and not is_private_preview %}
+<link rel="preload" as="image" href="{{ page.image_url if '://' in page.image_url else (site.SITE_URL ~ (page.image_url | static_v)) }}">
 {% endif %}
 {% endblock %}
 
 {% block structured_data %}
 {% if not is_private_preview %}
-{{ json_ld_graph([
-  {
-    "@type": "ProfilePage",
-    "name": meta_title,
-    "description": meta_description,
-    "url": canonical_url,
-    "inLanguage": "en-GB" if lang == 'en' else "fr-FR"
-  },
+{{ json_ld_graph(json_ld_schemas + [
   seo_breadcrumb([
     (t('nav.home'), site.SITE_URL ~ lang_url('index')),
-    ('Partners' if lang == 'en' else 'Partenaires', None),
+    ('Partners' if lang == 'en' else 'Partenaires', site.SITE_URL ~ lang_url('partners_index')),
     (page.title, None),
   ]),
 ]) }}
@@ -28,58 +39,133 @@
 
 {% block content %}
 {% if is_private_preview %}
-<div class="container" style="margin-top:1rem">
+<div class="container partner-preview-banner">
   <p class="flash flash--success">Aperçu privé — cette page n’est pas indexée ni accessible publiquement.</p>
 </div>
 {% endif %}
-<header class="page-hero page-hero--about">
-  <div class="container">
-    <nav class="breadcrumb" aria-label="Breadcrumb">
+
+<header class="partner-vitrine-hero{% if page.image_url %} partner-vitrine-hero--image{% endif %}">
+  {% if page.image_url %}
+  <div class="partner-vitrine-hero__media" aria-hidden="true">
+    <img src="{{ page.image_url if '://' in page.image_url else url_for('static', filename=page.image_url.lstrip('/static/')) }}"
+         alt="{{ page.title | e }}"
+         width="1200" height="675" loading="eager" decoding="async" fetchpriority="high">
+  </div>
+  {% endif %}
+  <div class="partner-vitrine-hero__overlay" aria-hidden="true"></div>
+  <div class="container partner-vitrine-hero__inner">
+    <nav class="breadcrumb breadcrumb--light" aria-label="Breadcrumb">
       <ol>
         <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+        <li><a href="{{ lang_url('partners_index') }}">{{ 'Partners' if lang == 'en' else 'Partenaires' }}</a></li>
         <li aria-current="page">{{ page.title }}</li>
       </ol>
     </nav>
-    <span class="page-hero__eyebrow">{{ 'Partner' if lang == 'en' else 'Partenaire' }} · Inside Vietnam Travel</span>
-    <h1>{{ page.title }}</h1>
-    {% if page.tagline %}<p class="page-hero__lead">{{ page.tagline }}</p>{% endif %}
+    <span class="partner-vitrine-hero__badge partner-reveal">{{ profile_badge }}</span>
+    <h1 class="partner-vitrine-hero__title partner-reveal">{{ page.title }}</h1>
+    {% if page.tagline %}
+    <p class="partner-vitrine-hero__tagline partner-reveal">{{ page.tagline }}</p>
+    {% endif %}
+    <ul class="partner-vitrine-hero__meta partner-reveal" aria-label="{{ 'Partner info' if lang == 'en' else 'Informations partenaire' }}">
+      {% if partner_city %}
+      <li><span aria-hidden="true">📍</span> {{ partner_city }}, Vietnam</li>
+      {% endif %}
+      <li><span aria-hidden="true">✦</span> {{ profile_label }}</li>
+      {% if partner_languages %}
+      <li><span aria-hidden="true">🗣</span> {{ partner_languages }}</li>
+      {% endif %}
+    </ul>
   </div>
 </header>
 
-<section class="section">
-  <div class="container page-layout">
-    <article class="page-content prose partner-public">
+<section class="section partner-vitrine-body">
+  <div class="container partner-vitrine-layout">
+    <article class="partner-vitrine-main">
       {% if page.overview_html %}
-      <section class="content-block">
-        <div class="prose">{{ page.overview_html | safe }}</div>
-      </section>
+      <div class="partner-vitrine-block partner-reveal">
+        <div class="prose partner-vitrine-prose">{{ page.overview_html | safe }}</div>
+      </div>
       {% endif %}
-      {% if page.services_html %}
-      <section class="content-block">
-        <div class="prose">{{ page.services_html | safe }}</div>
-      </section>
-      {% endif %}
+
       {% if page.extra and page.extra.profile_highlights %}
-      <section class="content-block">
-        <h2>{% if lang == 'en' %}Highlights{% else %}Points forts{% endif %}</h2>
-        <ul class="partner-highlights">
+      <section class="partner-vitrine-block partner-reveal" aria-labelledby="partner-highlights-title">
+        <h2 id="partner-highlights-title" class="partner-vitrine-section-title">
+          {% if lang == 'en' %}Why travellers choose this partner{% else %}Pourquoi choisir ce partenaire{% endif %}
+        </h2>
+        <ul class="partner-vitrine-highlights">
           {% for h in page.extra.profile_highlights %}
-          <li>{{ h }}</li>
+          <li class="partner-vitrine-highlight-card" style="--reveal-delay: {{ loop.index0 * 80 }}ms">
+            <span class="partner-vitrine-highlight-card__icon" aria-hidden="true">✓</span>
+            <span>{{ h }}</span>
+          </li>
           {% endfor %}
         </ul>
       </section>
       {% endif %}
-      <section class="content-block partner-public__contact card">
-        <h2>{% if lang == 'en' %}Contact{% else %}Contact{% endif %}</h2>
-        <p><strong>{{ partner.business_name or partner.first_name ~ ' ' ~ partner.last_name }}</strong></p>
-        {% if partner.city %}<p>{{ partner.city }}</p>{% endif %}
-        {% if page.extra and page.extra.contact_note %}
-        <p>{{ page.extra.contact_note }}</p>
-        {% elif partner.website %}
-        <p><a href="{{ partner.website }}" target="_blank" rel="noopener">{{ partner.website }} ↗</a></p>
-        {% endif %}
+
+      {% if page.services_html %}
+      <div class="partner-vitrine-block partner-reveal">
+        <div class="prose partner-vitrine-prose">{{ page.services_html | safe }}</div>
+      </div>
+      {% endif %}
+
+      {% if related_partners %}
+      <section class="partner-vitrine-block partner-reveal" aria-labelledby="related-partners-title">
+        <h2 id="related-partners-title" class="partner-vitrine-section-title">
+          {% if lang == 'en' %}Similar Vietnam partners{% else %}Partenaires similaires au Vietnam{% endif %}
+        </h2>
+        <div class="partner-vitrine-related-grid">
+          {% for rp in related_partners %}
+          <a class="partner-vitrine-related-card" href="{{ rp.url }}" style="--reveal-delay: {{ loop.index0 * 100 }}ms">
+            <span class="partner-vitrine-related-card__hint">{{ rp.hint }}</span>
+            <span class="partner-vitrine-related-card__title">{{ rp.title }}</span>
+            <span class="partner-vitrine-related-card__arrow" aria-hidden="true">→</span>
+          </a>
+          {% endfor %}
+        </div>
       </section>
+      {% endif %}
+
+      {% if maillage_links and not is_private_preview %}
+      {{ guide_related_links(maillage_links) }}
+      {% endif %}
     </article>
+
+    <aside class="partner-vitrine-aside partner-reveal" aria-label="{{ 'Contact & actions' if lang == 'en' else 'Contact et actions' }}">
+      <div class="partner-vitrine-contact card">
+        <h2 class="partner-vitrine-contact__title">{% if lang == 'en' %}Get in touch{% else %}Contact{% endif %}</h2>
+        <p class="partner-vitrine-contact__name">{{ partner.business_name or (partner.first_name ~ ' ' ~ partner.last_name) }}</p>
+        {% if partner_city %}<p class="partner-vitrine-contact__city">{{ partner_city }}, Vietnam</p>{% endif %}
+        {% if page.extra and page.extra.contact_note %}
+        <p class="partner-vitrine-contact__note">{{ page.extra.contact_note }}</p>
+        {% endif %}
+        {% if partner.website %}
+        <a class="btn btn-primary partner-vitrine-contact__cta" href="{{ partner.website }}" target="_blank" rel="noopener noreferrer">
+          {% if lang == 'en' %}Visit website{% else %}Visiter le site{% endif %} ↗
+        </a>
+        {% endif %}
+      </div>
+
+      <div class="partner-vitrine-cta card">
+        <p class="partner-vitrine-cta__eyebrow">Inside Vietnam Travel</p>
+        <h3>{% if lang == 'en' %}Planning a trip to Vietnam?{% else %}Vous préparez un voyage au Vietnam ?{% endif %}</h3>
+        <p>{% if lang == 'en' %}Explore our guides, tools and itineraries — or join our partner network.{% else %}Explorez nos guides, outils et itinéraires — ou rejoignez notre réseau partenaires.{% endif %}</p>
+        <div class="partner-vitrine-cta__actions">
+          <a href="{{ lang_url('prepare_trip') }}" class="btn btn-ghost">{% if lang == 'en' %}Plan your trip{% else %}Préparer son voyage{% endif %}</a>
+          <a href="{{ lang_url('partners_index') }}" class="btn btn-ghost">{% if lang == 'en' %}All partners{% else %}Tous les partenaires{% endif %}</a>
+        </div>
+      </div>
+    </aside>
   </div>
 </section>
+
+<section class="partner-vitrine-trust partner-reveal" aria-hidden="true">
+  <div class="container">
+    <p>{% if lang == 'en' %}Verified partner page · Editorial review by Inside Vietnam Travel{% else %}Page partenaire vérifiée · Validation éditoriale Inside Vietnam Travel{% endif %}</p>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/partner_public.js') }}" defer></script>
 {% endblock %}

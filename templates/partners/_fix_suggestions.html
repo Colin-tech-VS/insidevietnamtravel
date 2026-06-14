@@ -1,10 +1,18 @@
 {% if page_fixes %}
-<div class="partner-fixes">
-  <h3 class="partner-fixes__title">Corrections proposées</h3>
-  <p class="muted partner-fixes__lead">L'IA suggère ces modifications sur votre brouillon. Cliquez sur « Appliquer » pour les intégrer automatiquement.</p>
-  <div class="partner-fixes__list">
+<div class="partner-fixes" id="partner-fixes-root">
+  <div class="partner-fixes__head">
+    <div>
+      <h3 class="partner-fixes__title">Corrections proposées</h3>
+      <p class="muted partner-fixes__lead">L'IA suggère ces modifications sur votre brouillon — appliquez-les sans quitter cette page.</p>
+    </div>
+    <button type="button" class="btn btn-primary" id="partner-fixes-apply-all" data-apply-all="1">
+      Tout appliquer (<span id="partner-fixes-count">{{ page_fixes|length }}</span>)
+    </button>
+  </div>
+  <p class="partner-fixes__feedback flash" id="partner-fixes-feedback" hidden role="status"></p>
+  <div class="partner-fixes__list" id="partner-fixes-list">
     {% for fix in page_fixes %}
-    <article class="partner-fix-card">
+    <article class="partner-fix-card" data-fix-id="{{ fix.id }}">
       <header class="partner-fix-card__head">
         <h4>{{ fix.label or fix.field }}</h4>
         {% if fix.reason %}<p class="partner-fix-card__reason">{{ fix.reason }}</p>{% endif %}
@@ -19,18 +27,17 @@
         <span class="partner-fix-card__label">Proposition</span>
         <p>{{ fix.suggested }}</p>
       </div>
-      <form method="post" action="{{ url_for('partners.page_apply_fixes') }}" class="partner-fix-card__form">
-        <input type="hidden" name="fix_id" value="{{ fix.id }}">
-        <button type="submit" class="btn btn-primary btn-sm">Appliquer cette correction</button>
-      </form>
+      <div class="partner-fix-card__actions">
+        <button type="button" class="btn btn-primary btn-sm partner-fix-apply-btn" data-fix-id="{{ fix.id }}">
+          Appliquer
+        </button>
+      </div>
     </article>
     {% endfor %}
   </div>
-  {% if page_fixes|length > 1 %}
-  <form method="post" action="{{ url_for('partners.page_apply_fixes') }}" class="partner-fixes__all">
-    <input type="hidden" name="apply_all" value="1">
-    <button type="submit" class="btn btn-primary">Tout appliquer ({{ page_fixes|length }})</button>
-  </form>
-  {% endif %}
+  <div class="partner-fixes__done" id="partner-fixes-done" hidden>
+    <p class="partner-fixes__done-msg">✅ Toutes les corrections ont été appliquées à votre brouillon.</p>
+    <p class="muted">Relancez la vérification pour publier votre page.</p>
+  </div>
 </div>
 {% endif %}

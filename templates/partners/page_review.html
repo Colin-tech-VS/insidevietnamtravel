@@ -2,7 +2,13 @@
 {% block partner_content %}
 {% set extra = page.extra if page and page.extra else {} %}
 <section class="partner-review card" id="partner-review"
-         data-state-url="{{ url_for('partners.api_page_review_state') }}">
+         data-state-url="{{ url_for('partners.api_page_review_state') }}"
+         data-apply-url="{{ url_for('partners.api_apply_fixes') }}">
+  <div class="partner-review__overlay" id="partner-review-overlay" hidden aria-live="polite" aria-busy="true">
+    <div class="partner-review__spinner" aria-hidden="true"></div>
+    <p id="partner-review-overlay-phase">Traitement en cours…</p>
+    <p class="muted partner-review__wait-note" id="partner-review-overlay-hint"></p>
+  </div>
   <h1>Vérification de votre page</h1>
 
   {% if page and page.status == 'published' %}
@@ -111,7 +117,7 @@
 {% endblock %}
 
 {% block partner_scripts %}
-{% if show_loader %}
+{% if show_loader or page_fixes %}
 <script src="{{ url_for('static', filename='js/partner_page_review.js') }}" defer></script>
 {% endif %}
 {% endblock %}

@@ -364,6 +364,19 @@ def list_pages(*, status: str = "") -> list[dict]:
     return out
 
 
+def list_public_partners() -> list[dict]:
+    """Pages publiées indexables (hors compte test interne)."""
+    out: list[dict] = []
+    for page in list_pages(status="published"):
+        account = get_account_by_id(page.get("partner_id"))
+        if not account or account.get("status") != "active" or is_hidden_test_partner(account):
+            continue
+        entry = dict(page)
+        entry["partner"] = account
+        out.append(entry)
+    return out
+
+
 def save_page_draft(
     partner_id: str,
     *,
@@ -558,7 +571,18 @@ def apply_partner_fixes(
     save_page_draft(partner_id, **fields)
     remaining = [f for f in fixes if f.get("id") not in applied_ids]
     _set_review_fixes(partner_id, remaining)
-    return len(applied_ids)
+    applied_labels = [
+        str(f.get("label") or f.get("field") or "")
+        for f in selected
+        if f.get("id") in applied_ids
+    ]
+    return {
+        "applied_count": len(applied_ids),
+        "applied_ids": [i for i in applied_ids if i],
+        "applied_labels": applied_labels,
+        "remaining_fixes": remaining,
+        "draft": fields,
+    }
 
 
 def apply_ai_page_result(partner_id: str, result: dict) -> dict:
