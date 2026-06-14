@@ -198,4 +198,30 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // Depuis Partenariats : ?prefill=1&auto_generate=1&email_type=partenariat…
+  // → pré-remplit le formulaire (prefill.js) puis lance la génération IA ici.
+  (function maybeAutoGeneratePartnerEmail() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('prefill') !== '1' || params.get('auto_generate') !== '1') return;
+    if (!form) return;
+
+    const topic = document.getElementById('nl-topic')?.value?.trim();
+    const emailType = form.querySelector('input[name="email_type"]:checked')?.value;
+    const btn = form.querySelector('.btn-generate');
+    if (!topic || emailType !== 'partenariat' || !btn || btn.disabled) return;
+
+    const partnerName = document.getElementById('nl-partner-name')?.value?.trim();
+    document.querySelector('.content-tab[data-tab="ai"]')?.click();
+
+    const notice = document.createElement('p');
+    notice.className = 'flash flash--success';
+    notice.textContent = partnerName
+      ? `🤝 Génération IA de l'email partenariat pour ${partnerName}…`
+      : '🤝 Génération IA de l\'email partenariat…';
+    form.parentNode?.insertBefore(notice, form);
+
+    history.replaceState({}, '', window.location.pathname);
+    setTimeout(() => form.requestSubmit(btn), 120);
+  })();
 });

@@ -232,7 +232,11 @@
       <span class="draft-badge">{% if draft.manual %}Brouillon manuel{% elif draft.email_type == 'partenariat' %}🤝 Email partenariat{% else %}Aperçu IA{% endif %}</span>
 
       {% if draft.email_type == 'partenariat' %}
-      <p class="draft-partner-notice">Cet email est une <strong>proposition de partenariat</strong> — envoyez-le à un partenaire (liste à droite), pas aux abonnés newsletter.</p>
+      <p class="draft-partner-notice">Cet email est une <strong>proposition de partenariat</strong> — envoyez-le à un partenaire (liste à droite), pas aux abonnés newsletter.
+      {% if draft.partner_name or draft.recipient_email %}
+      Destinataire prévu : <strong>{{ draft.partner_name or draft.recipient_email }}</strong>{% if draft.recipient_email and draft.partner_name %} ({{ draft.recipient_email }}){% endif %}.
+      {% endif %}
+      </p>
       {% endif %}
 
       <h2>{{ draft.subject }}</h2>
@@ -337,6 +341,7 @@
       {% if partners_to_contact %}
 
       <p class="guides-stats-count"><strong>{{ partners_to_contact|length }}</strong> partenaire(s) à contacter</p>
+      <p class="muted" style="margin:0 0 0.75rem;font-size:0.82rem;">Un brouillon IA à la fois — cliquez « ✦ Email IA » pour en générer un par partenaire.</p>
 
       <ul class="subscriber-list">
         {% for p in partners_to_contact %}
@@ -463,6 +468,7 @@
       {% if partners_to_contact %}
 
       <p class="guides-stats-count"><strong>{{ partners_to_contact|length }}</strong> partenaire(s) à contacter</p>
+      <p class="muted" style="margin:0 0 0.75rem;font-size:0.82rem;">Un brouillon IA à la fois — cliquez « ✦ Email IA » pour en générer un par partenaire.</p>
 
       <ul class="subscriber-list">
         {% for p in partners_to_contact %}
@@ -486,8 +492,8 @@
           </div>
           <div class="subscriber-item__actions">
             <a class="btn btn-secondary btn-sm"
-               href="{{ url_for('admin.newsletter_admin', prefill=1, email_type='partenariat', partner_id=p.id, partner_name=p.name, recipient_email=p.email, topic='Partenariat avec ' ~ p.name ~ (' (' ~ p.topics ~ ')' if p.topics else '')) }}"
-               title="Préparer un email de partenariat IA pour {{ p.name }}">✦ Email IA</a>
+               href="{{ url_for('admin.newsletter_admin', prefill=1, auto_generate=1, email_type='partenariat', partner_id=p.id, partner_name=p.name, recipient_email=p.email, topic='Partenariat avec ' ~ p.name ~ (' (' ~ p.topics ~ ')' if p.topics else ''), notes='Type : ' ~ type_labels.get(p.type, p.type) ~ (' · Audience : ' ~ p.followers if p.followers else '')) }}"
+               title="Générer un email de partenariat IA pour {{ p.name }}">✦ Email IA</a>
             {% if draft and smtp_ok %}
             <form method="post" class="subscriber-item__send"
                   onsubmit="return confirm('Envoyer le brouillon « {{ draft.subject|e }} » à {{ p.name|e }} ({{ p.email }}) ?')">

@@ -816,6 +816,7 @@ def newsletter_admin():
         test_email_default=os.environ.get("LEGAL_CONTACT_EMAIL", ""),
         partners_to_contact=partners_to_contact,
         partner_status_labels=ps.PARTNER_STATUS_LABELS,
+        type_labels=ps.PARTNER_TYPE_LABELS,
         email_tracking_by_partner=email_tracking_by_partner,
         subscriber_tracking=subscriber_tracking,
         format_tracking_label=format_tracking_label,
