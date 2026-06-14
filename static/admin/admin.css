@@ -3508,3 +3508,67 @@ a.partners-stat:hover { border-color: var(--teal-light); color: var(--teal); }
 .inline-form .btn { white-space: normal; max-width: 100%; }
 .map-pending-form select { max-width: 180px; }
 .flash--warn { background: #fef9ec; border-color: #e8d5a8; color: #7a5c1e; }
+
+/* ── Google Search Console ───────────────────────────── */
+.gsc-connect-panel code {
+  display: inline-block;
+  padding: 0.35rem 0.55rem;
+  background: var(--rice, #f5f2eb);
+  border-radius: 6px;
+  font-size: 0.82rem;
+  word-break: break-all;
+}
+.gsc-settings-form { margin-top: 1rem; max-width: 520px; }
+.gsc-settings-form .form-row { margin-bottom: 0.85rem; }
+.gsc-settings-form label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.88rem;
+  margin-bottom: 0.3rem;
+}
+.gsc-settings-form input {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 8px;
+  font: inherit;
+}
+.gsc-status--ok {
+  padding: 0.85rem 0;
+}
+.gsc-site-form { margin: 0.75rem 0; }
+.gsc-site-form label { font-weight: 600; font-size: 0.88rem; }
+.gsc-site-form__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+.gsc-site-form select {
+  min-width: min(100%, 420px);
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border, #ddd);
+  font: inherit;
+}
+.gsc-google-btn { margin-top: 0.5rem; }
+.gsc-advanced { margin-top: 1rem; font-size: 0.9rem; }
+.gsc-table-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.gsc-table-head h2 { margin: 0; }
+.gsc-table-nav { display: flex; gap: 0.5rem; }
+.gsc-table-wrap {
+  overflow-x: auto;
+  max-height: 640px;
+  overflow-y: auto;
+}
+.gsc-table { min-width: 640px; }
+.gsc-table__query { max-width: 420px; word-break: break-word; }
+.gsc-table__url { max-width: 360px; word-break: break-all; font-size: 0.82rem; }
+

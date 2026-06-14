@@ -2,22 +2,34 @@ document.addEventListener('DOMContentLoaded', () => {
   const root = document.getElementById('partner-wizard');
   if (!root) return;
 
+  const isEn = root.dataset.lang === 'en';
+  const msg = {
+    chooseOption: isEn ? 'Please choose an option.' : 'Choisissez une option.',
+    required: isEn ? 'Please complete all required fields.' : 'Complétez les champs obligatoires.',
+    bioMin: isEn ? 'Partnership pitch must be at least 40 characters.' : 'La proposition de partenariat doit contenir au moins 40 caractères.',
+    passMin: isEn ? 'Password must be at least 8 characters.' : 'Mot de passe : 8 caractères minimum.',
+    passMatch: isEn ? 'Passwords do not match.' : 'Les mots de passe ne correspondent pas.',
+    consent: isEn ? 'Please accept the privacy policy.' : 'Acceptez la politique de confidentialité.',
+  };
+
   const steps = Array.from(root.querySelectorAll('.partner-step'));
-  const progress = Array.from(root.querySelectorAll('.partner-progress__step'));
+  const progress = Array.from(root.querySelectorAll('.pp-stepper__item'));
   const btnPrev = document.getElementById('partner-prev');
   const btnNext = document.getElementById('partner-next');
   const btnSubmit = document.getElementById('partner-submit');
   const errEl = document.getElementById('partner-wizard-error');
   const stepCurrentEl = document.getElementById('partner-step-current');
   const progressFill = document.getElementById('partner-progress-fill');
-  const typeCards = Array.from(root.querySelectorAll('.partner-type-card'));
+  const typeCards = Array.from(root.querySelectorAll('.pp-type'));
+  const bioField = root.querySelector('#pp-bio');
+  const bioCount = document.getElementById('pp-bio-count');
   let current = 1;
   const total = steps.length;
 
-  function showError(msg) {
+  function showError(text) {
     if (!errEl) return;
-    if (msg) {
-      errEl.textContent = msg;
+    if (text) {
+      errEl.textContent = text;
       errEl.hidden = false;
     } else {
       errEl.hidden = true;
@@ -35,7 +47,20 @@ document.addEventListener('DOMContentLoaded', () => {
   typeCards.forEach((card) => {
     const input = card.querySelector('input[type="radio"]');
     input?.addEventListener('change', syncTypeCards);
+    card.addEventListener('click', () => {
+      const input = card.querySelector('input[type="radio"]');
+      if (input) input.checked = true;
+      syncTypeCards();
+    });
   });
+
+  function updateBioCount() {
+    if (!bioField || !bioCount) return;
+    bioCount.textContent = String(bioField.value.length);
+  }
+
+  bioField?.addEventListener('input', updateBioCount);
+  updateBioCount();
 
   function go(step) {
     current = Math.max(1, Math.min(total, step));
@@ -53,9 +78,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnNext) btnNext.hidden = current >= total;
     if (btnSubmit) btnSubmit.hidden = current < total;
     if (stepCurrentEl) stepCurrentEl.textContent = String(current);
-    if (progressFill) progressFill.style.width = `${(current / total) * 100}%`;
+    if (progressFill) {
+      const pct = current === 1 ? 12.5 : ((current - 0.5) / total) * 100;
+      progressFill.style.width = `${pct}%`;
+    }
     showError('');
-    root.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const applySection = document.getElementById('partner-apply-form');
+    applySection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function validateStep(step) {
@@ -66,19 +95,19 @@ document.addEventListener('DOMContentLoaded', () => {
       if (field.type === 'radio') {
         const name = field.name;
         if (!panel.querySelector(`input[name="${name}"]:checked`)) {
-          showError('Choisissez une option.');
+          showError(msg.chooseOption);
           return false;
         }
       } else if (!field.value.trim()) {
         field.focus();
-        showError('Complétez les champs obligatoires.');
+        showError(msg.required);
         return false;
       }
     }
     if (step === 2) {
       const bio = root.querySelector('#pp-bio')?.value?.trim() || '';
       if (bio.length > 0 && bio.length < 40) {
-        showError('La proposition de partenariat doit contenir au moins 40 caractères.');
+        showError(msg.bioMin);
         root.querySelector('#pp-bio')?.focus();
         return false;
       }
@@ -87,15 +116,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const p1 = root.querySelector('#pp-pass')?.value || '';
       const p2 = root.querySelector('#pp-pass2')?.value || '';
       if (p1.length < 8) {
-        showError('Mot de passe : 8 caractères minimum.');
+        showError(msg.passMin);
         return false;
       }
       if (p1 !== p2) {
-        showError('Les mots de passe ne correspondent pas.');
+        showError(msg.passMatch);
         return false;
       }
       if (!root.querySelector('[name="consent_rgpd"]')?.checked) {
-        showError('Acceptez la politique de confidentialité.');
+        showError(msg.consent);
         return false;
       }
     }
@@ -138,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.error || 'Inscription impossible');
+      if (!res.ok || !data.ok) throw new Error(data.error || (isEn ? 'Registration failed' : 'Inscription impossible'));
       window.location.href = data.redirect || dashboardUrl;
     } catch (e) {
       showError(e.message);

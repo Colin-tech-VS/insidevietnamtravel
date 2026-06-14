@@ -118,6 +118,9 @@
         <a href="{{ url_for('admin.analytics') }}" class="admin-nav__link {% if request.endpoint == 'admin.analytics' %}is-active{% endif %}">
           <span class="admin-nav__icon" aria-hidden="true">↗</span> Analytics
         </a>
+        <a href="{{ url_for('admin.gsc') }}" class="admin-nav__link {% if request.endpoint in ('admin.gsc', 'admin.gsc_settings', 'admin.gsc_oauth_start', 'admin.gsc_oauth_callback', 'admin.gsc_disconnect', 'admin.gsc_site') %}is-active{% endif %}">
+          <span class="admin-nav__icon" aria-hidden="true">🔍</span> Search Console
+        </a>
       </nav>
 
       <div class="admin-sidebar__footer">

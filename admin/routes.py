@@ -1157,6 +1157,124 @@ def analytics():
     )
 
 
+# ── Google Search Console (OAuth + requêtes) ──────────────────────────
+@admin_bp.route("/gsc")
+@login_required
+def gsc():
+    from admin import gsc_service as gsc
+
+    days = int(request.args.get("days", 28))
+    if days not in (7, 28, 90):
+        days = 28
+    query_page = max(0, int(request.args.get("qpage", 0) or 0))
+
+    ctx = {
+        "oauth_configured": gsc.oauth_configured(),
+        "connected": gsc.is_connected(),
+        "connected_email": gsc.get_connected_email(),
+        "client_id": gsc.get_client_id(),
+        "client_secret_masked": gsc.masked_client_secret(),
+        "redirect_uri": gsc.redirect_uri(),
+        "sites": [],
+        "selected_site": gsc.get_site_url(),
+        "days": days,
+        "query_page": query_page,
+        "report": None,
+        "gsc_error": None,
+    }
+
+    if gsc.is_connected():
+        try:
+            ctx["sites"] = gsc.list_sites()
+            ctx["selected_site"] = gsc.get_site_url()
+            ctx["report"] = gsc.build_report(days=days, query_page=query_page)
+        except Exception as exc:  # noqa: BLE001
+            ctx["gsc_error"] = str(exc)
+
+    return render_template("admin/gsc.html", **ctx)
+
+
+@admin_bp.route("/gsc/settings", methods=["POST"])
+@login_required
+def gsc_settings():
+    from admin import gsc_service as gsc
+
+    gsc.save_oauth_config(
+        request.form.get("gsc_client_id", ""),
+        request.form.get("gsc_client_secret", ""),
+    )
+    flash("Identifiants OAuth Google Search Console enregistrés.", "success")
+    return redirect(url_for("admin.gsc"))
+
+
+@admin_bp.route("/gsc/oauth/start")
+@login_required
+def gsc_oauth_start():
+    from admin import gsc_service as gsc
+
+    try:
+        state = gsc.new_oauth_state()
+        session["gsc_oauth_state"] = state
+        return redirect(gsc.build_auth_url(state))
+    except Exception as exc:  # noqa: BLE001
+        flash(str(exc), "error")
+        return redirect(url_for("admin.gsc"))
+
+
+@admin_bp.route("/gsc/oauth/callback")
+@login_required
+def gsc_oauth_callback():
+    from admin import gsc_service as gsc
+
+    err = request.args.get("error")
+    if err:
+        flash(f"Connexion Google annulée : {err}", "error")
+        return redirect(url_for("admin.gsc"))
+
+    state = request.args.get("state", "")
+    expected = session.pop("gsc_oauth_state", None)
+    if not expected or state != expected:
+        flash("État OAuth invalide — réessayez la connexion.", "error")
+        return redirect(url_for("admin.gsc"))
+
+    code = request.args.get("code", "")
+    if not code:
+        flash("Code OAuth manquant.", "error")
+        return redirect(url_for("admin.gsc"))
+
+    try:
+        gsc.exchange_code(code)
+        info = gsc.test_connection()
+        flash(
+            f"Search Console connecté ({info.get('email') or 'compte Google'}) — "
+            f"{info.get('sites_count', 0)} propriété(s) trouvée(s).",
+            "success",
+        )
+    except Exception as exc:  # noqa: BLE001
+        flash(str(exc), "error")
+    return redirect(url_for("admin.gsc"))
+
+
+@admin_bp.route("/gsc/disconnect", methods=["POST"])
+@login_required
+def gsc_disconnect():
+    from admin import gsc_service as gsc
+
+    gsc.disconnect()
+    flash("Google Search Console déconnecté.", "success")
+    return redirect(url_for("admin.gsc"))
+
+
+@admin_bp.route("/gsc/site", methods=["POST"])
+@login_required
+def gsc_site():
+    from admin import gsc_service as gsc
+
+    gsc.save_site_url(request.form.get("site_url", ""))
+    flash("Propriété Search Console sélectionnée.", "success")
+    return redirect(url_for("admin.gsc"))
+
+
 # ── Réseaux sociaux (Facebook + réseaux voyageurs) ────────────────────
 @admin_bp.route("/social")
 @login_required

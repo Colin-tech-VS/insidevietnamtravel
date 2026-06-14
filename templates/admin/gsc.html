@@ -1,0 +1,291 @@
+{% extends "admin/layout.html" %}
+{% block title %}Search Console{% endblock %}
+{% block page_title %}Google Search Console{% endblock %}
+
+{% block content %}
+<p class="page-sub">
+  Connexion OAuth à Google Search Console — requêtes, pages, clics, impressions et position moyenne.
+  Les données GSC ont généralement <strong>2–3 jours de décalage</strong>.
+</p>
+
+<div class="admin-page-layout admin-page-layout--wide">
+  <div class="admin-page-main">
+
+    <section class="chart-panel gsc-connect-panel">
+      <h2>Connexion OAuth</h2>
+      {% if not oauth_configured %}
+      <p class="muted">Créez un client OAuth « Application Web » dans
+        <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud Console</a>,
+        activez l'API <strong>Google Search Console API</strong>, puis renseignez l'URI de redirection :</p>
+      <p><code>{{ redirect_uri }}</code></p>
+      <form method="post" action="{{ url_for('admin.gsc_settings') }}" class="gsc-settings-form">
+        <div class="form-row">
+          <label for="gsc-client-id">Client ID</label>
+          <input type="text" id="gsc-client-id" name="gsc_client_id" value="{{ client_id }}" placeholder="xxxx.apps.googleusercontent.com" autocomplete="off">
+        </div>
+        <div class="form-row">
+          <label for="gsc-client-secret">Client Secret</label>
+          <input type="password" id="gsc-client-secret" name="gsc_client_secret" value="{{ client_secret_masked }}" placeholder="GOCSPX-…" autocomplete="new-password">
+        </div>
+        <button type="submit" class="btn btn-primary">Enregistrer les identifiants OAuth</button>
+      </form>
+      {% elif connected %}
+      <div class="gsc-status gsc-status--ok">
+        <p><strong>Connecté</strong> — {{ connected_email or 'Compte Google' }}</p>
+        {% if sites %}
+        <form method="post" action="{{ url_for('admin.gsc_site') }}" class="gsc-site-form">
+          <label for="gsc-site">Propriété Search Console</label>
+          <div class="gsc-site-form__row">
+            <select id="gsc-site" name="site_url" onchange="this.form.submit()">
+              {% for s in sites %}
+              <option value="{{ s.site_url }}" {% if s.site_url == selected_site %}selected{% endif %}>
+                {{ s.site_url }} ({{ s.permission }})
+              </option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-secondary btn-sm">Appliquer</button>
+          </div>
+        </form>
+        {% endif %}
+        <form method="post" action="{{ url_for('admin.gsc_disconnect') }}" onsubmit="return confirm('Déconnecter Google Search Console ?');">
+          <button type="submit" class="btn btn-ghost btn-sm">Déconnecter</button>
+        </form>
+      </div>
+      {% else %}
+      <p class="muted">Client OAuth configuré. Connectez votre compte Google avec accès Search Console.</p>
+      <p><code>{{ redirect_uri }}</code></p>
+      <a href="{{ url_for('admin.gsc_oauth_start') }}" class="btn btn-primary gsc-google-btn">
+        Connecter Google Search Console
+      </a>
+      <details class="gsc-advanced">
+        <summary>Modifier les identifiants OAuth</summary>
+        <form method="post" action="{{ url_for('admin.gsc_settings') }}" class="gsc-settings-form">
+          <div class="form-row">
+            <label for="gsc-client-id-2">Client ID</label>
+            <input type="text" id="gsc-client-id-2" name="gsc_client_id" value="{{ client_id }}" autocomplete="off">
+          </div>
+          <div class="form-row">
+            <label for="gsc-client-secret-2">Client Secret</label>
+            <input type="password" id="gsc-client-secret-2" name="gsc_client_secret" value="{{ client_secret_masked }}" autocomplete="new-password">
+          </div>
+          <button type="submit" class="btn btn-secondary btn-sm">Enregistrer</button>
+        </form>
+      </details>
+      {% endif %}
+    </section>
+
+    {% if connected and report %}
+    <div class="analytics-toolbar">
+      <div class="analytics-toolbar__period">
+        <span class="analytics-toolbar__label">Période</span>
+        <div class="period-pills">
+          <a href="{{ url_for('admin.gsc', days=7) }}" class="period-pill {% if days == 7 %}is-active{% endif %}">7 jours</a>
+          <a href="{{ url_for('admin.gsc', days=28) }}" class="period-pill {% if days == 28 %}is-active{% endif %}">28 jours</a>
+          <a href="{{ url_for('admin.gsc', days=90) }}" class="period-pill {% if days == 90 %}is-active{% endif %}">90 jours</a>
+        </div>
+      </div>
+      <div class="analytics-toolbar__live muted">
+        {{ report.start_date }} → {{ report.end_date }} · {{ report.site_url }}
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card kpi-card--live">
+        <span class="kpi-card__label">Clics</span>
+        <span class="kpi-card__value">{{ report.totals.clicks }}</span>
+        <span class="kpi-card__hint">Depuis Google Search</span>
+      </div>
+      <div class="kpi-card kpi-card--gold">
+        <span class="kpi-card__label">Impressions</span>
+        <span class="kpi-card__value">{{ report.totals.impressions }}</span>
+        <span class="kpi-card__hint">Affichages dans les résultats</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-card__label">CTR moyen</span>
+        <span class="kpi-card__value">{{ report.totals.ctr }}%</span>
+        <span class="kpi-card__hint">Clics / impressions</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-card__label">Position moy.</span>
+        <span class="kpi-card__value">{{ report.totals.position }}</span>
+        <span class="kpi-card__hint">Plus bas = mieux</span>
+      </div>
+    </div>
+
+    <section class="chart-panel">
+      <h2>Performance quotidienne</h2>
+      {% if report.daily %}
+      <div class="chart-box chart-box--short"><canvas id="gscDailyChart"></canvas></div>
+      {% else %}
+      <p class="muted">Pas de données sur cette période.</p>
+      {% endif %}
+    </section>
+
+    <section class="chart-panel">
+      <div class="gsc-table-head">
+        <h2>Toutes les requêtes ({{ report.queries|length }})</h2>
+        <div class="gsc-table-nav">
+          {% if query_page > 0 %}
+          <a href="{{ url_for('admin.gsc', days=days, qpage=query_page - 1) }}" class="btn btn-secondary btn-sm">← Précédent</a>
+          {% endif %}
+          {% if report.has_more_queries %}
+          <a href="{{ url_for('admin.gsc', days=days, qpage=query_page + 1) }}" class="btn btn-secondary btn-sm">Suivant →</a>
+          {% endif %}
+        </div>
+      </div>
+      {% if report.queries %}
+      <div class="gsc-table-wrap">
+        <table class="admin-table gsc-table">
+          <thead>
+            <tr>
+              <th>Requête</th>
+              <th>Clics</th>
+              <th>Impressions</th>
+              <th>CTR</th>
+              <th>Position</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in report.queries %}
+            <tr>
+              <td class="gsc-table__query">{{ row.query }}</td>
+              <td>{{ row.clicks }}</td>
+              <td>{{ row.impressions }}</td>
+              <td>{{ row.ctr }}%</td>
+              <td>{{ row.position }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="muted">Aucune requête sur la période.</p>
+      {% endif %}
+    </section>
+
+    <div class="chart-grid">
+      <section class="chart-panel">
+        <h2>Top pages</h2>
+        {% if report.pages %}
+        <div class="gsc-table-wrap">
+          <table class="admin-table gsc-table">
+            <thead>
+              <tr><th>URL</th><th>Clics</th><th>Impr.</th><th>CTR</th><th>Pos.</th></tr>
+            </thead>
+            <tbody>
+              {% for row in report.pages %}
+              <tr>
+                <td class="gsc-table__url"><a href="{{ row.page }}" target="_blank" rel="noopener">{{ row.page }}</a></td>
+                <td>{{ row.clicks }}</td>
+                <td>{{ row.impressions }}</td>
+                <td>{{ row.ctr }}%</td>
+                <td>{{ row.position }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="muted">Pas de pages.</p>
+        {% endif %}
+      </section>
+
+      <section class="chart-panel">
+        <h2>Appareils</h2>
+        {% if report.devices %}
+        <table class="admin-table">
+          <thead><tr><th>Appareil</th><th>Clics</th><th>Impressions</th><th>CTR</th></tr></thead>
+          <tbody>
+            {% for row in report.devices %}
+            <tr>
+              <td>{{ row.device }}</td>
+              <td>{{ row.clicks }}</td>
+              <td>{{ row.impressions }}</td>
+              <td>{{ row.ctr }}%</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="muted">Pas de données appareil.</p>
+        {% endif %}
+      </section>
+    </div>
+
+    <section class="chart-panel">
+      <h2>Pays</h2>
+      {% if report.countries %}
+      <table class="admin-table">
+        <thead><tr><th>Pays</th><th>Clics</th><th>Impressions</th><th>CTR</th><th>Position</th></tr></thead>
+        <tbody>
+          {% for row in report.countries %}
+          <tr>
+            <td>{{ row.country }}</td>
+            <td>{{ row.clicks }}</td>
+            <td>{{ row.impressions }}</td>
+            <td>{{ row.ctr }}%</td>
+            <td>{{ row.position }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="muted">Pas de données pays.</p>
+      {% endif %}
+    </section>
+
+    {% elif connected and gsc_error %}
+    <section class="chart-panel">
+      <p class="flash flash--error">{{ gsc_error }}</p>
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if report and report.daily %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  const daily = {{ report.daily | tojson }};
+  const ctx = document.getElementById('gscDailyChart');
+  if (!ctx || !daily.length) return;
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: daily.map(d => d.date),
+      datasets: [
+        {
+          label: 'Clics',
+          data: daily.map(d => d.clicks),
+          borderColor: '#1b4d4a',
+          backgroundColor: 'rgba(27, 77, 74, 0.08)',
+          tension: 0.25,
+          fill: true,
+          yAxisID: 'y',
+        },
+        {
+          label: 'Impressions',
+          data: daily.map(d => d.impressions),
+          borderColor: '#c46a3a',
+          backgroundColor: 'transparent',
+          tension: 0.25,
+          yAxisID: 'y1',
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        y: { type: 'linear', position: 'left', beginAtZero: true, title: { display: true, text: 'Clics' } },
+        y1: { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, title: { display: true, text: 'Impressions' } },
+      },
+    },
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}
