@@ -13,6 +13,9 @@
       <label for="login-pass">{{ 'Password' if lang == 'en' else 'Mot de passe' }}</label>
       <input type="password" id="login-pass" name="password" required autocomplete="current-password">
     </div>
+    <p class="partner-auth__forgot">
+      <a href="{{ url_for('partners.forgot_password') }}">{{ 'Forgot password?' if lang == 'en' else 'Mot de passe oublié ?' }}</a>
+    </p>
     <button type="submit" class="btn btn-primary btn-block">{{ 'Sign in' if lang == 'en' else 'Se connecter' }}</button>
   </form>
   <p class="muted partner-auth__footer">

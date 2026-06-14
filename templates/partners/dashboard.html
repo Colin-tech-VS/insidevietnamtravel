@@ -126,7 +126,7 @@
     </header>
 
     <ul class="partner-vitrine-checklist">
-      {% for item in page_vitrine.items %}
+      {% for item in page_vitrine.checklist %}
       <li class="partner-vitrine-checklist__item{% if item.ok %} is-ok{% endif %}">
         <span class="partner-vitrine-checklist__icon" aria-hidden="true">{% if item.ok %}✓{% else %}○{% endif %}</span>
         <span class="partner-vitrine-checklist__body">

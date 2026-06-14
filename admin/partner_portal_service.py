@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
+import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -178,7 +180,7 @@ def page_vitrine_checklist(page: dict | None) -> dict:
             "highlights_ok": False,
             "highlights_text": "",
             "can_edit": False,
-            "items": [],
+            "checklist": [],
             "image_url": "",
         }
     extra = page.get("extra") if isinstance(page.get("extra"), dict) else {}
@@ -192,7 +194,7 @@ def page_vitrine_checklist(page: dict | None) -> dict:
         highlights_text = str(extra.get("highlights") or "").replace(",", "\n")
     has_photo = bool((page.get("image_url") or "").strip())
     can_edit = page.get("status") != "ai_review"
-    items = [
+    checklist = [
         {
             "id": "photo",
             "label": "Photo de couverture",
@@ -218,7 +220,7 @@ def page_vitrine_checklist(page: dict | None) -> dict:
         "highlights_ok": len(highlights) >= 3,
         "highlights_text": highlights_text,
         "can_edit": can_edit,
-        "items": items,
+        "checklist": checklist,
         "image_url": (page.get("image_url") or "").strip(),
     }
 
@@ -1251,3 +1253,189 @@ def portal_stats() -> dict:
         "pages_pending": sum(1 for p in pages if p.get("status") in ("ai_review", "approved")),
         "pages_rejected": sum(1 for p in pages if p.get("status") == "rejected"),
     }
+
+
+_PARTNER_RESET_TTL = timedelta(hours=1)
+
+
+def _hash_partner_reset_token(token: str) -> str:
+    return hashlib.sha256((token or "").encode("utf-8")).hexdigest()
+
+
+def _parse_reset_expires(raw) -> datetime | None:
+    if not raw:
+        return None
+    try:
+        if isinstance(raw, datetime):
+            dt = raw
+        else:
+            dt = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    except (TypeError, ValueError):
+        return None
+
+
+def _clear_partner_password_resets(partner_id: str) -> None:
+    with get_connection() as conn:
+        cur = conn.cursor()
+        if is_postgres():
+            cur.execute(
+                "DELETE FROM partner_password_resets WHERE partner_id = %s",
+                (partner_id,),
+            )
+        else:
+            cur.execute(
+                "DELETE FROM partner_password_resets WHERE partner_id = ?",
+                (partner_id,),
+            )
+
+
+def _send_partner_password_reset_email(account: dict, reset_url: str) -> None:
+    import config as site_config
+    from admin.mail_service import send_email
+    from admin.newsletter_service import wrap_email_html
+
+    first_name = (account.get("first_name") or "").strip() or "Partenaire"
+    body_html = f"""
+      <p style="margin:0 0 16px;">Bonjour {first_name},</p>
+      <p style="margin:0 0 16px;">Vous avez demandé la réinitialisation du mot de passe de votre espace partenaire Inside Vietnam Travel.</p>
+      <p style="margin:0 0 24px;text-align:center;">
+        <a href="{reset_url}" style="display:inline-block;background:#1b4d4a;color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:600;text-decoration:none;padding:14px 28px;border-radius:8px;">Choisir un nouveau mot de passe</a>
+      </p>
+      <p style="margin:0 0 12px;font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#7a7772;">Ce lien expire dans 1&nbsp;heure. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.</p>
+      <p style="margin:0;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#7a7772;word-break:break-all;">Lien direct : {reset_url}</p>
+    """
+    html = wrap_email_html(
+        body_html,
+        preheader="Réinitialisez votre mot de passe partenaire.",
+        recipient_email=account.get("email"),
+        email_type="partenariat",
+    )
+    plain = (
+        f"Bonjour {first_name},\n\n"
+        "Réinitialisez votre mot de passe partenaire :\n"
+        f"{reset_url}\n\n"
+        "Ce lien expire dans 1 heure."
+    )
+    send_email(
+        profile="newsletter",
+        to_addrs=[account["email"]],
+        subject="Réinitialisation mot de passe — Espace partenaire Inside Vietnam Travel",
+        html_body=html,
+        plain_body=plain,
+        reply_to=site_config.LEGAL_CONTACT_EMAIL,
+    )
+
+
+def request_partner_password_reset(email: str) -> dict:
+    """Demande de reset — retourne toujours ok (ne divulgue pas si l'email existe)."""
+    import config as site_config
+
+    email = (email or "").strip().lower()
+    if not email or "@" not in email:
+        raise ValueError("Email invalide.")
+
+    account = find_account_by_email(email)
+    if not account or account.get("status") == "suspended":
+        return {"ok": True}
+
+    token = secrets.token_urlsafe(32)
+    token_hash = _hash_partner_reset_token(token)
+    reset_id = uuid.uuid4().hex[:16]
+    now = datetime.now(timezone.utc)
+    expires = now + _PARTNER_RESET_TTL
+    expires_iso = expires.replace(tzinfo=None).isoformat()
+    created_iso = _now_iso()
+
+    _clear_partner_password_resets(account["id"])
+    with get_connection() as conn:
+        cur = conn.cursor()
+        if is_postgres():
+            cur.execute(
+                """INSERT INTO partner_password_resets
+                   (id, partner_id, token_hash, expires_at, created_at)
+                   VALUES (%s, %s, %s, %s, %s)""",
+                (reset_id, account["id"], token_hash, expires, created_iso),
+            )
+        else:
+            cur.execute(
+                """INSERT INTO partner_password_resets
+                   (id, partner_id, token_hash, expires_at, created_at)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (reset_id, account["id"], token_hash, expires_iso, created_iso),
+            )
+
+    reset_url = f"{site_config.SITE_CANONICAL_URL.rstrip('/')}/partners/reset-password/{token}"
+    try:
+        _send_partner_password_reset_email(account, reset_url)
+    except Exception:  # noqa: BLE001
+        _clear_partner_password_resets(account["id"])
+        raise ValueError(
+            "Impossible d'envoyer l'email pour le moment. Réessayez dans quelques minutes."
+        )
+    return {"ok": True}
+
+
+def reset_partner_password_with_token(
+    token: str,
+    *,
+    password: str,
+    password_confirm: str,
+) -> dict:
+    token = (token or "").strip()
+    if not token:
+        raise ValueError("Lien de réinitialisation invalide.")
+    if len(password or "") < 8:
+        raise ValueError("Mot de passe : 8 caractères minimum.")
+    if password != password_confirm:
+        raise ValueError("Les mots de passe ne correspondent pas.")
+
+    token_hash = _hash_partner_reset_token(token)
+    now = datetime.now(timezone.utc)
+    with get_connection() as conn:
+        cur = conn.cursor()
+        if is_postgres():
+            cur.execute(
+                """SELECT id, partner_id, expires_at FROM partner_password_resets
+                   WHERE token_hash = %s ORDER BY created_at DESC LIMIT 1""",
+                (token_hash,),
+            )
+        else:
+            cur.execute(
+                """SELECT id, partner_id, expires_at FROM partner_password_resets
+                   WHERE token_hash = ? ORDER BY created_at DESC LIMIT 1""",
+                (token_hash,),
+            )
+        row = cur.fetchone()
+        if not row:
+            raise ValueError("Lien invalide ou déjà utilisé.")
+        if isinstance(row, dict):
+            rec = dict(row)
+        elif hasattr(row, "keys"):
+            rec = {k: row[k] for k in row.keys()}
+        else:
+            rec = {"id": row[0], "partner_id": row[1], "expires_at": row[2]}
+        expires = _parse_reset_expires(rec.get("expires_at"))
+        if not expires or expires < now:
+            _clear_partner_password_resets(rec["partner_id"])
+            raise ValueError("Ce lien a expiré. Demandez un nouvel email.")
+
+        partner_id = rec["partner_id"]
+        pw_hash = generate_password_hash(password)
+        updated_iso = _now_iso()
+        if is_postgres():
+            cur.execute(
+                "UPDATE partner_accounts SET password_hash = %s, updated_at = %s WHERE id = %s",
+                (pw_hash, updated_iso, partner_id),
+            )
+            cur.execute("DELETE FROM partner_password_resets WHERE partner_id = %s", (partner_id,))
+        else:
+            cur.execute(
+                "UPDATE partner_accounts SET password_hash = ?, updated_at = ? WHERE id = ?",
+                (pw_hash, updated_iso, partner_id),
+            )
+            cur.execute("DELETE FROM partner_password_resets WHERE partner_id = ?", (partner_id,))
+
+    return {"ok": True, "partner_id": partner_id}

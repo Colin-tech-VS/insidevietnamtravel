@@ -36,6 +36,8 @@ from admin.partner_portal_service import (
     partner_page_workflow,
     publish_partner_page,
     release_page_from_ai_review,
+    request_partner_password_reset,
+    reset_partner_password_with_token,
     review_job_token,
     save_page_draft,
     save_page_review_hints,
@@ -57,6 +59,8 @@ _JOB_KEY = "partner_page_job_token"
 
 _PARTNER_META = {
     "partners.login": ("Connexion partenaire", "Connectez-vous à votre espace partenaire Inside Vietnam Travel."),
+    "partners.forgot_password": ("Mot de passe oublié", "Réinitialisez le mot de passe de votre espace partenaire."),
+    "partners.reset_password": ("Nouveau mot de passe", "Choisissez un nouveau mot de passe pour votre espace partenaire."),
     "partners.dashboard": ("Espace partenaire", "Gérez votre page partenaire et suivez la vérification."),
     "partners.page_edit": ("Ma page partenaire", "Rédigez votre fiche puis vérifiez-la avant publication."),
     "partners.page_review": ("Validation IA", "Suivi de l'analyse éditoriale de votre page partenaire."),
@@ -200,6 +204,44 @@ def login():
         "partners/login.html",
         next_url=request.args.get("next") or "",
     )
+
+
+@partners_bp.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if current_partner():
+        return redirect(url_for("partners.dashboard"))
+    if request.method == "POST":
+        email = (request.form.get("email") or "").strip()
+        try:
+            request_partner_password_reset(email)
+            flash(
+                "Si un compte existe avec cet email, vous recevrez un lien de réinitialisation sous peu.",
+                "success",
+            )
+            return redirect(url_for("partners.login"))
+        except ValueError as exc:
+            flash(str(exc), "error")
+    return render_template("partners/forgot_password.html")
+
+
+@partners_bp.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    if current_partner():
+        return redirect(url_for("partners.dashboard"))
+    if request.method == "POST":
+        password = request.form.get("password") or ""
+        password_confirm = request.form.get("password_confirm") or ""
+        try:
+            reset_partner_password_with_token(
+                token,
+                password=password,
+                password_confirm=password_confirm,
+            )
+            flash("Mot de passe mis à jour. Vous pouvez vous connecter.", "success")
+            return redirect(url_for("partners.login"))
+        except ValueError as exc:
+            flash(str(exc), "error")
+    return render_template("partners/reset_password.html", token=token)
 
 
 @partners_bp.route("/logout", methods=["GET", "POST"])

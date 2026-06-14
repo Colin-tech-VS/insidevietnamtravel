@@ -490,6 +490,22 @@ def _migrate_partner_portal_tables(conn, *, postgres: bool) -> None:
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_partner_pages_status ON partner_pages(status)"
             )
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS partner_password_resets (
+                    id TEXT PRIMARY KEY,
+                    partner_id TEXT NOT NULL,
+                    token_hash TEXT NOT NULL,
+                    expires_at TIMESTAMPTZ NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )""")
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_partner_password_resets_partner "
+                "ON partner_password_resets(partner_id)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_partner_password_resets_hash "
+                "ON partner_password_resets(token_hash)"
+            )
     else:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS partner_accounts (
@@ -536,6 +552,22 @@ def _migrate_partner_portal_tables(conn, *, postgres: bool) -> None:
         )
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_partner_pages_status ON partner_pages(status)"
+        )
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS partner_password_resets (
+                id TEXT PRIMARY KEY,
+                partner_id TEXT NOT NULL,
+                token_hash TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )""")
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_partner_password_resets_partner "
+            "ON partner_password_resets(partner_id)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_partner_password_resets_hash "
+            "ON partner_password_resets(token_hash)"
         )
 
 

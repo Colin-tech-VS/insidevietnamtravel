@@ -4065,6 +4065,7 @@ a.article-category:hover { text-decoration: underline; }
   font-size: 0.85rem;
   white-space: nowrap;
 }
+.partner-wizard__nav .btn[hidden] { display: none !important; }
 
 .partner-type-card__input {
   position: absolute;
@@ -4913,6 +4914,7 @@ a.article-category:hover { text-decoration: underline; }
   margin: 0 0 0.35rem;
 }
 .partner-auth__form { margin-top: 1.25rem; }
+.partner-auth__forgot { margin: -0.35rem 0 1rem; text-align: right; font-size: 0.875rem; }
 .partner-auth__footer { margin-top: 1.25rem; text-align: center; font-size: 0.9rem; }
 
 .btn-block { width: 100%; justify-content: center; }
