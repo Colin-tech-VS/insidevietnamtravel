@@ -27,6 +27,7 @@ RÈGLES :
 - Preheader 80–120 caractères (aperçu inbox).
 - Corps HTML : <p>, <h2>, <ul>, <li>, <strong>, <a href="#"> uniquement (pas de h1).
 - 250–450 mots. Paragraphes courts. 1 CTA clair vers le site.
+- Liens vers le site : UNIQUEMENT https://www.insidevietnamtravel.fr (jamais .com).
 - Contenu 100% Vietnam, conseils concrets.
 - ZÉRO mensonge : pas de statistique, abonnés, audience, chiffre de trafic ou fait inventé.
   N'invente jamais ce que tu as lu sur le site du destinataire — reste honnête et générique
@@ -250,6 +251,9 @@ def generate_newsletter_email(
         if greeting:
             body_html = _apply_partnership_greeting(body_html, greeting)
         body_html = _sanitize_partnership_stats(body_html, partnership_facts or _partnership_site_facts())
+    from admin.newsletter_service import normalize_email_domains
+
+    body_html = normalize_email_domains(body_html)
     return {
         "subject": str(data["subject"]).strip()[:120],
         "preheader": str(data.get("preheader", "")).strip()[:160],

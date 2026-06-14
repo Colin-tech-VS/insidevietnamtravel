@@ -194,8 +194,6 @@ def _is_our_site_url(url: str) -> bool:
         site_host,
         "www.insidevietnamtravel.fr",
         "insidevietnamtravel.fr",
-        "www.insidevietnamtravel.com",
-        "insidevietnamtravel.com",
     }
     return host in allowed or host.endswith(".insidevietnamtravel.fr")
 

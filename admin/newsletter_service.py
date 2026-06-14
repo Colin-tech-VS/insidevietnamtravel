@@ -14,7 +14,9 @@ from admin.newsletter_tokens import unsubscribe_url
 NEWSLETTER_FILE = Path(__file__).parent.parent / "data" / "newsletter_subscribers.txt"
 SITE_NAME = "Inside Vietnam Travel"
 SITE_URL = config.SITE_URL
-PRIVACY_URL = f"{SITE_URL}/politique-confidentialite"
+SITE_CANONICAL_URL = config.SITE_CANONICAL_URL
+SITE_PUBLIC_DOMAIN = config.SITE_PUBLIC_DOMAIN
+PRIVACY_URL = f"{SITE_CANONICAL_URL}/politique-confidentialite"
 
 
 from admin.mail_service import MailProfile, is_newsletter_smtp_configured, is_contact_smtp_configured, send_email
@@ -109,6 +111,25 @@ def _strip_html(text: str) -> str:
     return re.sub(r"<[^>]+>", " ", text or "").strip()
 
 
+def normalize_email_domains(text: str) -> str:
+    """Force insidevietnamtravel.fr — jamais .com dans les emails."""
+    if not text:
+        return text
+    canonical = SITE_CANONICAL_URL
+    domain = SITE_PUBLIC_DOMAIN
+    replacements = (
+        ("https://www.insidevietnamtravel.com", canonical),
+        ("http://www.insidevietnamtravel.com", canonical),
+        ("https://insidevietnamtravel.com", canonical),
+        ("http://insidevietnamtravel.com", canonical),
+        ("www.insidevietnamtravel.com", f"www.{domain}"),
+        ("insidevietnamtravel.com", domain),
+    )
+    for wrong, right in replacements:
+        text = text.replace(wrong, right)
+    return text
+
+
 def build_manual_newsletter(form) -> dict:
     subject = (form.get("subject") or "").strip()
     body_html = (form.get("body_html") or "").strip()
@@ -144,6 +165,7 @@ def wrap_email_html(
         )
 
     is_partnership = email_type == "partenariat"
+    body_html = normalize_email_domains(body_html)
     unsub_block = ""
     if recipient_email and not is_partnership:
         unsub_link = unsubscribe_url(recipient_email)
@@ -172,7 +194,7 @@ def wrap_email_html(
             <td style="padding:0 32px 28px;text-align:center;">
               <a href="{site_url}" style="display:inline-block;background:#1b4d4a;color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:600;text-decoration:none;padding:14px 28px;border-radius:8px;">Explorer le site</a>
             </td>
-          </tr>""".format(site_url=SITE_URL)
+          </tr>""".format(site_url=SITE_CANONICAL_URL)
 
     return f"""<!DOCTYPE html>
 <html lang="fr" xmlns="http://www.w3.org/1999/xhtml">
@@ -217,7 +239,7 @@ def wrap_email_html(
             <td style="padding:24px 32px;background:#f0ebe3;border-top:1px solid #e8e4dc;font-family:'Segoe UI',Arial,sans-serif;font-size:12px;line-height:1.6;color:#7a7772;">
               {footer_intro}
               <p style="margin:0;">
-                <a href="{SITE_URL}" style="color:#1b4d4a;text-decoration:none;font-weight:600;">insidevietnamtravel.com</a>
+                <a href="{SITE_CANONICAL_URL}" style="color:#1b4d4a;text-decoration:none;font-weight:600;">{SITE_PUBLIC_DOMAIN}</a>
                 &nbsp;&middot;&nbsp;
                 <a href="{PRIVACY_URL}" style="color:#1b4d4a;text-decoration:none;">Confidentialité</a>
               </p>
@@ -299,7 +321,7 @@ def send_newsletter_email(
                 email_type=email_type,
             )
         full_html = wrap_email_html(
-            body_html, preheader, recipient_email=addr, email_type=email_type,
+            normalize_email_domains(body_html), preheader, recipient_email=addr, email_type=email_type,
         )
         if send_rec:
             full_html = inject_tracking(

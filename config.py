@@ -21,6 +21,10 @@ SITE_TAGLINE_I18N = {
     "en": "Guides, itineraries and tips for travelling in Vietnam",
 }
 SITE_URL = _resolve_site_url()
+SITE_PUBLIC_DOMAIN = os.environ.get("SITE_PUBLIC_DOMAIN", "insidevietnamtravel.fr").strip().lower()
+SITE_CANONICAL_URL = (
+    os.environ.get("SITE_CANONICAL_URL", f"https://www.{SITE_PUBLIC_DOMAIN}").strip().rstrip("/")
+)
 
 
 def scalingo_app_url() -> str | None:
