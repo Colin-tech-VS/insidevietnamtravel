@@ -24,6 +24,58 @@ GSC_API = "https://www.googleapis.com/webmasters/v3"
 TIMEOUT = (8, 30)
 
 
+def locked_site_domain() -> str:
+    return config.SITE_PUBLIC_DOMAIN.strip().lower()
+
+
+def locked_site_label() -> str:
+    return locked_site_domain()
+
+
+def _site_matches_locked(site_url: str) -> bool:
+    low = (site_url or "").strip().lower()
+    domain = locked_site_domain()
+    return domain in low
+
+
+def _score_locked_site(site_url: str) -> int:
+    low = (site_url or "").strip().lower()
+    score = 0
+    if low.startswith(f"https://www.{locked_site_domain()}"):
+        score += 20
+    elif low.startswith("https://"):
+        score += 10
+    if low.endswith("/"):
+        score += 5
+    if low.startswith("sc-domain:"):
+        score += 3
+    return score
+
+
+def match_locked_site(sites: list[dict]) -> dict | None:
+    """Retourne la propriété GSC correspondant au site (insidevietnamtravel.fr)."""
+    matches = [s for s in sites if _site_matches_locked(s.get("site_url", ""))]
+    if not matches:
+        return None
+    return max(matches, key=lambda s: _score_locked_site(s.get("site_url", "")))
+
+
+def ensure_locked_site() -> str:
+    """Propriété GSC verrouillée — lève une erreur si inaccessible."""
+    sites = list_sites()
+    match = match_locked_site(sites)
+    if not match:
+        raise GscError(
+            f"Aucune propriété Search Console trouvée pour {locked_site_label()}. "
+            "Le compte Google connecté doit avoir accès à cette propriété "
+            "(Users and permissions dans Search Console)."
+        )
+    site_url = match["site_url"]
+    if get_site_url() != site_url:
+        save_site_url(site_url)
+    return site_url
+
+
 class GscError(RuntimeError):
     pass
 
@@ -365,14 +417,10 @@ def save_site_url(site_url: str) -> None:
 
 
 def test_connection() -> dict:
-    sites = list_sites()
-    site = get_site_url()
-    if not site and sites:
-        save_site_url(sites[0]["site_url"])
-        site = sites[0]["site_url"]
+    site = ensure_locked_site()
     return {
         "email": get_connected_email(),
-        "sites_count": len(sites),
+        "sites_count": 1,
         "site_url": site,
     }
 
@@ -442,13 +490,7 @@ def _aggregate_totals(rows: list[dict]) -> dict:
 
 
 def build_report(days: int = 28, query_page: int = 0, query_limit: int = 500) -> dict:
-    site = get_site_url()
-    if not site:
-        sites = list_sites()
-        if not sites:
-            raise GscError("Aucune propriété Search Console accessible sur ce compte Google.")
-        site = sites[0]["site_url"]
-        save_site_url(site)
+    site = ensure_locked_site()
 
     start_date, end_date = _date_range(days)
     totals_payload = search_analytics_query(site, start_date=start_date, end_date=end_date)

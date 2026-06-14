@@ -1,266 +1,258 @@
 {% extends "admin/layout.html" %}
 {% block title %}Search Console{% endblock %}
 {% block page_title %}Google Search Console{% endblock %}
+{% block body_class %}admin-gsc-page{% endblock %}
 
 {% block content %}
-<p class="page-sub">
-  Connexion OAuth à Google Search Console — requêtes, pages, clics, impressions et position moyenne.
-  Les données GSC ont généralement <strong>2–3 jours de décalage</strong>.
-</p>
+<div class="gsc-page">
+  <p class="page-sub gsc-page__intro">
+    Performances SEO de <strong>{{ locked_site_label }}</strong> — requêtes, pages, clics et impressions.
+    Données avec <strong>2–3 jours de décalage</strong>.
+  </p>
 
-<div class="admin-page-layout admin-page-layout--wide">
-  <div class="admin-page-main">
-
-    <section class="chart-panel gsc-connect-panel">
-      <h2>Connexion OAuth</h2>
-
-      <details class="gsc-setup-guide" open>
-        <summary>Configuration Google Cloud (obligatoire)</summary>
-        <ol class="gsc-setup-guide__list">
-          <li>Projet Google Cloud → activer <strong>Google Search Console API</strong>.</li>
-          <li><strong>OAuth consent screen</strong> → type Externe → renseigner insidevietnamtravel.fr.</li>
-          <li><strong>Scopes</strong> → Add or remove scopes → filtrer « Search Console » → cocher
-            <code>{{ gsc_scope_webmasters }}</code> (Google Search Console API).</li>
-          <li>Mode <strong>Test</strong> : section <strong>Test users</strong> → ajouter <em>chaque</em> Gmail autorisé à se connecter (ex. celui qui gère Search Console).</li>
-          <li><strong>Credentials</strong> → OAuth 2.0 Client ID « Web application » → URI de redirection autorisée (copier-coller exact) :</li>
-        </ol>
-        <p><code class="gsc-setup-guide__uri">{{ redirect_uri }}</code></p>
-        <p class="muted gsc-setup-guide__note">
-          Erreur « access_denied » / « app en cours de test » = votre Gmail n'est pas dans Test users.
-          Erreur « insufficient authentication scopes » = le scope Search Console n'est pas ajouté à l'écran de consentement
-          (étape Scopes ci-dessus) — puis cliquez <strong>Reconnecter</strong>.
-          Le compte Google connecté doit aussi avoir accès à la propriété dans
-          <a href="https://search.google.com/search-console" target="_blank" rel="noopener">Search Console</a>.
-        </p>
-      </details>
-
-      {% if not oauth_configured %}
-      <p class="muted">Collez le Client ID et Secret du client OAuth Web :</p>
-      <form method="post" action="{{ url_for('admin.gsc_settings') }}" class="gsc-settings-form">
-        <div class="form-row">
-          <label for="gsc-client-id">Client ID</label>
-          <input type="text" id="gsc-client-id" name="gsc_client_id" value="{{ client_id }}" placeholder="xxxx.apps.googleusercontent.com" autocomplete="off">
+  <section class="gsc-panel gsc-panel--connect">
+    {% if connected and locked_site_url %}
+    <div class="gsc-status-bar">
+      <div class="gsc-status-bar__main">
+        <span class="gsc-status-bar__dot" aria-hidden="true"></span>
+        <div class="gsc-status-bar__text">
+          <strong>{{ connected_email or 'Compte Google' }}</strong>
+          <span class="gsc-status-bar__property" title="{{ locked_site_url }}">{{ locked_site_label }}</span>
         </div>
-        <div class="form-row">
-          <label for="gsc-client-secret">Client Secret</label>
-          <input type="password" id="gsc-client-secret" name="gsc_client_secret" value="{{ client_secret_masked }}" placeholder="GOCSPX-…" autocomplete="new-password">
-        </div>
-        <button type="submit" class="btn btn-primary">Enregistrer les identifiants OAuth</button>
-      </form>
-      {% elif connected %}
-      <div class="gsc-status gsc-status--ok">
-        <p><strong>Connecté</strong> — {{ connected_email or 'Compte Google' }}</p>
-        {% if sites %}
-        <form method="post" action="{{ url_for('admin.gsc_site') }}" class="gsc-site-form">
-          <label for="gsc-site">Propriété Search Console</label>
-          <div class="gsc-site-form__row">
-            <select id="gsc-site" name="site_url" onchange="this.form.submit()">
-              {% for s in sites %}
-              <option value="{{ s.site_url }}" {% if s.site_url == selected_site %}selected{% endif %}>
-                {{ s.site_url }} ({{ s.permission }})
-              </option>
-              {% endfor %}
-            </select>
-            <button type="submit" class="btn btn-secondary btn-sm">Appliquer</button>
-          </div>
-        </form>
-        {% endif %}
+      </div>
+      <div class="gsc-status-bar__actions">
+        <a href="{{ url_for('admin.gsc_oauth_reconnect') }}" class="btn btn-secondary btn-sm">Reconnecter</a>
         <form method="post" action="{{ url_for('admin.gsc_disconnect') }}" onsubmit="return confirm('Déconnecter Google Search Console ?');">
           <button type="submit" class="btn btn-ghost btn-sm">Déconnecter</button>
         </form>
-        <a href="{{ url_for('admin.gsc_oauth_reconnect') }}" class="btn btn-secondary btn-sm">Reconnecter</a>
-      </div>
-      {% else %}
-      <p class="muted">Client OAuth configuré. Connectez le compte Google qui administre Search Console (doit être dans Test users si l'app est en mode Test).</p>
-      <a href="{{ url_for('admin.gsc_oauth_start') }}" class="btn btn-primary gsc-google-btn">
-        Connecter Google Search Console
-      </a>
-      <details class="gsc-advanced">
-        <summary>Modifier les identifiants OAuth</summary>
-        <form method="post" action="{{ url_for('admin.gsc_settings') }}" class="gsc-settings-form">
-          <div class="form-row">
-            <label for="gsc-client-id-2">Client ID</label>
-            <input type="text" id="gsc-client-id-2" name="gsc_client_id" value="{{ client_id }}" autocomplete="off">
-          </div>
-          <div class="form-row">
-            <label for="gsc-client-secret-2">Client Secret</label>
-            <input type="password" id="gsc-client-secret-2" name="gsc_client_secret" value="{{ client_secret_masked }}" autocomplete="new-password">
-          </div>
-          <button type="submit" class="btn btn-secondary btn-sm">Enregistrer</button>
-        </form>
-      </details>
-      {% endif %}
-    </section>
-
-    {% if connected and report %}
-    <div class="analytics-toolbar">
-      <div class="analytics-toolbar__period">
-        <span class="analytics-toolbar__label">Période</span>
-        <div class="period-pills">
-          <a href="{{ url_for('admin.gsc', days=7) }}" class="period-pill {% if days == 7 %}is-active{% endif %}">7 jours</a>
-          <a href="{{ url_for('admin.gsc', days=28) }}" class="period-pill {% if days == 28 %}is-active{% endif %}">28 jours</a>
-          <a href="{{ url_for('admin.gsc', days=90) }}" class="period-pill {% if days == 90 %}is-active{% endif %}">90 jours</a>
-        </div>
-      </div>
-      <div class="analytics-toolbar__live muted">
-        {{ report.start_date }} → {{ report.end_date }} · {{ report.site_url }}
       </div>
     </div>
+    {% else %}
+    <h2 class="gsc-panel__title">Connexion</h2>
+    {% endif %}
 
-    <div class="kpi-grid">
-      <div class="kpi-card kpi-card--live">
-        <span class="kpi-card__label">Clics</span>
-        <span class="kpi-card__value">{{ report.totals.clicks }}</span>
-        <span class="kpi-card__hint">Depuis Google Search</span>
+    <details class="gsc-setup-guide" {% if not connected %}open{% endif %}>
+      <summary>Configuration Google Cloud</summary>
+      <ol class="gsc-setup-guide__list">
+        <li>Activer <strong>Google Search Console API</strong>.</li>
+        <li><strong>OAuth consent screen</strong> → Scopes → ajouter
+          <code>{{ gsc_scope_webmasters }}</code>.</li>
+        <li><strong>Test users</strong> → ajouter le Gmail qui gère Search Console.</li>
+        <li>Redirect URI exacte :</li>
+      </ol>
+      <code class="gsc-setup-guide__uri">{{ redirect_uri }}</code>
+      <p class="muted gsc-setup-guide__note">
+        Erreur « insufficient authentication scopes » → ajoutez le scope Search Console puis Reconnecter.
+      </p>
+    </details>
+
+    {% if not oauth_configured %}
+    <form method="post" action="{{ url_for('admin.gsc_settings') }}" class="gsc-settings-form">
+      <div class="form-row">
+        <label for="gsc-client-id">Client ID</label>
+        <input type="text" id="gsc-client-id" name="gsc_client_id" value="{{ client_id }}" placeholder="xxxx.apps.googleusercontent.com" autocomplete="off">
       </div>
-      <div class="kpi-card kpi-card--gold">
-        <span class="kpi-card__label">Impressions</span>
-        <span class="kpi-card__value">{{ report.totals.impressions }}</span>
-        <span class="kpi-card__hint">Affichages dans les résultats</span>
+      <div class="form-row">
+        <label for="gsc-client-secret">Client Secret</label>
+        <input type="password" id="gsc-client-secret" name="gsc_client_secret" value="{{ client_secret_masked }}" placeholder="GOCSPX-…" autocomplete="new-password">
       </div>
-      <div class="kpi-card">
-        <span class="kpi-card__label">CTR moyen</span>
-        <span class="kpi-card__value">{{ report.totals.ctr }}%</span>
-        <span class="kpi-card__hint">Clics / impressions</span>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-card__label">Position moy.</span>
-        <span class="kpi-card__value">{{ report.totals.position }}</span>
-        <span class="kpi-card__hint">Plus bas = mieux</span>
+      <button type="submit" class="btn btn-primary">Enregistrer OAuth</button>
+    </form>
+    {% elif not connected %}
+    <p class="muted gsc-connect-hint">Connectez le compte Google avec accès à {{ locked_site_label }}.</p>
+    <a href="{{ url_for('admin.gsc_oauth_start') }}" class="btn btn-primary">Connecter Search Console</a>
+    <details class="gsc-advanced">
+      <summary>Modifier les identifiants OAuth</summary>
+      <form method="post" action="{{ url_for('admin.gsc_settings') }}" class="gsc-settings-form">
+        <div class="form-row">
+          <label for="gsc-client-id-2">Client ID</label>
+          <input type="text" id="gsc-client-id-2" name="gsc_client_id" value="{{ client_id }}" autocomplete="off">
+        </div>
+        <div class="form-row">
+          <label for="gsc-client-secret-2">Client Secret</label>
+          <input type="password" id="gsc-client-secret-2" name="gsc_client_secret" value="{{ client_secret_masked }}" autocomplete="new-password">
+        </div>
+        <button type="submit" class="btn btn-secondary btn-sm">Enregistrer</button>
+      </form>
+    </details>
+    {% endif %}
+  </section>
+
+  {% if connected and gsc_error %}
+  <section class="gsc-panel gsc-panel--error">
+    <p class="flash flash--error">{{ gsc_error }}</p>
+    {% if gsc_scope_error %}
+    <a href="{{ url_for('admin.gsc_oauth_reconnect') }}" class="btn btn-primary btn-sm">Reconnecter</a>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% if connected and report %}
+  <div class="gsc-toolbar">
+    <div class="gsc-toolbar__period">
+      <span class="gsc-toolbar__label">Période</span>
+      <div class="period-pills">
+        <a href="{{ url_for('admin.gsc', days=7) }}" class="period-pill {% if days == 7 %}is-active{% endif %}">7 j</a>
+        <a href="{{ url_for('admin.gsc', days=28) }}" class="period-pill {% if days == 28 %}is-active{% endif %}">28 j</a>
+        <a href="{{ url_for('admin.gsc', days=90) }}" class="period-pill {% if days == 90 %}is-active{% endif %}">90 j</a>
       </div>
     </div>
+    <p class="gsc-toolbar__range muted">{{ report.start_date }} → {{ report.end_date }}</p>
+  </div>
 
-    <section class="chart-panel">
-      <h2>Performance quotidienne</h2>
-      {% if report.daily %}
-      <div class="chart-box chart-box--short"><canvas id="gscDailyChart"></canvas></div>
-      {% else %}
-      <p class="muted">Pas de données sur cette période.</p>
+  <div class="gsc-kpi-grid">
+    <div class="gsc-kpi">
+      <span class="gsc-kpi__label">Clics</span>
+      <span class="gsc-kpi__value">{{ "{:,}".format(report.totals.clicks).replace(",", " ") }}</span>
+    </div>
+    <div class="gsc-kpi gsc-kpi--gold">
+      <span class="gsc-kpi__label">Impressions</span>
+      <span class="gsc-kpi__value">{{ "{:,}".format(report.totals.impressions).replace(",", " ") }}</span>
+    </div>
+    <div class="gsc-kpi">
+      <span class="gsc-kpi__label">CTR</span>
+      <span class="gsc-kpi__value">{{ report.totals.ctr }}%</span>
+    </div>
+    <div class="gsc-kpi">
+      <span class="gsc-kpi__label">Position moy.</span>
+      <span class="gsc-kpi__value">{{ report.totals.position }}</span>
+    </div>
+  </div>
+
+  <section class="gsc-panel">
+    <h2 class="gsc-panel__title">Performance quotidienne</h2>
+    {% if report.daily %}
+    <div class="gsc-chart-box"><canvas id="gscDailyChart"></canvas></div>
+    {% else %}
+    <p class="muted">Pas de données sur cette période.</p>
+    {% endif %}
+  </section>
+
+  <section class="gsc-panel">
+    <header class="gsc-panel__head">
+      <h2 class="gsc-panel__title">Requêtes <span class="gsc-panel__count">({{ report.queries|length }})</span></h2>
+      {% if query_page > 0 or report.has_more_queries %}
+      <nav class="gsc-pager" aria-label="Pagination requêtes">
+        {% if query_page > 0 %}
+        <a href="{{ url_for('admin.gsc', days=days, qpage=query_page - 1) }}" class="btn btn-secondary btn-sm">←</a>
+        {% endif %}
+        <span class="gsc-pager__num">Page {{ query_page + 1 }}</span>
+        {% if report.has_more_queries %}
+        <a href="{{ url_for('admin.gsc', days=days, qpage=query_page + 1) }}" class="btn btn-secondary btn-sm">→</a>
+        {% endif %}
+      </nav>
       {% endif %}
-    </section>
+    </header>
+    {% if report.queries %}
+    <div class="gsc-table-scroll">
+      <table class="gsc-table">
+        <thead>
+          <tr>
+            <th class="gsc-table__col-text">Requête</th>
+            <th class="gsc-table__col-num">Clics</th>
+            <th class="gsc-table__col-num">Impr.</th>
+            <th class="gsc-table__col-num">CTR</th>
+            <th class="gsc-table__col-num">Pos.</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in report.queries %}
+          <tr>
+            <td class="gsc-table__col-text"><span class="gsc-ellipsis" title="{{ row.query }}">{{ row.query }}</span></td>
+            <td class="gsc-table__col-num">{{ row.clicks }}</td>
+            <td class="gsc-table__col-num">{{ row.impressions }}</td>
+            <td class="gsc-table__col-num">{{ row.ctr }}%</td>
+            <td class="gsc-table__col-num">{{ row.position }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="muted">Aucune requête sur la période.</p>
+    {% endif %}
+  </section>
 
-    <section class="chart-panel">
-      <div class="gsc-table-head">
-        <h2>Toutes les requêtes ({{ report.queries|length }})</h2>
-        <div class="gsc-table-nav">
-          {% if query_page > 0 %}
-          <a href="{{ url_for('admin.gsc', days=days, qpage=query_page - 1) }}" class="btn btn-secondary btn-sm">← Précédent</a>
-          {% endif %}
-          {% if report.has_more_queries %}
-          <a href="{{ url_for('admin.gsc', days=days, qpage=query_page + 1) }}" class="btn btn-secondary btn-sm">Suivant →</a>
-          {% endif %}
-        </div>
-      </div>
-      {% if report.queries %}
-      <div class="gsc-table-wrap">
-        <table class="admin-table gsc-table">
+  <div class="gsc-split">
+    <section class="gsc-panel gsc-panel--wide">
+      <h2 class="gsc-panel__title">Top pages</h2>
+      {% if report.pages %}
+      <div class="gsc-table-scroll gsc-table-scroll--short">
+        <table class="gsc-table">
           <thead>
             <tr>
-              <th>Requête</th>
-              <th>Clics</th>
-              <th>Impressions</th>
-              <th>CTR</th>
-              <th>Position</th>
+              <th class="gsc-table__col-text">URL</th>
+              <th class="gsc-table__col-num">Clics</th>
+              <th class="gsc-table__col-num">Impr.</th>
+              <th class="gsc-table__col-num">CTR</th>
+              <th class="gsc-table__col-num">Pos.</th>
             </tr>
           </thead>
           <tbody>
-            {% for row in report.queries %}
+            {% for row in report.pages %}
             <tr>
-              <td class="gsc-table__query">{{ row.query }}</td>
-              <td>{{ row.clicks }}</td>
-              <td>{{ row.impressions }}</td>
-              <td>{{ row.ctr }}%</td>
-              <td>{{ row.position }}</td>
+              <td class="gsc-table__col-text">
+                <a href="{{ row.page }}" class="gsc-ellipsis gsc-link" target="_blank" rel="noopener" title="{{ row.page }}">{{ row.page }}</a>
+              </td>
+              <td class="gsc-table__col-num">{{ row.clicks }}</td>
+              <td class="gsc-table__col-num">{{ row.impressions }}</td>
+              <td class="gsc-table__col-num">{{ row.ctr }}%</td>
+              <td class="gsc-table__col-num">{{ row.position }}</td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
       {% else %}
-      <p class="muted">Aucune requête sur la période.</p>
+      <p class="muted">Pas de pages.</p>
       {% endif %}
     </section>
 
-    <div class="chart-grid">
-      <section class="chart-panel">
-        <h2>Top pages</h2>
-        {% if report.pages %}
-        <div class="gsc-table-wrap">
-          <table class="admin-table gsc-table">
-            <thead>
-              <tr><th>URL</th><th>Clics</th><th>Impr.</th><th>CTR</th><th>Pos.</th></tr>
-            </thead>
+    <div class="gsc-split__side">
+      <section class="gsc-panel">
+        <h2 class="gsc-panel__title">Appareils</h2>
+        {% if report.devices %}
+        <table class="gsc-table gsc-table--compact">
+          <thead><tr><th>Appareil</th><th class="gsc-table__col-num">Clics</th><th class="gsc-table__col-num">CTR</th></tr></thead>
+          <tbody>
+            {% for row in report.devices %}
+            <tr>
+              <td>{{ row.device }}</td>
+              <td class="gsc-table__col-num">{{ row.clicks }}</td>
+              <td class="gsc-table__col-num">{{ row.ctr }}%</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="muted">—</p>
+        {% endif %}
+      </section>
+
+      <section class="gsc-panel">
+        <h2 class="gsc-panel__title">Pays</h2>
+        {% if report.countries %}
+        <div class="gsc-table-scroll gsc-table-scroll--short">
+          <table class="gsc-table gsc-table--compact">
+            <thead><tr><th>Pays</th><th class="gsc-table__col-num">Clics</th><th class="gsc-table__col-num">Pos.</th></tr></thead>
             <tbody>
-              {% for row in report.pages %}
+              {% for row in report.countries %}
               <tr>
-                <td class="gsc-table__url"><a href="{{ row.page }}" target="_blank" rel="noopener">{{ row.page }}</a></td>
-                <td>{{ row.clicks }}</td>
-                <td>{{ row.impressions }}</td>
-                <td>{{ row.ctr }}%</td>
-                <td>{{ row.position }}</td>
+                <td>{{ row.country }}</td>
+                <td class="gsc-table__col-num">{{ row.clicks }}</td>
+                <td class="gsc-table__col-num">{{ row.position }}</td>
               </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
         {% else %}
-        <p class="muted">Pas de pages.</p>
-        {% endif %}
-      </section>
-
-      <section class="chart-panel">
-        <h2>Appareils</h2>
-        {% if report.devices %}
-        <table class="admin-table">
-          <thead><tr><th>Appareil</th><th>Clics</th><th>Impressions</th><th>CTR</th></tr></thead>
-          <tbody>
-            {% for row in report.devices %}
-            <tr>
-              <td>{{ row.device }}</td>
-              <td>{{ row.clicks }}</td>
-              <td>{{ row.impressions }}</td>
-              <td>{{ row.ctr }}%</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        {% else %}
-        <p class="muted">Pas de données appareil.</p>
+        <p class="muted">—</p>
         {% endif %}
       </section>
     </div>
-
-    <section class="chart-panel">
-      <h2>Pays</h2>
-      {% if report.countries %}
-      <table class="admin-table">
-        <thead><tr><th>Pays</th><th>Clics</th><th>Impressions</th><th>CTR</th><th>Position</th></tr></thead>
-        <tbody>
-          {% for row in report.countries %}
-          <tr>
-            <td>{{ row.country }}</td>
-            <td>{{ row.clicks }}</td>
-            <td>{{ row.impressions }}</td>
-            <td>{{ row.ctr }}%</td>
-            <td>{{ row.position }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-      <p class="muted">Pas de données pays.</p>
-      {% endif %}
-    </section>
-
-    {% elif connected and gsc_error %}
-    <section class="chart-panel">
-      <p class="flash flash--error">{{ gsc_error }}</p>
-      {% if gsc_scope_error %}
-      <p><a href="{{ url_for('admin.gsc_oauth_reconnect') }}" class="btn btn-primary">Reconnecter Google Search Console</a></p>
-      {% endif %}
-    </section>
-    {% endif %}
   </div>
+  {% endif %}
 </div>
 {% endblock %}
 
@@ -275,24 +267,28 @@
   new Chart(ctx, {
     type: 'line',
     data: {
-      labels: daily.map(d => d.date),
+      labels: daily.map(d => d.date.slice(5)),
       datasets: [
         {
           label: 'Clics',
           data: daily.map(d => d.clicks),
           borderColor: '#1b4d4a',
-          backgroundColor: 'rgba(27, 77, 74, 0.08)',
-          tension: 0.25,
+          backgroundColor: 'rgba(27, 77, 74, 0.07)',
+          tension: 0.3,
           fill: true,
           yAxisID: 'y',
+          pointRadius: 2,
+          borderWidth: 2,
         },
         {
           label: 'Impressions',
           data: daily.map(d => d.impressions),
           borderColor: '#c46a3a',
           backgroundColor: 'transparent',
-          tension: 0.25,
+          tension: 0.3,
           yAxisID: 'y1',
+          pointRadius: 0,
+          borderWidth: 2,
         },
       ],
     },
@@ -300,9 +296,13 @@
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top', align: 'end', labels: { boxWidth: 12, padding: 16 } },
+      },
       scales: {
-        y: { type: 'linear', position: 'left', beginAtZero: true, title: { display: true, text: 'Clics' } },
-        y1: { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, title: { display: true, text: 'Impressions' } },
+        x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkipPadding: 12 } },
+        y: { type: 'linear', position: 'left', beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } },
+        y1: { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false } },
       },
     },
   });

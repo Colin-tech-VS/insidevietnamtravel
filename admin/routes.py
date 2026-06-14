@@ -1176,8 +1176,8 @@ def gsc():
         "client_secret_masked": gsc.masked_client_secret(),
         "redirect_uri": gsc.redirect_uri(),
         "gsc_scope_webmasters": gsc.GSC_SCOPE_WEBMASTERS,
-        "sites": [],
-        "selected_site": gsc.get_site_url(),
+        "locked_site_label": gsc.locked_site_label(),
+        "locked_site_url": "",
         "days": days,
         "query_page": query_page,
         "report": None,
@@ -1187,8 +1187,7 @@ def gsc():
 
     if gsc.is_connected():
         try:
-            ctx["sites"] = gsc.list_sites()
-            ctx["selected_site"] = gsc.get_site_url()
+            ctx["locked_site_url"] = gsc.ensure_locked_site()
             ctx["report"] = gsc.build_report(days=days, query_page=query_page)
         except Exception as exc:  # noqa: BLE001
             msg = str(exc)
@@ -1283,10 +1282,7 @@ def gsc_disconnect():
 @admin_bp.route("/gsc/site", methods=["POST"])
 @login_required
 def gsc_site():
-    from admin import gsc_service as gsc
-
-    gsc.save_site_url(request.form.get("site_url", ""))
-    flash("Propriété Search Console sélectionnée.", "success")
+    flash("La propriété Search Console est verrouillée sur insidevietnamtravel.fr.", "success")
     return redirect(url_for("admin.gsc"))
 
 
