@@ -8,6 +8,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnNext = document.getElementById('partner-next');
   const btnSubmit = document.getElementById('partner-submit');
   const errEl = document.getElementById('partner-wizard-error');
+  const stepCurrentEl = document.getElementById('partner-step-current');
+  const progressFill = document.getElementById('partner-progress-fill');
+  const typeCards = Array.from(root.querySelectorAll('.partner-type-card'));
   let current = 1;
   const total = steps.length;
 
@@ -21,6 +24,18 @@ document.addEventListener('DOMContentLoaded', () => {
       errEl.textContent = '';
     }
   }
+
+  function syncTypeCards() {
+    typeCards.forEach((card) => {
+      const input = card.querySelector('input[type="radio"]');
+      card.classList.toggle('is-selected', Boolean(input?.checked));
+    });
+  }
+
+  typeCards.forEach((card) => {
+    const input = card.querySelector('input[type="radio"]');
+    input?.addEventListener('change', syncTypeCards);
+  });
 
   function go(step) {
     current = Math.max(1, Math.min(total, step));
@@ -37,7 +52,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnPrev) btnPrev.hidden = current <= 1;
     if (btnNext) btnNext.hidden = current >= total;
     if (btnSubmit) btnSubmit.hidden = current < total;
+    if (stepCurrentEl) stepCurrentEl.textContent = String(current);
+    if (progressFill) progressFill.style.width = `${(current / total) * 100}%`;
     showError('');
+    root.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   function validateStep(step) {
@@ -54,6 +72,14 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (!field.value.trim()) {
         field.focus();
         showError('Complétez les champs obligatoires.');
+        return false;
+      }
+    }
+    if (step === 2) {
+      const bio = root.querySelector('#pp-bio')?.value?.trim() || '';
+      if (bio.length > 0 && bio.length < 40) {
+        showError('La proposition de partenariat doit contenir au moins 40 caractères.');
+        root.querySelector('#pp-bio')?.focus();
         return false;
       }
     }
@@ -120,5 +146,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  syncTypeCards();
   go(1);
 });
