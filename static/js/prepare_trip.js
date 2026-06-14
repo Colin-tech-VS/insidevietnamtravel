@@ -8,9 +8,11 @@
   if (!wizard || !emailGate || !resultsEl) return;
 
   const UNLOCK_KEY = 'ivt_prepare_unlocked';
-  const TOTAL_STEPS = 4;
+  const TOTAL_STEPS = 5;
+  const MIN_TRAVELERS = 1;
+  const MAX_TRAVELERS = 20;
   const LANG = (document.documentElement.lang || 'fr').slice(0, 2);
-  const state = { group: null, style: null, duration: null, cities: [], step: 1 };
+  const state = { group: null, persons: null, style: null, duration: null, cities: [], step: 1 };
   const labels = catalog.labels || {};
   const cityList = catalog.cities || [];
   const cityRegion = {};
@@ -117,7 +119,32 @@
   }
 
   function fieldForStep(n) {
-    return n === 1 ? 'group' : n === 2 ? 'style' : n === 3 ? 'duration' : 'cities';
+    if (n === 1) return 'group';
+    if (n === 2) return 'persons';
+    if (n === 3) return 'style';
+    if (n === 4) return 'duration';
+    return 'cities';
+  }
+
+  function defaultPersonsForGroup(groupId) {
+    const item = (catalog.groups || []).find((g) => g.id === groupId);
+    const sizes = (catalog.budget && catalog.budget.group_size) || {};
+    return (item && item.default_persons) || sizes[groupId] || 2;
+  }
+
+  function labelForGroup(id) {
+    const item = (catalog.groups || []).find((g) => g.id === id);
+    return item ? item.label : id;
+  }
+
+  function labelForStyle(id) {
+    const item = (catalog.styles || []).find((s) => s.id === id);
+    return item ? item.label : id;
+  }
+
+  function labelForDuration(id) {
+    const item = (catalog.durations || []).find((d) => d.id === id);
+    return item ? item.label : id;
   }
 
   function fmtEur(n) {
@@ -154,7 +181,10 @@
     const field = fieldForStep(state.step);
     const next = wizard.querySelector('.prepare-next');
     if (!next) return;
-    const ready = field === 'cities' ? state.cities.length > 0 : Boolean(state[field]);
+    let ready = false;
+    if (field === 'cities') ready = state.cities.length > 0;
+    else if (field === 'persons') ready = Number(state.persons) >= MIN_TRAVELERS;
+    else ready = Boolean(state[field]);
     next.disabled = !ready;
     next.classList.toggle('is-disabled', !ready);
     next.setAttribute('aria-disabled', ready ? 'false' : 'true');
@@ -179,6 +209,10 @@
     container.querySelectorAll('.prepare-option').forEach((btn) => {
       btn.addEventListener('click', () => {
         state[field] = btn.dataset.value;
+        if (field === 'group') {
+          state.persons = defaultPersonsForGroup(state.group);
+          renderTravelersStep(wizard.querySelector('[data-step="2"] .prepare-travelers'));
+        }
         container.querySelectorAll('.prepare-option').forEach((b) => b.classList.remove('is-selected'));
         btn.classList.add('is-selected');
         updateNextButton();
@@ -186,19 +220,47 @@
     });
   }
 
-  function renderCityOptions(container) {
-    container.innerHTML = cityList.map((c) => {
-      const selected = state.cities.includes(c.id);
-      return `<button type="button" class="prepare-option prepare-option--multi${selected ? ' is-selected' : ''}" data-value="${c.id}" aria-pressed="${selected}">
-        <span class="prepare-option__icon" aria-hidden="true">📍</span>
-        <span class="prepare-option__body">
-          <span class="prepare-option__label">${c.name}</span>
-          <span class="prepare-option__desc">${c.region_label}</span>
-        </span>
-        <span class="prepare-option__check" aria-hidden="true">✓</span>
-      </button>`;
-    }).join('');
+  function renderTravelersStep(container) {
+    if (!container) return;
+    const count = Number(state.persons) || defaultPersonsForGroup(state.group) || 2;
+    state.persons = count;
+    container.innerHTML = `
+      <div class="prepare-travelers__control">
+        <button type="button" class="prepare-travelers__btn" data-action="dec" aria-label="${labels.travelers_decrease || '-'}">−</button>
+        <div class="prepare-travelers__value">
+          <span class="prepare-travelers__num" aria-live="polite">${count}</span>
+          <span class="prepare-travelers__unit">${labels.budget_persons || ''}</span>
+        </div>
+        <button type="button" class="prepare-travelers__btn" data-action="inc" aria-label="${labels.travelers_increase || '+'}">+</button>
+      </div>`;
 
+    container.querySelector('[data-action="dec"]').addEventListener('click', () => {
+      state.persons = Math.max(MIN_TRAVELERS, Number(state.persons) - 1);
+      renderTravelersStep(container);
+      updateNextButton();
+    });
+    container.querySelector('[data-action="inc"]').addEventListener('click', () => {
+      state.persons = Math.min(MAX_TRAVELERS, Number(state.persons) + 1);
+      renderTravelersStep(container);
+      updateNextButton();
+    });
+    updateNextButton();
+  }
+
+  function cityOptionHtml(c) {
+    const selected = state.cities.includes(c.id);
+    const desc = c.tagline || c.region_label || '';
+    return `<button type="button" class="prepare-option prepare-option--multi${selected ? ' is-selected' : ''}" data-value="${c.id}" aria-pressed="${selected}">
+      <span class="prepare-option__icon" aria-hidden="true">📍</span>
+      <span class="prepare-option__body">
+        <span class="prepare-option__label">${c.name}</span>
+        ${desc ? `<span class="prepare-option__desc">${desc}</span>` : ''}
+      </span>
+      <span class="prepare-option__check" aria-hidden="true">✓</span>
+    </button>`;
+  }
+
+  function bindCityButtons(container) {
     container.querySelectorAll('.prepare-option').forEach((btn) => {
       btn.addEventListener('click', () => {
         const id = btn.dataset.value;
@@ -213,6 +275,27 @@
     });
   }
 
+  function renderCityOptions(container) {
+    const regions = catalog.city_regions || [];
+    if (regions.length) {
+      container.innerHTML = regions.map((region) => {
+        const cards = (region.destinations || []).map((dest) => {
+          const c = cityList.find((x) => x.id === dest.slug) || {
+            id: dest.slug,
+            name: dest.name,
+            tagline: dest.tagline,
+            region_label: region.label,
+          };
+          return cityOptionHtml(c);
+        }).join('');
+        return `<section class="prepare-region"><h3 class="prepare-region__title">${region.label}</h3><div class="prepare-options prepare-options--grid prepare-options--multi">${cards}</div></section>`;
+      }).join('');
+    } else {
+      container.innerHTML = `<div class="prepare-options prepare-options--grid prepare-options--multi">${cityList.map(cityOptionHtml).join('')}</div>`;
+    }
+    bindCityButtons(container);
+  }
+
   function showStep(n) {
     state.step = n;
     wizard.querySelectorAll('.prepare-step').forEach((el) => {
@@ -224,6 +307,8 @@
       const num = Number(step.dataset.step);
       step.classList.toggle('is-active', num === n);
       step.classList.toggle('is-done', num < n);
+      step.classList.toggle('is-clickable', num < n);
+      step.setAttribute('aria-current', num === n ? 'step' : 'false');
     });
     const back = wizard.querySelector('.prepare-back');
     const next = wizard.querySelector('.prepare-next');
@@ -232,6 +317,10 @@
       next.textContent = n === TOTAL_STEPS
         ? (labels.view_results || labels.results_title || 'Results')
         : (labels.next || 'Continue');
+    }
+    if (n === 2) {
+      const travelersEl = wizard.querySelector('[data-step="2"] .prepare-travelers');
+      if (travelersEl) renderTravelersStep(travelersEl);
     }
     updateNextButton();
   }
@@ -281,7 +370,7 @@
     const tier = (b.tiers || {})[tierKey] || { perday: {}, perday_total: 0 };
     const perday = tier.perday || {};
     const days = (b.duration_days || {})[state.duration] || 10;
-    const persons = (b.group_size || {})[state.group] || 2;
+    const persons = Number(state.persons) || (b.group_size || {})[state.group] || 2;
     const legs = Math.max(0, state.cities.length - 1);
     const intercity = legs * (b.intercity_per_leg || 0);
 
@@ -421,6 +510,23 @@
     return block('✨', labels.recos_section || 'Recommendations', inner);
   }
 
+  function summaryHtml() {
+    const cityNames = state.cities.map((id) => {
+      const c = cityList.find((x) => x.id === id);
+      return c ? c.name : id;
+    });
+    const items = [
+      { icon: '👥', label: labelForGroup(state.group), value: `${state.persons} ${labels.budget_persons || ''}` },
+      { icon: '✈️', label: labels.step3 || '', value: labelForStyle(state.style) },
+      { icon: '📅', label: labels.step4 || '', value: labelForDuration(state.duration) },
+      { icon: '📍', label: labels.step5 || '', value: cityNames.length ? cityNames.join(', ') : '—' },
+    ];
+    const cards = items.map((item) => (
+      `<div class="prepare-summary__item"><span class="prepare-summary__icon" aria-hidden="true">${item.icon}</span><div><span class="prepare-summary__label">${item.label}</span><strong class="prepare-summary__value">${item.value}</strong></div></div>`
+    )).join('');
+    return block('📋', labels.summary_section || 'Profile', `<div class="prepare-summary">${cards}</div>`);
+  }
+
   function renderResults() {
     const { itinSlugs, destSlugs, artSlugs, catKeys } = resolveSlugs();
     const articles = catalog.articles || {};
@@ -429,6 +535,8 @@
     ).slice(0, 4);
 
     const sections = [];
+
+    sections.push(summaryHtml());
 
     // 1. Budget estimé (réponse directe à "estimation plus précise").
     if (catalog.budget && state.style) sections.push(budgetHtml());
@@ -465,6 +573,8 @@
 
     resultsEl.querySelector('.prepare-results__title').textContent = labels.results_title || '';
     resultsEl.querySelector('.prepare-results__sub').textContent = labels.results_sub || '';
+    const backBtn = resultsEl.querySelector('.prepare-results-back');
+    if (backBtn) backBtn.textContent = labels.results_back || labels.back || '';
     resultsEl.querySelector('.prepare-restart').textContent = labels.restart || '';
     resultsEl.querySelector('.prepare-pdf-cta').textContent = labels.pdf_cta || '';
     resultsEl.querySelector('.prepare-results__sections').innerHTML =
@@ -478,6 +588,7 @@
     if (window.ivtProfile && window.ivtProfile.saveTripPrefs) {
       window.ivtProfile.saveTripPrefs({
         group: state.group,
+        persons: state.persons,
         style: state.style,
         duration: state.duration,
         cities: state.cities,
@@ -490,26 +601,47 @@
     var p = window.ivtProfile.load();
     if (!p) return;
     if (p.g) state.group = p.g;
+    if (p.n) state.persons = Number(p.n) || null;
     if (p.s) state.style = p.s;
     if (p.d) state.duration = p.d;
     if (p.c && p.c.length) state.cities = p.c.slice();
+    if (state.group && !state.persons) state.persons = defaultPersonsForGroup(state.group);
   }
 
   function init() {
     applySavedProfile();
     const step1 = wizard.querySelector('[data-step="1"] .prepare-options');
-    const step2 = wizard.querySelector('[data-step="2"] .prepare-options');
+    const step2 = wizard.querySelector('[data-step="2"] .prepare-travelers');
     const step3 = wizard.querySelector('[data-step="3"] .prepare-options');
     const step4 = wizard.querySelector('[data-step="4"] .prepare-options');
+    const step5 = wizard.querySelector('[data-step="5"] .prepare-cities');
     renderOptions(step1, catalog.groups, 'group');
-    renderOptions(step2, catalog.styles, 'style');
-    renderOptions(step3, catalog.durations, 'duration');
-    if (step4) renderCityOptions(step4);
+    renderTravelersStep(step2);
+    renderOptions(step3, catalog.styles, 'style');
+    renderOptions(step4, catalog.durations, 'duration');
+    if (step5) renderCityOptions(step5);
+
+    wizard.querySelectorAll('.prepare-progress__step').forEach((stepEl) => {
+      const goBack = () => {
+        const num = Number(stepEl.dataset.step);
+        if (num < state.step) showStep(num);
+      };
+      stepEl.addEventListener('click', goBack);
+      stepEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          goBack();
+        }
+      });
+    });
 
     wizard.querySelector('.prepare-back').addEventListener('click', () => showStep(state.step - 1));
     wizard.querySelector('.prepare-next').addEventListener('click', () => {
       const field = fieldForStep(state.step);
-      const ready = field === 'cities' ? state.cities.length > 0 : Boolean(state[field]);
+      let ready = false;
+      if (field === 'cities') ready = state.cities.length > 0;
+      else if (field === 'persons') ready = Number(state.persons) >= MIN_TRAVELERS;
+      else ready = Boolean(state[field]);
       if (!ready) return;
       if (state.step < TOTAL_STEPS) showStep(state.step + 1);
       else requestResults();
@@ -529,15 +661,25 @@
         showStep(TOTAL_STEPS);
       });
     }
+    const resultsBack = resultsEl.querySelector('.prepare-results-back');
+    if (resultsBack) {
+      resultsBack.addEventListener('click', () => {
+        resultsEl.hidden = true;
+        wizard.hidden = false;
+        showStep(TOTAL_STEPS);
+      });
+    }
     resultsEl.querySelector('.prepare-restart').addEventListener('click', () => {
       state.group = null;
+      state.persons = null;
       state.style = null;
       state.duration = null;
       state.cities = [];
       renderOptions(step1, catalog.groups, 'group');
-      renderOptions(step2, catalog.styles, 'style');
-      renderOptions(step3, catalog.durations, 'duration');
-      if (step4) renderCityOptions(step4);
+      renderTravelersStep(step2);
+      renderOptions(step3, catalog.styles, 'style');
+      renderOptions(step4, catalog.durations, 'duration');
+      if (step5) renderCityOptions(step5);
       hideEmailGate();
       resultsEl.hidden = true;
       wizard.hidden = false;

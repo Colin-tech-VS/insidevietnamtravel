@@ -164,13 +164,16 @@
 
   function saveTripPrefs(prefs) {
     if (!personalizationEnabled() || !prefs) return null;
-    return mergeProfile({
+    const patch = {
       g: prefs.group || prefs.g,
       s: prefs.style || prefs.s,
       d: prefs.duration || prefs.d,
       c: prefs.cities || prefs.c || [],
       u: ['prepare'],
-    });
+    };
+    const persons = prefs.persons != null ? prefs.persons : prefs.n;
+    if (persons != null) patch.n = Number(persons) || 1;
+    return mergeProfile(patch);
   }
 
   function clearProfile() {

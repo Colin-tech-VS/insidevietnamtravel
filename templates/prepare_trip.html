@@ -42,22 +42,26 @@
 <section class="section section--alt prepare-trip" id="prepare-trip" aria-labelledby="prepare-wizard-title">
   <div class="container prepare-trip__inner">
     <div class="prepare-wizard" id="prepare-wizard">
-      <nav class="prepare-progress" aria-label="{% if lang == 'en' %}Wizard progress{% else %}Progression du questionnaire{% endif %}">
-        <div class="prepare-progress__step is-active" data-step="1">
+      <nav class="prepare-progress prepare-progress--5" aria-label="{% if lang == 'en' %}Wizard progress{% else %}Progression du questionnaire{% endif %}">
+        <div class="prepare-progress__step is-active" data-step="1" role="button" tabindex="0" aria-label="{{ t('prepare.step1') }}">
           <span class="prepare-progress__num" aria-hidden="true">1</span>
           <span class="prepare-progress__label">{{ t('prepare.step1') }}</span>
         </div>
-        <div class="prepare-progress__step" data-step="2">
+        <div class="prepare-progress__step" data-step="2" role="button" tabindex="0" aria-label="{{ t('prepare.step2') }}">
           <span class="prepare-progress__num" aria-hidden="true">2</span>
           <span class="prepare-progress__label">{{ t('prepare.step2') }}</span>
         </div>
-        <div class="prepare-progress__step" data-step="3">
+        <div class="prepare-progress__step" data-step="3" role="button" tabindex="0" aria-label="{{ t('prepare.step3') }}">
           <span class="prepare-progress__num" aria-hidden="true">3</span>
           <span class="prepare-progress__label">{{ t('prepare.step3') }}</span>
         </div>
-        <div class="prepare-progress__step" data-step="4">
+        <div class="prepare-progress__step" data-step="4" role="button" tabindex="0" aria-label="{{ t('prepare.step4') }}">
           <span class="prepare-progress__num" aria-hidden="true">4</span>
           <span class="prepare-progress__label">{{ t('prepare.step4') }}</span>
+        </div>
+        <div class="prepare-progress__step" data-step="5" role="button" tabindex="0" aria-label="{{ t('prepare.step5') }}">
+          <span class="prepare-progress__num" aria-hidden="true">5</span>
+          <span class="prepare-progress__label">{{ t('prepare.step5') }}</span>
         </div>
       </nav>
 
@@ -72,9 +76,9 @@
       <div class="prepare-step" data-step="2" hidden>
         <header class="prepare-step__head">
           <h2>{{ t('prepare.step2') }}</h2>
-          <p class="prepare-step__hint">{{ t('prepare.step_hint') }}</p>
+          <p class="prepare-step__hint">{{ t('prepare.step2_hint') }}</p>
         </header>
-        <div class="prepare-options prepare-options--grid" role="group" aria-label="{{ t('prepare.step2') }}"></div>
+        <div class="prepare-travelers" role="group" aria-label="{{ t('prepare.step2') }}"></div>
       </div>
 
       <div class="prepare-step" data-step="3" hidden>
@@ -82,15 +86,23 @@
           <h2>{{ t('prepare.step3') }}</h2>
           <p class="prepare-step__hint">{{ t('prepare.step_hint') }}</p>
         </header>
-        <div class="prepare-options prepare-options--trio" role="group" aria-label="{{ t('prepare.step3') }}"></div>
+        <div class="prepare-options prepare-options--grid" role="group" aria-label="{{ t('prepare.step3') }}"></div>
       </div>
 
       <div class="prepare-step" data-step="4" hidden>
         <header class="prepare-step__head">
           <h2>{{ t('prepare.step4') }}</h2>
-          <p class="prepare-step__hint">{{ t('prepare.step4_hint') }}</p>
+          <p class="prepare-step__hint">{{ t('prepare.step_hint') }}</p>
         </header>
-        <div class="prepare-options prepare-options--grid prepare-options--multi" role="group" aria-label="{{ t('prepare.step4') }}"></div>
+        <div class="prepare-options prepare-options--trio" role="group" aria-label="{{ t('prepare.step4') }}"></div>
+      </div>
+
+      <div class="prepare-step" data-step="5" hidden>
+        <header class="prepare-step__head">
+          <h2>{{ t('prepare.step5') }}</h2>
+          <p class="prepare-step__hint">{{ t('prepare.step5_hint') }}</p>
+        </header>
+        <div class="prepare-cities" role="group" aria-label="{{ t('prepare.step5') }}"></div>
       </div>
 
       <div class="prepare-wizard__nav">
@@ -126,8 +138,12 @@
         <span class="prepare-results__badge" aria-hidden="true">✦</span>
         <h2 class="prepare-results__title"></h2>
         <p class="prepare-results__sub"></p>
-        <button type="button" class="btn btn-ghost prepare-restart"></button>
+        <div class="prepare-results__actions">
+          <button type="button" class="btn btn-ghost prepare-results-back"></button>
+          <button type="button" class="btn btn-ghost prepare-restart"></button>
+        </div>
       </header>
+      <div class="prepare-results__summary" hidden aria-live="polite"></div>
       <div class="prepare-results__sections"></div>
       <aside class="prepare-results__cta">
         <p class="prepare-results__cta-lead">{% if lang == 'en' %}Want the full checklist, budgets and printable maps?{% else %}Envie de la checklist complète, des budgets et cartes imprimables ?{% endif %}</p>

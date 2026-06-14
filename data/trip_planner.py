@@ -397,8 +397,8 @@ def _affiliate_links(lang: str, track_url_fn, destinations: dict) -> dict:
         return track_url_fn(provider, url) if track_url_fn else url
 
     per_city: dict[str, dict] = {}
-    for slug in CITY_REGION:
-        name = destinations.get(slug, {}).get("name", slug)
+    for slug, dest in destinations.items():
+        name = dest.get("name", slug)
         meta = get_location_meta(slug, name=name)
         label = meta.get("label", name)
         per_city[slug] = {
@@ -454,10 +454,23 @@ def build_planner_catalog(
             "name": d.get("name", slug),
             "tagline": d.get("tagline", ""),
             "url": lang_url_fn("destination_page", lang, slug=slug),
-            "region": CITY_REGION.get(slug, ""),
+            "region": resolve_region(slug, d),
             "hotel_url": city_links.get("hotel_url", ""),
             "activity_url": city_links.get("activity_url", ""),
         }
+
+    city_regions = destinations_by_region(destinations, lang, t_fn)
+    city_cards = []
+    for region in city_regions:
+        for dest in region["destinations"]:
+            slug = dest["slug"]
+            city_cards.append({
+                "id": slug,
+                "name": dest["name"],
+                "region": region["key"],
+                "region_label": region["label"],
+                "tagline": dest.get("tagline", ""),
+            })
 
     art_cards = {}
     for a in articles:
@@ -479,19 +492,6 @@ def build_planner_catalog(
         }
         for k, v in categories.items()
     }
-
-    # Villes proposées à l'étape « Où aller ? » (ordre Nord → Sud, présentes au catalogue).
-    city_cards = [
-        {
-            "id": c["slug"],
-            "name": destinations.get(c["slug"], {}).get("name", c["slug"]),
-            "region": c["region"],
-            "region_label": t_fn(f"prepare.region.{c['region']}", lang),
-            "tagline": destinations.get(c["slug"], {}).get("tagline", ""),
-        }
-        for c in PLANNER_CITIES
-        if c["slug"] in destinations
-    ]
 
     budget = build_budget(lang)
     budget_block = {
@@ -529,10 +529,19 @@ def build_planner_catalog(
         "articles": art_cards,
         "categories": cat_cards,
         "cities": city_cards,
+        "city_regions": city_regions,
         "budget": budget_block,
         "tips": tips,
         "recos": recos,
-        "groups": [{"id": g, "label": t_fn(f"prepare.group.{g}", lang)} for g in GROUP_KEYS],
+        "groups": [
+            {
+                "id": g,
+                "label": t_fn(f"prepare.group.{g}", lang),
+                "desc": t_fn(f"prepare.group.{g}.hint", lang),
+                "default_persons": GROUP_SIZE[g],
+            }
+            for g in GROUP_KEYS
+        ],
         "styles": [
             {"id": s, "label": t_fn(f"prepare.style.{s}.label", lang), "desc": t_fn(f"prepare.style.{s}.desc", lang)}
             for s in STYLE_KEYS
@@ -566,8 +575,16 @@ def build_planner_catalog(
             "see_all": t_fn("prepare.see_all", lang),
             "empty": t_fn("prepare.results.empty", lang),
             "days": t_fn("nav.days", lang),
+            "step5": t_fn("prepare.step5", lang),
+            "step5_hint": t_fn("prepare.step5_hint", lang),
+            "step3": t_fn("prepare.step3", lang),
             "step4": t_fn("prepare.step4", lang),
-            "step4_hint": t_fn("prepare.step4_hint", lang),
+            "step2": t_fn("prepare.step2", lang),
+            "step2_hint": t_fn("prepare.step2_hint", lang),
+            "travelers_decrease": t_fn("prepare.travelers.decrease", lang),
+            "travelers_increase": t_fn("prepare.travelers.increase", lang),
+            "summary_section": t_fn("prepare.results.summary", lang),
+            "results_back": t_fn("prepare.results.back", lang),
             "budget_perperson": t_fn("prepare.budget.perperson", lang),
             "budget_group": t_fn("prepare.budget.group", lang),
             "budget_persons": t_fn("prepare.budget.persons", lang),
