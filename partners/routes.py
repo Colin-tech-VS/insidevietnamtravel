@@ -251,11 +251,11 @@ def page_edit():
                 )
                 flash("Brouillon enregistré.", "success")
             elif action == "save_vitrine":
-            photo = request.files.get("photo_file")
-            file_bytes = photo.read() if photo and photo.filename else None
-            if file_bytes and len(file_bytes) > 5 * 1024 * 1024:
-                raise ValueError("Photo trop volumineuse (max 5 Mo).")
-            page = save_page_vitrine(
+                photo = request.files.get("photo_file")
+                file_bytes = photo.read() if photo and photo.filename else None
+                if file_bytes and len(file_bytes) > 5 * 1024 * 1024:
+                    raise ValueError("Photo trop volumineuse (max 5 Mo).")
+                page = save_page_vitrine(
                     partner["id"],
                     profile_highlights_text=request.form.get("profile_highlights", ""),
                     image_url=request.form.get("image_url", ""),
