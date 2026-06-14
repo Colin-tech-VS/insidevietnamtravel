@@ -1145,6 +1145,13 @@ UI: dict[str, dict[str, str]] = {
     "events.status_recurring": {"fr": "Récurrent", "en": "Recurring"},
     "events.regions": {"fr": "Régions", "en": "Regions"},
     "events.tip_label": {"fr": "Conseil", "en": "Tip"},
+    "events.section_highlights": {"fr": "À ne pas manquer", "en": "Highlights"},
+    "events.section_detail": {"fr": "En détail", "en": "In detail"},
+    "events.section_practical": {"fr": "Infos pratiques", "en": "Practical info"},
+    "events.section_meta": {"fr": "Où & quand", "en": "Where & when"},
+    "events.destinations_label": {"fr": "Destinations liées", "en": "Related destinations"},
+    "events.year_label": {"fr": "Année", "en": "Year"},
+    "events.view_event": {"fr": "Voir la fiche", "en": "View details"},
     "events.hoi_an_title": {
         "fr": "Hội An — pleines lunes & lanternes flottantes",
         "en": "Hội An — full moons & floating lanterns",

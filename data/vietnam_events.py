@@ -645,6 +645,831 @@ EVENTS: list[dict] = [
     },
 ]
 
+def _pick_list(block: dict, lang: str) -> list[str]:
+    return list(block.get(lang, block.get("fr", [])))
+
+
+# Images + contenu enrichi par événement (clé = EVENTS[].key)
+EVENT_ENRICHMENT: dict[str, dict] = {
+    "new_year": {
+        "image": "/static/images/destinations/ho-chi-minh-city.webp",
+        "image_alt": {
+            "fr": "Saigon illuminée pour le Nouvel An",
+            "en": "Saigon lit up for New Year",
+        },
+        "highlights": {
+            "fr": [
+                "Feux d'artifice sur la rue Nguyễn Huệ et au lac Hoàn Kiếm (Hanoï)",
+                "Countdowns dans les centres commerciaux et bars des grandes villes",
+                "Ambiance festive sans fermetures massives (contrairement au Tết)",
+            ],
+            "en": [
+                "Fireworks on Nguyễn Huệ street and Hoàn Kiếm Lake (Hanoi)",
+                "Countdowns in malls and bars in major cities",
+                "Festive mood without mass closures (unlike Tết)",
+            ],
+        },
+        "experience": {
+            "fr": "Le 1er janvier est un jour férié officiel. À Hô-Chi-Minh-Ville, la "
+                  "promenade Nguyễn Huệ — piétonne et bordée de gratte-ciel — devient le "
+                  "théâtre des countdowns et des feux d'artifice. À Hanoï, le quartier du "
+                  "lac Hoàn Kiếm accueille des concerts en plein air et une foule de "
+                  "familles. C'est une bonne porte d'entrée avant le Têt, quelques semaines "
+                  "plus tard, pour sentir l'énergie urbaine vietnamienne.",
+            "en": "January 1 is an official public holiday. In Ho Chi Minh City, the pedestrian "
+                  "Nguyễn Huệ boulevard — lined with skyscrapers — hosts countdowns and "
+                  "fireworks. In Hanoi, the Hoàn Kiếm Lake area fills with outdoor concerts "
+                  "and families. It's a good warm-up before Tết a few weeks later, to feel "
+                  "Vietnam's urban energy.",
+        },
+        "practical": {
+            "fr": [
+                "Réservez hôtels et trains pour la nuit du 31 décembre",
+                "Arrivez tôt pour les spots photo (Nguyễn Huệ, Hoàn Kiếm)",
+                "Transport local limité après minuit — prévoyez Grab à l'avance",
+            ],
+            "en": [
+                "Book hotels and trains for December 31 night",
+                "Arrive early for photo spots (Nguyễn Huệ, Hoàn Kiếm)",
+                "Limited local transport after midnight — plan Grab ahead",
+            ],
+        },
+    },
+    "tet": {
+        "image": "/static/images/destinations/hanoi.webp",
+        "image_alt": {
+            "fr": "Hanoï pendant le Têt — marchés aux fleurs et décorations",
+            "en": "Hanoi during Tết — flower markets and decorations",
+        },
+        "highlights": {
+            "fr": [
+                "Marchés aux fleurs de Quảng Ba (Hanoï) et Nguyễn Huệ (Saigon)",
+                "Enveloppes rouges lì xì, danses de dragon et de lion",
+                "Visites aux ancêtres, nettoyage des maisons, repas familiaux",
+                "Feux d'artifice le soir du réveillon (Giao thừa)",
+            ],
+            "en": [
+                "Flower markets at Quảng Ba (Hanoi) and Nguyễn Huệ (Saigon)",
+                "Red lì xì envelopes, dragon and lion dances",
+                "Ancestor visits, house cleaning, family meals",
+                "Fireworks on New Year's Eve (Giao thừa)",
+            ],
+        },
+        "experience": {
+            "fr": "Le Tết Nguyên Đán marque le début du calendrier lunaire et rythme toute la "
+                  "société vietnamienne pendant une à deux semaines. Les familles rentrent au "
+                  "village, les temples sont bondés d'offrandes et les rues se parent de "
+                  "kumquats, d'orchidées et de branches de pêcher. Pour le voyageur, c'est "
+                  "l'immersion culturelle ultime — mais aussi la période la plus contrainte : "
+                  "musées fermés, tarifs flottants, plages surbookées au Sud.",
+            "en": "Tết Nguyên Đán marks the lunar new year and shapes Vietnamese society for "
+                  "one to two weeks. Families return to their home villages, temples overflow "
+                  "with offerings and streets fill with kumquat trees, orchids and peach "
+                  "blossom. For travellers it's the ultimate cultural immersion — but also "
+                  "the most constrained period: museums closed, surge pricing, packed beaches "
+                  "in the South.",
+        },
+        "practical": {
+            "fr": [
+                "Réservez vols, trains et hôtels 2–3 mois à l'avance",
+                "Prévoir 3–7 jours de fermetures commerciales autour du 1er jour lunaire",
+                "Évitez si vous comptez sur musées, tailleurs ou formalités administratives",
+                "Offrir un petit lì xì (enveloppe) est apprécié chez l'hôte",
+            ],
+            "en": [
+                "Book flights, trains and hotels 2–3 months ahead",
+                "Expect 3–7 days of business closures around lunar New Year's Day",
+                "Avoid if you rely on museums, tailors or admin errands",
+                "A small lì xì envelope is appreciated when visiting hosts",
+            ],
+        },
+    },
+    "perfume_pagoda": {
+        "image": "/static/images/pool/1578662996442-48f60103fc96.webp",
+        "image_alt": {
+            "fr": "Paysage montagneux du site de Chùa Hương",
+            "en": "Mountain landscape at Chùa Hương",
+        },
+        "highlights": {
+            "fr": [
+                "Traversée en barque sur la rivière Yen jusqu'au pied de la montagne",
+                "Grotte sacrée Huong Tich — « paradis sur terre »",
+                "Téléphérique ou montée à pied à travers la végétation karstique",
+                "Ambiance de pèlerinage authentique, encens et offrandes",
+            ],
+            "en": [
+                "Boat ride on the Yen River to the mountain foot",
+                "Sacred Huong Tich cave — « heaven on earth »",
+                "Cable car or hike through karst vegetation",
+                "Authentic pilgrimage atmosphere, incense and offerings",
+            ],
+        },
+        "experience": {
+            "fr": "Chùa Hương est le plus grand pèlerinage bouddhiste du Nord. Des dizaines "
+                  "de milliers de visiteurs — croyants et curieux — empruntent les barques "
+                  "traditionnelles, gravissent les marches humides et pénètrent dans la "
+                  "grotte Huong Tich, éclairée au néon et saturée d'encens. L'excursion "
+                  "complète depuis Hanoï dure une journée ; l'atmosphère est à la fois "
+                  "spectaculaire et profondément locale.",
+            "en": "Chùa Hương is the largest Buddhist pilgrimage in the North. Tens of "
+                  "thousands of visitors — believers and curious travellers — take "
+                  "traditional boats, climb damp steps and enter Huong Tich cave, lit by "
+                  "neon and thick with incense. The full day trip from Hanoi is both "
+                  "spectacular and deeply local.",
+        },
+        "practical": {
+            "fr": [
+                "Excursion d'une journée depuis Hanoï (~2 h de route)",
+                "Préférez un jour de semaine hors pic du Têt",
+                "Chaussures antidérapantes, eau et cash pour barques + téléphérique",
+                "Tenue couvrante pour les zones sacrées",
+            ],
+            "en": [
+                "Day trip from Hanoi (~2 h drive)",
+                "Prefer a weekday outside Tết peak",
+                "Non-slip shoes, water and cash for boats + cable car",
+                "Modest dress in sacred areas",
+            ],
+        },
+    },
+    "lim_festival": {
+        "image": "/static/images/pool/1528127269322-539801943592.webp",
+        "image_alt": {
+            "fr": "Festival traditionnel dans la campagne du Nord Vietnam",
+            "en": "Traditional festival in northern Vietnam countryside",
+        },
+        "highlights": {
+            "fr": [
+                "Quan họ : chants en duo entre villages « frères » et « sœurs »",
+                "Patrimoine oral UNESCO du delta du fleuve Rouge",
+                "Costumes traditionnels, chapeaux coniques et soieries",
+                "Jeux populaires, processions et offrandes sur l'eau",
+            ],
+            "en": [
+                "Quan họ: duet singing between 'brother' and 'sister' villages",
+                "UNESCO oral heritage of the Red River Delta",
+                "Traditional dress, conical hats and silk",
+                "Folk games, processions and water offerings",
+            ],
+        },
+        "experience": {
+            "fr": "Le festival de Lim, dans la province de Bắc Ninh, célèbre le quan họ — "
+                  "art lyrique pratiqué depuis des siècles sur les bateaux et les pagodes "
+                  "de campagne. Les chanteurs s'interpellent de rive à rive, entrecoupant "
+                  "mélodies et plaisanteries. C'est l'une des expressions culturelles les "
+                  "plus pures du Nord, accessible en excursion d'une journée depuis Hanoï.",
+            "en": "The Lim festival in Bắc Ninh province celebrates quan họ — a lyrical art "
+                  "practised for centuries on boats and rural pagodas. Singers call across "
+                  "the water, alternating melodies and banter. It's one of the purest "
+                  "cultural expressions of the North, reachable on a day trip from Hanoi.",
+        },
+        "practical": {
+            "fr": [
+                "Date clé : 13e jour du 1er mois lunaire",
+                "Excursion organisée ou location de voiture avec chauffeur",
+                "Arrivez tôt le matin — affluence massive l'après-midi",
+                "Respectez les espaces de cérémonie, demandez avant de filmer",
+            ],
+            "en": [
+                "Key date: 13th day of the 1st lunar month",
+                "Organised tour or car with driver",
+                "Arrive early morning — huge crowds by afternoon",
+                "Respect ceremony spaces, ask before filming",
+            ],
+        },
+    },
+    "hung_kings": {
+        "image": "/static/images/destinations/hue.webp",
+        "image_alt": {
+            "fr": "Temple et patrimoine historique vietnamien",
+            "en": "Vietnamese temple and historical heritage",
+        },
+        "highlights": {
+            "fr": [
+                "Jour férié national — hommage aux rois Hùng fondateurs",
+                "Cérémonies au temple Den Hung (province de Phú Thọ)",
+                "Offrandes de banh chung (gâteau de riz carré) et bánh dày",
+                "Symbolique identitaire forte pour les Vietnamiens",
+            ],
+            "en": [
+                "National holiday — tribute to founding Hùng kings",
+                "Ceremonies at Den Hung temple (Phú Thọ province)",
+                "Offerings of banh chung (square rice cake) and bánh dày",
+                "Strong identity symbolism for Vietnamese people",
+            ],
+        },
+        "experience": {
+            "fr": "Le 10e jour du 3e mois lunaire, le Vietnam commémore les rois Hùng, "
+                  "figures légendaires de la fondation du pays. Des milliers de pèlerins "
+                  "montent vers le complexe de Den Hung, dans un paysage de collines "
+                  "verdoyantes à ~90 km de Hanoï. Même sans assister à la cérémonie "
+                  "officielle, la journée offre un aperçu de la mémoire collective "
+                  "vietnamienne.",
+            "en": "On the 10th day of the 3rd lunar month, Vietnam commemorates the Hùng "
+                  "kings, legendary founders of the nation. Thousands of pilgrims climb to "
+                  "the Den Hung complex in green hills ~90 km from Hanoi. Even without "
+                  "attending the official ceremony, the day reveals Vietnam's collective "
+                  "memory.",
+        },
+        "practical": {
+            "fr": [
+                "Jour férié : administrations fermées",
+                "Excursion depuis Hanoï — comptez une journée",
+                "Chaleur et foule possibles — chapeau et eau",
+            ],
+            "en": [
+                "Public holiday: offices closed",
+                "Day trip from Hanoi — allow a full day",
+                "Heat and crowds possible — hat and water",
+            ],
+        },
+    },
+    "reunification": {
+        "image": "/static/images/pool/1609412058473-c199497c3c5d.webp",
+        "image_alt": {
+            "fr": "Palais de la Réunification à Saigon",
+            "en": "Reunification Palace in Saigon",
+        },
+        "highlights": {
+            "fr": [
+                "30 avril : chute de Saigon et réunification (1975)",
+                "1er mai : Fête internationale du Travail",
+                "Cérémonies au Palais de la Réunification",
+                "Long week-end très animé dans le centre-ville",
+            ],
+            "en": [
+                "April 30: Fall of Saigon and reunification (1975)",
+                "May 1: International Labour Day",
+                "Ceremonies at Reunification Palace",
+                "Busy long weekend downtown",
+            ],
+        },
+        "experience": {
+            "fr": "À Hô-Chi-Minh-Ville, le double holiday du 30 avril–1er mai mêle "
+                  "commémoration historique et fête populaire. Le Palais de la "
+                  "Réunification — symbole de la fin de la guerre — accueille des "
+                  "cérémonies officielles. Les rues adjacentes se remplissent de "
+                  "familles, de drapeaux et de vendeurs ambulants. C'est l'occasion "
+                  "idéale de visiter le palais et les monuments voisins en une journée.",
+            "en": "In Ho Chi Minh City, the April 30–May 1 double holiday blends historical "
+                  "commemoration and street celebration. Reunification Palace — symbol of "
+                  "the war's end — hosts official ceremonies. Nearby streets fill with "
+                  "families, flags and street vendors. Ideal timing to visit the palace "
+                  "and neighbouring monuments in one day.",
+        },
+        "practical": {
+            "fr": [
+                "Réservez hébergement pour le long week-end",
+                "Visitez le Palais tôt le 30 avril (fermetures partielles possibles)",
+                "Circulation dense — privilégiez Grab ou métro",
+            ],
+            "en": [
+                "Book accommodation for the long weekend",
+                "Visit the Palace early on April 30 (partial closures possible)",
+                "Heavy traffic — use Grab or metro",
+            ],
+        },
+    },
+    "hue_festival": {
+        "image": "/static/images/destinations/hue.webp",
+        "image_alt": {
+            "fr": "Citadelle impériale de Huế",
+            "en": "Imperial citadel of Huế",
+        },
+        "highlights": {
+            "fr": [
+                "Festival biennal de la culture impériale",
+                "Défilés en costumes Nguyen, musique de cour",
+                "Spectacles nocturnes dans la citadelle UNESCO",
+                "Gastronomie royale et artisans locaux",
+            ],
+            "en": [
+                "Biennial imperial culture festival",
+                "Nguyen dynasty costume parades, court music",
+                "Night shows in UNESCO citadel",
+                "Royal cuisine and local crafts",
+            ],
+        },
+        "experience": {
+            "fr": "Huế, ancienne capitale des empereurs Nguyen, accueille périodiquement un "
+                  "festival majeur mêlant patrimoine, spectacles vivants et gastronomie de "
+                  "cour. Les remparts, pagodes et pavillons royaux deviennent scènes "
+                  "ouvertes. Les dates exactes varient selon l'édition — consultez le "
+                  "programme officiel, mais l'ambiance impériale de Huế vaut le détour "
+                  "toute l'année.",
+            "en": "Huế, former capital of the Nguyen emperors, periodically hosts a major "
+                  "festival blending heritage, live performance and court cuisine. Ramparts, "
+                  "pagodas and royal pavilions become open-air stages. Exact dates vary by "
+                  "edition — check the official programme — but Huế's imperial atmosphere "
+                  "rewards a visit any time of year.",
+        },
+        "practical": {
+            "fr": [
+                "Vérifiez les dates sur le site du Festival de Huế",
+                "Réservez hôtel dans la cité impériale ou Perfume River",
+                "Billets pour spectacles nocturnes souvent limités",
+            ],
+            "en": [
+                "Check dates on the Huế Festival website",
+                "Book hotels in the imperial city or Perfume River area",
+                "Night show tickets often limited",
+            ],
+        },
+    },
+    "hoi_an_lantern": {
+        "image": "/static/images/pool/1559592413-7cec4d0cae2b.webp",
+        "image_alt": {
+            "fr": "Lanternes colorées dans la vieille ville de Hội An",
+            "en": "Colourful lanterns in Hội An old town",
+        },
+        "highlights": {
+            "fr": [
+                "Centre historique piéton éteint chaque soir — éclairage aux lanternes",
+                "14e jour lunaire : lanternes flottantes sur la rivière Thu Bồn",
+                "Musique live, stands de nourriture et tailleurs ouverts le jour",
+                "UNESCO — architecture fusion vietnamienne, chinoise et japonaise",
+            ],
+            "en": [
+                "Pedestrian old town dims each evening — lantern lighting",
+                "14th lunar day: floating lanterns on Thu Bồn River",
+                "Live music, food stalls and tailors open by day",
+                "UNESCO — Vietnamese, Chinese and Japanese fusion architecture",
+            ],
+        },
+        "experience": {
+            "fr": "Hội An transforme chaque nuit son centre en théâtre de lumière tamisée. "
+                  "Les façades jaunes, les ponts japonais et les rives de la Thu Bồn se "
+                  "reflètent dans l'eau. Le festival mensuel des lanternes flottantes "
+                  "(veille de pleine lune) est le moment le plus photogénique : les "
+                  "visiteurs lâchent des lanternes en papier, créant un fleuve de "
+                  "couleurs. Prévoyez au minimum deux nuits sur place.",
+            "en": "Hội An turns its centre into a soft-lit theatre every night. Yellow "
+                  "facades, Japanese Bridge and Thu Bồn banks mirror in the water. The "
+                  "monthly floating lantern festival (eve of full moon) is the most "
+                  "photogenic moment: visitors release paper lanterns, creating a river "
+                  "of colour. Plan at least two nights.",
+        },
+        "practical": {
+            "fr": [
+                "Ticket d'entrée vieille ville (~120 000 VND) valable plusieurs jours",
+                "Réservez 2–3 nuits, surtout en pleine lune",
+                "Tailleurs fermés pendant le Têt",
+                "Consultez le calendrier lunaire ci-dessous pour les dates précises",
+            ],
+            "en": [
+                "Old town entry ticket (~120,000 VND) valid several days",
+                "Book 2–3 nights, especially on full moon",
+                "Tailors closed during Tết",
+                "See lunar calendar below for exact dates",
+            ],
+        },
+    },
+    "danang_fireworks": {
+        "image": "/static/images/destinations/da-nang.webp",
+        "image_alt": {
+            "fr": "Skyline de Đà Nẵng et baie de Han",
+            "en": "Đà Nẵng skyline and Han Bay",
+        },
+        "highlights": {
+            "fr": [
+                "Compétition internationale de feux d'artifice (DIFF)",
+                "Spectacle sur la baie de Han et le Dragon Bridge",
+                "Plages de My Khe et vie nocturne animée",
+                "Événement phare de la côte Centre quand organisé",
+            ],
+            "en": [
+                "International fireworks competition (DIFF)",
+                "Shows on Han Bay and Dragon Bridge",
+                "My Khe beach and lively nightlife",
+                "Central coast flagship event when held",
+            ],
+        },
+        "experience": {
+            "fr": "Quand il se tient, le Festival international des feux d'artifice de Đà Nẵng "
+                  "attire des équipes du monde entier. Les nuits de compétition transforment "
+                  "la baie de Han en amphithéâtre à ciel ouvert. Le Dragon Bridge crache le "
+                  "feu le week-end, les terrasses des hôtels affichent complet et la ville "
+                  "pulse d'énergie estivale.",
+            "en": "When held, Đà Nẵng's International Fireworks Festival draws teams from "
+                  "around the world. Competition nights turn Han Bay into an open-air "
+                  "amphitheatre. Dragon Bridge breathes fire on weekends, hotel rooftops "
+                  "sell out and the city pulses with summer energy.",
+        },
+        "practical": {
+            "fr": [
+                "Dates à confirmer sur le site officiel de Đà Nẵng",
+                "Réservez hôtel avec vue baie plusieurs mois à l'avance",
+                "Circulation bloquée le long du fleuve Han les soirs de spectacle",
+            ],
+            "en": [
+                "Confirm dates on Đà Nẵng official website",
+                "Book bay-view hotels months ahead",
+                "Traffic blocked along Han River on show nights",
+            ],
+        },
+    },
+    "vu_lan": {
+        "image": "/static/images/pool/1557750255-c76072a7aad1.webp",
+        "image_alt": {
+            "fr": "Pagode vietnamienne lors d'une cérémonie",
+            "en": "Vietnamese pagoda during a ceremony",
+        },
+        "highlights": {
+            "fr": [
+                "Fête des morts bouddhiste — 15e jour du 7e mois lunaire",
+                "Offrandes aux ancêtres et repas végétariens",
+                "Processions dans les pagodes de tout le pays",
+                "Deuxième fête familiale après le Tết",
+            ],
+            "en": [
+                "Buddhist Wandering Souls Day — 15th of 7th lunar month",
+                "Ancestor offerings and vegetarian meals",
+                "Processions in pagodas nationwide",
+                "Second most important family festival after Tết",
+            ],
+        },
+        "experience": {
+            "fr": "Vu Lan (Rằm tháng 7) est le moment où les Vietnamiens honorent les ancêtres "
+                  "défunts. Les pagodes — de la Pagode des Jade à Saigon au temple Literature "
+                  "à Hanoï — regorgent d'encens, de fruits et de fidèles en tenue sombre. "
+                  "Les restaurants proposent des menus chay (végétariens). L'atmosphère est "
+                  "recueillie ; idéal pour observer les rituels avec respect.",
+            "en": "Vu Lan (7th month full moon) is when Vietnamese honour deceased ancestors. "
+                  "Pagodas — from Jade Emperor in Saigon to Temple of Literature in Hanoi — "
+                  "overflow with incense, fruit and devotees in dark clothing. Restaurants "
+                  "serve chay (vegetarian) menus. The mood is contemplative; ideal for "
+                  "observing rituals respectfully.",
+        },
+        "practical": {
+            "fr": [
+                "Tenue couvrante (épaules et genoux) dans les pagodes",
+                "Retirez chaussures et chapeau à l'entrée",
+                "Demandez avant de photographier les fidèles",
+            ],
+            "en": [
+                "Modest dress (shoulders and knees) in pagodas",
+                "Remove shoes and hat at entrance",
+                "Ask before photographing worshippers",
+            ],
+        },
+    },
+    "national_day": {
+        "image": "/static/images/destinations/hanoi.webp",
+        "image_alt": {
+            "fr": "Place Ba Đình et drapeaux vietnamiens à Hanoï",
+            "en": "Ba Đình Square and Vietnamese flags in Hanoi",
+        },
+        "highlights": {
+            "fr": [
+                "Commémoration de l'indépendance (2 septembre 1945)",
+                "Cérémonie au mausolée Hô Chi Minh",
+                "Défilé militaire les années paires (selon édition)",
+                "Feux d'artifice le soir à Hanoï et Saigon",
+            ],
+            "en": [
+                "Independence commemoration (September 2, 1945)",
+                "Ceremony at Ho Chi Minh Mausoleum",
+                "Military parade on even years (when held)",
+                "Evening fireworks in Hanoi and Saigon",
+            ],
+        },
+        "experience": {
+            "fr": "Le 2 septembre, le Vietnam célèbre la déclaration d'indépendance de Hô Chi "
+                  "Minh sur la place Ba Đình. Drapeaux rouges à étoile jaune, portraits du "
+                  "« Oncle Hô » et cérémonies officielles rythment la journée. C'est aussi "
+                  "un long week-end très prisé des locaux — musées, lac Hoàn Kiếm et "
+                  "centre-ville battent plein.",
+            "en": "On September 2, Vietnam celebrates Ho Chi Minh's independence declaration "
+                  "at Ba Đình Square. Red flags with gold stars, Uncle Hô portraits and "
+                  "official ceremonies mark the day. It's also a popular long weekend for "
+                  "locals — museums, Hoàn Kiếm Lake and downtown are packed.",
+        },
+        "practical": {
+            "fr": [
+                "Mausolée HCM fermé plusieurs jours autour du 2 septembre",
+                "Réservez hôtels et trains pour le long week-end",
+                "Évitez les déplacements inter-villes le 1er septembre soir",
+            ],
+            "en": [
+                "Ho Chi Minh Mausoleum closed several days around September 2",
+                "Book hotels and trains for the long weekend",
+                "Avoid inter-city travel on the evening of September 1",
+            ],
+        },
+    },
+    "mid_autumn": {
+        "image": "/static/images/pool/1559592413-7cec4d0cae2b.webp",
+        "image_alt": {
+            "fr": "Lanternes de la fête de la mi-automne",
+            "en": "Mid-Autumn Festival lanterns",
+        },
+        "highlights": {
+            "fr": [
+                "Fête des enfants sous la pleine lune",
+                "Lanternes en forme de poisson, étoile ou personnages",
+                "Gâteaux de lune bánh trung thu (noix, haricot, jaune d'œuf)",
+                "Danses de lion dans les rues de Hội An, Hanoï et Cholon",
+            ],
+            "en": [
+                "Children's festival under the full moon",
+                "Fish-, star- or character-shaped lanterns",
+                "Mooncakes bánh trung thu (nuts, bean paste, egg yolk)",
+                "Lion dances in Hội An, Hanoi and Cholon streets",
+            ],
+        },
+        "experience": {
+            "fr": "Tết Trung Thu est la fête la plus joyeuse pour les enfants vietnamiens. "
+                  "Les familles défilent avec des lanternes illuminées, dégustent des "
+                  "gâteaux de lune et regardent les danses de lion. Hội An combine "
+                  "lanternes traditionnelles et décorations modernes ; le quartier chinois "
+                  "de Cholon (Saigon) propose marchés nocturnes et spectacles de rue.",
+            "en": "Tết Trung Thu is the happiest festival for Vietnamese children. Families "
+                  "parade with lit lanterns, eat mooncakes and watch lion dances. Hội An "
+                  "mixes traditional lanterns and modern decor; Cholon (Saigon) offers "
+                  "night markets and street performances.",
+        },
+        "practical": {
+            "fr": [
+                "Goûtez les gâteaux artisanaux plutôt que les boîtes industrielles",
+                "Hội An et Cholon très fréquentés — arrivez avant le coucher du soleil",
+                "Parfait pour voyager en famille",
+            ],
+            "en": [
+                "Try artisan mooncakes rather than industrial boxes",
+                "Hội An and Cholon very busy — arrive before sunset",
+                "Perfect for family travel",
+            ],
+        },
+    },
+    "kate_festival": {
+        "image": "/static/images/pool/1583417319070-4a69db38a482.webp",
+        "image_alt": {
+            "fr": "Tour Cham en briques — patrimoine du centre Vietnam",
+            "en": "Cham brick tower — Central Vietnam heritage",
+        },
+        "highlights": {
+            "fr": [
+                "Plus grande fête du peuple Cham (minorité du Sud-Centre)",
+                "Rituels aux tours Po Klong Garai et Po Rome (Ninh Thuận)",
+                "Costumes brodés, danses kate et musique traditionnelle",
+                "Immersion dans une culture hindouiste-bouddhiste unique",
+            ],
+            "en": [
+                "Largest festival of the Cham people (South-Central minority)",
+                "Rituals at Po Klong Garai and Po Rome towers (Ninh Thuận)",
+                "Embroidered dress, kate dances and traditional music",
+                "Immersion in a unique Hindu-Buddhist culture",
+            ],
+        },
+        "experience": {
+            "fr": "Le Kate marque la fin de l'année rituelle cham. Les tours de briques "
+                  "centenaires — vestiges du Champa — accueillent processions, sacrifices "
+                  "symboliques et danses en costumes éclatants. Phan Rang et la province de "
+                  "Ninh Thuận, entre les dunes et la mer, offrent un contraste saisissant "
+                  "avec le Vietnam khmér ou viet majoritaire.",
+            "en": "Kate marks the end of the Cham ritual year. Centuries-old brick towers — "
+                  "Champa relics — host processions, symbolic offerings and dances in "
+                  "vivid dress. Phan Rang and Ninh Thuận province, between dunes and sea, "
+                  "contrast sharply with mainstream Vietnamese or Khmer culture.",
+        },
+        "practical": {
+            "fr": [
+                "Base à Phan Rang ou excursion depuis Đà Nẵng/Nha Trang (~3–4 h)",
+                "Demandez permission avant de filmer les cérémonies",
+                "Chaleur forte — chapeau, eau, tenue légère mais respectueuse",
+            ],
+            "en": [
+                "Base in Phan Rang or day trip from Đà Nẵng/Nha Trang (~3–4 h)",
+                "Ask permission before filming ceremonies",
+                "Strong heat — hat, water, light but respectful clothing",
+            ],
+        },
+    },
+    "ok_om_bok": {
+        "image": "/static/images/destinations/delta-du-mekong.webp",
+        "image_alt": {
+            "fr": "Rivière et campagne du delta du Mékong",
+            "en": "River and countryside in the Mekong Delta",
+        },
+        "highlights": {
+            "fr": [
+                "Fête Khmer du Sud — remerciements à la lune pour la récolte",
+                "Offrandes de riz au clair de lune (Bon Om Touk)",
+                "Regatta traditionnelle Ghe Ngo à Sóc Trăng",
+                "Pagodes Khmer décorées, musique et street food",
+            ],
+            "en": [
+                "Southern Khmer festival — moon thanksgiving for harvest",
+                "Moonlight rice offerings (Bon Om Touk)",
+                "Traditional Ghe Ngo regatta in Sóc Trăng",
+                "Decorated Khmer pagodas, music and street food",
+            ],
+        },
+        "experience": {
+            "fr": "Ok Om Bok (Lễ Óc Om Bóc) est le pendant mékongien du Bon Om Touk cambodgien. "
+                  "La communauté Khmer du delta célèbre l'abondance du riz avec des "
+                  "processions nocturnes, des bateaux-dragon colorés et une énergie "
+                  "festive unique dans le Sud vietnamien. Sóc Trăng et Cần Thơ sont les "
+                  "bases idéales pour vivre l'événement.",
+            "en": "Ok Om Bok (Lễ Óc Om Bóc) is the Mekong counterpart to Cambodia's Bon Om "
+                  "Touk. The delta's Khmer community celebrates rice abundance with night "
+                  "processions, colourful dragon boats and festive energy unique in "
+                  "southern Vietnam. Sóc Trăng and Cần Thơ are ideal bases.",
+        },
+        "practical": {
+            "fr": [
+                "15e jour du 10e mois lunaire — vérifiez la date exacte",
+                "Réservez hébergement à Sóc Trăng ou Cần Thơ",
+                "Combinez avec un marché flottant au lever du soleil",
+            ],
+            "en": [
+                "15th day of 10th lunar month — confirm exact date",
+                "Book stays in Sóc Trăng or Cần Thơ",
+                "Combine with a sunrise floating market",
+            ],
+        },
+    },
+    "floating_market_peak": {
+        "image": "/static/images/destinations/delta-du-mekong.webp",
+        "image_alt": {
+            "fr": "Marché flottant au lever du soleil dans le delta du Mékong",
+            "en": "Floating market at sunrise in the Mekong Delta",
+        },
+        "highlights": {
+            "fr": [
+                "Cái Răng et Cai Be : les marchés les plus photogéniques",
+                "Activité maximale de novembre à janvier (haute eau)",
+                "Fruits tropicaux, café phin et vente depuis les sampans",
+                "Expérience authentique du Sud vietnamien",
+            ],
+            "en": [
+                "Cái Răng and Cai Be: most photogenic markets",
+                "Peak activity November to January (high water)",
+                "Tropical fruit, phin coffee and sampan trading",
+                "Authentic southern Vietnam experience",
+            ],
+        },
+        "experience": {
+            "fr": "Après la mousson, le Mékong gonfle et les agriculteurs convergent vers "
+                  "Cái Răng, à proximité de Cần Thơ. Dès 5 h du matin, des centaines de "
+                  "barques chargées de papaye, de noix de coco et de soupe phở s'échangent "
+                  "sur l'eau brumeuse. C'est l'une des images les plus emblématiques du "
+                  "Vietnam — à vivre au moins une fois.",
+            "en": "After monsoon, the Mekong swells and farmers converge on Cái Răng near "
+                  "Cần Thơ. From 5 a.m., hundreds of boats loaded with papaya, coconut "
+                  "and phở soup trade on misty water. One of Vietnam's most iconic sights "
+                  "— worth experiencing at least once.",
+        },
+        "practical": {
+            "fr": [
+                "Départ obligatoire à 5h–6h du matin",
+                "Nuit à Cần Thơ recommandée",
+                "Excursion en sampan (~200 000–400 000 VND) via votre hôtel",
+            ],
+            "en": [
+                "Must leave at 5–6 a.m.",
+                "Overnight in Cần Thơ recommended",
+                "Sampan tour (~200,000–400,000 VND) via your hotel",
+            ],
+        },
+    },
+    "sapa_festival": {
+        "image": "/static/images/destinations/sapa.webp",
+        "image_alt": {
+            "fr": "Rizières en terrasses dorées à Sapa",
+            "en": "Golden rice terraces in Sapa",
+        },
+        "highlights": {
+            "fr": [
+                "Rizières dorées de septembre à novembre",
+                "Marchés hebdomadaires Hmong et Dao (Bac Ha, Muong Hum)",
+                "Randonnées entre villages et homestays",
+                "Fêtes de moisson dans les villages ethniques",
+            ],
+            "en": [
+                "Golden terraces September to November",
+                "Weekly Hmong and Dao markets (Bac Ha, Muong Hum)",
+                "Trekking between villages and homestays",
+                "Harvest celebrations in ethnic villages",
+            ],
+        },
+        "experience": {
+            "fr": "L'automne à Sapa est la saison des photographes : les terrasses en "
+                  "cascades passent du vert à l'or avant la récolte. Les minorités Hmong "
+                  "et Dao convergent vers les marchés dominicaux de Bac Ha — l'un des plus "
+                  "colorés du Nord — en costumes brodés. Les homestays permettent de "
+                  "partager repas et traditions au rythme local.",
+            "en": "Autumn in Sapa is photographers' season: cascading terraces turn from "
+                  "green to gold before harvest. Hmong and Dao minorities gather at "
+                  "Sunday markets like Bac Ha — among the North's most colourful — in "
+                  "embroidered dress. Homestays let you share meals and traditions at "
+                  "local pace.",
+        },
+        "practical": {
+            "fr": [
+                "Réservez guide et homestay pour octobre",
+                "Températures fraîches en altitude — veste imperméable",
+                "Bac Ha : dimanche matin, départ tôt depuis Sapa",
+            ],
+            "en": [
+                "Book guide and homestay for October",
+                "Cool at altitude — waterproof jacket",
+                "Bac Ha: Sunday morning, leave early from Sapa",
+            ],
+        },
+    },
+    "halong_cruise_peak": {
+        "image": "/static/images/destinations/halong.webp",
+        "image_alt": {
+            "fr": "Jonques dans la baie d'Halong",
+            "en": "Junk boats in Halong Bay",
+        },
+        "highlights": {
+            "fr": [
+                "Meilleure période : octobre à avril (mer calme, ciel dégagé)",
+                "Nuit à bord d'une jonque traditionnelle ou premium",
+                "Kayak, grottes et baignade entre les karsts",
+                "Site UNESCO — 1 600 îles et îlots",
+            ],
+            "en": [
+                "Best period: October to April (calm seas, clear skies)",
+                "Overnight on traditional or premium junk boat",
+                "Kayak, caves and swimming among karsts",
+                "UNESCO site — 1,600 islands and islets",
+            ],
+        },
+        "experience": {
+            "fr": "La baie d'Halong concentre l'imaginaire du Vietnam. Entre octobre et avril, "
+                  "la brume légère et la mer plate offrent les conditions idéales pour une "
+                  "croisière d'une ou deux nuits. Les itinéraires incluent grottes "
+                  "spectaculaires, villages flottants et kayak au lever du soleil. Évitez "
+                  "juillet–août (typhons) et le Tết si vous préférez moins de monde.",
+            "en": "Halong Bay captures Vietnam's imagination. Between October and April, light "
+                  "mist and flat seas offer ideal conditions for one- or two-night cruises. "
+                  "Routes include spectacular caves, floating villages and sunrise kayaking. "
+                  "Avoid July–August (typhoons) and Tết if you prefer fewer crowds.",
+        },
+        "practical": {
+            "fr": [
+                "Choisissez un opérateur certifié (éviter les prix trop bas)",
+                "Cabine avec hublot fortement recommandée",
+                "Transfert depuis Hanoï inclus dans la plupart des forfaits (~3–4 h)",
+            ],
+            "en": [
+                "Choose a certified operator (avoid suspiciously low prices)",
+                "Cabin with porthole strongly recommended",
+                "Transfer from Hanoi included in most packages (~3–4 h)",
+            ],
+        },
+    },
+    "christmas": {
+        "image": "/static/images/destinations/hoi-an.webp",
+        "image_alt": {
+            "fr": "Hội An décorée pour les fêtes de fin d'année",
+            "en": "Hội An decorated for the holiday season",
+        },
+        "highlights": {
+            "fr": [
+                "Noël non férié mais très visible à Saigon",
+                "Cathédrale Notre-Dame et boulevard Dong Khoi illuminés",
+                "Centres commerciaux Vincom et Landmark 81 décorés",
+                "Hội An mêle lanternes vietnamiennes et guirlandes occidentales",
+            ],
+            "en": [
+                "Christmas not a public holiday but very visible in Saigon",
+                "Notre-Dame Cathedral and Dong Khoi boulevard lit up",
+                "Vincom malls and Landmark 81 decorated",
+                "Hội An mixes Vietnamese lanterns and Western fairy lights",
+            ],
+        },
+        "experience": {
+            "fr": "Le Vietnam n'est pas un pays catholique majoritaire, mais le Sud — et "
+                  "Saigon en particulier — affiche fièrement décorations et crèches. La "
+                  "cathédrale Notre-Dame (en restauration selon périodes) et le quartier "
+                  "central deviennent promenades nocturnes. Hội An, déjà magique en "
+                  "décembre, ajoute guirlandes et marchés artisanaux.",
+            "en": "Vietnam isn't majority Catholic, but the South — especially Saigon — "
+                  "proudly displays decorations and nativity scenes. Notre-Dame Cathedral "
+                  "(under restoration at times) and the central district become evening "
+                  "strolls. Hội An, already magical in December, adds fairy lights and "
+                  "craft markets.",
+        },
+        "practical": {
+            "fr": [
+                "Messe de minuit : places limitées à Notre-Dame",
+                "Haute saison touristique — réservez Hội An à l'avance",
+                "Climat sec et agréable au Sud en décembre",
+            ],
+            "en": [
+                "Midnight mass: limited seats at Notre-Dame",
+                "Peak tourist season — book Hội An ahead",
+                "Dry, pleasant weather in the South in December",
+            ],
+        },
+    },
+}
+
+
 # Dates clés 14e jour lunaire (lanternes flottantes Hội An) 2026-2027
 HOI_AN_FULL_MOON_2026_2027: list[dict] = [
     {"start": "2026-03-02", "end": "2026-03-02", "label_fr": "Mars 2026", "label_en": "March 2026"},
@@ -689,15 +1514,25 @@ def build_events_calendar(
                 continue
             is_recurring = bool(occ.get("recurring"))
             dest_slugs = ev.get("destinations") or []
+            enrich = EVENT_ENRICHMENT.get(ev["key"], {})
+            image = enrich.get("image") or (
+                f"/static/images/destinations/{dest_slugs[0]}.webp" if dest_slugs else
+                "/static/images/destinations/hanoi.webp"
+            )
             flat.append({
                 "id": f"{ev['key']}-{occ['start']}",
                 "event_key": ev["key"],
                 "icon": ev.get("icon", "✦"),
+                "image": image,
+                "image_alt": _pick(enrich.get("image_alt", {}), lang) or _pick(ev["title"], lang),
                 "category": ev["category"],
                 "category_label": ui_t(f"events.cat.{ev['category']}", lang),
                 "title": _pick(ev["title"], lang),
                 "summary": _pick(ev["summary"], lang),
                 "body": _pick(ev["body"], lang),
+                "experience": _pick(enrich.get("experience", ev.get("body", {})), lang),
+                "highlights": _pick_list(enrich.get("highlights", {}), lang),
+                "practical": _pick_list(enrich.get("practical", {}), lang),
                 "tip": _pick(ev.get("tip", {}), lang),
                 "lunar_note": _pick(ev.get("lunar", {}), lang),
                 "start": occ["start"],
@@ -723,6 +1558,13 @@ def build_events_calendar(
     upcoming = [e for e in flat if e["status"] in ("upcoming", "ongoing", "recurring")]
     highlights = [e for e in flat if e["must_see"] and e["status"] != "past"]
 
+    year_groups: list[dict] = []
+    for ev_item in flat:
+        yr = ev_item["year"]
+        if not year_groups or year_groups[-1]["year"] != yr:
+            year_groups.append({"year": yr, "events": []})
+        year_groups[-1]["events"].append(ev_item)
+
     moon_dates = [
         {
             "start": d["start"],
@@ -742,6 +1584,7 @@ def build_events_calendar(
             ui_t(f"events.month.{m}", lang) for m in range(1, 13)
         ],
         "events": flat,
+        "year_groups": year_groups,
         "upcoming": upcoming,
         "highlights": highlights[:8],
         "hoi_an_moon_dates": moon_dates,

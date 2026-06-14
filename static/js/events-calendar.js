@@ -16,6 +16,7 @@
   var msgCount = root.dataset.msgCount || "";
 
   var cards = Array.prototype.slice.call(timeline.querySelectorAll(".events-card"));
+  var yearGroups = Array.prototype.slice.call(timeline.querySelectorAll(".events-year-group"));
 
   function isVisible(card) {
     var year = yearSel.value;
@@ -40,6 +41,14 @@
       if (show) visible += 1;
     });
 
+    yearGroups.forEach(function (group) {
+      var groupCards = group.querySelectorAll(".events-card");
+      var anyVisible = Array.prototype.some.call(groupCards, function (c) {
+        return !c.hidden;
+      });
+      group.hidden = !anyVisible;
+    });
+
     if (resultEl) {
       if (visible === 0) {
         resultEl.textContent = msgNone;
@@ -53,11 +62,9 @@
   }
 
   function scrollToNext() {
-    var upcomingOnly = upcomingChk && upcomingChk.checked;
     var target = cards.find(function (card) {
       if (card.hidden) return false;
       var status = card.dataset.status;
-      if (upcomingOnly && status === "past" && card.dataset.recurring !== "1") return false;
       return status === "upcoming" || status === "ongoing" || status === "recurring";
     });
     if (target) {

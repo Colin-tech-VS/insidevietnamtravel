@@ -22,6 +22,105 @@
 {{ json_ld_graph(graph) }}
 {% endblock %}
 
+{% macro event_card(ev) %}
+<article class="events-card events-card--{{ ev.status }}"
+         id="event-{{ ev.id }}"
+         data-id="{{ ev.id }}"
+         data-year="{{ ev.year }}"
+         data-month="{{ ev.month }}"
+         data-category="{{ ev.category }}"
+         data-status="{{ ev.status }}"
+         data-recurring="{{ '1' if ev.recurring else '0' }}">
+  <div class="events-card__layout">
+    <figure class="events-card__media">
+      {{ responsive_img(ev.image, alt=ev.image_alt, width=640, height=400, loading='lazy',
+         class='events-card__img', sizes='(max-width:720px) 100vw, 280px') }}
+      <span class="events-card__icon" aria-hidden="true">{{ ev.icon }}</span>
+    </figure>
+    <div class="events-card__content">
+      <header class="events-card__header">
+        <div class="events-card__meta">
+          <span class="events-card__badge events-card__badge--{{ ev.category }}">{{ ev.category_label }}</span>
+          {% if ev.must_see %}
+          <span class="events-card__badge events-card__badge--star">{{ t('events.must_see') }}</span>
+          {% endif %}
+          {% if ev.status == 'ongoing' %}
+          <span class="events-card__badge events-card__badge--live">{{ t('events.status_ongoing') }}</span>
+          {% elif ev.status == 'past' %}
+          <span class="events-card__badge events-card__badge--past">{{ t('events.status_past') }}</span>
+          {% elif ev.recurring %}
+          <span class="events-card__badge events-card__badge--recurring">{{ t('events.status_recurring') }}</span>
+          {% endif %}
+        </div>
+        <h3 class="events-card__title">{{ ev.title }}</h3>
+        <div class="events-card__datebar">
+          <time datetime="{{ ev.start_date }}" class="events-card__date">
+            {{ ev.date_label }}
+          </time>
+          {% if ev.lunar_note %}
+          <span class="events-card__lunar">{{ ev.lunar_note }}</span>
+          {% endif %}
+        </div>
+        <p class="events-card__summary">{{ ev.summary }}</p>
+      </header>
+
+      {% if ev.highlights %}
+      <section class="events-card__section">
+        <h4 class="events-card__section-title">{{ t('events.section_highlights') }}</h4>
+        <ul class="events-card__list">
+          {% for item in ev.highlights %}
+          <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
+      {% if ev.experience %}
+      <section class="events-card__section">
+        <h4 class="events-card__section-title">{{ t('events.section_detail') }}</h4>
+        <p class="events-card__text">{{ ev.experience }}</p>
+      </section>
+      {% endif %}
+
+      {% if ev.practical %}
+      <section class="events-card__section">
+        <h4 class="events-card__section-title">{{ t('events.section_practical') }}</h4>
+        <ul class="events-card__list events-card__list--practical">
+          {% for item in ev.practical %}
+          <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
+      <footer class="events-card__footer">
+        {% if ev.region_labels %}
+        <p class="events-card__regions">
+          <span class="events-card__footer-label">{{ t('events.regions') }}</span>
+          {{ ev.region_labels | join(' · ') }}
+        </p>
+        {% endif %}
+        {% if ev.destinations %}
+        <div class="events-card__dests">
+          <span class="events-card__footer-label">{{ t('events.destinations_label') }}</span>
+          <div class="events-card__dests-links">
+            {% for d in ev.destinations %}
+            <a class="events-card__dest" href="{{ lang_url('destination_page', slug=d.slug) }}">{{ d.name }}</a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        {% if ev.tip %}
+        <aside class="events-card__tip">
+          <strong>{{ t('events.tip_label') }}</strong> {{ ev.tip }}
+        </aside>
+        {% endif %}
+      </footer>
+    </div>
+  </div>
+</article>
+{% endmacro %}
+
 {% block content %}
 <header class="pillar-hero">
   <div class="pillar-hero__media" aria-hidden="true">
@@ -44,63 +143,65 @@
 
 <section class="section section--alt" id="events-planner">
   <div class="container">
-    <div class="section-header">
-      <h2>{{ t('events.filter_title') }}</h2>
-      <p>{{ t('events.filter_sub') }}</p>
-    </div>
+    <div class="events-planner-panel">
+      <div class="section-header section-header--compact">
+        <h2>{{ t('events.filter_title') }}</h2>
+        <p>{{ t('events.filter_sub') }}</p>
+      </div>
 
-    <div class="events-planner" id="events-planner-root"
-         data-lang="{{ lang }}"
-         data-today="{{ calendar.today }}"
-         data-msg-none="{{ t('events.filter_none') }}"
-         data-msg-count="{{ t('events.filter_count') }}">
-      <div class="events-planner__controls">
-        <div class="form-field">
-          <label for="ev-year">{{ t('events.filter_year') }}</label>
-          <select id="ev-year">
-            <option value="all">{{ t('events.filter_all') }}</option>
-            <option value="2026">2026</option>
-            <option value="2027">2027</option>
-          </select>
+      <div class="events-planner" id="events-planner-root"
+           data-lang="{{ lang }}"
+           data-today="{{ calendar.today }}"
+           data-msg-none="{{ t('events.filter_none') }}"
+           data-msg-count="{{ t('events.filter_count') }}">
+        <div class="events-planner__controls">
+          <div class="form-field">
+            <label for="ev-year">{{ t('events.filter_year') }}</label>
+            <select id="ev-year">
+              <option value="all">{{ t('events.filter_all') }}</option>
+              <option value="2026">2026</option>
+              <option value="2027">2027</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="ev-month">{{ t('events.filter_month') }}</label>
+            <select id="ev-month">
+              <option value="all">{{ t('events.filter_all') }}</option>
+              {% for i in range(12) %}
+              <option value="{{ i + 1 }}">{{ calendar.month_labels[i] }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="ev-category">{{ t('events.filter_category') }}</label>
+            <select id="ev-category">
+              <option value="all">{{ t('events.filter_all') }}</option>
+              {% for cat in calendar.categories %}
+              <option value="{{ cat.key }}">{{ cat.label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <label class="events-planner__toggle">
+            <input type="checkbox" id="ev-upcoming" checked>
+            <span>{{ t('events.filter_upcoming') }}</span>
+          </label>
         </div>
-        <div class="form-field">
-          <label for="ev-month">{{ t('events.filter_month') }}</label>
-          <select id="ev-month">
-            <option value="all">{{ t('events.filter_all') }}</option>
-            {% for i in range(12) %}
-            <option value="{{ i + 1 }}">{{ calendar.month_labels[i] }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="form-field">
-          <label for="ev-category">{{ t('events.filter_category') }}</label>
-          <select id="ev-category">
-            <option value="all">{{ t('events.filter_all') }}</option>
-            {% for cat in calendar.categories %}
-            <option value="{{ cat.key }}">{{ cat.label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <label class="events-planner__toggle">
-          <input type="checkbox" id="ev-upcoming" checked>
-          <span>{{ t('events.filter_upcoming') }}</span>
-        </label>
+        <output class="events-planner__result" id="ev-result" aria-live="polite"></output>
       </div>
-      <output class="events-planner__result" id="ev-result" aria-live="polite"></output>
-    </div>
 
-    <div class="events-stats" role="list">
-      <div class="events-stat" role="listitem">
-        <span class="events-stat__value">{{ calendar.stats.total }}</span>
-        <span class="events-stat__label">{{ t('events.stat_total') }}</span>
-      </div>
-      <div class="events-stat" role="listitem">
-        <span class="events-stat__value">{{ calendar.stats.upcoming }}</span>
-        <span class="events-stat__label">{{ t('events.stat_upcoming') }}</span>
-      </div>
-      <div class="events-stat" role="listitem">
-        <span class="events-stat__value">{{ calendar.stats.must_see }}</span>
-        <span class="events-stat__label">{{ t('events.stat_must_see') }}</span>
+      <div class="events-stats" role="list">
+        <div class="events-stat" role="listitem">
+          <span class="events-stat__value">{{ calendar.stats.total }}</span>
+          <span class="events-stat__label">{{ t('events.stat_total') }}</span>
+        </div>
+        <div class="events-stat" role="listitem">
+          <span class="events-stat__value">{{ calendar.stats.upcoming }}</span>
+          <span class="events-stat__label">{{ t('events.stat_upcoming') }}</span>
+        </div>
+        <div class="events-stat" role="listitem">
+          <span class="events-stat__value">{{ calendar.stats.must_see }}</span>
+          <span class="events-stat__label">{{ t('events.stat_must_see') }}</span>
+        </div>
       </div>
     </div>
   </div>
@@ -115,14 +216,19 @@
     </div>
     <div class="events-highlights">
       {% for ev in calendar.highlights %}
-      <article class="events-highlight" data-event-id="{{ ev.id }}">
-        <span class="events-highlight__icon" aria-hidden="true">{{ ev.icon }}</span>
-        <div>
+      <a class="events-highlight" href="#event-{{ ev.id }}" data-event-id="{{ ev.id }}">
+        <figure class="events-highlight__media">
+          {{ responsive_img(ev.image, alt=ev.image_alt, width=400, height=240, loading='lazy',
+             class='events-highlight__img', sizes='(max-width:560px) 100vw, 320px') }}
+        </figure>
+        <div class="events-highlight__body">
+          <span class="events-highlight__icon" aria-hidden="true">{{ ev.icon }}</span>
           <h3>{{ ev.title }}</h3>
           <p class="events-highlight__date">{{ ev.date_label }}</p>
-          <p>{{ ev.summary }}</p>
+          <p class="events-highlight__summary">{{ ev.summary }}</p>
+          <span class="events-highlight__link">{{ t('events.view_event') }} →</span>
         </div>
-      </article>
+      </a>
       {% endfor %}
     </div>
   </div>
@@ -136,80 +242,46 @@
       <p>{{ t('events.timeline_sub') }}</p>
     </div>
     <div class="events-timeline" id="events-timeline">
-      {% for ev in calendar.events %}
-      <article class="events-card"
-               id="event-{{ ev.id }}"
-               data-id="{{ ev.id }}"
-               data-year="{{ ev.year }}"
-               data-month="{{ ev.month }}"
-               data-category="{{ ev.category }}"
-               data-status="{{ ev.status }}"
-               data-recurring="{{ '1' if ev.recurring else '0' }}">
-        <header class="events-card__head">
-          <span class="events-card__icon" aria-hidden="true">{{ ev.icon }}</span>
-          <div class="events-card__meta">
-            <span class="events-card__badge events-card__badge--{{ ev.category }}">{{ ev.category_label }}</span>
-            {% if ev.must_see %}
-            <span class="events-card__badge events-card__badge--star">{{ t('events.must_see') }}</span>
-            {% endif %}
-            {% if ev.status == 'ongoing' %}
-            <span class="events-card__badge events-card__badge--live">{{ t('events.status_ongoing') }}</span>
-            {% elif ev.status == 'past' %}
-            <span class="events-card__badge events-card__badge--past">{{ t('events.status_past') }}</span>
-            {% elif ev.recurring %}
-            <span class="events-card__badge events-card__badge--recurring">{{ t('events.status_recurring') }}</span>
-            {% endif %}
-          </div>
-        </header>
-        <h3 class="events-card__title">{{ ev.title }}</h3>
-        <p class="events-card__date">
-          <time datetime="{{ ev.start_date }}">{{ ev.date_label }}</time>
-          {% if ev.lunar_note %}
-          <span class="events-card__lunar"> · {{ ev.lunar_note }}</span>
-          {% endif %}
-        </p>
-        <p class="events-card__summary">{{ ev.summary }}</p>
-        <div class="events-card__body">{{ ev.body }}</div>
-        {% if ev.region_labels %}
-        <p class="events-card__regions">
-          <span class="events-card__regions-label">{{ t('events.regions') }}:</span>
-          {{ ev.region_labels | join(' · ') }}
-        </p>
-        {% endif %}
-        {% if ev.destinations %}
-        <div class="events-card__dests">
-          {% for d in ev.destinations %}
-          <a class="events-card__dest" href="{{ lang_url('destination_page', slug=d.slug) }}">{{ d.name }}</a>
-          {% endfor %}
-        </div>
-        {% endif %}
-        {% if ev.tip %}
-        <aside class="events-card__tip">
-          <strong>{{ t('events.tip_label') }}</strong> {{ ev.tip }}
-        </aside>
-        {% endif %}
-      </article>
+      {% for group in calendar.year_groups %}
+      <div class="events-year-group" data-year-group="{{ group.year }}">
+        <h3 class="events-year-heading">
+          <span class="events-year-heading__label">{{ t('events.year_label') }}</span>
+          {{ group.year }}
+        </h3>
+        {% for ev in group.events %}
+        {{ event_card(ev) }}
+        {% endfor %}
+      </div>
       {% endfor %}
     </div>
-    <p class="events-empty sr-only" id="events-empty" hidden>{{ t('events.filter_none') }}</p>
+    <p class="events-empty" id="events-empty" hidden>{{ t('events.filter_none') }}</p>
   </div>
 </section>
 
 {% if calendar.hoi_an_moon_dates %}
 <section class="section">
   <div class="container">
-    <div class="section-header">
-      <h2>{{ t('events.hoi_an_title') }}</h2>
-      <p>{{ t('events.hoi_an_sub') }}</p>
+    <div class="events-moon-panel">
+      <figure class="events-moon-panel__media">
+        {{ responsive_img('/static/images/pool/1559592413-7cec4d0cae2b.webp',
+           alt=t('events.hoi_an_title'), width=640, height=400, loading='lazy',
+           class='events-moon-panel__img', sizes='(max-width:720px) 100vw, 320px') }}
+      </figure>
+      <div class="events-moon-panel__content">
+        <div class="section-header section-header--compact">
+          <h2>{{ t('events.hoi_an_title') }}</h2>
+          <p>{{ t('events.hoi_an_sub') }}</p>
+        </div>
+        <div class="events-moon-grid">
+          {% for d in calendar.hoi_an_moon_dates %}
+          <span class="events-moon-chip events-moon-chip--{{ d.status }}">
+            <time datetime="{{ d.start }}">{{ d.label }}</time>
+          </span>
+          {% endfor %}
+        </div>
+        <p class="events-moon-note">{{ t('events.hoi_an_note') }}</p>
+      </div>
     </div>
-    <div class="events-moon-grid">
-      {% for d in calendar.hoi_an_moon_dates %}
-      <span class="events-moon-chip events-moon-chip--{{ d.status }}">
-        <time datetime="{{ d.start }}">{{ d.label }}</time>
-      </span>
-      {% endfor %}
-    </div>
-    <p class="events-moon-note">{{ t('events.hoi_an_note') }}</p>
   </div>
 </section>
 {% endif %}
