@@ -1,5 +1,4 @@
 {% extends "partners/layout.html" %}
-{% block title %}Validation IA{% endblock %}
 {% block partner_content %}
 <section class="partner-review card" id="partner-review"
          data-status-url="{{ url_for('partners.api_page_job_status') }}"
@@ -46,7 +45,7 @@
 </section>
 {% endblock %}
 
-{% block scripts %}
+{% block partner_scripts %}
 {% if job_status.status == 'running' %}
 <script src="{{ url_for('static', filename='js/partner_page_review.js') }}" defer></script>
 {% endif %}

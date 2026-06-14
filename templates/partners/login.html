@@ -1,7 +1,6 @@
 {% extends "partners/layout.html" %}
-{% block title %}Connexion{% endblock %}
 {% block partner_content %}
-<section class="partner-auth card">
+<div class="partner-auth card">
   <h1>Espace partenaire</h1>
   <p class="muted">Connectez-vous pour gérer votre page sur Inside Vietnam Travel.</p>
   <form method="post" class="partner-auth__form">
@@ -19,5 +18,5 @@
   <p class="muted partner-auth__footer">
     Pas encore inscrit ? <a href="{{ url_for('become_partner') }}">Devenir partenaire</a>
   </p>
-</section>
+</div>
 {% endblock %}

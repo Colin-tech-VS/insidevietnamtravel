@@ -1175,12 +1175,14 @@ def gsc():
         "client_id": gsc.get_client_id(),
         "client_secret_masked": gsc.masked_client_secret(),
         "redirect_uri": gsc.redirect_uri(),
+        "gsc_scope_webmasters": gsc.GSC_SCOPE_WEBMASTERS,
         "sites": [],
         "selected_site": gsc.get_site_url(),
         "days": days,
         "query_page": query_page,
         "report": None,
         "gsc_error": None,
+        "gsc_scope_error": False,
     }
 
     if gsc.is_connected():
@@ -1189,7 +1191,10 @@ def gsc():
             ctx["selected_site"] = gsc.get_site_url()
             ctx["report"] = gsc.build_report(days=days, query_page=query_page)
         except Exception as exc:  # noqa: BLE001
-            ctx["gsc_error"] = str(exc)
+            msg = str(exc)
+            ctx["gsc_error"] = msg
+            ctx["gsc_scope_error"] = "insufficient authentication scopes" in msg.lower() or "scopes insuffisants" in msg.lower()
+            ctx["connected"] = gsc.is_connected()
 
     return render_template("admin/gsc.html", **ctx)
 
@@ -1253,6 +1258,16 @@ def gsc_oauth_callback():
     except Exception as exc:  # noqa: BLE001
         flash(str(exc), "error")
     return redirect(url_for("admin.gsc"))
+
+
+@admin_bp.route("/gsc/oauth/reconnect")
+@login_required
+def gsc_oauth_reconnect():
+    from admin import gsc_service as gsc
+
+    gsc.disconnect()
+    flash("Session réinitialisée — reconnectez Google avec toutes les autorisations.", "success")
+    return redirect(url_for("admin.gsc_oauth_start"))
 
 
 @admin_bp.route("/gsc/disconnect", methods=["POST"])

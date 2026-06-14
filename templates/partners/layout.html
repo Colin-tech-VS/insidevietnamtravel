@@ -1,32 +1,42 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Espace partenaire{% endblock %} — Inside Vietnam Travel</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/partners.css') }}">
-</head>
-<body class="partner-portal-body">
-  <header class="partner-portal-header">
-    <div class="container partner-portal-header__inner">
-      <a href="{{ url_for('index') }}" class="partner-portal-logo">Inside Vietnam Travel</a>
-      <nav class="partner-portal-nav">
-        {% if partner %}
-        <span class="partner-portal-nav__user">{{ partner.first_name }} {{ partner.last_name }}</span>
-        <form method="post" action="{{ url_for('partners.logout') }}" class="partner-portal-nav__logout">
-          <button type="submit" class="btn btn-ghost btn-sm">Déconnexion</button>
-        </form>
-        {% else %}
-        <a href="{{ url_for('partners.login') }}" class="btn btn-secondary btn-sm">Connexion</a>
-        {% endif %}
-      </nav>
-    </div>
-  </header>
-  <main class="partner-portal-main container">
+{% extends "base.html" %}
+
+{% block meta_robots %}noindex, nofollow{% endblock %}
+{% block body_class %}partner-portal-page{% endblock %}
+
+{% block content %}
+{% if partner %}
+<nav class="partner-portal-subnav" aria-label="Espace partenaire">
+  <div class="container partner-portal-subnav__inner">
+    <span class="partner-portal-subnav__label">Espace partenaire</span>
+    <ul class="partner-portal-subnav__links">
+      <li>
+        <a href="{{ url_for('partners.dashboard') }}" class="partner-portal-subnav__link {% if request.endpoint == 'partners.dashboard' %}is-active{% endif %}">Dashboard</a>
+      </li>
+      <li>
+        <a href="{{ url_for('partners.page_edit') }}" class="partner-portal-subnav__link {% if request.endpoint in ('partners.page_edit', 'partners.page_review') %}is-active{% endif %}">Ma page</a>
+      </li>
+      {% if partner_page and partner_page.status == 'published' and partner_page.slug and not is_hidden_account|default(false) %}
+      <li>
+        <a href="{{ url_for('partner_public_page', slug=partner_page.slug) }}" class="partner-portal-subnav__link" target="_blank" rel="noopener">Page publique ↗</a>
+      </li>
+      {% elif is_hidden_account|default(false) %}
+      <li>
+        <a href="{{ url_for('partners.page_preview') }}" class="partner-portal-subnav__link" target="_blank" rel="noopener">Aperçu privé ↗</a>
+      </li>
+      {% endif %}
+    </ul>
+    <form method="post" action="{{ url_for('partners.logout') }}" class="partner-portal-subnav__logout">
+      <button type="submit" class="btn btn-ghost btn-sm">Déconnexion</button>
+    </form>
+  </div>
+</nav>
+{% endif %}
+
+<section class="section partner-portal-section">
+  <div class="container partner-portal-section__inner">
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-    <div class="partner-flashes">
+    <div class="partner-portal-flashes">
       {% for category, message in messages %}
       <p class="flash flash--{{ category }}">{{ message }}</p>
       {% endfor %}
@@ -34,7 +44,8 @@
     {% endif %}
     {% endwith %}
     {% block partner_content %}{% endblock %}
-  </main>
-  {% block scripts %}{% endblock %}
-</body>
-</html>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}{% block partner_scripts %}{% endblock %}{% endblock %}

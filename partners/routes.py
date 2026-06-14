@@ -39,6 +39,32 @@ partners_bp = Blueprint("partners", __name__, url_prefix="/partners")
 
 _JOB_KEY = "partner_page_job_token"
 
+_PARTNER_META = {
+    "partners.login": ("Connexion partenaire", "Connectez-vous à votre espace partenaire Inside Vietnam Travel."),
+    "partners.dashboard": ("Espace partenaire", "Gérez votre page partenaire et suivez la validation IA."),
+    "partners.page_edit": ("Ma page partenaire", "Rédigez et soumettez votre fiche partenaire."),
+    "partners.page_review": ("Validation IA", "Suivi de l'analyse éditoriale de votre page partenaire."),
+}
+
+
+@partners_bp.context_processor
+def partner_template_globals():
+    import config as site_config
+    from admin.partner_portal_service import get_page_by_partner, is_hidden_test_partner
+
+    account = current_partner()
+    ep = request.endpoint or ""
+    title, desc = _PARTNER_META.get(ep, ("Espace partenaire", "Espace partenaire Inside Vietnam Travel."))
+    page = get_page_by_partner(account["id"]) if account else None
+    hidden = is_hidden_test_partner(account) if account else False
+    return {
+        "partner": account,
+        "partner_page": page,
+        "is_hidden_account": hidden,
+        "meta_title": f"{title} — {site_config.SITE_NAME}",
+        "meta_description": desc,
+    }
+
 
 def _start_page_job(partner_id: str) -> str:
     account = current_partner()

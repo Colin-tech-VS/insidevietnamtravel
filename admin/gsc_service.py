@@ -13,10 +13,10 @@ import requests
 
 import config
 
-GSC_SCOPE = (
-    "https://www.googleapis.com/auth/webmasters.readonly "
-    "https://www.googleapis.com/auth/userinfo.email"
-)
+GSC_SCOPE_WEBMASTERS = "https://www.googleapis.com/auth/webmasters.readonly"
+GSC_SCOPE_EMAIL = "openid email"
+GSC_SCOPES = (GSC_SCOPE_WEBMASTERS, GSC_SCOPE_EMAIL)
+GSC_SCOPE = " ".join(GSC_SCOPES)
 OAUTH_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 OAUTH_TOKEN_URL = "https://oauth2.googleapis.com/token"
 USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
@@ -95,6 +95,21 @@ def oauth_error_help(error: str, description: str = "") -> str:
     return f"Erreur Google OAuth : {error or 'inconnue'}"
 
 
+def scope_insufficient_help() -> str:
+    return (
+        "Google n'a pas accordé l'accès Search Console (scopes insuffisants). "
+        "Dans Google Cloud Console → OAuth consent screen → Scopes → Add or remove scopes, "
+        "ajoutez « Google Search Console API » "
+        f"({GSC_SCOPE_WEBMASTERS}), enregistrez, puis cliquez « Reconnecter » ci-dessous "
+        "et acceptez toutes les autorisations demandées."
+    )
+
+
+def _scopes_include_webmasters(scope_str: str) -> bool:
+    scopes = (scope_str or "").split()
+    return any("webmasters" in s for s in scopes)
+
+
 def save_oauth_config(client_id: str, client_secret: str) -> None:
     from admin.store import save_settings
 
@@ -135,8 +150,24 @@ def get_site_url() -> str:
     return (_settings().get("gsc_site_url") or "").strip()
 
 
+def get_granted_scopes() -> str:
+    return (_settings().get("gsc_granted_scopes") or "").strip()
+
+
+def has_webmasters_scope() -> bool:
+    stored = get_granted_scopes()
+    if stored:
+        return _scopes_include_webmasters(stored)
+    return is_connected()
+
+
 def is_connected() -> bool:
     return bool(get_refresh_token())
+
+
+def _save_granted_scopes(scope_str: str) -> None:
+    from admin.store import save_settings
+    save_settings({"gsc_granted_scopes": (scope_str or "").strip()})
 
 
 def _save_tokens(
@@ -167,6 +198,7 @@ def disconnect() -> None:
         "gsc_token_expires_at": 0,
         "gsc_connected_email": "",
         "gsc_site_url": "",
+        "gsc_granted_scopes": "",
     })
 
 
@@ -181,7 +213,6 @@ def build_auth_url(state: str) -> str:
         "access_type": "offline",
         "prompt": "consent",
         "state": state,
-        "include_granted_scopes": "true",
     }
     return f"{OAUTH_AUTH_URL}?{urlencode(params)}"
 
@@ -206,7 +237,16 @@ def exchange_code(code: str) -> None:
     payload = _json_or_empty(resp)
     if resp.status_code >= 400 or "access_token" not in payload:
         raise GscError(payload.get("error_description") or payload.get("error") or "Échange OAuth échoué.")
+    granted = payload.get("scope") or GSC_SCOPE
+    if not _scopes_include_webmasters(granted):
+        raise GscError(scope_insufficient_help())
+    if not payload.get("refresh_token"):
+        raise GscError(
+            "Google n'a pas renvoyé de refresh token. Déconnectez, puis reconnectez "
+            "(l'écran de consentement doit s'afficher avec toutes les autorisations)."
+        )
     email = _fetch_user_email(payload["access_token"])
+    _save_granted_scopes(granted)
     _save_tokens(
         access_token=payload["access_token"],
         refresh_token=payload.get("refresh_token"),
@@ -253,6 +293,12 @@ def _refresh_access_token() -> str:
             disconnect()
             raise GscError("Session Google expirée — reconnectez Search Console.")
         raise GscError(msg)
+    granted = payload.get("scope") or get_granted_scopes()
+    if granted:
+        _save_granted_scopes(granted)
+    if granted and not _scopes_include_webmasters(granted):
+        disconnect()
+        raise GscError(scope_insufficient_help())
     _save_tokens(
         access_token=payload["access_token"],
         expires_in=payload.get("expires_in"),
@@ -289,7 +335,11 @@ def _api_request(method: str, path: str, *, json_body: dict | None = None) -> di
     if resp.status_code >= 400:
         err = payload.get("error", {})
         message = err.get("message") if isinstance(err, dict) else str(err)
-        raise GscError(message or f"Erreur Search Console (HTTP {resp.status_code}).")
+        message = message or f"Erreur Search Console (HTTP {resp.status_code})."
+        if "insufficient authentication scopes" in message.lower():
+            disconnect()
+            raise GscError(scope_insufficient_help())
+        raise GscError(message)
     return payload
 
 
