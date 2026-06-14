@@ -313,6 +313,7 @@ def _init_postgres():
         _migrate_visitor_profile_table(conn, postgres=True)
         _migrate_mai_chat_table(conn, postgres=True)
         _migrate_email_tracking_table(conn, postgres=True)
+        _migrate_partner_portal_tables(conn, postgres=True)
         conn.commit()
     finally:
         conn.close()
@@ -357,6 +358,7 @@ def _init_sqlite():
         _migrate_visitor_profile_table(conn, postgres=False)
         _migrate_mai_chat_table(conn, postgres=False)
         _migrate_email_tracking_table(conn, postgres=False)
+        _migrate_partner_portal_tables(conn, postgres=False)
 
 
 def _migrate_email_tracking_table(conn, *, postgres: bool) -> None:
@@ -428,6 +430,104 @@ def _migrate_email_tracking_table(conn, *, postgres: bool) -> None:
         )
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_email_sends_recipient ON email_sends(recipient_email)"
+        )
+
+
+def _migrate_partner_portal_tables(conn, *, postgres: bool) -> None:
+    if postgres:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS partner_accounts (
+                    id TEXT PRIMARY KEY,
+                    email TEXT NOT NULL UNIQUE,
+                    password_hash TEXT NOT NULL,
+                    first_name TEXT NOT NULL,
+                    last_name TEXT NOT NULL,
+                    profile_type TEXT NOT NULL,
+                    business_name TEXT,
+                    phone TEXT,
+                    city TEXT,
+                    website TEXT,
+                    languages TEXT,
+                    bio TEXT,
+                    services TEXT,
+                    social_links TEXT,
+                    status TEXT NOT NULL DEFAULT 'active',
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )""")
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS partner_pages (
+                    id TEXT PRIMARY KEY,
+                    partner_id TEXT NOT NULL UNIQUE,
+                    slug TEXT UNIQUE,
+                    status TEXT NOT NULL DEFAULT 'draft',
+                    title TEXT,
+                    tagline TEXT,
+                    overview_html TEXT,
+                    services_html TEXT,
+                    seo_title TEXT,
+                    seo_description TEXT,
+                    image_url TEXT,
+                    extra_json TEXT,
+                    ai_review_json TEXT,
+                    admin_notes TEXT,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    published_at TIMESTAMPTZ
+                )""")
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_partner_pages_slug ON partner_pages(slug)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_partner_pages_status ON partner_pages(status)"
+            )
+    else:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS partner_accounts (
+                id TEXT PRIMARY KEY,
+                email TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                first_name TEXT NOT NULL,
+                last_name TEXT NOT NULL,
+                profile_type TEXT NOT NULL,
+                business_name TEXT,
+                phone TEXT,
+                city TEXT,
+                website TEXT,
+                languages TEXT,
+                bio TEXT,
+                services TEXT,
+                social_links TEXT,
+                status TEXT NOT NULL DEFAULT 'active',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )""")
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS partner_pages (
+                id TEXT PRIMARY KEY,
+                partner_id TEXT NOT NULL UNIQUE,
+                slug TEXT UNIQUE,
+                status TEXT NOT NULL DEFAULT 'draft',
+                title TEXT,
+                tagline TEXT,
+                overview_html TEXT,
+                services_html TEXT,
+                seo_title TEXT,
+                seo_description TEXT,
+                image_url TEXT,
+                extra_json TEXT,
+                ai_review_json TEXT,
+                admin_notes TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                published_at TEXT
+            )""")
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_partner_pages_slug ON partner_pages(slug)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_partner_pages_status ON partner_pages(status)"
         )
 
 

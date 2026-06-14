@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% from "macros/seo.html" import json_ld_graph with context %}
+
+{% block head %}
+{% if is_private_preview %}
+<meta name="robots" content="noindex, nofollow">
+{% endif %}
+{% endblock %}
+
+{% block structured_data %}
+{% if not is_private_preview %}
+{{ json_ld_graph([
+  {
+    "@type": "ProfilePage",
+    "name": meta_title,
+    "description": meta_description,
+    "url": canonical_url,
+    "inLanguage": "en-GB" if lang == 'en' else "fr-FR"
+  },
+  seo_breadcrumb([
+    (t('nav.home'), site.SITE_URL ~ lang_url('index')),
+    ('Partners' if lang == 'en' else 'Partenaires', None),
+    (page.title, None),
+  ]),
+]) }}
+{% endif %}
+{% endblock %}
+
+{% block content %}
+{% if is_private_preview %}
+<div class="container" style="margin-top:1rem">
+  <p class="flash flash--success">Aperçu privé — cette page n’est pas indexée ni accessible publiquement.</p>
+</div>
+{% endif %}
+<header class="page-hero page-hero--about">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <ol>
+        <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+        <li aria-current="page">{{ page.title }}</li>
+      </ol>
+    </nav>
+    <span class="page-hero__eyebrow">{{ 'Partner' if lang == 'en' else 'Partenaire' }} · Inside Vietnam Travel</span>
+    <h1>{{ page.title }}</h1>
+    {% if page.tagline %}<p class="page-hero__lead">{{ page.tagline }}</p>{% endif %}
+  </div>
+</header>
+
+<section class="section">
+  <div class="container page-layout">
+    <article class="page-content prose partner-public">
+      {% if page.overview_html %}
+      <section class="content-block">
+        <div class="prose">{{ page.overview_html | safe }}</div>
+      </section>
+      {% endif %}
+      {% if page.services_html %}
+      <section class="content-block">
+        <div class="prose">{{ page.services_html | safe }}</div>
+      </section>
+      {% endif %}
+      {% if page.extra and page.extra.profile_highlights %}
+      <section class="content-block">
+        <h2>{% if lang == 'en' %}Highlights{% else %}Points forts{% endif %}</h2>
+        <ul class="partner-highlights">
+          {% for h in page.extra.profile_highlights %}
+          <li>{{ h }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+      <section class="content-block partner-public__contact card">
+        <h2>{% if lang == 'en' %}Contact{% else %}Contact{% endif %}</h2>
+        <p><strong>{{ partner.business_name or partner.first_name ~ ' ' ~ partner.last_name }}</strong></p>
+        {% if partner.city %}<p>{{ partner.city }}</p>{% endif %}
+        {% if page.extra and page.extra.contact_note %}
+        <p>{{ page.extra.contact_note }}</p>
+        {% elif partner.website %}
+        <p><a href="{{ partner.website }}" target="_blank" rel="noopener">{{ partner.website }} ↗</a></p>
+        {% endif %}
+      </section>
+    </article>
+  </div>
+</section>
+{% endblock %}

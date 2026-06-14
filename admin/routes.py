@@ -1459,6 +1459,58 @@ def _search_partners_result(ps, brief: str, report) -> dict:
     }
 
 
+# ── Espace partenaires (inscriptions publiques + pages) ───────────────
+@admin_bp.route("/partner-portal", methods=["GET", "POST"])
+@login_required
+def partner_portal_admin():
+    from admin.partner_portal_service import (
+        ACCOUNT_STATUS_LABELS,
+        PAGE_STATUS_LABELS,
+        PROFILE_TYPE_LABELS,
+        list_accounts,
+        list_pages,
+        portal_stats,
+        set_account_status,
+        set_page_status,
+    )
+
+    if request.method == "POST":
+        action = request.form.get("action")
+        partner_id = (request.form.get("partner_id") or "").strip()
+        try:
+            if action == "suspend_account" and set_account_status(partner_id, "suspended"):
+                flash("Compte partenaire suspendu.", "success")
+            elif action == "activate_account" and set_account_status(partner_id, "active"):
+                flash("Compte réactivé.", "success")
+            elif action == "publish_page" and set_page_status(partner_id, "published"):
+                flash("Page publiée manuellement.", "success")
+            elif action == "reject_page" and set_page_status(
+                partner_id, "rejected", admin_notes=request.form.get("admin_notes", "")
+            ):
+                flash("Page refusée.", "success")
+            elif action == "unpublish_page" and set_page_status(partner_id, "draft"):
+                flash("Page dépubliée.", "success")
+        except Exception as e:  # noqa: BLE001
+            flash(f"Erreur : {e}", "error")
+        return redirect(url_for("admin.partner_portal_admin"))
+
+    accounts = list_accounts()
+    pages = {p["partner_id"]: p for p in list_pages()}
+    rows = []
+    for acc in accounts:
+        page = pages.get(acc["id"])
+        rows.append({"account": acc, "page": page})
+
+    return render_template(
+        "admin/partner_portal.html",
+        rows=rows,
+        stats=portal_stats(),
+        profile_labels=PROFILE_TYPE_LABELS,
+        page_status_labels=PAGE_STATUS_LABELS,
+        account_status_labels=ACCOUNT_STATUS_LABELS,
+    )
+
+
 @admin_bp.route("/map", methods=["GET", "POST"])
 @login_required
 def map_admin():

@@ -308,6 +308,7 @@
             <ul id="nav-about" class="nav-dropdown__menu">
               <li><a href="{{ lang_url('about') }}" {% if request.endpoint == 'about' %}aria-current="page"{% endif %}>{{ t('nav.about') }}</a></li>
               <li><a href="{{ lang_url('contact') }}" {% if request.endpoint == 'contact' %}aria-current="page"{% endif %}>{{ t('nav.contact') }}</a></li>
+              <li><a href="{{ lang_url('become_partner') }}" {% if request.endpoint == 'become_partner' %}aria-current="page"{% endif %}>{{ 'Become a partner' if lang == 'en' else 'Devenir partenaire' }}</a></li>
             </ul>
           </li>
         </ul>

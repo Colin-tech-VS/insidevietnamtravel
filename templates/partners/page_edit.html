@@ -1,0 +1,55 @@
+{% extends "partners/layout.html" %}
+{% block title %}Ma page partenaire{% endblock %}
+{% block partner_content %}
+<section class="partner-page-edit card">
+  <header class="partner-page-edit__head">
+    <div>
+      <p class="partner-dash__eyebrow">{{ profile_label }}</p>
+      <h1>Ma page partenaire</h1>
+      <p class="muted">Contenu soumis à validation IA (SEO, ton éditorial, pertinence Vietnam).</p>
+    </div>
+    <a href="{{ url_for('partners.dashboard') }}" class="btn btn-secondary btn-sm">← Dashboard</a>
+  </header>
+
+  <form method="post" class="partner-page-form">
+    <div class="form-field">
+      <label for="pitch">Accroche publique *</label>
+      <textarea id="pitch" name="pitch" rows="2" required maxlength="500" placeholder="Une phrase qui résume votre proposition de valeur">{{ extra.pitch or '' }}</textarea>
+    </div>
+    <div class="form-field">
+      <label for="highlights">Points forts (expériences, certifications, niche…)</label>
+      <textarea id="highlights" name="highlights" rows="4" maxlength="2000">{{ extra.highlights or '' }}</textarea>
+    </div>
+    <div class="form-field">
+      <label for="offer_details">Votre offre en détail *</label>
+      <textarea id="offer_details" name="offer_details" rows="6" required maxlength="5000" placeholder="Services, tarifs indicatifs, zones couvertes, public cible…">{{ extra.offer_details or '' }}</textarea>
+    </div>
+    <div class="partner-form-grid">
+      <div class="form-field">
+        <label for="city">Ville / région</label>
+        <input type="text" id="city" name="city" value="{{ extra.city or partner.city or '' }}" maxlength="80">
+      </div>
+      <div class="form-field">
+        <label for="contact_note">Comment vous contacter</label>
+        <input type="text" id="contact_note" name="contact_note" value="{{ extra.contact_note or '' }}" maxlength="200" placeholder="Email, WhatsApp, formulaire…">
+      </div>
+    </div>
+
+    <div class="partner-page-form__actions">
+      <button type="submit" name="action" value="save" class="btn btn-secondary">Enregistrer brouillon</button>
+      {% if ai_ready %}
+      <button type="submit" name="action" value="submit_ai" class="btn btn-primary"
+              {% if page and page.status == 'ai_review' %}disabled{% endif %}>
+        Soumettre à l'IA
+      </button>
+      {% else %}
+      <p class="muted">Génération IA indisponible — enregistrez votre brouillon.</p>
+      {% endif %}
+    </div>
+  </form>
+
+  {% if page and page.status == 'published' %}
+  <p class="partner-page-edit__note">Page publiée — modifiez puis resoumettez pour une nouvelle validation.</p>
+  {% endif %}
+</section>
+{% endblock %}

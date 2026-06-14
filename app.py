@@ -8,7 +8,7 @@ from urllib.parse import quote, unquote, urlparse
 from dotenv import load_dotenv
 from flask import (
     Flask, render_template, abort, Response, url_for,
-    request, redirect, flash,
+    request, redirect, flash, jsonify,
 )
 from flask_compress import Compress
 
@@ -40,6 +40,7 @@ from seo_utils import (
     website_schema,
 )
 from admin import admin_bp
+from partners import partners_bp
 from admin import db as analytics_db
 from admin.image_service import persistent_image_url
 from admin.store import get_articles, get_article_by_slug, get_categories, get_settings, get_destinations_dict
@@ -73,6 +74,7 @@ RESERVED_SLUGS = frozenset({
     "visa-vietnam", "vietnam-visa",
     "esim-assurance-vietnam", "esim-insurance-vietnam",
     "applications-utiles-vietnam", "useful-apps-vietnam",
+    "devenir-partenaire", "become-a-partner", "partenaire", "partner", "partners",
 })
 
 load_dotenv()
@@ -95,6 +97,7 @@ app.config["COMPRESS_LEVEL"] = 6
 app.config["COMPRESS_MIN_SIZE"] = 256
 Compress(app)
 app.register_blueprint(admin_bp)
+app.register_blueprint(partners_bp)
 
 
 # Heure de démarrage du process : un nouveau déploiement redémarre le serveur, donc
@@ -1052,6 +1055,112 @@ def about():
         meta_title=t("meta.about.title", lang),
         meta_description=t("meta.about.desc", lang),
         meta_keywords="independent Vietnam guide, Inside Vietnam Travel" if lang == "en" else "guide Vietnam indépendant, Inside Vietnam Travel, voyage Vietnam",
+    )
+
+
+@app.route("/devenir-partenaire")
+@app.route("/en/become-a-partner")
+def become_partner():
+    from admin.partner_portal_service import PROFILE_TYPES
+
+    lang = get_lang()
+    is_en = lang == "en"
+    return render_template(
+        "partner_apply.html",
+        profile_types=PROFILE_TYPES,
+        meta_title=(
+            "Vietnam travel partnership program — collaborate with us"
+            if is_en
+            else "Devenir partenaire Vietnam — programme de collaboration"
+        ),
+        meta_description=(
+            "Apply to the Inside Vietnam Travel partnership program: local guides, "
+            "travel influencers, bloggers and agencies. Co-marketing, guest content "
+            "and affiliate collaborations — free partner page after validation."
+            if is_en
+            else "Rejoignez le programme partenaires Inside Vietnam Travel : guides locaux, "
+            "influenceurs, blogueurs et agences. Co-marketing, contenus invités et "
+            "collaborations affiliation — page partenaire gratuite après validation."
+        ),
+        meta_keywords=(
+            "Vietnam travel partnership, collaborate Vietnam travel brand, local guide partnership, "
+            "influencer collaboration Vietnam, travel blogger partnership"
+            if is_en
+            else "devenir partenaire Vietnam, partenariat voyage Vietnam, collaboration guide local Vietnam, "
+            "partenariat influenceur voyage, programme partenaires tourisme Vietnam, "
+            "partenariat blog voyage Vietnam, collaboration agence locale Vietnam"
+        ),
+    )
+
+
+@app.route("/devenir-partenaire/inscription", methods=["POST"])
+@app.route("/en/become-a-partner/register", methods=["POST"])
+def become_partner_register():
+    from admin.partner_portal_service import register_partner
+    from partners.auth import do_partner_login
+
+    lang = get_lang()
+    data = request.get_json(silent=True) or {}
+    if request.form:
+        data = {**request.form, **data}
+    try:
+        if data.get("website"):
+            return jsonify({"ok": False, "error": "Spam detected"}), 400
+        if not data.get("consent_rgpd"):
+            raise ValueError(
+                "Acceptez la politique de confidentialité."
+                if lang == "fr"
+                else "Please accept the privacy policy."
+            )
+        services_raw = data.get("services") or ""
+        social_raw = data.get("social_links") or ""
+        services = [s.strip() for s in services_raw.split("\n") if s.strip()] if isinstance(services_raw, str) else services_raw
+        social = [s.strip() for s in social_raw.split("\n") if s.strip()] if isinstance(social_raw, str) else social_raw
+        account = register_partner(
+            first_name=data.get("first_name", ""),
+            last_name=data.get("last_name", ""),
+            email=data.get("email", ""),
+            password=data.get("password", ""),
+            password_confirm=data.get("password_confirm", ""),
+            profile_type=data.get("profile_type", ""),
+            business_name=data.get("business_name", ""),
+            phone=data.get("phone", ""),
+            city=data.get("city", ""),
+            website=data.get("website_public", data.get("website", "")),
+            languages=data.get("languages", ""),
+            bio=data.get("bio", ""),
+            services=services,
+            social_links=social,
+        )
+        do_partner_login(account["id"])
+        return jsonify({"ok": True, "redirect": url_for("partners.dashboard")})
+    except ValueError as e:
+        return jsonify({"ok": False, "error": str(e)}), 400
+    except Exception:
+        return jsonify({"ok": False, "error": "Erreur serveur."}), 500
+
+
+@app.route("/partenaire/<slug>")
+@app.route("/en/partner/<slug>")
+def partner_public_page(slug):
+    from admin.partner_portal_service import get_account_by_id, get_page_by_slug, is_hidden_test_partner
+
+    lang = get_lang()
+    page = get_page_by_slug(slug)
+    if not page:
+        abort(404)
+    partner = get_account_by_id(page.get("partner_id"))
+    if not partner or partner.get("status") != "active" or is_hidden_test_partner(partner):
+        abort(404)
+    is_en = lang == "en"
+    title = page.get("seo_title") or page.get("title") or partner.get("business_name")
+    desc = page.get("seo_description") or page.get("tagline") or ""
+    return render_template(
+        "partner_public.html",
+        page=page,
+        partner=partner,
+        meta_title=title,
+        meta_description=desc,
     )
 
 

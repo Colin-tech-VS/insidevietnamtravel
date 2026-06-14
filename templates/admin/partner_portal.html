@@ -1,0 +1,82 @@
+{% extends "admin/layout.html" %}
+{% block title %}Espace partenaires{% endblock %}
+{% block page_title %}Espace partenaires{% endblock %}
+
+{% block content %}
+<p class="page-sub">Inscriptions publiques via <a href="{{ url_for('become_partner') }}" target="_blank" rel="noopener">/devenir-partenaire</a> — dashboard <code>/partners</code> — pages publiées sur <code>/partenaire/slug</code>.</p>
+
+<div class="stat-grid stat-grid--4">
+  <div class="stat-card">
+    <span class="stat-label">Comptes</span>
+    <span class="stat-value">{{ stats.accounts }}</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Pages publiées</span>
+    <span class="stat-value">{{ stats.pages_published }}</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">En validation</span>
+    <span class="stat-value">{{ stats.pages_pending }}</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Refusées</span>
+    <span class="stat-value">{{ stats.pages_rejected }}</span>
+  </div>
+</div>
+
+<section class="panel" style="margin-top:1.25rem">
+  <h2>Partenaires inscrits</h2>
+  {% if rows %}
+  <div class="partner-admin-list">
+    {% for row in rows %}
+    {% set acc = row.account %}
+    {% set pg = row.page %}
+    <article class="partner-admin-row card">
+      <div class="partner-admin-row__main">
+        <strong>{{ acc.business_name or (acc.first_name ~ ' ' ~ acc.last_name) }}</strong>
+        <span class="muted">{{ profile_labels.get(acc.profile_type, acc.profile_type) }} · {{ acc.email }}</span>
+        {% if acc.city %}<span class="muted"> · {{ acc.city }}</span>{% endif %}
+        <div class="partner-admin-row__meta">
+          <span class="badge badge--{% if acc.status == 'active' %}ok{% else %}warn{% endif %}">{{ account_status_labels.get(acc.status, acc.status) }}</span>
+          {% if pg %}
+          <span class="badge">{{ page_status_labels.get(pg.status, pg.status) }}</span>
+          {% if pg.status == 'published' %}
+          <a href="{{ url_for('partner_public_page', slug=pg.slug) }}" target="_blank" rel="noopener">/partenaire/{{ pg.slug }} ↗</a>
+          {% endif %}
+          {% else %}
+          <span class="muted">Pas encore de page</span>
+          {% endif %}
+        </div>
+        {% if pg and pg.ai_review and pg.ai_review.summary %}
+        <p class="partner-admin-row__review muted">{{ pg.ai_review.summary }}</p>
+        {% endif %}
+      </div>
+      <div class="partner-admin-row__actions">
+        {% if acc.status == 'active' %}
+        <form method="post"><input type="hidden" name="action" value="suspend_account"><input type="hidden" name="partner_id" value="{{ acc.id }}"><button type="submit" class="btn btn-ghost btn-sm">Suspendre</button></form>
+        {% else %}
+        <form method="post"><input type="hidden" name="action" value="activate_account"><input type="hidden" name="partner_id" value="{{ acc.id }}"><button type="submit" class="btn btn-secondary btn-sm">Réactiver</button></form>
+        {% endif %}
+        {% if pg and pg.status != 'published' %}
+        <form method="post"><input type="hidden" name="action" value="publish_page"><input type="hidden" name="partner_id" value="{{ acc.id }}"><button type="submit" class="btn btn-primary btn-sm">Publier</button></form>
+        {% endif %}
+        {% if pg and pg.status == 'published' %}
+        <form method="post"><input type="hidden" name="action" value="unpublish_page"><input type="hidden" name="partner_id" value="{{ acc.id }}"><button type="submit" class="btn btn-ghost btn-sm">Dépublier</button></form>
+        {% endif %}
+        {% if pg %}
+        <form method="post" onsubmit="return confirm('Refuser cette page ?');">
+          <input type="hidden" name="action" value="reject_page">
+          <input type="hidden" name="partner_id" value="{{ acc.id }}">
+          <input type="hidden" name="admin_notes" value="Refus admin">
+          <button type="submit" class="btn btn-ghost btn-sm">Refuser</button>
+        </form>
+        {% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted">Aucune inscription pour le moment.</p>
+  {% endif %}
+</section>
+{% endblock %}

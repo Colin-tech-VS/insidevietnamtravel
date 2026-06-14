@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% from "macros/seo.html" import json_ld_graph with context %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/partners.css') }}">
+{% endblock %}
+
+{% block structured_data %}
+{{ json_ld_graph([
+  {
+    "@type": "WebPage",
+    "@id": canonical_url ~ "#webpage",
+    "name": meta_title,
+    "description": meta_description,
+    "url": canonical_url,
+    "inLanguage": "en-GB" if lang == 'en' else "fr-FR",
+    "about": {
+      "@type": "Thing",
+      "name": "Travel partnership program Vietnam" if lang == 'en' else "Programme partenariat voyage Vietnam"
+    },
+    "audience": {
+      "@type": "BusinessAudience",
+      "audienceType": "Local guides, travel influencers, bloggers, agencies" if lang == 'en' else "Guides locaux, influenceurs, blogueurs, agences"
+    }
+  },
+  seo_breadcrumb([
+    (t('nav.home'), site.SITE_URL ~ lang_url('index')),
+    ('Partnership program' if lang == 'en' else 'Programme partenaires', None),
+  ]),
+]) }}
+{% endblock %}
+
+{% block content %}
+{% set is_en = (lang == 'en') %}
+<header class="page-hero page-hero--prepare">
+  <div class="prepare-hero__bg partner-hero__bg" aria-hidden="true"></div>
+  <div class="container prepare-hero__content">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <ol>
+        <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+        <li aria-current="page">{{ 'Partnership program' if is_en else 'Programme partenaires' }}</li>
+      </ol>
+    </nav>
+    <p class="prepare-hero__eyebrow">{{ 'Partnership · Co-marketing · Collaboration' if is_en else 'Partenariat · Co-marketing · Collaboration' }}</p>
+    <h1>{{ 'Vietnam travel partnership program — apply to collaborate' if is_en else 'Devenir partenaire Vietnam — programme de collaboration' }}</h1>
+    <p class="page-hero__lead">{{ 'Inside Vietnam Travel works with local guides, travel creators, bloggers and agencies on co-marketing, guest content and long-term partnerships. Submit your application and publish your partner profile after our editorial review.' if is_en else 'Inside Vietnam Travel collabore avec guides locaux, créateurs voyage, blogueurs et agences : co-marketing, contenus invités et partenariats durables. Déposez votre candidature et publiez votre fiche partenaire après validation éditoriale.' }}</p>
+  </div>
+</header>
+
+<section class="section partner-seo-intro">
+  <div class="container partner-seo-intro__inner">
+    <h2 class="partner-seo-intro__title">{{ 'Who this program is for' if is_en else 'À qui s\'adresse ce programme partenaires' }}</h2>
+    <p>{{ 'This page is for professionals seeking a travel partnership in Vietnam — not for trip planning or visitor support. If you run tours, create travel content or represent a local brand, you can apply to join our partner network.' if is_en else 'Cette page s\'adresse aux professionnels qui recherchent un partenariat voyage au Vietnam — pas à la planification de séjour ni au support visiteur. Guide local, créateur de contenu, blogueur ou agence : candidatez au réseau partenaires Inside Vietnam Travel.' }}</p>
+    <ul class="partner-seo-intro__list">
+      <li><strong>{{ 'Local guides' if is_en else 'Guides locaux' }}</strong> — {{ 'private tours, themed experiences, regional expertise' if is_en else 'visites privées, expériences thématiques, expertise régionale' }}</li>
+      <li><strong>{{ 'Influencers & creators' if is_en else 'Influenceurs & créateurs' }}</strong> — {{ 'sponsored posts, affiliate links, co-branded campaigns' if is_en else 'posts sponsorisés, liens affiliation, campagnes co-brandées' }}</li>
+      <li><strong>{{ 'Travel bloggers & media' if is_en else 'Blogueurs & médias voyage' }}</strong> — {{ 'guest articles, link exchanges, editorial partnerships' if is_en else 'articles invités, échanges de liens, partenariats éditoriaux' }}</li>
+      <li><strong>{{ 'Agencies & accommodations' if is_en else 'Agences & hébergements' }}</strong> — {{ 'B2B referrals, package visibility, local distribution' if is_en else 'apport d\'affaires B2B, visibilité offres, distribution locale' }}</li>
+    </ul>
+  </div>
+</section>
+
+<section class="section section--alt">
+  <div class="container partner-wizard-wrap">
+    <div class="partner-wizard card" id="partner-wizard"
+         data-register-url="{{ lang_url('become_partner_register') }}"
+         data-dashboard-url="{{ url_for('partners.dashboard') }}">
+
+      <nav class="partner-progress" aria-label="Progress">
+        <div class="partner-progress__step is-active" data-step="1"><span>1</span><small>{{ 'Profile' if is_en else 'Profil' }}</small></div>
+        <div class="partner-progress__step" data-step="2"><span>2</span><small>{{ 'Activity' if is_en else 'Activité' }}</small></div>
+        <div class="partner-progress__step" data-step="3"><span>3</span><small>{{ 'Details' if is_en else 'Détails' }}</small></div>
+        <div class="partner-progress__step" data-step="4"><span>4</span><small>{{ 'Account' if is_en else 'Compte' }}</small></div>
+      </nav>
+
+      <p class="partner-wizard__error" id="partner-wizard-error" hidden role="alert"></p>
+
+      <!-- Step 1 -->
+      <div class="partner-step is-active" data-step="1">
+        <h2>{{ 'Partnership profile type' if is_en else 'Type de partenariat recherché' }}</h2>
+        <p class="muted">{{ 'Select the collaboration profile that matches your business.' if is_en else 'Indiquez le profil de collaboration correspondant à votre activité professionnelle.' }}</p>
+        <div class="partner-type-grid">
+          {% for key, label in profile_types %}
+          <label class="partner-type-card">
+            <input type="radio" name="profile_type" value="{{ key }}" {% if loop.first %}checked{% endif %}>
+            <span class="partner-type-card__label">{{ label }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="partner-step" data-step="2" hidden>
+        <h2>{{ 'Your activity' if is_en else 'Votre activité' }}</h2>
+        <div class="form-field">
+          <label for="pp-business">{{ 'Brand / business name' if is_en else 'Nom de marque / activité' }} *</label>
+          <input type="text" id="pp-business" name="business_name" maxlength="120" required>
+        </div>
+        <div class="form-field">
+          <label for="pp-city">{{ 'City / region in Vietnam' if is_en else 'Ville / région au Vietnam' }}</label>
+          <input type="text" id="pp-city" name="city" maxlength="80" placeholder="Hanoï, Da Nang, Sapa…">
+        </div>
+        <div class="form-field">
+          <label for="pp-bio">{{ 'Short presentation' if is_en else 'Présentation courte' }} *</label>
+          <textarea id="pp-bio" name="bio" rows="4" maxlength="2000" required placeholder="{{ 'Your partnership proposal: niche, audience, past collabs, what you offer…' if is_en else 'Votre proposition de partenariat : niche, audience, collabs passées, ce que vous proposez…' }}"></textarea>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="partner-step" data-step="3" hidden>
+        <h2>{{ 'Services & links' if is_en else 'Services & liens' }}</h2>
+        <div class="form-field">
+          <label for="pp-services">{{ 'Services offered (one per line)' if is_en else 'Services proposés (un par ligne)' }}</label>
+          <textarea id="pp-services" name="services" rows="4" placeholder="{{ 'Private tours in Hanoi\nPhoto walks\nFood experiences' if is_en else 'Visites privées Hanoï\nBalades photo\nExpériences food' }}"></textarea>
+        </div>
+        <div class="form-field">
+          <label for="pp-social">{{ 'Website & social (one URL per line)' if is_en else 'Site & réseaux (une URL par ligne)' }}</label>
+          <textarea id="pp-social" name="social_links" rows="3" placeholder="https://instagram.com/…"></textarea>
+        </div>
+        <div class="partner-form-grid">
+          <div class="form-field">
+            <label for="pp-phone">{{ 'Phone' if is_en else 'Téléphone' }}</label>
+            <input type="tel" id="pp-phone" name="phone" maxlength="40">
+          </div>
+          <div class="form-field">
+            <label for="pp-langs">{{ 'Languages spoken' if is_en else 'Langues parlées' }}</label>
+            <input type="text" id="pp-langs" name="languages" maxlength="120" placeholder="Français, anglais, vietnamien">
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="partner-step" data-step="4" hidden>
+        <h2>{{ 'Create your account' if is_en else 'Créez votre compte' }}</h2>
+        <p class="muted">{{ 'Access your dashboard at insidevietnamtravel.fr/partners' if is_en else 'Accédez à votre espace sur insidevietnamtravel.fr/partners' }}</p>
+        <div class="partner-form-grid">
+          <div class="form-field">
+            <label for="pp-first">{{ 'First name' if is_en else 'Prénom' }} *</label>
+            <input type="text" id="pp-first" name="first_name" required autocomplete="given-name">
+          </div>
+          <div class="form-field">
+            <label for="pp-last">{{ 'Last name' if is_en else 'Nom' }} *</label>
+            <input type="text" id="pp-last" name="last_name" required autocomplete="family-name">
+          </div>
+        </div>
+        <div class="form-field">
+          <label for="pp-email">{{ 'Email' if is_en else 'Email' }} *</label>
+          <input type="email" id="pp-email" name="email" required autocomplete="email">
+        </div>
+        <div class="partner-form-grid">
+          <div class="form-field">
+            <label for="pp-pass">{{ 'Password' if is_en else 'Mot de passe' }} *</label>
+            <input type="password" id="pp-pass" name="password" required minlength="8" autocomplete="new-password">
+          </div>
+          <div class="form-field">
+            <label for="pp-pass2">{{ 'Confirm password' if is_en else 'Confirmation' }} *</label>
+            <input type="password" id="pp-pass2" name="password_confirm" required minlength="8" autocomplete="new-password">
+          </div>
+        </div>
+        <label class="contact-form__consent">
+          <input type="checkbox" name="consent_rgpd" value="1" required>
+          <span>{{ 'I accept the' if is_en else 'J\'accepte la' }} <a href="{{ lang_url('privacy') }}" target="_blank" rel="noopener">{{ t('newsletter.privacy_link') }}</a>.</span>
+        </label>
+        <input type="text" name="website" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true">
+      </div>
+
+      <div class="partner-wizard__nav">
+        <button type="button" class="btn btn-secondary" id="partner-prev" hidden>{{ 'Back' if is_en else 'Retour' }}</button>
+        <button type="button" class="btn btn-primary" id="partner-next">{{ 'Continue' if is_en else 'Continuer' }}</button>
+        <button type="button" class="btn btn-primary" id="partner-submit" hidden>{{ 'Create my account' if is_en else 'Créer mon compte' }}</button>
+      </div>
+
+      <p class="partner-wizard__login muted">
+        {{ 'Already registered?' if is_en else 'Déjà inscrit ?' }}
+        <a href="{{ url_for('partners.login') }}">{{ 'Sign in' if is_en else 'Connexion' }}</a>
+      </p>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/partner_apply.js') }}" defer></script>
+{% endblock %}

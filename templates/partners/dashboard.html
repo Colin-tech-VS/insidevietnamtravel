@@ -1,0 +1,71 @@
+{% extends "partners/layout.html" %}
+{% block title %}Tableau de bord{% endblock %}
+{% block partner_content %}
+<section class="partner-dash">
+  {% if is_hidden_account %}
+  <p class="flash flash--success partner-hidden-notice">
+    Compte test interne — toutes les fonctions sont actives, mais rien n’est public (admin, SEO, <code>/partenaire/…</code>).
+  </p>
+  {% endif %}
+
+  <header class="partner-dash__head">
+    <div>
+      <p class="partner-dash__eyebrow">{{ profile_label }}</p>
+      <h1>Bonjour {{ partner.first_name }} 👋</h1>
+      <p class="muted">{{ partner.business_name or partner.email }}</p>
+    </div>
+    <a href="{{ url_for('partners.page_edit') }}" class="btn btn-primary">
+      {% if page %}Modifier ma page{% else %}Créer ma page{% endif %}
+    </a>
+  </header>
+
+  <div class="partner-dash__grid">
+    <article class="card partner-stat-card">
+      <h2>Statut de votre page</h2>
+      {% if page %}
+      <p class="partner-stat-card__value partner-stat-card__value--{{ page.status }}">
+        {{ page_status_labels.get(page.status, page.status) }}{% if is_hidden_account and page.status == 'published' %} (privé){% endif %}
+      </p>
+      {% if page.status == 'published' and page.slug %}
+        {% if is_hidden_account %}
+        <p><a href="{{ url_for('partners.page_preview') }}" target="_blank" rel="noopener">Aperçu privé ↗</a> <span class="muted">— non indexé</span></p>
+        {% else %}
+        <p><a href="{{ url_for('partner_public_page', slug=page.slug) }}" target="_blank" rel="noopener">Voir la page publique ↗</a></p>
+        {% endif %}
+      {% elif page.status == 'rejected' and page.ai_review %}
+      <p class="partner-stat-card__warn">{{ page.ai_review.summary or 'Contenu non conforme — modifiez et relancez.' }}</p>
+      {% if page.ai_review.issues %}
+      <ul class="partner-issues">
+        {% for issue in page.ai_review.issues %}
+        <li>{{ issue }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% elif page.overview_html or page.title %}
+      <p><a href="{{ url_for('partners.page_preview') }}" target="_blank" rel="noopener">Aperçu privé du brouillon ↗</a></p>
+      {% endif %}
+      {% else %}
+      <p class="muted">Vous n'avez pas encore créé votre page partenaire.</p>
+      {% endif %}
+    </article>
+
+    <article class="card partner-stat-card">
+      <h2>Votre profil</h2>
+      <ul class="partner-profile-list">
+        <li><strong>Ville</strong> {{ partner.city or '—' }}</li>
+        <li><strong>Langues</strong> {{ partner.languages or '—' }}</li>
+        <li><strong>Site</strong> {% if partner.website %}<a href="{{ partner.website }}" target="_blank" rel="noopener">{{ partner.website }}</a>{% else %}—{% endif %}</li>
+      </ul>
+    </article>
+  </div>
+
+  <article class="card partner-help">
+    <h2>Comment ça marche ?</h2>
+    <ol>
+      <li>Rédigez votre page (accroche, offre, points forts).</li>
+      <li>Soumettez — notre IA vérifie le design, le SEO et la cohérence avec le site.</li>
+      <li>Si validé, votre page est publiée{% if is_hidden_account %} en mode privé (aperçu uniquement){% else %} sur <code>/partenaire/votre-slug</code>{% endif %}.</li>
+    </ol>
+  </article>
+</section>
+{% endblock %}

@@ -100,6 +100,9 @@
         <a href="{{ url_for('admin.partnerships') }}" class="admin-nav__link {% if request.endpoint == 'admin.partnerships' %}is-active{% endif %}">
           <span class="admin-nav__icon" aria-hidden="true">🤝</span> Partenariats
         </a>
+        <a href="{{ url_for('admin.partner_portal_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.partner_portal_admin' %}is-active{% endif %}">
+          <span class="admin-nav__icon" aria-hidden="true">🌐</span> Espace partenaires
+        </a>
         <a href="{{ url_for('admin.contact_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.contact_admin' %}is-active{% endif %}">
           <span class="admin-nav__icon" aria-hidden="true">✉</span> Contact{% if contact_unread %} <span class="admin-nav__badge">{{ contact_unread }}</span>{% endif %}
         </a>

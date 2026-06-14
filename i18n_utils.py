@@ -263,6 +263,12 @@ ROUTE_PATHS: dict[str, dict[str, str]] = {
     "events_calendar": {"fr": "/evenements-vietnam-2026", "en": "/en/vietnam-events-calendar"},
     "about": {"fr": "/a-propos", "en": "/en/about"},
     "contact": {"fr": "/contact", "en": "/en/contact"},
+    "become_partner": {"fr": "/devenir-partenaire", "en": "/en/become-a-partner"},
+    "become_partner_register": {
+        "fr": "/devenir-partenaire/inscription",
+        "en": "/en/become-a-partner/register",
+    },
+    "partner_public": {"fr": "/partenaire/{slug}", "en": "/en/partner/{slug}"},
     "privacy": {"fr": "/politique-confidentialite", "en": "/en/privacy"},
     "legal_notices": {"fr": "/mentions-legales", "en": "/en/legal"},
     "newsletter_unsubscribe": {
