@@ -58,6 +58,15 @@ _EMAIL_JUNK = ("example.", "sentry", "wixpress", "yourdomain", "domain.com",
                "email.com", "@2x", ".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg",
                "no-reply", "noreply", "w3.org", "schema.org")
 
+# Locaux d'email génériques (info@, contact@…) — pas de prénom exploitable.
+_GENERIC_EMAIL_LOCALS = frozenset({
+    "info", "contact", "hello", "bonjour", "support", "team", "admin", "sales",
+    "partnership", "partenariat", "collab", "hi", "mail", "office", "press",
+    "media", "booking", "reservation", "reservations", "service", "services",
+    "enquiries", "inquiry", "news", "marketing", "commercial", "business",
+    "noreply", "no-reply", "webmaster", "postmaster", "abuse", "help", "careers",
+})
+
 
 # ── Store ─────────────────────────────────────────────────────────────────
 
@@ -72,6 +81,35 @@ def save_partnerships(items: list[dict]) -> None:
 
 def find_partnership(pid: str) -> dict | None:
     return next((p for p in get_partnerships() if p.get("id") == pid), None)
+
+
+def is_generic_contact_email(email: str) -> bool:
+    """True si l'adresse est un contact générique (info@, contact@…)."""
+    email = (email or "").strip().lower()
+    if "@" not in email:
+        return True
+    local = email.split("@", 1)[0].split("+", 1)[0]
+    if local in _GENERIC_EMAIL_LOCALS:
+        return True
+    return any(local.startswith(f"{g}.") for g in ("info", "contact", "hello", "mail"))
+
+
+def partnership_greeting(partner_name: str = "", recipient_email: str = "") -> str:
+    """Salutation pour emails partenariat sans prénom de contact."""
+    name = (partner_name or "").strip()
+    email = (recipient_email or "").strip().lower()
+
+    if email and not is_generic_contact_email(email):
+        local = email.split("@", 1)[0].split("+", 1)[0]
+        parts = re.split(r"[._-]+", local)
+        if parts and parts[0] not in _GENERIC_EMAIL_LOCALS and len(parts[0]) >= 2:
+            first = parts[0].capitalize()
+            if first.isalpha():
+                return f"Bonjour {first},"
+
+    if name:
+        return f"Bonjour à l'équipe {name},"
+    return "Bonjour,"
 
 
 def _normalize_links(links) -> list[str]:

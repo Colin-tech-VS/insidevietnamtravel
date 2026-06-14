@@ -49,6 +49,12 @@ UI: dict[str, dict[str, str]] = {
     },
     "home.hero.cta_dest": {"fr": "Explorer les destinations", "en": "Explore destinations"},
     "home.hero.cta_pdf": {"fr": "Télécharger le guide PDF", "en": "Download the PDF guide"},
+    "home.hero.stat_dest": {"fr": "guides destinations", "en": "destination guides"},
+    "home.hero.stat_itin": {"fr": "itinéraires clés en main", "en": "ready-made itineraries"},
+    "home.hero.stat_free": {"fr": "planificateur gratuit", "en": "free trip planner"},
+    "home.hero.slide.halong": {"fr": "Baie d'Halong, Vietnam", "en": "Halong Bay, Vietnam"},
+    "home.hero.slide.hoi_an": {"fr": "Hội An, ville ancienne", "en": "Hội An ancient town"},
+    "home.hero.slide.hanoi": {"fr": "Hanoï, capitale du Vietnam", "en": "Hanoi, Vietnam capital"},
     "home.pillars.title": {"fr": "Par où commencer", "en": "Where to start"},
     "home.pillars.sub": {
         "fr": "Nos guides piliers pour préparer chaque facette de votre voyage au Vietnam",

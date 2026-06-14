@@ -130,18 +130,14 @@ def _categories(lang=None):
 
 
 def _destinations(lang=None):
-    """Destinations publiques — image admin + repli source_url si fichier local absent."""
+    """Destinations publiques — même URL d'image que l'admin (fichier canonique ou repli)."""
+    from admin.image_service import enrich_destination_for_display
+
     lang = lang or get_lang()
-    out = {}
-    for slug, d in get_destinations_dict(lang).items():
-        dest = dict(d)
-        dest["image"] = persistent_image_url(
-            dest.get("image"),
-            dest.get("image_photo_id"),
-            dest.get("image_source_url"),
-        )
-        out[slug] = dest
-    return out
+    return {
+        slug: enrich_destination_for_display(d)
+        for slug, d in get_destinations_dict(lang).items()
+    }
 
 
 def _itineraries(lang=None):

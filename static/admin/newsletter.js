@@ -160,6 +160,8 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const topic = document.getElementById('nl-topic')?.value?.trim();
       const notes = document.getElementById('nl-notes')?.value?.trim() || '';
+      const partnerName = document.getElementById('nl-partner-name')?.value?.trim() || '';
+      const recipientEmail = document.getElementById('nl-recipient-email')?.value?.trim() || '';
       const emailType = form.querySelector('input[name="email_type"]:checked')?.value;
       if (!topic) {
         form.reportValidity();
@@ -175,7 +177,13 @@ document.addEventListener('DOMContentLoaded', () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
           credentials: 'same-origin',
-          body: JSON.stringify({ topic, email_type: emailType, notes }),
+          body: JSON.stringify({
+            topic,
+            email_type: emailType,
+            notes,
+            partner_name: partnerName,
+            recipient_email: recipientEmail,
+          }),
         });
         const data = await res.json();
         if (!res.ok || !data.ok) throw new Error(data.error || 'Erreur génération');

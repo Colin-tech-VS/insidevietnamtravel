@@ -175,12 +175,13 @@ DESTINATION_PHOTO_MAP: dict[str, str] = {
 DESTINATION_PHOTO_ALTERNATES: dict[str, list[str]] = {
     "hanoi": ["1521993117367-b7f70ccd029d"],
     "halong": ["1545172538-171a802bd867"],
-    "sapa": ["1480996408299-fc0e830b5db1", "1609412058473-c199497c3c5d"],
+    "sapa": ["1609412058473-c199497c3c5d"],
     "hoi-an": ["1526139334526-f591a54b477c"],
     "ho-chi-minh-city": ["1603852452378-a4e8d84324a2"],
     "delta-du-mekong": ["1432405972618-c60b0225b8f9", "1559592413-7cec4d0cae2b"],
-    "phu-quoc": ["1555979864-7a8f9b4fddf8"],
+    "phu-quoc": ["1602646993875-70bc0ba52c87"],
     "hue": ["1557750255-c76072a7aad1"],
+    "da-nang": ["1504457047772-27faf1c00561"],
 }
 
 # Requêtes Pixabay par défaut (Linh / admin) — toujours ancrées sur la ville
@@ -380,12 +381,16 @@ def _align_destination_pool_image(dest: dict) -> dict | None:
 
     photo_id = (dest.get("image_photo_id") or "").strip() or _photo_id_from_pool_url(image)
     if photo_id and photo_id_matches_destination(slug, photo_id):
+        if _local_pool_path(photo_id).exists():
+            return {**dest, **_commit_pool_photo_to_destination(slug, photo_id)}
         pool_url = pool_image_url(photo_id)
         if image != pool_url:
             return {**dest, "image": pool_url, "image_photo_id": photo_id, "image_placeholder": False}
         return None
 
     pid = _pick_destination_photo_id(slug, abs(hash(slug)) % 9999)
+    if _local_pool_path(pid).exists():
+        return {**dest, **_commit_pool_photo_to_destination(slug, pid)}
     return {
         **dest,
         "image": pool_image_url(pid),
@@ -684,6 +689,72 @@ def _local_pool_path(photo_id: str) -> Path:
 _STATIC_ROOT = Path(__file__).parent.parent / "static"
 
 
+def destination_image_for_display(dest: dict) -> str | None:
+    """URL servie au visiteur — même logique que l'admin doit afficher."""
+    return persistent_image_url(
+        dest.get("image"),
+        dest.get("image_photo_id"),
+        dest.get("image_source_url"),
+    )
+
+
+def enrich_destination_for_display(dest: dict) -> dict:
+    """Copie destination avec `image` résolue (fichier local, source ou pool)."""
+    out = dict(dest)
+    out["image"] = destination_image_for_display(dest)
+    return out
+
+
+def _canonical_destination_image_url(slug: str) -> str:
+    return f"/static/images/destinations/{slug}.webp"
+
+
+def _commit_pool_photo_to_destination(slug: str, photo_id: str) -> dict:
+    """Copie une photo pool vers destinations/<slug>.webp — URL unique admin + public."""
+    raw = _fetch_vietnam_photo(photo_id)
+    out_path = DEST_IMAGES_DIR / f"{slug}.webp"
+    try:
+        _to_webp(raw, out_path)
+    except Exception:
+        _write_webp_fast(raw, out_path)
+    return {
+        "image": _canonical_destination_image_url(slug),
+        "image_alt": DESTINATION_IMAGE_ALTS.get(slug, f"Guide voyage {slug.replace('-', ' ')}, Vietnam"),
+        "image_photo_id": "",
+        "image_placeholder": False,
+    }
+
+
+def _normalize_destination_store_record(slug: str, dest: dict, *, allow_network: bool) -> dict | None:
+    """Force l'URL canonique destinations/<slug>.webp quand le fichier existe ou peut être recréé."""
+    canonical = _canonical_destination_image_url(slug)
+    committed = DEST_IMAGES_DIR / f"{slug}.webp"
+    source = (dest.get("image_source_url") or "").strip()
+
+    if not committed.is_file() and allow_network and _is_remote_image_url(source):
+        try:
+            _write_remote_webp(source, committed)
+        except Exception:
+            pass
+
+    if committed.is_file():
+        changed = dest.get("image") != canonical or dest.get("image_photo_id")
+        alt = dest.get("image_alt") or DESTINATION_IMAGE_ALTS.get(slug)
+        if not changed and not alt:
+            return None
+        patch = {**dest, "image": canonical, "image_photo_id": "", "image_placeholder": False}
+        if alt:
+            patch["image_alt"] = alt
+        return patch
+
+    image = (dest.get("image") or "").strip()
+    if image.startswith("/static/images/pool/"):
+        photo_id = _photo_id_from_pool_url(image) or (dest.get("image_photo_id") or "").strip()
+        if photo_id and _local_pool_path(photo_id).exists():
+            return {**dest, **_commit_pool_photo_to_destination(slug, photo_id)}
+    return None
+
+
 def persistent_image_url(
     image_url: str | None,
     photo_id: str | None,
@@ -752,8 +823,14 @@ def sync_destination_images(*, allow_network: bool = True) -> int:
 
     dests = get_destinations_dict()
     updated = 0
-    for slug, dest in dests.items():
+    for slug, dest in list(dests.items()):
         dest = {**dest, "slug": slug}
+        normalized = _normalize_destination_store_record(slug, dest, allow_network=allow_network)
+        if normalized:
+            dests[slug] = normalized
+            updated += 1
+            dest = normalized
+
         upgraded = _upgrade_to_committed_city_image(dest)
         if upgraded:
             dests[slug] = upgraded
@@ -807,6 +884,34 @@ def sync_destination_images(*, allow_network: bool = True) -> int:
 def ensure_all_destination_images() -> int:
     """Alias historique — synchronise les images destination (admin = public)."""
     return sync_destination_images(allow_network=True)
+
+
+def refresh_all_destination_images_from_sources() -> int:
+    """Re-télécharge chaque bannière depuis image_source_url (photos uniques par ville)."""
+    from admin.store import get_destinations_dict, save_destinations
+
+    dests = get_destinations_dict()
+    updated = 0
+    for slug, dest in dests.items():
+        source = (dest.get("image_source_url") or "").strip()
+        if not _is_remote_image_url(source):
+            continue
+        try:
+            _write_remote_webp(source, DEST_IMAGES_DIR / f"{slug}.webp")
+            alt = DESTINATION_IMAGE_ALTS.get(slug) or dest.get("image_alt")
+            dests[slug] = {
+                **dest,
+                "image": _canonical_destination_image_url(slug),
+                "image_photo_id": "",
+                "image_placeholder": False,
+                "image_alt": alt,
+            }
+            updated += 1
+        except Exception as exc:
+            log(f"refresh destination image {slug} failed: {exc}")
+    if updated:
+        save_destinations(dests)
+    return updated
 
 
 def _article_image_meta(article: dict, slug: str, photo_id: str, placeholder: bool,
@@ -1193,8 +1298,9 @@ def attach_image_to_destination(
         pool_candidates = _photo_ids_for_destination(slug) or [photo_id]
         for pid in pool_candidates:
             if _local_pool_path(pid).exists():
-                log(f"IMAGE dest done slug={slug} en {time.time() - t0:.1f}s pool_ref photo_id={pid}")
-                return _meta(pid, placeholder=False, image_url=f"/static/images/pool/{pid}.webp")
+                _commit_pool_photo_to_destination(slug, pid)
+                log(f"IMAGE dest done slug={slug} en {time.time() - t0:.1f}s pool_commit photo_id={pid}")
+                return _meta(pid, placeholder=False, image_url=_canonical_destination_image_url(slug))
 
     def _gather() -> tuple[bytes, str]:
         if want_ai:

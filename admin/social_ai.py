@@ -35,7 +35,7 @@ def _img(url: str | None) -> str:
 def page_inventory(lang: str = "fr") -> list[dict]:
     """Pages publiables groupées (id, group, label, url, title, summary, image)."""
     from admin.store import get_articles, get_destinations_dict
-    from admin.image_service import persistent_image_url
+    from admin.image_service import persistent_image_url, destination_image_for_display
     from data.itineraries import ITINERARIES
     from data import pillars as P
     from locales.ui import t
@@ -70,11 +70,12 @@ def page_inventory(lang: str = "fr") -> list[dict]:
 
     # Destinations
     for slug, d in get_destinations_dict(lang).items():
+        image = destination_image_for_display(d)
         items.append({
             "id": f"dest:{slug}", "group": "Destinations",
             "label": d.get("name", slug), "url": _abs(lang_url("destination_page", lang, slug=slug)),
             "title": d.get("name", slug), "summary": d.get("tagline", ""),
-            "image": _img(d.get("image")),
+            "image": _img(image),
         })
 
     # Itinéraires

@@ -604,8 +604,11 @@ def destinations_admin():
         return redirect(url_for("admin.destinations_admin"))
 
     sync_destination_images(allow_network=True)
+    from admin.image_service import enrich_destination_for_display
+
     dest_list = []
     for slug, d in get_destinations_dict().items():
+        d = enrich_destination_for_display(d)
         d["region_key"] = resolve_region(slug, d)
         d["region_label"] = REGION_LABELS_FR.get(d["region_key"], d["region_key"])
         dest_list.append(d)
@@ -864,6 +867,8 @@ def api_generate_newsletter():
     topic = (data.get("topic") or "").strip()
     email_type = data.get("email_type") or "actualite"
     notes = (data.get("notes") or "").strip()
+    partner_name = (data.get("partner_name") or "").strip()
+    recipient_email = (data.get("recipient_email") or "").strip()
 
     if not ai_client.is_configured():
         return jsonify({"ok": False, "error": "Aucune clé IA configurée (GROQ_API_KEY ou MISTRAL_API_KEY)"}), 400
@@ -872,7 +877,12 @@ def api_generate_newsletter():
 
     _start_draft_job(
         "newsletter",
-        lambda report: groq_newsletter.generate_newsletter_email(topic, email_type, notes, progress=report),
+        lambda report: groq_newsletter.generate_newsletter_email(
+            topic, email_type, notes,
+            progress=report,
+            partner_name=partner_name,
+            recipient_email=recipient_email,
+        ),
     )
     return jsonify({"ok": True, "started": True})
 

@@ -1547,9 +1547,16 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
 
         email_type = params.get("email_type") or "actualite"
         notes = (params.get("notes") or "").strip()
+        partner_name = (params.get("partner_name") or "").strip()
+        recipient_email = (params.get("recipient_email") or "").strip()
         _start_job(
             "newsletter",
-            lambda report: groq_newsletter.generate_newsletter_email(topic, email_type, notes, progress=report),
+            lambda report: groq_newsletter.generate_newsletter_email(
+                topic, email_type, notes,
+                progress=report,
+                partner_name=partner_name,
+                recipient_email=recipient_email,
+            ),
             "Rédaction de l'email…",
         )
         return {"job": {"kind": "newsletter"}}

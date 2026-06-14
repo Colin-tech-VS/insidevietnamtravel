@@ -32,16 +32,78 @@
 {% endblock %}
 
 {% block content %}
-<section class="hero" aria-labelledby="hero-title">
-  <div class="hero-bg" aria-hidden="true"></div>
+<section class="hero hero--editorial" aria-labelledby="hero-title">
+  {% set hero_slides = ['halong', 'hoi-an', 'hanoi'] %}
+  {% set hero_mosaic = [
+    ('halong', 'hero-mosaic__cell--main'),
+    ('hoi-an', 'hero-mosaic__cell--b'),
+    ('hanoi', 'hero-mosaic__cell--c'),
+    ('sapa', 'hero-mosaic__cell--d'),
+  ] %}
+
+  <div class="hero-slides" aria-hidden="true">
+    {% for slug in hero_slides %}
+    {% set d = destinations.get(slug) %}
+    {% if d and d.image %}
+    <div class="hero-slide" style="--slide-i: {{ loop.index0 }}">
+      {% if loop.first %}
+      {{ responsive_img(d.image, alt=d.image_alt or d.name, width=1920, height=1080, loading='eager', fetchpriority='high', class='hero-slide__img', sizes='100vw') }}
+      {% else %}
+      {{ responsive_img(d.image, alt=d.image_alt or d.name, width=1920, height=1080, loading='lazy', class='hero-slide__img', sizes='100vw') }}
+      {% endif %}
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+  <div class="hero-scrim" aria-hidden="true"></div>
   <div class="hero-pattern" aria-hidden="true"></div>
-  <div class="container hero-content">
-    <p class="hero-eyebrow">{{ t('home.hero.eyebrow') }}</p>
-    <h1 id="hero-title">{{ t('home.hero.title') }}<br><em>{{ t('home.hero.title_em') }}</em></h1>
-    <p class="hero-lead">{{ t('home.hero.lead') }}</p>
-    <div class="hero-actions">
-      <a href="#destinations" class="btn btn-primary">{{ t('home.hero.cta_dest') }}</a>
-      <a href="{{ pdf_checkout_url() }}" class="btn btn-ghost" data-no-loader>{{ t('home.hero.cta_pdf') }}</a>
+
+  <div class="container hero-layout">
+    <div class="hero-content">
+      <p class="hero-eyebrow">{{ t('home.hero.eyebrow') }}</p>
+      <h1 id="hero-title">{{ t('home.hero.title') }}<br><em>{{ t('home.hero.title_em') }}</em></h1>
+      <p class="hero-lead">{{ t('home.hero.lead') }}</p>
+      <div class="hero-actions">
+        <a href="#destinations" class="btn btn-primary">{{ t('home.hero.cta_dest') }}</a>
+        <a href="{{ lang_url('prepare_trip') }}" class="btn btn-ghost btn-ghost--on-dark">{{ t('nav.prepare') }}</a>
+        <a href="{{ pdf_checkout_url() }}" class="btn btn-ghost btn-ghost--on-dark" data-no-loader>{{ t('home.hero.cta_pdf') }}</a>
+      </div>
+      <ul class="hero-stats" aria-label="{{ 'Points clés' if lang == 'fr' else 'Highlights' }}">
+        <li class="stat">
+          <span class="stat-number">{{ destinations|length }}</span>
+          <span class="stat-label">{{ t('home.hero.stat_dest') }}</span>
+        </li>
+        <li class="stat">
+          <span class="stat-number">{{ itineraries|length }}</span>
+          <span class="stat-label">{{ t('home.hero.stat_itin') }}</span>
+        </li>
+        <li class="stat">
+          <span class="stat-number">✦</span>
+          <span class="stat-label">{{ t('home.hero.stat_free') }}</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="hero-mosaic" aria-label="{{ 'Aperçu destinations' if lang == 'fr' else 'Destination preview' }}">
+      {% for slug, cell_class in hero_mosaic %}
+      {% set d = destinations.get(slug) %}
+      {% if d %}
+      <a href="{{ lang_url('destination_page', slug=slug) }}" class="hero-mosaic__cell {{ cell_class }}">
+        {% if d.image %}
+        {{ responsive_img(
+          d.image,
+          alt=d.image_alt or d.name,
+          width=600,
+          height=750,
+          loading='lazy',
+          class='hero-mosaic__img',
+          sizes='(max-width: 1024px) 0px, 280px'
+        ) }}
+        {% endif %}
+        <span class="hero-mosaic__label">{{ d.name }}</span>
+      </a>
+      {% endif %}
+      {% endfor %}
     </div>
   </div>
 </section>

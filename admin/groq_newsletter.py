@@ -6,6 +6,7 @@ import json
 import re
 
 from admin import ai_client
+from admin.partners_service import partnership_greeting
 
 EMAIL_TYPES = [
     {"value": "actualite", "label": "Actualité voyage", "icon": "📰"},
@@ -54,11 +55,48 @@ def _ensure_html(text: str) -> str:
     return "".join(f"<p>{p}</p>" for p in parts)
 
 
+def _partner_name_from_topic(topic: str) -> str:
+    m = re.match(r"(?i)partenariat\s+avec\s+(.+?)(?:\s*\(|$)", (topic or "").strip())
+    return m.group(1).strip() if m else ""
+
+
+_PLACEHOLDER_GREETING_RE = re.compile(
+    r"Bonjour\s*(?:"
+    r"\[[^\]]*pr[eé]nom[^\]]*\]"
+    r"|\([^)]*pr[eé]nom[^)]*\)"
+    r"|\{[^}]*pr[eé]nom[^}]*\}"
+    r"|\[[^\]]+\]"
+    r"|\([^)]+\)"
+    r"|\{[^}]+\}"
+    r"|Pr[eé]nom"
+    r")",
+    re.IGNORECASE,
+)
+
+
+def _apply_partnership_greeting(body_html: str, greeting: str) -> str:
+    """Remplace salutations placeholder ou inventées par la formule calculée."""
+    if not body_html or not greeting:
+        return body_html
+    fixed = _PLACEHOLDER_GREETING_RE.sub(greeting.rstrip(","), body_html, count=1)
+    if fixed == body_html and greeting.lower() not in body_html.lower():
+        fixed = re.sub(
+            r"(<p>\s*)Bonjour[^,<]*,",
+            rf"\1{greeting.rstrip(',')},",
+            body_html,
+            count=1,
+            flags=re.IGNORECASE,
+        )
+    return fixed
+
+
 def generate_newsletter_email(
     topic: str,
     email_type: str = "actualite",
     notes: str = "",
     progress=None,
+    partner_name: str = "",
+    recipient_email: str = "",
 ) -> dict:
     ai_client.require_api_key()
     report = progress or (lambda *_: None)
@@ -70,10 +108,19 @@ def generate_newsletter_email(
         f"Type : {type_label}\n"
         f"Sujet / angle : {topic}\n"
     )
+    greeting = ""
     if email_type == "partenariat":
+        pname = (partner_name or "").strip() or _partner_name_from_topic(topic)
+        remail = (recipient_email or "").strip()
+        greeting = partnership_greeting(pname, remail)
+        dest_line = pname or topic
+        if remail:
+            dest_line += f" ({remail})"
         user_msg = (
             "Rédige un email de PROSPECTION PARTENARIAT (B2B) — PAS une newsletter aux abonnés.\n"
-            f"Destinataire : {topic}\n"
+            f"Destinataire : {dest_line}\n"
+            f"SALUTATION OBLIGATOIRE (première phrase, copier-coller exact) : « {greeting} »\n"
+            "INTERDIT : prénom inventé, [Prénom], (Prénom), {prénom}, ou tout placeholder.\n"
             "CONTEXTE : tu écris au nom de l'éditeur d'Inside Vietnam Travel "
             "(insidevietnamtravel.fr), guide francophone du voyage au Vietnam, à un "
             "partenaire potentiel (influenceur, blogueur, créateur, guide local ou agence).\n"
@@ -81,11 +128,11 @@ def generate_newsletter_email(
             "selon le profil : article invité ou interview sur le site, mise en avant de son "
             "contenu auprès de notre audience, post sponsorisé / échange de visibilité sur "
             "nos réseaux (Facebook, Pinterest, Instagram…), lien d'affiliation.\n"
-            "RÈGLES SPÉCIFIQUES : personnalise avec le nom et la niche du destinataire "
-            "(fournis dans le sujet/notes) ; reste court (120-200 mots), humain et direct ; "
-            "montre qu'on connaît son travail ; UNE proposition claire + question simple en "
-            "fin (« partant pour en discuter ? ») ; pas de jargon marketing ni de promesses "
-            "chiffrées inventées ; signature « L'équipe Inside Vietnam Travel ».\n"
+            "RÈGLES SPÉCIFIQUES : personnalise avec le nom de marque / chaîne / blog "
+            "(pas un prénom de contact) et la niche (sujet/notes) ; reste court (120-200 mots), "
+            "humain et direct ; montre qu'on connaît son travail ; UNE proposition claire + "
+            "question simple en fin (« partant pour en discuter ? ») ; pas de jargon marketing "
+            "ni de promesses chiffrées inventées ; signature « L'équipe Inside Vietnam Travel ».\n"
         )
     if notes:
         user_msg += f"Notes éditoriales : {notes}\n"
@@ -101,10 +148,13 @@ def generate_newsletter_email(
     )
     raw = response.choices[0].message.content or ""
     data = _parse_response(raw)
+    body_html = _ensure_html(str(data["body_html"]))
+    if email_type == "partenariat" and greeting:
+        body_html = _apply_partnership_greeting(body_html, greeting)
     return {
         "subject": str(data["subject"]).strip()[:120],
         "preheader": str(data.get("preheader", "")).strip()[:160],
-        "body_html": _ensure_html(str(data["body_html"])),
+        "body_html": body_html,
         "ai_generated": True,
         "manual": False,
         "email_type": email_type,
