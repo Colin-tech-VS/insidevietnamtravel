@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+{% from "macros/images.html" import responsive_img with context %}
+{% from "macros/seo.html" import json_ld_graph with context %}
+{% from "macros/affiliates.html" import pdf_banner with context %}
+
+{% set hero_img = '/static/images/destinations/hoi-an.webp' %}
+
+{% block head_preload %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tools.css') }}">
+<link rel="preload" as="image" href="{{ hero_img }}" fetchpriority="high">
+{% endblock %}
+
+{% block structured_data %}
+{% set graph = [
+  {"@type": "WebPage", "name": meta_title, "description": meta_description,
+   "url": canonical_url, "inLanguage": "en-GB" if lang == 'en' else "fr-FR"},
+  seo_breadcrumb([
+    (t('nav.home'), site.SITE_URL ~ lang_url('index')),
+    (t('events.nav'), None),
+  ]),
+] %}
+{{ json_ld_graph(graph) }}
+{% endblock %}
+
+{% block content %}
+<header class="pillar-hero">
+  <div class="pillar-hero__media" aria-hidden="true">
+    {{ responsive_img(hero_img, alt='', width=1600, height=900, loading='eager',
+       fetchpriority='high', class='pillar-hero__img', sizes='100vw') }}
+  </div>
+  <div class="container pillar-hero__inner">
+    <nav class="breadcrumb breadcrumb--light" aria-label="{{ t('breadcrumb.aria') }}">
+      <ol>
+        <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+        <li aria-current="page">{{ t('events.nav') }}</li>
+      </ol>
+    </nav>
+    <span class="pillar-hero__eyebrow">{{ t('events.eyebrow') }}</span>
+    <h1 class="pillar-hero__title">{{ t('events.title') }}</h1>
+    <p class="pillar-hero__lede">{{ t('events.lead') }}</p>
+    <p class="events-hero__season">{{ t('events.season_label') }} · {{ calendar.season_label }}</p>
+  </div>
+</header>
+
+<section class="section section--alt" id="events-planner">
+  <div class="container">
+    <div class="section-header">
+      <h2>{{ t('events.filter_title') }}</h2>
+      <p>{{ t('events.filter_sub') }}</p>
+    </div>
+
+    <div class="events-planner" id="events-planner-root"
+         data-lang="{{ lang }}"
+         data-today="{{ calendar.today }}"
+         data-msg-none="{{ t('events.filter_none') }}"
+         data-msg-count="{{ t('events.filter_count') }}">
+      <div class="events-planner__controls">
+        <div class="form-field">
+          <label for="ev-year">{{ t('events.filter_year') }}</label>
+          <select id="ev-year">
+            <option value="all">{{ t('events.filter_all') }}</option>
+            <option value="2026">2026</option>
+            <option value="2027">2027</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="ev-month">{{ t('events.filter_month') }}</label>
+          <select id="ev-month">
+            <option value="all">{{ t('events.filter_all') }}</option>
+            {% for i in range(12) %}
+            <option value="{{ i + 1 }}">{{ calendar.month_labels[i] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="ev-category">{{ t('events.filter_category') }}</label>
+          <select id="ev-category">
+            <option value="all">{{ t('events.filter_all') }}</option>
+            {% for cat in calendar.categories %}
+            <option value="{{ cat.key }}">{{ cat.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <label class="events-planner__toggle">
+          <input type="checkbox" id="ev-upcoming" checked>
+          <span>{{ t('events.filter_upcoming') }}</span>
+        </label>
+      </div>
+      <output class="events-planner__result" id="ev-result" aria-live="polite"></output>
+    </div>
+
+    <div class="events-stats" role="list">
+      <div class="events-stat" role="listitem">
+        <span class="events-stat__value">{{ calendar.stats.total }}</span>
+        <span class="events-stat__label">{{ t('events.stat_total') }}</span>
+      </div>
+      <div class="events-stat" role="listitem">
+        <span class="events-stat__value">{{ calendar.stats.upcoming }}</span>
+        <span class="events-stat__label">{{ t('events.stat_upcoming') }}</span>
+      </div>
+      <div class="events-stat" role="listitem">
+        <span class="events-stat__value">{{ calendar.stats.must_see }}</span>
+        <span class="events-stat__label">{{ t('events.stat_must_see') }}</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if calendar.highlights %}
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2>{{ t('events.highlights_title') }}</h2>
+      <p>{{ t('events.highlights_sub') }}</p>
+    </div>
+    <div class="events-highlights">
+      {% for ev in calendar.highlights %}
+      <article class="events-highlight" data-event-id="{{ ev.id }}">
+        <span class="events-highlight__icon" aria-hidden="true">{{ ev.icon }}</span>
+        <div>
+          <h3>{{ ev.title }}</h3>
+          <p class="events-highlight__date">{{ ev.date_label }}</p>
+          <p>{{ ev.summary }}</p>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="section section--alt">
+  <div class="container">
+    <div class="section-header">
+      <h2>{{ t('events.timeline_title') }}</h2>
+      <p>{{ t('events.timeline_sub') }}</p>
+    </div>
+    <div class="events-timeline" id="events-timeline">
+      {% for ev in calendar.events %}
+      <article class="events-card"
+               id="event-{{ ev.id }}"
+               data-id="{{ ev.id }}"
+               data-year="{{ ev.year }}"
+               data-month="{{ ev.month }}"
+               data-category="{{ ev.category }}"
+               data-status="{{ ev.status }}"
+               data-recurring="{{ '1' if ev.recurring else '0' }}">
+        <header class="events-card__head">
+          <span class="events-card__icon" aria-hidden="true">{{ ev.icon }}</span>
+          <div class="events-card__meta">
+            <span class="events-card__badge events-card__badge--{{ ev.category }}">{{ ev.category_label }}</span>
+            {% if ev.must_see %}
+            <span class="events-card__badge events-card__badge--star">{{ t('events.must_see') }}</span>
+            {% endif %}
+            {% if ev.status == 'ongoing' %}
+            <span class="events-card__badge events-card__badge--live">{{ t('events.status_ongoing') }}</span>
+            {% elif ev.status == 'past' %}
+            <span class="events-card__badge events-card__badge--past">{{ t('events.status_past') }}</span>
+            {% elif ev.recurring %}
+            <span class="events-card__badge events-card__badge--recurring">{{ t('events.status_recurring') }}</span>
+            {% endif %}
+          </div>
+        </header>
+        <h3 class="events-card__title">{{ ev.title }}</h3>
+        <p class="events-card__date">
+          <time datetime="{{ ev.start_date }}">{{ ev.date_label }}</time>
+          {% if ev.lunar_note %}
+          <span class="events-card__lunar"> · {{ ev.lunar_note }}</span>
+          {% endif %}
+        </p>
+        <p class="events-card__summary">{{ ev.summary }}</p>
+        <div class="events-card__body">{{ ev.body }}</div>
+        {% if ev.region_labels %}
+        <p class="events-card__regions">
+          <span class="events-card__regions-label">{{ t('events.regions') }}:</span>
+          {{ ev.region_labels | join(' · ') }}
+        </p>
+        {% endif %}
+        {% if ev.destinations %}
+        <div class="events-card__dests">
+          {% for d in ev.destinations %}
+          <a class="events-card__dest" href="{{ lang_url('destination_page', slug=d.slug) }}">{{ d.name }}</a>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% if ev.tip %}
+        <aside class="events-card__tip">
+          <strong>{{ t('events.tip_label') }}</strong> {{ ev.tip }}
+        </aside>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+    <p class="events-empty sr-only" id="events-empty" hidden>{{ t('events.filter_none') }}</p>
+  </div>
+</section>
+
+{% if calendar.hoi_an_moon_dates %}
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2>{{ t('events.hoi_an_title') }}</h2>
+      <p>{{ t('events.hoi_an_sub') }}</p>
+    </div>
+    <div class="events-moon-grid">
+      {% for d in calendar.hoi_an_moon_dates %}
+      <span class="events-moon-chip events-moon-chip--{{ d.status }}">
+        <time datetime="{{ d.start }}">{{ d.label }}</time>
+      </span>
+      {% endfor %}
+    </div>
+    <p class="events-moon-note">{{ t('events.hoi_an_note') }}</p>
+  </div>
+</section>
+{% endif %}
+
+<section class="section section--alt">
+  <div class="container">
+    <aside class="tool-callout">
+      <span class="tool-callout__icon" aria-hidden="true">📅</span>
+      <div>
+        <h3>{{ t('events.tip_title') }}</h3>
+        <p>{{ t('events.tip_body') }}</p>
+      </div>
+    </aside>
+    <div class="tool-links" style="margin-top:2rem">
+      <a class="tool-link-card" href="{{ lang_url('best_season') }}">
+        <span class="tool-link-card__icon" aria-hidden="true">🌤️</span>
+        <span class="tool-link-card__title">{{ t('tools.season') }}</span>
+      </a>
+      <a class="tool-link-card" href="{{ lang_url('prepare_trip') }}">
+        <span class="tool-link-card__icon" aria-hidden="true">🗺️</span>
+        <span class="tool-link-card__title">{{ t('nav.prepare') }}</span>
+      </a>
+      <a class="tool-link-card" href="{{ lang_url('customs_guide') }}">
+        <span class="tool-link-card__icon" aria-hidden="true">🙏</span>
+        <span class="tool-link-card__title">{{ t('tools.customs') }}</span>
+      </a>
+    </div>
+    {{ pdf_banner() }}
+  </div>
+</section>
+
+<script type="application/json" id="events-calendar-data">{{ calendar.events | tojson }}</script>
+<script src="{{ url_for('static', filename='js/events-calendar.js') }}" defer></script>
+{% endblock %}

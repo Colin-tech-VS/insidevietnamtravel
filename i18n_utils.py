@@ -260,6 +260,7 @@ ROUTE_PATHS: dict[str, dict[str, str]] = {
     "safety_guide": {"fr": "/securite-voyage-vietnam", "en": "/en/vietnam-travel-safety"},
     "customs_guide": {"fr": "/coutumes-vietnam", "en": "/en/vietnam-customs-etiquette"},
     "phrases_guide": {"fr": "/phrases-utiles-vietnamien", "en": "/en/useful-vietnamese-phrases"},
+    "events_calendar": {"fr": "/evenements-vietnam-2026", "en": "/en/vietnam-events-calendar"},
     "about": {"fr": "/a-propos", "en": "/en/about"},
     "contact": {"fr": "/contact", "en": "/en/contact"},
     "privacy": {"fr": "/politique-confidentialite", "en": "/en/privacy"},

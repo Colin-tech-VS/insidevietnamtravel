@@ -802,6 +802,179 @@
   border-radius: 2px;
 }
 
+/* ── Events calendar ─────────────────────────────────────────────────── */
+.events-hero__season {
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  opacity: 0.92;
+}
+.events-planner__controls {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: end;
+}
+.events-planner__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.65rem 0;
+}
+.events-planner__toggle input { accent-color: var(--teal); }
+.events-planner__result {
+  display: block;
+  margin-top: 1rem;
+  padding: 0.85rem 1.1rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+}
+.events-planner__result--ok { background: rgba(42, 107, 94, 0.1); color: var(--jade); }
+.events-planner__result--empty { background: var(--rice); color: var(--ink-muted); font-weight: 500; }
+.events-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 2rem;
+}
+.events-stat {
+  text-align: center;
+  padding: 1.25rem 1rem;
+  background: var(--white);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+.events-stat__value {
+  display: block;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--teal);
+  line-height: 1.1;
+}
+.events-stat__label {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+}
+.events-highlights {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+.events-highlight {
+  display: flex;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: var(--white);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--teal);
+}
+.events-highlight__icon { font-size: 1.75rem; line-height: 1; }
+.events-highlight h3 { font-size: 1.05rem; margin-bottom: 0.25rem; }
+.events-highlight__date {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--teal);
+  margin-bottom: 0.35rem;
+}
+.events-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.events-card {
+  padding: 1.5rem;
+  background: var(--white);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  scroll-margin-top: calc(var(--header-h) + 1rem);
+}
+.events-card[hidden] { display: none; }
+.events-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.events-card__icon { font-size: 2rem; line-height: 1; }
+.events-card__meta { display: flex; flex-wrap: wrap; gap: 0.35rem; justify-content: flex-end; }
+.events-card__badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: var(--rice);
+  color: var(--ink-muted);
+}
+.events-card__badge--culture { background: rgba(42, 107, 94, 0.12); color: var(--jade); }
+.events-card__badge--national { background: rgba(196, 101, 74, 0.12); color: var(--terracotta); }
+.events-card__badge--religious { background: rgba(127, 176, 105, 0.18); color: #3d6b35; }
+.events-card__badge--local { background: rgba(232, 196, 104, 0.22); color: #7a5f1a; }
+.events-card__badge--recurring { background: rgba(42, 107, 94, 0.08); color: var(--teal); }
+.events-card__badge--star { background: rgba(232, 196, 104, 0.35); color: #5c4a12; }
+.events-card__badge--live { background: rgba(42, 107, 94, 0.2); color: var(--jade); }
+.events-card__badge--past { opacity: 0.65; }
+.events-card__title { font-size: 1.25rem; margin-bottom: 0.35rem; }
+.events-card__date {
+  font-weight: 600;
+  color: var(--teal);
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.events-card__lunar { font-weight: 500; color: var(--ink-muted); }
+.events-card__summary { font-weight: 500; margin-bottom: 0.75rem; }
+.events-card__body { color: var(--ink-muted); line-height: 1.6; margin-bottom: 0.75rem; }
+.events-card__regions { font-size: 0.88rem; color: var(--ink-muted); margin-bottom: 0.5rem; }
+.events-card__regions-label { font-weight: 600; color: var(--ink); }
+.events-card__dests { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
+.events-card__dest {
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(42, 107, 94, 0.08);
+  color: var(--jade);
+  text-decoration: none;
+  transition: background var(--transition);
+}
+.events-card__dest:hover { background: rgba(42, 107, 94, 0.16); }
+.events-card__tip {
+  margin-top: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--rice);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.events-moon-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.events-moon-chip {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(42, 107, 94, 0.08);
+  color: var(--jade);
+}
+.events-moon-chip--past { opacity: 0.5; }
+.events-moon-chip--ongoing { background: rgba(42, 107, 94, 0.2); }
+.events-moon-note {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+}
+
 /* ── Responsive ─────────────────────────────────────────────────────────
    Bloc gardé en FIN de fichier : à spécificité égale, c'est l'ordre qui
    décide, et ces overrides doivent l'emporter sur les styles composants
@@ -810,6 +983,8 @@
   .budget-tool { grid-template-columns: 1fr; }
   .budget-field--row-3 { grid-template-columns: 1fr 1fr; }
   .budget-select-grid { grid-template-columns: 1fr; }
+  .events-planner__controls { grid-template-columns: 1fr 1fr; }
+  .events-stats { grid-template-columns: 1fr; }
 }
 @media (max-width: 700px) {
   .season-planner__controls { grid-template-columns: 1fr; }

@@ -827,6 +827,22 @@ def phrases_guide():
     )
 
 
+@app.route("/evenements-vietnam-2026")
+@app.route("/en/vietnam-events-calendar")
+def events_calendar():
+    from data.vietnam_events import build_events_calendar
+
+    lang = get_lang()
+    return render_template(
+        "tools/events.html",
+        calendar=build_events_calendar(lang, destinations=_destinations(lang)),
+        meta_title=t("meta.events.title", lang),
+        meta_description=t("meta.events.desc", lang),
+        meta_keywords=t("meta.events.kw", lang),
+        og_image="/static/images/destinations/hoi-an.webp",
+    )
+
+
 # ── Blog ──────────────────────────────────────────────────────────────
 
 @app.route("/blog")
@@ -1324,6 +1340,7 @@ def search_index():
         ("safety_guide", "safety.nav"),
         ("customs_guide", "customs.nav"),
         ("phrases_guide", "phrases.nav"),
+        ("events_calendar", "events.nav"),
         ("prepare_trip", "nav.prepare"),
     ):
         items.append({

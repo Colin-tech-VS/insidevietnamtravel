@@ -25,6 +25,7 @@ SITEMAP_STATIC: dict[str, dict[str, str]] = {
     "safety_guide": {"priority": "0.82", "changefreq": "monthly"},
     "customs_guide": {"priority": "0.82", "changefreq": "monthly"},
     "phrases_guide": {"priority": "0.82", "changefreq": "monthly"},
+    "events_calendar": {"priority": "0.88", "changefreq": "weekly"},
     "about": {"priority": "0.5", "changefreq": "monthly"},
     "contact": {"priority": "0.5", "changefreq": "monthly"},
     "privacy": {"priority": "0.4", "changefreq": "yearly"},

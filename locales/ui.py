@@ -626,6 +626,7 @@ UI: dict[str, dict[str, str]] = {
     "tools.safety": {"fr": "Sécurité & arnaques", "en": "Safety & scams"},
     "tools.customs": {"fr": "Coutumes", "en": "Customs"},
     "tools.phrases": {"fr": "Phrases vietnamiennes", "en": "Vietnamese phrases"},
+    "tools.events": {"fr": "Événements & festivals", "en": "Events & festivals"},
     "footer.tools": {"fr": "Outils voyage", "en": "Travel tools"},
 
     # ── Page Applications utiles ─────────────────────────────────────────
@@ -1091,6 +1092,117 @@ UI: dict[str, dict[str, str]] = {
     "meta.phrases.kw": {
         "fr": "phrases vietnamien, parler vietnamien voyage, vocabulaire Vietnam",
         "en": "Vietnamese phrases, learn Vietnamese travel, Vietnam vocabulary",
+    },
+    "events.nav": {"fr": "Événements Vietnam", "en": "Vietnam events"},
+    "events.eyebrow": {"fr": "Calendrier culturel", "en": "Cultural calendar"},
+    "events.title": {
+        "fr": "Événements & festivals au Vietnam (2026–2027)",
+        "en": "Vietnam events & festivals (2026–2027)",
+    },
+    "events.lead": {
+        "fr": "Têt, fêtes lunaires, festivals régionaux et rendez-vous incontournables — "
+              "dates, lieux et conseils pratiques pour planifier votre voyage.",
+        "en": "Tết, lunar festivals, regional celebrations and unmissable dates — "
+              "when, where and how to plan your trip around them.",
+    },
+    "events.season_label": {"fr": "Saison", "en": "Season"},
+    "events.filter_title": {"fr": "Filtrer le calendrier", "en": "Filter the calendar"},
+    "events.filter_sub": {
+        "fr": "Par année, mois ou type d'événement. Affichez uniquement ce qui reste à venir.",
+        "en": "By year, month or event type. Show upcoming events only.",
+    },
+    "events.filter_year": {"fr": "Année", "en": "Year"},
+    "events.filter_month": {"fr": "Mois", "en": "Month"},
+    "events.filter_category": {"fr": "Catégorie", "en": "Category"},
+    "events.filter_upcoming": {"fr": "À venir uniquement", "en": "Upcoming only"},
+    "events.filter_all": {"fr": "Tous", "en": "All"},
+    "events.filter_none": {
+        "fr": "Aucun événement ne correspond à ces filtres.",
+        "en": "No events match these filters.",
+    },
+    "events.filter_count": {
+        "fr": "{n} événement(s) affiché(s)",
+        "en": "{n} event(s) shown",
+    },
+    "events.stat_total": {"fr": "Événements listés", "en": "Events listed"},
+    "events.stat_upcoming": {"fr": "À venir ou en cours", "en": "Upcoming or ongoing"},
+    "events.stat_must_see": {"fr": "Incontournables", "en": "Must-see"},
+    "events.highlights_title": {"fr": "Les incontournables", "en": "Must-see highlights"},
+    "events.highlights_sub": {
+        "fr": "Les rendez-vous culturels les plus marquants de la saison.",
+        "en": "The most memorable cultural dates of the season.",
+    },
+    "events.timeline_title": {"fr": "Calendrier détaillé", "en": "Full calendar"},
+    "events.timeline_sub": {
+        "fr": "Dates solaires confirmées pour 2026–2027 ; certaines éditions (Hue Festival, DIFF) "
+              "peuvent être ajustées par les autorités locales.",
+        "en": "Confirmed solar dates for 2026–2027; some editions (Hue Festival, DIFF) may be "
+              "adjusted by local authorities.",
+    },
+    "events.must_see": {"fr": "Incontournable", "en": "Must-see"},
+    "events.status_ongoing": {"fr": "En cours", "en": "Ongoing"},
+    "events.status_past": {"fr": "Passé", "en": "Past"},
+    "events.status_recurring": {"fr": "Récurrent", "en": "Recurring"},
+    "events.regions": {"fr": "Régions", "en": "Regions"},
+    "events.tip_label": {"fr": "Conseil", "en": "Tip"},
+    "events.hoi_an_title": {
+        "fr": "Hội An — pleines lunes & lanternes flottantes",
+        "en": "Hội An — full moons & floating lanterns",
+    },
+    "events.hoi_an_sub": {
+        "fr": "Le 14e jour de chaque mois lunaire : festival des lanternes sur la rivière Thu Bồn.",
+        "en": "On the 14th lunar day each month: lantern festival on the Thu Bồn River.",
+    },
+    "events.hoi_an_note": {
+        "fr": "La vieille ville est illuminée chaque soir ; ces dates sont les soirées les plus "
+              "spectaculaires.",
+        "en": "The old town is lit every evening; these are the most spectacular nights.",
+    },
+    "events.tip_title": {
+        "fr": "Planifier autour d'un festival",
+        "en": "Plan around a festival",
+    },
+    "events.tip_body": {
+        "fr": "Réservez transport et hébergement 2–3 mois à l'avance pour le Têt et les longs "
+              "week-ends. Croisez avec notre guide « Quand partir » pour le climat.",
+        "en": "Book transport and stays 2–3 months ahead for Tết and long weekends. Cross-check "
+              "with our best-time guide for weather.",
+    },
+    "events.cat.national": {"fr": "Fête nationale", "en": "National holiday"},
+    "events.cat.culture": {"fr": "Culture & tradition", "en": "Culture & tradition"},
+    "events.cat.religious": {"fr": "Religieux & spirituel", "en": "Religious & spiritual"},
+    "events.cat.local": {"fr": "Local & régional", "en": "Local & regional"},
+    "events.cat.recurring": {"fr": "Récurrent", "en": "Recurring"},
+    "events.region.north": {"fr": "Nord", "en": "North"},
+    "events.region.central": {"fr": "Centre", "en": "Central"},
+    "events.region.south": {"fr": "Sud", "en": "South"},
+    "events.region.mekong": {"fr": "Delta du Mékong", "en": "Mekong Delta"},
+    "events.region.nationwide": {"fr": "Tout le pays", "en": "Nationwide"},
+    "events.month.1": {"fr": "Janvier", "en": "January"},
+    "events.month.2": {"fr": "Février", "en": "February"},
+    "events.month.3": {"fr": "Mars", "en": "March"},
+    "events.month.4": {"fr": "Avril", "en": "April"},
+    "events.month.5": {"fr": "Mai", "en": "May"},
+    "events.month.6": {"fr": "Juin", "en": "June"},
+    "events.month.7": {"fr": "Juillet", "en": "July"},
+    "events.month.8": {"fr": "Août", "en": "August"},
+    "events.month.9": {"fr": "Septembre", "en": "September"},
+    "events.month.10": {"fr": "Octobre", "en": "October"},
+    "events.month.11": {"fr": "Novembre", "en": "November"},
+    "events.month.12": {"fr": "Décembre", "en": "December"},
+    "meta.events.title": {
+        "fr": "Événements Vietnam 2026–2027 — Têt, festivals & calendrier lunaire",
+        "en": "Vietnam events 2026–2027 — Tết, festivals & lunar calendar",
+    },
+    "meta.events.desc": {
+        "fr": "Calendrier des festivals et événements au Vietnam : Nouvel An lunaire, Hội An, "
+              "Huế, Cham, Mékong. Dates 2026–2027 et conseils voyage.",
+        "en": "Vietnam festival calendar: Lunar New Year, Hội An, Huế, Cham, Mekong. "
+              "2026–2027 dates and travel tips.",
+    },
+    "meta.events.kw": {
+        "fr": "événements Vietnam, Têt 2026, festivals Vietnam, calendrier Vietnam voyage",
+        "en": "Vietnam events, Tết 2026, Vietnam festivals, Vietnam travel calendar",
     },
 }
 
