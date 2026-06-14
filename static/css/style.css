@@ -2802,8 +2802,22 @@ a.article-category:hover { text-decoration: underline; }
   font-size: 1rem;
   color: var(--ink-soft);
   max-width: 36rem;
-  margin: 0 auto;
+  margin: 0 auto 0.75rem;
   line-height: 1.6;
+}
+.prepare-email-gate__free {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--jade);
+  max-width: 36rem;
+  margin: 0 auto 0.5rem;
+}
+.prepare-email-gate__pdf-hint {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  max-width: 36rem;
+  margin: 0 auto 1.25rem;
+  line-height: 1.5;
 }
 .prepare-email-gate__form {
   display: flex;
@@ -2999,10 +3013,80 @@ a.article-category:hover { text-decoration: underline; }
   background: linear-gradient(135deg, rgba(27, 77, 74, 0.06) 0%, rgba(196, 160, 83, 0.1) 100%);
   border: 1px solid rgba(27, 77, 74, 0.12);
 }
+.prepare-pdf-offer {
+  text-align: left;
+}
+.prepare-pdf-offer__eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin: 0 0 0.5rem;
+}
+.prepare-pdf-offer__title {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 0.65rem;
+}
+.prepare-pdf-offer__sub {
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+  margin: 0 0 1rem;
+  line-height: 1.55;
+}
+.prepare-pdf-offer__features {
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+.prepare-pdf-offer__features li {
+  font-size: 0.9rem;
+  color: var(--ink);
+  padding-left: 1.35rem;
+  position: relative;
+  line-height: 1.45;
+}
+.prepare-pdf-offer__features li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--jade);
+  font-weight: 700;
+}
+.prepare-pdf-offer__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(27, 77, 74, 0.1);
+}
+.prepare-pdf-offer__price {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--jade);
+}
 .prepare-results__cta-lead {
   font-size: 0.95rem;
   color: var(--ink-soft);
   margin-bottom: 1rem;
+}
+@media (max-width: 640px) {
+  .prepare-pdf-offer__footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .prepare-pdf-offer__footer .btn {
+    width: 100%;
+    text-align: center;
+  }
 }
 
 /* ── Budget estimé ────────────────────────────────── */

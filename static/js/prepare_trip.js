@@ -532,7 +532,6 @@
     const backBtn = resultsEl.querySelector('.prepare-results-back');
     if (backBtn) backBtn.textContent = labels.results_back || labels.back || '';
     resultsEl.querySelector('.prepare-restart').textContent = labels.restart || '';
-    resultsEl.querySelector('.prepare-pdf-cta').textContent = labels.pdf_cta || '';
     resultsEl.querySelector('.prepare-results__sections').innerHTML =
       `<p class="prepare-results__loading" aria-live="polite">${labels.gate_loading || '…'}</p>`;
     resultsEl.scrollIntoView({ behavior: 'auto', block: 'start' });

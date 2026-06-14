@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Any
+from typing import Any, Callable
 
 from locales.ui import t as ui_t
 from i18n_utils import lang_url
@@ -1513,6 +1513,85 @@ def _dest_label(slug: str, lang: str, destinations: dict | None) -> str:
     if destinations and slug in destinations:
         return destinations[slug].get("name", slug)
     return slug.replace("-", " ").title()
+
+
+def build_events_mai_chunks(
+    lang: str,
+    page_url_fn: Callable[[str, str], str],
+    *,
+    today: date | None = None,
+) -> list[dict]:
+    """Index événements 2026–2027 pour Mai (RAG)."""
+    lang = "en" if lang == "en" else "fr"
+    today = today or date.today()
+    chunks: list[dict] = []
+    calendar_url = page_url_fn("events_calendar", lang)
+
+    must_see: list[str] = []
+    upcoming_lines: list[str] = []
+    for ev in EVENTS:
+        title = _pick(ev["title"], lang)
+        if ev.get("must_see"):
+            must_see.append(title)
+        for occ in ev.get("occurrences", []):
+            start = _parse(occ["start"])
+            end = _parse(occ["end"])
+            if end < CALENDAR_START or start > CALENDAR_END:
+                continue
+            if _status(start, end, today) == "past":
+                continue
+            upcoming_lines.append(f"{title} ({_format_range(start, end, lang)})")
+
+    overview = " ".join(filter(None, [
+        ui_t("events.lead", lang),
+        ui_t("events.highlights_sub", lang),
+        f"{'Incontournables' if lang == 'fr' else 'Must-see'}: {', '.join(must_see[:9])}." if must_see else "",
+        f"{'Prochaines dates' if lang == 'fr' else 'Upcoming dates'}: {'; '.join(upcoming_lines[:14])}." if upcoming_lines else "",
+    ]))
+    chunks.append({
+        "id": "guide-page:events_calendar",
+        "title": ui_t("events.title", lang),
+        "url": calendar_url,
+        "group": "Événements Vietnam",
+        "text": overview[:900],
+    })
+
+    for ev in EVENTS:
+        dates: list[str] = []
+        for occ in ev.get("occurrences", []):
+            start = _parse(occ["start"])
+            end = _parse(occ["end"])
+            if end < CALENDAR_START or start > CALENDAR_END:
+                continue
+            dates.append(_format_range(start, end, lang))
+
+        enrich = EVENT_ENRICHMENT.get(ev["key"], {})
+        highlights = _pick_list(enrich.get("highlights", {}), lang)
+        practical = _pick_list(enrich.get("practical", {}), lang)
+        parts = [
+            f"{'Dates' if lang == 'fr' else 'Dates'}: {' · '.join(dates)}" if dates else "",
+            _pick(ev["summary"], lang),
+            _pick(ev["body"], lang),
+            _pick(ev.get("tip", {}), lang),
+            _pick(ev.get("lunar", {}), lang),
+        ]
+        if highlights:
+            parts.append(f"{'Points forts' if lang == 'fr' else 'Highlights'}: {'; '.join(highlights[:5])}")
+        if practical:
+            parts.append(f"{'Pratique' if lang == 'fr' else 'Practical'}: {'; '.join(practical[:4])}")
+        region_labels = [ui_t(f"events.region.{r}", lang) for r in ev.get("regions") or []]
+        if region_labels:
+            parts.append(f"{'Régions' if lang == 'fr' else 'Regions'}: {', '.join(region_labels)}")
+
+        chunks.append({
+            "id": f"guide-events:{ev['key']}",
+            "title": _pick(ev["title"], lang),
+            "url": calendar_url,
+            "group": "Événements Vietnam",
+            "text": " ".join(p for p in parts if p)[:900],
+        })
+
+    return chunks
 
 
 def build_events_calendar(

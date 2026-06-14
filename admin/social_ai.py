@@ -108,6 +108,7 @@ def page_inventory(lang: str = "fr") -> list[dict]:
         ("customs_guide", "customs.title", "customs.lead"),
         ("phrases_guide", "phrases.title", "phrases.lead"),
         ("prepare_trip", "nav.prepare", "prepare.sub"),
+        ("events_calendar", "events.title", "events.lead"),
     )
     for endpoint, title_key, lead_key in tool_pages:
         title = t(title_key, lang)

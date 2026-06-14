@@ -323,6 +323,26 @@ def _extended_knowledge_chunks(lang: str, track_url_fn) -> list[dict]:
     except Exception:
         pass
 
+    try:
+        from data.affiliates import PDF_GUIDE
+
+        pdf_block = (PDF_GUIDE.get("i18n") or {}).get(lang) or PDF_GUIDE
+        features = "; ".join(pdf_block.get("features") or [])
+        chunks.append({
+            "id": "product:pdf_guide",
+            "title": pdf_block.get("title", "Guide Vietnam PDF"),
+            "url": _abs(lang_url("pdf_checkout", lang)),
+            "group": "Produit digital",
+            "text": (
+                f"{pdf_block.get('subtitle', '')} "
+                f"{'Prix' if lang == 'fr' else 'Price'}: {pdf_block.get('price', '')}. "
+                f"{features}. "
+                f"{'Complète le trip planner gratuit avec checklists imprimables et itinéraires jour par jour.' if lang == 'fr' else 'Complements the free trip planner with printable checklists and day-by-day itineraries.'}"
+            )[:900],
+        })
+    except Exception:
+        pass
+
     return chunks
 
 
@@ -490,6 +510,8 @@ def retrieve(query: str, lang: str, track_url_fn, top_n: int = CHAT_RETRIEVE_TOP
         "coutume", "etiquette", "respect", "temple", "politesse",
         "phrase", "vietnamien", "vietnamese", "xin chao", "cam on",
         "budget", "prepare", "preparer", "organiser", "itinera", "circuit", "blog",
+        "festival", "festiv", "tet", "têt", "evenement", "événement", "event", "calendrier",
+        "lunaire", "lunar", "celebr", "célébr",
     )):
         top_n = max(top_n, 18)
 
@@ -540,6 +562,20 @@ def retrieve(query: str, lang: str, track_url_fn, top_n: int = CHAT_RETRIEVE_TOP
             score += 3
         if chunk.get("id") in ("tool:prepare_trip", "page:prepare_trip") and any(
             w in hay for w in ("partir", "prepare", "preparer", "organiser", "faut faire", "checklist")
+        ):
+            score += 4
+        if chunk.get("group") == "Événements Vietnam" and any(
+            t in q_tokens for t in _tokenize(
+                "festival tet evenement calendrier lunaire celebration fete fête", lang
+            )
+        ):
+            score += 4
+        if chunk.get("id", "").startswith("guide-events:") and any(
+            t in q_tokens for t in _tokenize("tet festival lunaire lunar new year", lang)
+        ):
+            score += 3
+        if chunk.get("id") == "product:pdf_guide" and any(
+            t in q_tokens for t in _tokenize("pdf guide telecharger checklist imprimable acheter", lang)
         ):
             score += 4
         if chunk.get("group") in ("Articles de blog", "Guides expérience") and any(
@@ -673,6 +709,10 @@ def _link_intent(text: str) -> dict[str, bool]:
         "prepare": any(w in hay for w in (
             "partir", "prepare", "preparer", "préparer", "organiser", "faut faire", "checklist",
             "before you go", "what do i need",
+        )),
+        "pdf": any(w in hay for w in (
+            "pdf", "guide pdf", "telecharger", "télécharger", "acheter", "buy guide",
+            "download guide", "checklist imprim", "printable",
         )),
         "map": _wants_map(text),
     }
@@ -989,7 +1029,7 @@ def _auto_enrich_links(
 ) -> tuple[list[dict], list[dict]]:
     """Complète au plus 1 lien site + 1 affilié, uniquement si la question le demande."""
     intent = _link_intent(message)
-    if not any(intent[k] for k in ("booking", "activity", "esim", "insurance", "visa", "prepare", "guide_page", "map")):
+    if not any(intent[k] for k in ("booking", "activity", "esim", "insurance", "visa", "prepare", "guide_page", "map", "pdf")):
         return [], []
 
     slug = _detect_destination_slug(message, lang)
@@ -1025,6 +1065,8 @@ def _auto_enrich_links(
         if intent["visa"] and cid.startswith("guide-visa"):
             add_site(chunk)
         elif intent["prepare"] and cid in ("tool:prepare_trip", "page:prepare_trip"):
+            add_site(chunk)
+        elif intent["pdf"] and cid == "product:pdf_guide":
             add_site(chunk)
         elif intent["map"] and slug and cid == f"dest-rich:{slug}":
             add_site(chunk)
@@ -1223,7 +1265,8 @@ def _system_prompt(lang: str) -> str:
         "SCOPE: you are the public travel assistant for the entire Inside Vietnam Travel website "
         "(FR + EN). You know ALL public pages: home, prepare-your-trip hub, destinations with interactive maps, "
         "ready-made itineraries (3/7/10/15 days), blog & experience guides, practical tools (visa, weather, "
-        "budget calculator, safety, customs, phrases, apps, eSIM & insurance), about & contact. "
+        "budget calculator, safety, customs, phrases, apps, eSIM & insurance), events & festivals "
+        "calendar (2026–2027), PDF travel guide (paid), about & contact. "
         "You do NOT manage /admin (that is Linh, the internal admin copilot) — for site ownership or "
         "partnerships, point to the contact page."
     )
@@ -1231,7 +1274,8 @@ def _system_prompt(lang: str) -> str:
         "PÉRIMÈTRE : tu es l'assistante voyage du site public Inside Vietnam Travel (FR + EN). "
         "Tu connais TOUTES les pages publiques : accueil, hub préparer son voyage, destinations avec cartes "
         "interactives, itinéraires clés en main (3/7/10/15 jours), blog & guides expérience, outils pratiques "
-        "(visa, météo, calculateur budget, sécurité, coutumes, phrases, apps, eSIM & assurance), à propos & contact. "
+        "(visa, météo, calculateur budget, sécurité, coutumes, phrases, apps, eSIM & assurance), calendrier "
+        "événements & festivals (2026–2027), guide PDF voyage (payant), à propos & contact. "
         "Tu ne gères PAS /admin (c'est Linh, copilote interne) — pour la rédaction du site ou un partenariat, "
         "oriente vers la page contact."
     )
@@ -1255,6 +1299,9 @@ def _system_prompt(lang: str) -> str:
             "The site has dedicated guides: travel safety & scams, customs & etiquette, useful Vietnamese phrases, "
             "visa checker (evisa.gov.vn), weather planner by region/destination, useful apps (Grab), eSIM & insurance — "
             "recommend the matching page from CONTEXT when relevant. "
+            "For festivals, Tết or event dates, use the events calendar page from CONTEXT. "
+            "After detailed trip-planning advice, you may briefly mention the paid PDF guide "
+            "(day-by-day itineraries, printable checklists) — only when it genuinely helps, not every reply. "
             "CITIES — absolute rule: when a CITIES MENTIONED block is present, your answer is about THOSE exact "
             "cities and matches their factual anchors. NEVER mix up two distinct cities (Đà Lạt, the highland city, "
             "is NOT Huế, the imperial capital; Đà Nẵng is not Đà Lạt). If the site has no page for a requested "
@@ -1301,6 +1348,9 @@ def _system_prompt(lang: str) -> str:
         "Le site propose des guides dédiés : sécurité & arnaques, coutumes & étiquette, phrases utiles en vietnamien, "
         "test visa (evisa.gov.vn), météo par région/ville avec planificateur, apps utiles (Grab), eSIM & assurance — "
         "orientez vers la page correspondante du CONTEXTE quand c'est pertinent. "
+        "Pour les festivals, le Têt ou les dates d'événements, utilise le calendrier événements du CONTEXTE. "
+        "Après des conseils détaillés de préparation, tu peux mentionner brièvement le guide PDF payant "
+        "(itinéraires jour par jour, checklists imprimables) — seulement si ça aide vraiment, pas à chaque réponse. "
         "VILLES — règle absolue : quand un bloc VILLES MENTIONNÉES est présent, ta réponse porte sur CES villes "
         "précises et respecte leurs repères factuels. Ne confonds JAMAIS deux villes distinctes (Đà Lạt, la ville "
         "d'altitude des hauts plateaux, n'est PAS Huế, la capitale impériale ; Đà Nẵng n'est pas Đà Lạt). "

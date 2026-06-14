@@ -177,6 +177,29 @@ UI: dict[str, dict[str, str]] = {
               "You'll also be subscribed to our newsletter (Vietnam travel tips, one-click unsubscribe).",
     },
     "prepare.gate.cta": {"fr": "Voir mon programme", "en": "View my trip plan"},
+    "prepare.gate.free_note": {
+        "fr": "Aperçu gratuit instantané : budget estimé, itinéraires et conseils sur mesure.",
+        "en": "Instant free preview: estimated budget, itineraries and tailored tips.",
+    },
+    "prepare.gate.pdf_hint": {
+        "fr": "Ensuite, option guide PDF complet ({price}) — checklists imprimables et itinéraires jour par jour.",
+        "en": "Then, optional full PDF guide ({price}) — printable checklists and day-by-day itineraries.",
+    },
+    "prepare.pdf.eyebrow": {"fr": "Guide PDF premium", "en": "Premium PDF guide"},
+    "prepare.pdf.title": {
+        "fr": "Passez à la vitesse supérieure",
+        "en": "Take it to the next level",
+    },
+    "prepare.pdf.sub": {
+        "fr": "Votre aperçu gratuit est un excellent départ. Le guide PDF ajoute les détails jour par jour, "
+              "les checklists à imprimer et les adresses testées.",
+        "en": "Your free preview is a great start. The PDF guide adds day-by-day details, "
+              "printable checklists and tested addresses.",
+    },
+    "prepare.pdf.cta": {
+        "fr": "Obtenir le guide — {price}",
+        "en": "Get the guide — {price}",
+    },
     "prepare.gate.privacy": {
         "fr": "Pas de spam. Désinscription en un clic.",
         "en": "No spam. Unsubscribe in one click.",

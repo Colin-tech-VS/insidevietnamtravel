@@ -116,6 +116,8 @@
         <span class="prepare-results__badge" aria-hidden="true">✉</span>
         <h2 class="prepare-email-gate__title">{{ t('prepare.gate.title') }}</h2>
         <p class="prepare-email-gate__sub">{{ t('prepare.gate.sub') }}</p>
+        <p class="prepare-email-gate__free">{{ t('prepare.gate.free_note') }}</p>
+        <p class="prepare-email-gate__pdf-hint">{{ t('prepare.gate.pdf_hint', price=pdf.PDF_GUIDE.price) }}</p>
       </header>
       <form class="prepare-email-gate__form" id="prepare-email-form" data-no-loader novalidate>
         <label for="prepare-email" class="sr-only">Email</label>
@@ -145,9 +147,21 @@
       </header>
       <div class="prepare-results__summary" hidden aria-live="polite"></div>
       <div class="prepare-results__sections"></div>
-      <aside class="prepare-results__cta">
-        <p class="prepare-results__cta-lead">{% if lang == 'en' %}Want the full checklist, budgets and printable maps?{% else %}Envie de la checklist complète, des budgets et cartes imprimables ?{% endif %}</p>
-        <a href="{{ pdf_checkout_url() }}" class="btn btn-primary prepare-pdf-cta" data-no-loader></a>
+      <aside class="prepare-results__cta prepare-pdf-offer" aria-labelledby="prepare-pdf-offer-title">
+        <p class="prepare-pdf-offer__eyebrow">{{ t('prepare.pdf.eyebrow') }}</p>
+        <h3 id="prepare-pdf-offer-title" class="prepare-pdf-offer__title">{{ t('prepare.pdf.title') }}</h3>
+        <p class="prepare-pdf-offer__sub">{{ t('prepare.pdf.sub') }}</p>
+        <ul class="prepare-pdf-offer__features">
+          {% for feature in pdf.PDF_GUIDE.features %}
+          <li>{{ feature }}</li>
+          {% endfor %}
+        </ul>
+        <div class="prepare-pdf-offer__footer">
+          <span class="prepare-pdf-offer__price">{{ pdf.PDF_GUIDE.price }}</span>
+          <a href="{{ pdf_checkout_url() }}" class="btn btn-primary prepare-pdf-cta" data-no-loader>
+            {{ t('prepare.pdf.cta', price=pdf.PDF_GUIDE.price) }}
+          </a>
+        </div>
       </aside>
     </div>
   </div>

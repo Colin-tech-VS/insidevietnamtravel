@@ -768,4 +768,12 @@ def build_mai_knowledge_chunks(lang: str, page_url_fn: Callable[[str, str], str]
         group="Guides pratiques",
     )
 
+    try:
+        from data.vietnam_events import build_events_mai_chunks
+
+        for chunk in build_events_mai_chunks(lang, page_url_fn):
+            add(chunk)
+    except Exception:
+        pass
+
     return chunks
