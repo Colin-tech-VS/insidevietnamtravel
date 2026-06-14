@@ -478,6 +478,8 @@ def save_page_review_hints(partner_id: str, review: dict, *, error_reason: str =
         extra["last_verification_error"] = str(error_reason).strip()[:800]
     if review.get("fixes"):
         extra["pending_fixes"] = review["fixes"]
+    extra.pop("ai_job_token", None)
+    extra.pop("ai_job_started_at", None)
     ai_review_json = json.dumps(review, ensure_ascii=False)
     extra_json = json.dumps(extra, ensure_ascii=False)
     with get_connection() as conn:
@@ -593,15 +595,35 @@ def apply_ai_page_result(partner_id: str, result: dict) -> dict:
 
     review = result.get("review") or {}
     approved = bool(review.get("approved"))
+    try:
+        score = int(review.get("score", 0))
+    except (TypeError, ValueError):
+        score = 0
     page_data = result.get("page") or {}
     now = _now_iso()
 
-    status = "published" if approved else "rejected"
-    published_at = now if approved else None
-
+    account = get_account_by_id(partner_id)
     title = (page_data.get("title") or "").strip()
-    tagline = (page_data.get("tagline") or "").strip()
     overview_html = (page_data.get("overview_html") or "").strip()
+    has_content = bool(title and overview_html)
+
+    if is_hidden_test_partner(account) and has_content:
+        status = "published"
+        approved = True
+        review = dict(review)
+        review["approved"] = True
+        if not review.get("summary"):
+            review["summary"] = "Page validée (compte test — aperçu privé)."
+    elif approved:
+        status = "published"
+    elif has_content and score >= 60:
+        status = "approved"
+    else:
+        status = "rejected"
+
+    published_at = now if status == "published" else None
+
+    tagline = (page_data.get("tagline") or "").strip()
     services_html = (page_data.get("services_html") or "").strip()
     seo_title = (page_data.get("seo_title") or title)[:120]
     seo_description = (page_data.get("seo_description") or "")[:320]
@@ -614,6 +636,8 @@ def apply_ai_page_result(partner_id: str, result: dict) -> dict:
     else:
         extra.pop("pending_fixes", None)
     extra.pop("last_verification_error", None)
+    extra.pop("ai_job_token", None)
+    extra.pop("ai_job_started_at", None)
 
     with get_connection() as conn:
         cur = conn.cursor()
@@ -647,12 +671,36 @@ def apply_ai_page_result(partner_id: str, result: dict) -> dict:
                     now, published_at, partner_id,
                 ),
             )
-    if approved:
+    if approved or status == "published":
         try:
             from admin import chat_service
             chat_service.invalidate_cache()
         except Exception:
             pass
+    return get_page_by_partner(partner_id) or {}
+
+
+def partner_page_has_publishable_content(page: dict | None) -> bool:
+    if not page:
+        return False
+    return bool((page.get("title") or "").strip() and (page.get("overview_html") or "").strip())
+
+
+def publish_partner_page(partner_id: str) -> dict:
+    """Publication manuelle après vérification IA (contenu généré)."""
+    page = get_page_by_partner(partner_id)
+    if not page:
+        raise ValueError("Page introuvable.")
+    if page.get("status") == "published":
+        return page
+    if page.get("status") == "ai_review":
+        raise ValueError("Vérification en cours — patientez.")
+    if not partner_page_has_publishable_content(page):
+        raise ValueError("Contenu incomplet — lancez d'abord la vérification IA.")
+    if page.get("status") not in ("approved", "rejected", "draft"):
+        raise ValueError("Publication impossible dans l'état actuel.")
+    if not set_page_status(partner_id, "published"):
+        raise ValueError("Échec de la publication.")
     return get_page_by_partner(partner_id) or {}
 
 
@@ -687,25 +735,83 @@ def set_page_status(partner_id: str, status: str, *, admin_notes: str = "") -> b
     return ok
 
 
-def mark_page_ai_review(partner_id: str) -> bool:
+def mark_page_ai_review(partner_id: str, *, job_token: str = "") -> bool:
+    now = _now_iso()
+    page = get_page_by_partner(partner_id)
+    extra = dict((page or {}).get("extra") or {})
+    if job_token:
+        extra["ai_job_token"] = job_token
+        extra["ai_job_started_at"] = now
+    extra_json = json.dumps(extra, ensure_ascii=False)
+    with get_connection() as conn:
+        cur = conn.cursor()
+        if is_postgres():
+            cur.execute(
+                """UPDATE partner_pages SET status = 'ai_review', extra_json = %s,
+                   updated_at = %s WHERE partner_id = %s""",
+                (extra_json, now, partner_id),
+            )
+        else:
+            cur.execute(
+                """UPDATE partner_pages SET status = 'ai_review', extra_json = ?,
+                   updated_at = ? WHERE partner_id = ?""",
+                (extra_json, now, partner_id),
+            )
+        return cur.rowcount > 0
+
+
+def clear_page_review_job(partner_id: str) -> None:
+    page = get_page_by_partner(partner_id)
+    if not page:
+        return
+    extra = dict(page.get("extra") or {})
+    if not extra.pop("ai_job_token", None) and not extra.pop("ai_job_started_at", None):
+        return
     now = _now_iso()
     with get_connection() as conn:
         cur = conn.cursor()
         if is_postgres():
             cur.execute(
-                "UPDATE partner_pages SET status = 'ai_review', updated_at = %s WHERE partner_id = %s",
-                (now, partner_id),
+                "UPDATE partner_pages SET extra_json = %s, updated_at = %s WHERE partner_id = %s",
+                (json.dumps(extra, ensure_ascii=False), now, partner_id),
             )
         else:
             cur.execute(
-                "UPDATE partner_pages SET status = 'ai_review', updated_at = ? WHERE partner_id = ?",
-                (now, partner_id),
+                "UPDATE partner_pages SET extra_json = ?, updated_at = ? WHERE partner_id = ?",
+                (json.dumps(extra, ensure_ascii=False), now, partner_id),
             )
-        return cur.rowcount > 0
+
+
+def review_job_token(page: dict | None, session_token: str | None = None) -> str | None:
+    extra = (page or {}).get("extra") or {}
+    return (session_token or extra.get("ai_job_token") or "").strip() or None
+
+
+def page_review_job_running(token: str | None) -> bool:
+    if not token:
+        return False
+    from admin import draft_store
+
+    return draft_store.status(token).get("status") == "running"
+
+
+def page_ai_review_orphaned(page: dict | None, token: str | None) -> bool:
+    """Page bloquée en ai_review sans job actif (session perdue, redémarrage serveur…)."""
+    if not page or page.get("status") != "ai_review":
+        return False
+    if page_review_job_running(token):
+        return False
+    if not token:
+        return True
+    from admin import draft_store
+
+    st = draft_store.status(token).get("status")
+    return st not in ("running", "done")
 
 
 def release_page_from_ai_review(partner_id: str) -> bool:
     """Remet la page en brouillon après une analyse IA interrompue ou en échec."""
+    clear_page_review_job(partner_id)
     now = _now_iso()
     with get_connection() as conn:
         cur = conn.cursor()
@@ -724,11 +830,12 @@ def release_page_from_ai_review(partner_id: str) -> bool:
         return cur.rowcount > 0
 
 
-def page_ai_review_stale(page: dict | None, *, minutes: int = 3) -> bool:
+def page_ai_review_stale(page: dict | None, *, minutes: int = 12) -> bool:
     """True si la page est bloquée en ai_review depuis trop longtemps."""
     if not page or page.get("status") != "ai_review":
         return False
-    raw = page.get("updated_at")
+    extra = page.get("extra") or {}
+    raw = extra.get("ai_job_started_at") or page.get("updated_at")
     if not raw:
         return True
     try:

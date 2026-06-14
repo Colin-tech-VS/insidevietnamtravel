@@ -3,7 +3,8 @@
 {% set extra = page.extra if page and page.extra else {} %}
 <section class="partner-review card" id="partner-review"
          data-state-url="{{ url_for('partners.api_page_review_state') }}"
-         data-apply-url="{{ url_for('partners.api_apply_fixes') }}">
+         data-apply-url="{{ url_for('partners.api_apply_fixes') }}"
+         data-retry-url="{{ url_for('partners.page_retry_ai') }}">
   <div class="partner-review__overlay" id="partner-review-overlay" hidden aria-live="polite" aria-busy="true">
     <div class="partner-review__spinner" aria-hidden="true"></div>
     <p id="partner-review-overlay-phase">Traitement en cours…</p>
@@ -21,6 +22,22 @@
     <a href="{{ url_for('partner_public_page', slug=page.slug) }}" class="btn btn-primary" target="_blank" rel="noopener">Voir ma page ↗</a>
     {% endif %}
     <a href="{{ url_for('partners.dashboard') }}" class="btn btn-secondary">Dashboard</a>
+  </div>
+
+  {% elif page and page.status == 'approved' %}
+  <div class="partner-review__ok partner-review__ok--left">
+    <h2>✅ Page validée — prête à publier</h2>
+    {% if page.ai_review and page.ai_review.score is not none %}
+    <p class="partner-review__score muted">Score éditorial : <strong>{{ page.ai_review.score }}/100</strong></p>
+    {% endif %}
+    <p class="partner-review__summary">{{ page.ai_review.summary if page.ai_review else 'Votre contenu est prêt.' }}</p>
+    <div class="partner-review__actions">
+      <form method="post" action="{{ url_for('partners.page_publish') }}">
+        <button type="submit" class="btn btn-primary">{% if is_hidden_account %}Publier (aperçu privé){% else %}Publier ma page{% endif %}</button>
+      </form>
+      <a href="{{ url_for('partners.page_preview') }}" class="btn btn-secondary" target="_blank" rel="noopener">Aperçu ↗</a>
+      <a href="{{ url_for('partners.page_edit') }}" class="btn btn-ghost">Modifier le brouillon</a>
+    </div>
   </div>
 
   {% elif page and page.status == 'rejected' %}
@@ -42,12 +59,17 @@
     {% endif %}
     {% include "partners/_fix_suggestions.html" %}
     <div class="partner-review__actions">
-      {% if ai_ready %}
-      <form method="post" action="{{ url_for('partners.page_retry_ai') }}">
-        <button type="submit" class="btn btn-primary">Relancer la vérification</button>
+      {% if can_publish %}
+      <form method="post" action="{{ url_for('partners.page_publish') }}">
+        <button type="submit" class="btn btn-primary">{% if is_hidden_account %}Publier quand même (privé){% else %}Publier ma page{% endif %}</button>
       </form>
       {% endif %}
-      <a href="{{ url_for('partners.page_edit') }}" class="btn btn-secondary">Modifier manuellement</a>
+      {% if ai_ready %}
+      <form method="post" action="{{ url_for('partners.page_retry_ai') }}">
+        <button type="submit" class="btn btn-secondary">Relancer la vérification</button>
+      </form>
+      {% endif %}
+      <a href="{{ url_for('partners.page_edit') }}" class="btn btn-ghost">Modifier manuellement</a>
     </div>
   </div>
 
@@ -55,7 +77,7 @@
   <div class="partner-review__loader" aria-live="polite">
     <div class="partner-review__spinner" aria-hidden="true"></div>
     <p id="partner-review-phase">{{ job_status.phase or 'Analyse en cours…' }}</p>
-    <p class="muted">Rédaction de votre fiche et contrôle SEO (30–90 s).</p>
+    <p class="muted">Rédaction de votre fiche et contrôle SEO (30–120 s).</p>
     <p class="muted partner-review__wait-note">Ne fermez pas cette page — elle se mettra à jour automatiquement.</p>
   </div>
 
@@ -98,9 +120,14 @@
     {% endif %}
     {% include "partners/_fix_suggestions.html" %}
     <div class="partner-review__actions">
+      {% if can_publish %}
+      <form method="post" action="{{ url_for('partners.page_publish') }}">
+        <button type="submit" class="btn btn-primary">{% if is_hidden_account %}Publier (aperçu privé){% else %}Publier ma page{% endif %}</button>
+      </form>
+      {% endif %}
       {% if ai_ready %}
       <form method="post" action="{{ url_for('partners.page_retry_ai') }}">
-        <button type="submit" class="btn btn-primary">Relancer la vérification</button>
+        <button type="submit" class="btn btn-secondary">Relancer la vérification</button>
       </form>
       {% endif %}
       <a href="{{ url_for('partners.page_edit') }}" class="btn btn-secondary">Retour à l'éditeur</a>
@@ -117,7 +144,7 @@
 {% endblock %}
 
 {% block partner_scripts %}
-{% if show_loader or page_fixes %}
+{% if show_loader or page_fixes or (page and page.status in ('approved', 'rejected', 'draft')) %}
 <script src="{{ url_for('static', filename='js/partner_page_review.js') }}" defer></script>
 {% endif %}
 {% endblock %}

@@ -37,7 +37,9 @@
   </div>
   <div class="partner-fixes__done" id="partner-fixes-done" hidden>
     <p class="partner-fixes__done-msg">✅ Toutes les corrections ont été appliquées à votre brouillon.</p>
-    <p class="muted">Relancez la vérification pour publier votre page.</p>
+    <form method="post" action="{{ url_for('partners.page_retry_ai') }}" id="partner-fixes-relaunch">
+      <button type="submit" class="btn btn-primary">Relancer la vérification</button>
+    </form>
   </div>
 </div>
 {% endif %}

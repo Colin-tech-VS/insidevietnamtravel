@@ -47,7 +47,7 @@
 <header class="partner-vitrine-hero{% if page.image_url %} partner-vitrine-hero--image{% endif %}">
   {% if page.image_url %}
   <div class="partner-vitrine-hero__media" aria-hidden="true">
-    <img src="{{ page.image_url if '://' in page.image_url else url_for('static', filename=page.image_url.lstrip('/static/')) }}"
+    <img src="{{ page.image_url if '://' in page.image_url else (site.SITE_URL ~ (page.image_url | static_v)) }}"
          alt="{{ page.title | e }}"
          width="1200" height="675" loading="eager" decoding="async" fetchpriority="high">
   </div>

@@ -67,7 +67,7 @@ JSON strict :
   }
 }
 
-approved=true seulement si score >= 72 et aucun problème bloquant (hors-sujet, spam, mensonge).
+approved=true seulement si score >= 65 et aucun problème bloquant (hors-sujet, spam, mensonge).
 Si approved=false : issues non vide ET fixes avec au moins 1 entrée (suggested respecte les minimums de caractères).
 """
 

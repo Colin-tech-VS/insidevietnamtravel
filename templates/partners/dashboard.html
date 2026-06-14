@@ -31,6 +31,9 @@
         {% else %}
         <p><a href="{{ url_for('partner_public_page', slug=page.slug) }}" target="_blank" rel="noopener">Voir la page publique ↗</a></p>
         {% endif %}
+      {% elif page.status == 'approved' %}
+      <p class="partner-stat-card__ok">Votre page est validée — il ne reste qu'à la publier.</p>
+      <p><a href="{{ url_for('partners.page_review') }}" class="btn btn-primary btn-sm">Publier ma page →</a></p>
       {% elif page.status == 'rejected' and page.ai_review %}
       <p class="partner-stat-card__warn">{{ page.ai_review.summary or 'Contenu non conforme — modifiez et relancez.' }}</p>
       {% if page.ai_review.issues %}
