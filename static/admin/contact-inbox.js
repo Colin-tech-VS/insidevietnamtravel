@@ -17,13 +17,12 @@
 
   var activeId = null;
   var activeFilter = "all";
-  var initialLoad = true;
 
   var IFRAME_CSS =
     "<style>" +
     "html,body{margin:0;padding:14px 16px 20px;max-width:100%!important;overflow-x:hidden!important;" +
-    "word-wrap:break-word;overflow-wrap:anywhere;box-sizing:border-box;font-family:system-ui,sans-serif;" +
-    "font-size:15px;line-height:1.55;color:#1a1a18;}" +
+    "overflow-y:auto!important;word-wrap:break-word;overflow-wrap:anywhere;box-sizing:border-box;" +
+    "font-family:system-ui,sans-serif;font-size:15px;line-height:1.55;color:#1a1a18;}" +
     "*,*::before,*::after{box-sizing:inherit;max-width:100%;}" +
     "img,svg,video,iframe{max-width:100%!important;height:auto!important;}" +
     "table{width:100%!important;max-width:100%!important;table-layout:fixed;border-collapse:collapse;}" +
@@ -57,26 +56,6 @@
       return html.replace(/<html([^>]*)>/i, "<html$1><head>" + IFRAME_CSS + "</head>");
     }
     return IFRAME_CSS + html;
-  }
-
-  function resizeIframe(iframe) {
-    if (!iframe) return;
-    function fit() {
-      try {
-        var doc = iframe.contentDocument;
-        if (!doc) return;
-        var h = Math.max(
-          doc.documentElement ? doc.documentElement.scrollHeight : 0,
-          doc.body ? doc.body.scrollHeight : 0
-        );
-        iframe.style.height = Math.max(280, h + 32) + "px";
-      } catch (e) {
-        iframe.style.minHeight = "420px";
-      }
-    }
-    iframe.addEventListener("load", fit);
-    setTimeout(fit, 120);
-    setTimeout(fit, 400);
   }
 
   function setRowReadState(msgId, read) {
@@ -165,7 +144,7 @@
       "  </header>" +
       '  <div class="contact-mail-detail__body">' +
       (hasHtml
-        ? '    <iframe class="contact-mail-detail__iframe" title="Aperçu email" sandbox="" referrerpolicy="no-referrer" scrolling="no"></iframe>'
+        ? '    <iframe class="contact-mail-detail__iframe" title="Aperçu email" sandbox="" referrerpolicy="no-referrer"></iframe>'
         : "") +
       '    <pre class="contact-mail-detail__plain' +
       (hasHtml ? " is-hidden" : "") +
@@ -190,7 +169,6 @@
       var html = wrapEmailHtml(decodeHtml(d.htmlB64));
       if (iframe && html) {
         iframe.srcdoc = html;
-        resizeIframe(iframe);
       }
 
       var toggles = detail.querySelectorAll(".contact-mail-view-toggle__btn");
@@ -222,7 +200,8 @@
 
     if (options.scrollDetail !== false) {
       detail.scrollTop = 0;
-      detail.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      var body = detail.querySelector(".contact-mail-detail__body");
+      if (body) body.scrollTop = 0;
     }
 
     if (d.read !== "1" && !options.skipMarkRead) {
@@ -236,7 +215,7 @@
     detail.innerHTML =
       '<div class="contact-mail-detail__placeholder">' +
       '<div class="contact-mail-detail__placeholder-icon" aria-hidden="true">✉</div>' +
-      "<p>Sélectionnez un filtre ou un message dans la liste</p>" +
+      "<p>Cliquez un message dans la liste pour le lire</p>" +
       "</div>";
     list.querySelectorAll(".contact-mail-row").forEach(function (row) {
       row.classList.remove("contact-mail-row--active");
@@ -263,19 +242,14 @@
     );
   }
 
-  function applyFilter(filter, options) {
-    options = options || {};
+  function applyFilter(filter) {
     activeFilter = filter;
     var visible = 0;
-    var firstVisible = null;
 
     list.querySelectorAll(".contact-mail-row").forEach(function (row) {
       var show = rowMatchesFilter(row, filter);
       row.hidden = !show;
-      if (show) {
-        visible++;
-        if (!firstVisible) firstVisible = row;
-      }
+      if (show) visible++;
     });
 
     if (emptyFilter) emptyFilter.hidden = visible > 0;
@@ -283,15 +257,10 @@
 
     mailbox.classList.toggle("contact-mailbox--filtered", filter !== "all");
 
-    if (options.openFirst !== false && firstVisible) {
-      renderDetail(firstVisible.dataset.id, { scrollDetail: !initialLoad });
-    } else if (!firstVisible) {
-      closeDetail();
-    } else if (activeId) {
+    if (activeId) {
       var activeRow = list.querySelector('.contact-mail-row[data-id="' + CSS.escape(activeId) + '"]');
-      if (activeRow && activeRow.hidden) {
-        if (firstVisible) renderDetail(firstVisible.dataset.id);
-        else closeDetail();
+      if (!activeRow || activeRow.hidden) {
+        closeDetail();
       }
     }
   }
@@ -316,8 +285,7 @@
         b.classList.toggle("is-active", b === btn);
         b.setAttribute("aria-selected", b === btn ? "true" : "false");
       });
-      initialLoad = false;
-      applyFilter(btn.dataset.filter, { openFirst: true });
+      applyFilter(btn.dataset.filter);
     });
   });
 
