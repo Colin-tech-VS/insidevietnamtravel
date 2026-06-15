@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let elapsedTimer = null;
   let loaderStart = 0;
   let barPct = 5;
-  let matrixRows = [];
+  let queueRows = [];
 
   function escapeHtml(s) {
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -25,20 +25,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return res.json();
   }
 
-  document.querySelectorAll('.content-tab').forEach((tab) => {
-    tab.addEventListener('click', () => {
-      const target = tab.dataset.tab;
-      document.querySelectorAll('.content-tab').forEach((t) => {
-        const active = t.dataset.tab === target;
-        t.classList.toggle('is-active', active);
-        t.setAttribute('aria-selected', active ? 'true' : 'false');
-      });
-      document.querySelectorAll('.content-panel').forEach((panel) => {
-        panel.hidden = panel.id !== `tab-${target}`;
-      });
-    });
-  });
-
   function fmtElapsed(ms) {
     const total = Math.max(0, Math.floor(ms / 1000));
     return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
@@ -47,15 +33,15 @@ document.addEventListener('DOMContentLoaded', () => {
   function startLoader(title, text) {
     if (!overlay) return;
     overlay.hidden = false;
-    if (loaderTitle) loaderTitle.textContent = title || 'Génération IA';
-    if (loaderText) loaderText.textContent = text || 'Préparation…';
+    if (loaderTitle) loaderTitle.textContent = title || 'Génération en cours';
+    if (loaderText) loaderText.textContent = text || "L'IA rédige la page…";
     barPct = 8;
     if (loaderBar) loaderBar.style.width = `${barPct}%`;
     loaderStart = Date.now();
     if (elapsedTimer) clearInterval(elapsedTimer);
     elapsedTimer = setInterval(() => {
       if (loaderElapsed) loaderElapsed.textContent = fmtElapsed(Date.now() - loaderStart);
-      barPct = Math.min(94, barPct + 0.5);
+      barPct = Math.min(94, barPct + 0.4);
       if (loaderBar) loaderBar.style.width = `${barPct}%`;
     }, 1000);
   }
@@ -67,11 +53,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loaderBar) loaderBar.style.width = '100%';
   }
 
-  async function pollStatus(url, onDone) {
+  async function pollStatus(url) {
     const data = await fetch(url, { credentials: 'same-origin' }).then((r) => r.json());
     if (data.phase && loaderText) loaderText.textContent = data.phase;
     if (data.status === 'running') {
-      setTimeout(() => pollStatus(url, onDone), 2000);
+      setTimeout(() => pollStatus(url), 2000);
       return;
     }
     stopLoader();
@@ -79,166 +65,167 @@ document.addEventListener('DOMContentLoaded', () => {
       alert(data.error || 'Erreur de génération');
       return;
     }
-    if (onDone) onDone(data);
-    else window.location.reload();
+    window.location.reload();
   }
 
-  function renderMatrix() {
-    const panel = document.getElementById('matrix-panel');
-    const tbody = document.getElementById('matrix-tbody');
-    const countEl = document.getElementById('matrix-count');
-    if (!tbody || !panel) return;
-    if (!matrixRows.length) {
-      panel.hidden = true;
+  function rowFromCard(el) {
+    return {
+      topic: el.dataset.topic || '',
+      keywords: (el.dataset.keywords || '').split(',').map((k) => k.trim()).filter(Boolean),
+      city: el.dataset.city || '',
+      page_type: el.dataset.type || 'landing',
+      selected: true,
+    };
+  }
+
+  async function generateOne({ topic, keywords, city }) {
+    const t = (topic || '').trim();
+    const k = (keywords || '').trim();
+    if (!t && !k) {
+      alert('Indiquez un sujet ou des mots-clés.');
       return;
     }
-    panel.hidden = false;
-    const selected = matrixRows.filter((r) => r.selected && !r.duplicate).length;
-    if (countEl) countEl.textContent = `(${selected} sélectionnée(s) / ${matrixRows.length})`;
-    tbody.innerHTML = matrixRows.map((row, i) => `
-      <tr class="${row.duplicate ? 'matrix-row--dup' : ''}">
-        <td><input type="checkbox" data-matrix-idx="${i}" ${row.selected && !row.duplicate ? 'checked' : ''} ${row.duplicate ? 'disabled' : ''}></td>
-        <td><span class="suggestion-card__priority suggestion-card__priority--${escapeHtml(row.priority || 'moyenne')}">${escapeHtml(row.priority || 'moyenne')}</span></td>
-        <td>${escapeHtml(row.topic)}${row.duplicate ? ' <span class="muted">(doublon)</span>' : ''}</td>
-        <td class="matrix-kw">${escapeHtml((row.keywords || []).slice(0, 5).join(' · '))}</td>
-        <td>${escapeHtml(row.city || '—')}</td>
-      </tr>
+    startLoader('1 page SEO', "L'IA rédige la page…");
+    try {
+      const data = await postJson('/admin/api/seo-pages/generate', {
+        topic: t,
+        keywords: k,
+        city: (city || '').trim(),
+        page_type: 'landing',
+      });
+      if (!data.ok) {
+        stopLoader();
+        alert(data.error || 'Erreur');
+        return;
+      }
+      pollStatus('/admin/api/seo-pages/draft-status');
+    } catch (e) {
+      stopLoader();
+      alert(e.message || 'Erreur réseau');
+    }
+  }
+
+  async function generateBatch(rows) {
+    const selected = rows.filter((r) => r.selected !== false && !r.duplicate);
+    if (!selected.length) {
+      alert('Sélectionnez au moins une page.');
+      return;
+    }
+    const n = selected.length;
+    if (!confirm(`Générer ${n} page(s) ? Comptez environ ${n * 2}–${n * 5} minutes.`)) return;
+    startLoader(`${n} pages SEO`, 'Page 1 en cours…');
+    try {
+      const data = await postJson('/admin/api/seo-pages/batch-generate', { rows: selected });
+      if (!data.ok) {
+        stopLoader();
+        alert(data.error || 'Erreur');
+        return;
+      }
+      pollStatus('/admin/api/seo-pages/batch-status');
+    } catch (e) {
+      stopLoader();
+      alert(e.message || 'Erreur réseau');
+    }
+  }
+
+  function updateSelectedButton() {
+    const btn = document.getElementById('btn-gen-selected');
+    const n = document.querySelectorAll('.idea-check:checked').length;
+    if (!btn) return;
+    btn.disabled = n === 0;
+    btn.textContent = n ? `Générer la sélection (${n})` : 'Générer la sélection';
+  }
+
+  function setQueue(rows) {
+    queueRows = (rows || []).filter((r) => !r.duplicate);
+    const details = document.getElementById('seo-queue-details');
+    const list = document.getElementById('seo-queue-list');
+    const countEl = document.getElementById('queue-count');
+    if (!details || !list) return;
+    if (!queueRows.length) {
+      details.hidden = true;
+      return;
+    }
+    details.hidden = false;
+    details.open = true;
+    if (countEl) countEl.textContent = String(queueRows.length);
+    list.innerHTML = queueRows.map((r, i) => `
+      <li class="seo-queue-item">
+        <label><input type="checkbox" class="queue-check" data-idx="${i}" checked></label>
+        <span>${escapeHtml(r.topic)}</span>
+      </li>
     `).join('');
-    tbody.querySelectorAll('input[type=checkbox]').forEach((cb) => {
+    list.querySelectorAll('.queue-check').forEach((cb) => {
       cb.addEventListener('change', () => {
-        const idx = parseInt(cb.dataset.matrixIdx, 10);
-        if (matrixRows[idx]) matrixRows[idx].selected = cb.checked;
-        renderMatrix();
+        const idx = parseInt(cb.dataset.idx, 10);
+        if (queueRows[idx]) queueRows[idx].selected = cb.checked;
       });
     });
+    details.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
-  function setMatrix(rows) {
-    matrixRows = rows || [];
-    renderMatrix();
-    document.querySelector('.content-tab[data-tab="matrix"]')?.click();
-  }
-
-  function addToMatrix(rows) {
-    const existing = new Set(matrixRows.map((r) => (r.topic || '').toLowerCase().slice(0, 40)));
-    for (const row of rows) {
-      const key = (row.topic || '').toLowerCase().slice(0, 40);
-      if (key && !existing.has(key)) {
-        existing.add(key);
-        matrixRows.push({ ...row, id: row.id || `s-${Date.now()}`, selected: !row.duplicate });
-      }
-    }
-    renderMatrix();
-  }
-
-  document.getElementById('btn-matrix-build')?.addEventListener('click', async () => {
-    const data = await postJson('/admin/api/seo-pages/matrix/build', {
-      axis_a: document.getElementById('axis_a')?.value || '',
-      axis_b: document.getElementById('axis_b')?.value || '',
-      city: document.getElementById('matrix_city')?.value || '',
-      page_type: document.getElementById('matrix_page_type')?.value || 'landing',
+  function bindIdeaCard(card) {
+    const genBtn = card.querySelector('.btn-gen-one');
+    const check = card.querySelector('.idea-check');
+    genBtn?.addEventListener('click', () => {
+      const row = rowFromCard(card);
+      generateOne({ topic: row.topic, keywords: row.keywords.join(', '), city: row.city });
     });
-    if (!data.ok) { alert(data.error || 'Erreur'); return; }
-    setMatrix(data.rows);
+    check?.addEventListener('change', updateSelectedButton);
+  }
+
+  document.querySelectorAll('.seo-idea-card').forEach(bindIdeaCard);
+
+  document.getElementById('btn-gen-selected')?.addEventListener('click', () => {
+    const rows = [...document.querySelectorAll('.seo-idea-card')]
+      .filter((c) => c.querySelector('.idea-check')?.checked)
+      .map(rowFromCard);
+    generateBatch(rows);
   });
 
-  document.getElementById('btn-matrix-ai')?.addEventListener('click', async () => {
-    startLoader('Matrice IA', 'Analyse des clusters SEO…');
+  document.getElementById('btn-propose-batch')?.addEventListener('click', async () => {
+    startLoader('Idées de pages', "L'IA prépare 6 sujets SEO…");
     try {
-      const data = await postJson('/admin/api/seo-pages/matrix/generate', {
-        brief: document.getElementById('matrix_brief')?.value || '',
-        count: parseInt(document.getElementById('matrix_ai_count')?.value || '10', 10),
-        city: document.getElementById('matrix_ai_city')?.value || '',
-      });
+      const data = await postJson('/admin/api/seo-pages/matrix/generate', { brief: '', count: 6 });
       stopLoader();
-      if (!data.ok) { alert(data.error || 'Erreur'); return; }
-      setMatrix(data.rows);
+      if (!data.ok) {
+        alert(data.error || 'Erreur');
+        return;
+      }
+      setQueue(data.rows);
     } catch (e) {
       stopLoader();
       alert(e.message || 'Erreur réseau');
     }
   });
 
-  document.getElementById('matrix-select-all')?.addEventListener('change', (e) => {
-    const on = e.target.checked;
-    matrixRows.forEach((r) => { if (!r.duplicate) r.selected = on; });
-    renderMatrix();
+  document.getElementById('btn-matrix-build')?.addEventListener('click', async () => {
+    const data = await postJson('/admin/api/seo-pages/matrix/build', {
+      axis_a: document.getElementById('axis_a')?.value || '',
+      axis_b: document.getElementById('axis_b')?.value || '',
+      page_type: 'landing',
+    });
+    if (!data.ok) {
+      alert(data.error || 'Erreur');
+      return;
+    }
+    setQueue(data.rows);
   });
 
-  document.getElementById('btn-batch-generate')?.addEventListener('click', async () => {
-    const selected = matrixRows.filter((r) => r.selected && !r.duplicate);
-    if (!selected.length) { alert('Sélectionnez au moins une ligne.'); return; }
-    if (!confirm(`Générer ${selected.length} page(s) SEO (objectif maximal) ? Cela peut prendre plusieurs minutes.`)) return;
-    startLoader(`Lot SEO (${selected.length} pages)`, 'Page 1 — rédaction SEO maximale…');
-    try {
-      const data = await postJson('/admin/api/seo-pages/batch-generate', { rows: selected });
-      if (!data.ok) { stopLoader(); alert(data.error || 'Erreur'); return; }
-      pollStatus('/admin/api/seo-pages/batch-status');
-    } catch (e) {
-      stopLoader();
-      alert(e.message || 'Erreur');
-    }
+  document.getElementById('btn-queue-generate')?.addEventListener('click', () => {
+    generateBatch(queueRows);
   });
 
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const topic = (document.getElementById('topic')?.value || '').trim();
-      const keywords = (document.getElementById('keywords')?.value || '').trim();
-      const city = (document.getElementById('city')?.value || '').trim();
-      const pageType = (document.getElementById('page_type')?.value || 'landing').trim();
-      if (!topic && !keywords) { alert('Sujet ou mots-clés requis.'); return; }
-      startLoader('Page SEO', 'Rédaction SEO maximale…');
-      try {
-        const data = await postJson('/admin/api/seo-pages/generate', { topic, keywords, city, page_type: pageType });
-        if (!data.ok) { stopLoader(); alert(data.error || 'Erreur'); return; }
-        pollStatus('/admin/api/seo-pages/draft-status');
-      } catch (err) {
-        stopLoader();
-        alert(err.message || 'Erreur réseau');
-      }
+      generateOne({
+        topic: document.getElementById('topic')?.value,
+        keywords: document.getElementById('keywords')?.value,
+        city: document.getElementById('city')?.value,
+      });
     });
   }
-
-  function fillSinglePage(card) {
-    document.getElementById('topic').value = card.dataset.topic || '';
-    document.getElementById('keywords').value = card.dataset.keywords || '';
-    const city = card.dataset.city || '';
-    const citySel = document.getElementById('city');
-    if (citySel && city) citySel.value = city;
-    const type = card.dataset.type || 'landing';
-    const typeSel = document.getElementById('page_type');
-    if (typeSel) typeSel.value = type;
-    document.querySelector('.content-tab[data-tab="ai"]')?.click();
-  }
-
-  function suggestionToRow(card) {
-    return {
-      id: `sg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      topic: card.dataset.topic || '',
-      keywords: (card.dataset.keywords || '').split(',').map((k) => k.trim()).filter(Boolean),
-      city: card.dataset.city || '',
-      page_type: card.dataset.type || 'landing',
-      priority: 'haute',
-      reason: 'Proposition SEO',
-      selected: true,
-    };
-  }
-
-  document.querySelectorAll('.seo-suggestion-card').forEach((card) => {
-    card.addEventListener('click', (e) => {
-      if (e.shiftKey) {
-        addToMatrix([suggestionToRow(card)]);
-        return;
-      }
-      fillSinglePage(card);
-    });
-  });
-
-  document.getElementById('btn-suggestions-to-matrix')?.addEventListener('click', () => {
-    const rows = [...document.querySelectorAll('.seo-suggestion-card')].map(suggestionToRow);
-    addToMatrix(rows);
-  });
 
   document.getElementById('refresh-seo-suggestions')?.addEventListener('click', async () => {
     const btn = document.getElementById('refresh-seo-suggestions');
@@ -246,36 +233,30 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const data = await postJson('/admin/api/seo-pages/suggestions', {});
       const list = document.getElementById('seo-suggestions-list');
-      if (!data.ok || !list) { alert(data.error || 'Erreur'); return; }
+      if (!data.ok || !list) {
+        alert(data.error || 'Erreur');
+        return;
+      }
       list.innerHTML = (data.suggestions || []).map((s) => `
-        <li>
-          <button type="button" class="suggestion-card seo-suggestion-card"
-            data-topic="${escapeHtml(s.topic)}"
-            data-keywords="${escapeHtml((s.keywords || []).join(', '))}"
-            data-city="${escapeHtml(s.city || '')}"
-            data-type="${escapeHtml(s.page_type || 'landing')}">
-            <span class="suggestion-card__priority suggestion-card__priority--${escapeHtml(s.priority || 'moyenne')}">${escapeHtml(s.priority || 'moyenne')}</span>
-            <span class="suggestion-card__topic">${escapeHtml(s.topic)}</span>
-            <span class="suggestion-card__meta">
-              ${s.volume_hint ? `<span>📈 ${escapeHtml(s.volume_hint)}</span>` : ''}
-              ${s.city ? `<span>📍 ${escapeHtml(s.city)}</span>` : ''}
-            </span>
-            ${s.reason ? `<span class="suggestion-card__reason">${escapeHtml(s.reason)}</span>` : ''}
-            <span class="suggestion-card__kw muted small">${escapeHtml((s.keywords || []).slice(0, 4).join(' · '))}</span>
-          </button>
+        <li class="seo-idea-card"
+          data-topic="${escapeHtml(s.topic)}"
+          data-keywords="${escapeHtml((s.keywords || []).join(', '))}"
+          data-city="${escapeHtml(s.city || '')}"
+          data-type="${escapeHtml(s.page_type || 'landing')}">
+          <label class="seo-idea-card__check"><input type="checkbox" class="idea-check"></label>
+          <div class="seo-idea-card__body">
+            <span class="seo-idea-card__title">${escapeHtml(s.topic)}</span>
+            ${s.city ? `<span class="seo-idea-card__meta">📍 ${escapeHtml(s.city)}</span>` : ''}
+          </div>
+          <button type="button" class="btn btn-primary btn-sm btn-gen-one">Générer</button>
         </li>
-      `).join('') || '<li class="muted">Aucune proposition.</li>';
-      list.querySelectorAll('.seo-suggestion-card').forEach((card) => {
-        card.addEventListener('click', (e) => {
-          if (e.shiftKey) { addToMatrix([suggestionToRow(card)]); return; }
-          fillSinglePage(card);
-        });
-      });
+      `).join('') || '<li class="muted">Aucune idée pour le moment.</li>';
+      list.querySelectorAll('.seo-idea-card').forEach(bindIdeaCard);
+      updateSelectedButton();
     } finally {
       if (btn) btn.disabled = false;
     }
   });
 
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('topic')) document.querySelector('.content-tab[data-tab="ai"]')?.click();
+  updateSelectedButton();
 });

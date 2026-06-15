@@ -132,7 +132,7 @@ SUGGESTIONS = [
 _ADMIN_PAGE_NOTES = {
     "admin.dashboard": ("Dashboard", "Vue d'ensemble : trafic, revenus, recommandations, choix du moteur IA (Groq/Mistral)."),
     "admin.guides": ("Guides IA", "Génération d'articles SEO par IA (ville + sujet + type), amélioration IA, rédaction manuelle, publication sur /blog."),
-    "admin.seo_pages_admin": ("Pages SEO", "Landing pages SEO : propositions, matrice manuelle/IA de mots-clés, génération simple ou par lot (max 12), publication /seo/slug, sitemap et maillage auto."),
+    "admin.seo_pages_admin": ("Pages SEO", "Créer des landing /seo/slug en 3 clics : idées prêtes → Générer → Publier. Plusieurs pages possible (sélection ou « Proposer 6 pages »). Linh peut aussi générer/publier."),
     "admin.destinations_admin": ("Destinations", "Création/édition des pages destinations (IA ou manuel), images WebP, choix de la section Nord/Centre/Sud, publication sur /<slug>."),
     "admin.map_admin": ("Carte", "Points d'intérêt et pins affiliés (hôtels, activités) sur les cartes interactives des destinations."),
     "admin.newsletter_admin": ("Newsletter", "Composition d'emails (IA ou manuel), envoi test / abonné / tous, gestion des abonnés, contact direct des partenaires."),
