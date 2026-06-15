@@ -252,10 +252,27 @@ def logout():
     return redirect(url_for("partners.login"))
 
 
-@partners_bp.route("/")
+@partners_bp.route("/", methods=["GET", "POST"])
 @partner_login_required
 def dashboard():
     partner = current_partner()
+    if request.method == "POST" and request.form.get("action") == "save_vitrine":
+        try:
+            photo = request.files.get("photo_file")
+            file_bytes = photo.read() if photo and photo.filename else None
+            if file_bytes and len(file_bytes) > 5 * 1024 * 1024:
+                raise ValueError("Photo trop volumineuse (max 5 Mo).")
+            save_page_vitrine(
+                partner["id"],
+                profile_highlights_text=request.form.get("profile_highlights", ""),
+                image_url=request.form.get("image_url", ""),
+                image_file=file_bytes,
+                clear_image=request.form.get("clear_image") == "1",
+            )
+            flash("Vitrine enregistrée — visible sur votre page publique.", "success")
+        except ValueError as exc:
+            flash(str(exc), "error")
+        return redirect(url_for("partners.dashboard"))
     page = get_page_by_partner(partner["id"]) if partner else None
     is_hidden = is_hidden_test_partner(partner) if partner else False
     publication = partner_page_publication(page, is_hidden=is_hidden)
@@ -370,7 +387,7 @@ def page_vitrine():
                 clear_image=request.form.get("clear_image") == "1",
             )
             flash("Vitrine enregistrée — visible sur votre page publique.", "success")
-            return redirect(url_for("partners.page_vitrine"))
+            return redirect(url_for("partners.dashboard"))
         except ValueError as exc:
             flash(str(exc), "error")
         page = get_page_by_partner(partner["id"])

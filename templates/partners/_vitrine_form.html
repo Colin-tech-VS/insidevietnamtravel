@@ -1,6 +1,7 @@
 {% set vitrine = vitrine if vitrine is defined else page_vitrine %}
 <form method="post" action="{{ form_action | default(url_for('partners.page_vitrine')) }}"
       class="partner-vitrine-form" enctype="multipart/form-data" id="partner-vitrine-form">
+  <input type="hidden" name="action" value="save_vitrine">
   {% if not vitrine.can_edit %}
   <p class="flash flash--success">Vérification en cours — modification de la vitrine indisponible.</p>
   {% else %}

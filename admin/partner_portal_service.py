@@ -165,13 +165,79 @@ def _highlights_from_extra(extra: dict | None) -> list[str]:
 def page_public_highlights(page: dict | None) -> list[str]:
     if not page:
         return []
-    extra = page.get("extra") if isinstance(page.get("extra"), dict) else {}
+    return _resolve_public_highlights(page)
+
+
+def _resolve_public_highlights(page: dict, *, extra: dict | None = None) -> list[str]:
+    """Points « Pourquoi choisir » — extra, puis HTML services / à propos."""
+    extra = extra if extra is not None else (page.get("extra") if isinstance(page.get("extra"), dict) else {})
     items = _highlights_from_extra(extra)
-    if not items:
-        items = _highlights_from_html(page.get("services_html"))
-    if not items:
-        items = _highlights_from_html(page.get("overview_html"))
-    return items
+    if len(items) >= 3:
+        return items[:8]
+    for html in (page.get("services_html"), page.get("overview_html")):
+        items = _highlights_from_pourquoi_section(html)
+        if len(items) >= 3:
+            return items[:8]
+        items = _highlights_from_html(html)
+        if len(items) >= 3:
+            return items[:8]
+    return items[:8]
+
+
+_POURQUOI_SECTION = re.compile(
+    r"<h2[^>]*>\s*(?:Pourquoi\s+choisir|Why\s+(?:travellers?\s+)?choose).*?</h2>\s*(.*?)(?=<h2\b|$)",
+    re.I | re.S,
+)
+
+
+def _highlights_from_pourquoi_section(html: str | None) -> list[str]:
+    if not html:
+        return []
+    match = _POURQUOI_SECTION.search(html)
+    if not match:
+        return []
+    return _highlights_from_html(match.group(1))
+
+
+def _persist_extra_profile_highlights(partner_id: str, highlights: list[str]) -> None:
+    """Écrit profile_highlights dans extra_json si absent ou incomplet."""
+    if not partner_id or len(highlights) < 3:
+        return
+    page = get_page_by_partner(partner_id)
+    if not page:
+        return
+    extra = dict(page.get("extra") or {})
+    stored = _coerce_profile_highlights(extra.get("profile_highlights"))
+    if stored == highlights[:8]:
+        return
+    extra["profile_highlights"] = highlights[:8]
+    now = _now_iso()
+    extra_json = json.dumps(extra, ensure_ascii=False)
+    with get_connection() as conn:
+        cur = conn.cursor()
+        if is_postgres():
+            cur.execute(
+                "UPDATE partner_pages SET extra_json = %s, updated_at = %s WHERE partner_id = %s",
+                (extra_json, now, partner_id),
+            )
+        else:
+            cur.execute(
+                "UPDATE partner_pages SET extra_json = ?, updated_at = ? WHERE partner_id = ?",
+                (extra_json, now, partner_id),
+            )
+
+
+def ensure_page_profile_highlights(page: dict | None, *, persist: bool = False) -> list[str]:
+    """Résout les points forts et optionnellement les persiste en BDD."""
+    if not page:
+        return []
+    highlights = _resolve_public_highlights(page)
+    if persist and len(highlights) >= 3:
+        pid = page.get("partner_id") or ""
+        stored = _coerce_profile_highlights((page.get("extra") or {}).get("profile_highlights"))
+        if len(stored) < 3:
+            _persist_extra_profile_highlights(pid, highlights)
+    return highlights
 
 
 def _parse_profile_highlights_lines(text: str) -> list[str]:
@@ -304,10 +370,14 @@ def save_page_vitrine(
                 "Ajoutez au moins 3 points pour « Pourquoi choisir ce partenaire » (une ligne par point)."
             )
         extra["profile_highlights"] = highlights
-    elif not _coerce_profile_highlights(extra.get("profile_highlights")):
-        wizard_hl = _highlights_from_extra({"highlights": extra.get("highlights") or ""})
-        if len(wizard_hl) >= 3:
-            extra["profile_highlights"] = wizard_hl
+    else:
+        resolved = _resolve_public_highlights(page, extra=extra)
+        if len(resolved) >= 3:
+            extra["profile_highlights"] = resolved[:8]
+        elif not _coerce_profile_highlights(extra.get("profile_highlights")):
+            wizard_hl = _highlights_from_extra({"highlights": extra.get("highlights") or ""})
+            if len(wizard_hl) >= 3:
+                extra["profile_highlights"] = wizard_hl
 
     if clear_image:
         new_image = ""
@@ -1027,14 +1097,24 @@ def apply_ai_page_result(partner_id: str, result: dict) -> dict:
     seo_title = (page_data.get("seo_title") or title)[:120]
     seo_description = (page_data.get("seo_description") or "")[:320]
     image_url = (page_data.get("image_url") or "").strip()
+    if not image_url:
+        image_url = (page.get("image_url") or "").strip()
     ai_review_json = json.dumps(review, ensure_ascii=False)
     extra = dict(page.get("extra") or {})
+    saved_vitrine_hl = _coerce_profile_highlights(extra.get("profile_highlights"))
     profile_highlights = _coerce_profile_highlights(page_data.get("profile_highlights"))
     if len(profile_highlights) < 3:
         profile_highlights = _highlights_from_extra(extra)
     if len(profile_highlights) < 3:
         profile_highlights = _highlights_from_html(page_data.get("services_html"))
-    extra["profile_highlights"] = profile_highlights
+    if len(profile_highlights) < 3:
+        profile_highlights = _highlights_from_html(page.get("services_html"))
+    if len(profile_highlights) < 3 and len(saved_vitrine_hl) >= 3:
+        profile_highlights = saved_vitrine_hl
+    if len(profile_highlights) >= 3:
+        extra["profile_highlights"] = profile_highlights[:8]
+    elif saved_vitrine_hl:
+        extra["profile_highlights"] = saved_vitrine_hl[:8]
     if review.get("fixes"):
         extra["pending_fixes"] = review["fixes"]
     else:
@@ -1109,9 +1189,9 @@ def publish_partner_page(partner_id: str) -> dict:
     if not partner_page_has_publishable_content(page):
         raise ValueError("Contenu incomplet — relancez la vérification IA.")
     extra = dict(page.get("extra") or {})
-    highlights = _highlights_from_extra(extra)
+    highlights = _resolve_public_highlights(page, extra=extra)
     if len(highlights) >= 3 and not _coerce_profile_highlights(extra.get("profile_highlights")):
-        extra["profile_highlights"] = highlights
+        extra["profile_highlights"] = highlights[:8]
         now = _now_iso()
         extra_json = json.dumps(extra, ensure_ascii=False)
         with get_connection() as conn:

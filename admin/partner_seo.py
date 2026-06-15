@@ -399,10 +399,11 @@ def _services_html_for_display(page: dict, highlights: list[str]) -> str:
 
 def build_public_page_context(page: dict, partner: dict, lang: str, *, canonical_url: str) -> dict:
     """Variables template pour partner_public.html."""
+    from admin.partner_portal_service import ensure_page_profile_highlights
+
     extra = page.get("extra") or {}
     city = (extra.get("city") or partner.get("city") or "").strip()
-    image = page.get("image_url") or ""
-    highlights = page_public_highlights(page)
+    highlights = ensure_page_profile_highlights(page, persist=True)
     hero_image = partner_hero_image(page, partner, city=city)
     contact = partner_contact_context(page, partner)
     services_html = _services_html_for_display(page, highlights)

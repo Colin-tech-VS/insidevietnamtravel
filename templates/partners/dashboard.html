@@ -137,7 +137,8 @@
       {% endfor %}
     </ul>
 
-    {% include "partners/_vitrine_form.html" %}
+    {% set form_action = url_for('partners.dashboard') %}
+    {% include "partners/_vitrine_form.html" with context %}
   </article>
   {% endif %}
 </section>
