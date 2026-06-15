@@ -7060,6 +7060,60 @@ a.article-category:hover { text-decoration: underline; }
   color: var(--teal);
 }
 
+.partner-directory-seo {
+  padding: 1.5rem 0 0.5rem;
+  background: linear-gradient(180deg, var(--rice) 0%, transparent 100%);
+}
+.partner-directory-seo__inner { max-width: 48rem; }
+.partner-directory-seo__title {
+  margin: 0 0 0.65rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 2.2vw, 1.45rem);
+  color: var(--ink);
+}
+.partner-directory-seo__text {
+  margin: 0;
+  line-height: 1.65;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+.partner-directory-faq {
+  margin-top: 2.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--rice-dark);
+  max-width: 42rem;
+}
+.partner-directory-faq__title {
+  margin: 0 0 1rem;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+}
+.partner-directory-faq__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.partner-faq-item {
+  border: 1px solid var(--rice-dark);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  padding: 0.65rem 0.85rem;
+}
+.partner-faq-item__q {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--ink);
+  list-style: none;
+}
+.partner-faq-item__q::-webkit-details-marker { display: none; }
+.partner-faq-item__a {
+  margin: 0.55rem 0 0;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
 .destination-partners__grid {
   list-style: none;
   margin: 0;

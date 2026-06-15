@@ -24,7 +24,8 @@
 <header class="pillar-hero partner-directory-hero">
   <div class="pillar-hero__media" aria-hidden="true">
     <img src="{{ url_for('static', filename='images/destinations/hoi-an-960.webp') }}"
-         alt="" width="960" height="640" loading="eager" decoding="async" class="pillar-hero__img">
+         alt="{{ 'Hoi An Vietnam — verified travel partners directory' if is_en else 'Hội An Vietnam — annuaire partenaires voyage vérifiés' }}"
+         width="960" height="640" loading="eager" decoding="async" class="pillar-hero__img">
   </div>
   <div class="container partner-directory-hero__inner">
     <nav class="breadcrumb breadcrumb--light" aria-label="Breadcrumb">
@@ -39,6 +40,13 @@
     <p class="partner-directory-hero__count"><strong>{{ partners|length }}</strong> {{ 'published partners' if is_en else 'partenaires publiés' }}</p>
   </div>
 </header>
+
+<section class="section partner-directory-seo" aria-label="{{ 'About this directory' if is_en else 'À propos de cet annuaire' }}">
+  <div class="container partner-directory-seo__inner">
+    <h2 class="partner-directory-seo__title">{{ 'Find a local expert for your Vietnam trip' if is_en else 'Trouvez un expert local pour votre voyage au Vietnam' }}</h2>
+    <p class="partner-directory-seo__text">{{ 'Planning a trip to Vietnam? Browse verified local guides, travel agencies, bloggers and creators by city and profile type. Each partner page is editorially reviewed to help you choose the right on-the-ground expert — Hanoi, Ho Chi Minh City, Hoi An, Halong Bay and more.' if is_en else 'Vous préparez un voyage au Vietnam ? Parcourez des guides locaux, agences de voyage, blogueurs et créateurs vérifiés, par ville et type de profil. Chaque fiche est validée éditorialement pour vous aider à choisir le bon expert terrain — Hanoï, Ho Chi Minh-Ville, Hội An, baie d\'Halong et plus.' }}</p>
+  </div>
+</section>
 
 <section class="section partner-directory" aria-label="{{ 'Partner directory' if is_en else 'Annuaire partenaires' }}">
   <div class="container">
@@ -91,6 +99,20 @@
       <a href="{{ lang_url('prepare_trip') }}">{{ 'Plan your trip' if is_en else 'Préparer son voyage' }}</a>
       <a href="{{ lang_url('about') }}">{{ t('nav.about') }}</a>
     </nav>
+
+    {% if partners_faq %}
+    <section class="partner-directory-faq partner-reveal" aria-labelledby="partners-faq-title">
+      <h2 id="partners-faq-title" class="partner-directory-faq__title">{{ 'FAQ — Vietnam travel partners' if is_en else 'FAQ — partenaires voyage Vietnam' }}</h2>
+      <div class="partner-directory-faq__list">
+        {% for item in partners_faq %}
+        <details class="partner-faq-item">
+          <summary class="partner-faq-item__q">{{ item.name }}</summary>
+          <p class="partner-faq-item__a">{{ item.acceptedAnswer.text }}</p>
+        </details>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
   </div>
 </section>
 {% endblock %}

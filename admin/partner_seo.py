@@ -10,6 +10,12 @@ from admin.partner_portal_service import (
     list_public_partners,
     page_public_highlights,
 )
+from admin.partner_seo_keywords import (
+    _contains_vietnam_intent,
+    _truncate,
+    city_keyword_phrases,
+    seed_keywords,
+)
 from i18n_utils import lang_url
 
 PROFILE_TYPE_I18N = {
@@ -62,28 +68,28 @@ _HIGHLIGHTS_H2 = re.compile(
 
 KEYWORDS_BY_TYPE = {
     "guide": {
-        "fr": "guide local Vietnam, guide francophone Vietnam, excursion Vietnam, tour privé Vietnam, guide Hanoï, guide Hội An",
-        "en": "local guide Vietnam, French speaking guide Vietnam, Vietnam private tour, Vietnam day trip, Hanoi guide, Hoi An guide",
+        "fr": "guide local Vietnam, guide francophone Vietnam, excursion Vietnam, tour privé Vietnam, visite guidée Vietnam, circuit sur mesure Vietnam, guide Hanoï, guide Hội An, préparer voyage Vietnam",
+        "en": "local guide Vietnam, French speaking guide Vietnam, Vietnam private tour, Vietnam day trip, guided tour Vietnam, bespoke Vietnam trip, Hanoi guide, Hoi An guide, plan Vietnam trip",
     },
     "influenceur": {
-        "fr": "influenceur voyage Vietnam, créateur contenu Vietnam, Instagram Vietnam, partenaire voyage Vietnam",
-        "en": "Vietnam travel influencer, Vietnam content creator, Vietnam travel partner, Vietnam Instagram",
+        "fr": "influenceur voyage Vietnam, créateur contenu Vietnam, Instagram Vietnam voyage, TikTok Vietnam, partenaire voyage Vietnam, conseils voyage Vietnam",
+        "en": "Vietnam travel influencer, Vietnam content creator, Vietnam travel Instagram, Vietnam travel tips, Vietnam travel partner",
     },
     "blogueur": {
-        "fr": "blogueur voyage Vietnam, blog voyage Vietnam, conseils voyage Vietnam, partenaire Vietnam",
-        "en": "Vietnam travel blogger, Vietnam travel blog, Vietnam travel tips, Vietnam partner",
+        "fr": "blogueur voyage Vietnam, blog voyage Vietnam, conseils voyage Vietnam, itinéraire Vietnam blog, guide pratique Vietnam, partenaire Vietnam",
+        "en": "Vietnam travel blogger, Vietnam travel blog, Vietnam travel tips, Vietnam itinerary blog, Vietnam travel guide, Vietnam partner",
     },
     "agence": {
-        "fr": "agence locale Vietnam, agence voyage Vietnam, circuit sur mesure Vietnam, DMC Vietnam",
-        "en": "local travel agency Vietnam, Vietnam tour operator, bespoke Vietnam trip, Vietnam DMC",
+        "fr": "agence locale Vietnam, agence voyage Vietnam, circuit sur mesure Vietnam, DMC Vietnam, séjour Vietnam organisé, voyage Vietnam tout compris, partenaire agence Vietnam",
+        "en": "local travel agency Vietnam, Vietnam tour operator, bespoke Vietnam trip, Vietnam DMC, organized Vietnam tour, Vietnam travel agency partner",
     },
     "hotel": {
-        "fr": "hébergement Vietnam, hôtel Vietnam, guesthouse Vietnam, où dormir Vietnam",
-        "en": "Vietnam accommodation, Vietnam hotel, guesthouse Vietnam, where to stay Vietnam",
+        "fr": "hébergement Vietnam, hôtel Vietnam, guesthouse Vietnam, où dormir Vietnam, séjour Vietnam, hébergement authentique Vietnam",
+        "en": "Vietnam accommodation, Vietnam hotel, guesthouse Vietnam, where to stay Vietnam, Vietnam stay, authentic Vietnam lodging",
     },
     "autre": {
-        "fr": "partenaire Inside Vietnam Travel, expert voyage Vietnam, services voyage Vietnam",
-        "en": "Inside Vietnam Travel partner, Vietnam travel expert, Vietnam travel services",
+        "fr": "partenaire Inside Vietnam Travel, expert voyage Vietnam, services voyage Vietnam, professionnel tourisme Vietnam, voyage au Vietnam",
+        "en": "Inside Vietnam Travel partner, Vietnam travel expert, Vietnam travel services, Vietnam tourism professional, trip to Vietnam",
     },
 }
 
@@ -114,16 +120,224 @@ def meta_keywords(page: dict, partner: dict, lang: str) -> str:
     lang = "en" if lang == "en" else "fr"
     ptype = (partner or {}).get("profile_type") or "autre"
     base = KEYWORDS_BY_TYPE.get(ptype, KEYWORDS_BY_TYPE["autre"])[lang]
-    extra = (page.get("extra") or {})
+    extra = page.get("extra") or {}
     city = (extra.get("city") or partner.get("city") or "").strip()
     title = (page.get("title") or partner.get("business_name") or "").strip()
-    parts = [base]
+    parts = [base, city_keyword_phrases(city, lang)]
+    for kw in seed_keywords(lang)[:6]:
+        parts.append(kw)
     if city:
-        parts.append(f"{city} Vietnam" if lang == "en" else f"{city} Vietnam voyage")
+        parts.append(f"{city} Vietnam" if lang == "en" else f"voyage {city} Vietnam")
     if title:
         parts.append(title)
     parts.append("Inside Vietnam Travel")
-    return ", ".join(dict.fromkeys(p.strip() for p in parts if p.strip()))
+    return ", ".join(dict.fromkeys(p.strip() for p in parts if p and p.strip()))
+
+
+def _profile_type_seo_label(ptype: str, lang: str) -> str:
+    labels_fr = {
+        "guide": "guide local Vietnam",
+        "influenceur": "créateur voyage Vietnam",
+        "blogueur": "blogueur voyage Vietnam",
+        "agence": "agence locale Vietnam",
+        "hotel": "hébergement Vietnam",
+        "autre": "partenaire voyage Vietnam",
+    }
+    labels_en = {
+        "guide": "Vietnam local guide",
+        "influenceur": "Vietnam travel creator",
+        "blogueur": "Vietnam travel blogger",
+        "agence": "Vietnam travel agency",
+        "hotel": "Vietnam accommodation",
+        "autre": "Vietnam travel partner",
+    }
+    labels = labels_en if lang == "en" else labels_fr
+    return labels.get(ptype, labels["autre"])
+
+
+def optimize_partner_meta(page: dict, partner: dict, lang: str) -> dict[str, str]:
+    """Titre & description SEO optimisés pour voyageurs cherchant le Vietnam."""
+    lang = "en" if lang == "en" else "fr"
+    ptype = (partner or {}).get("profile_type") or "autre"
+    extra = page.get("extra") or {}
+    city = (extra.get("city") or partner.get("city") or "").strip()
+    name = (page.get("title") or partner.get("business_name") or "").strip()
+    if not name:
+        name = f"{partner.get('first_name', '')} {partner.get('last_name', '')}".strip() or "Partner"
+
+    raw_title = (page.get("seo_title") or "").strip()
+    raw_desc = (page.get("seo_description") or page.get("tagline") or "").strip()
+    type_label = _profile_type_seo_label(ptype, lang)
+
+    if raw_title and _contains_vietnam_intent(raw_title, lang) and 35 <= len(raw_title) <= 68:
+        meta_title = raw_title
+    elif lang == "en":
+        if city:
+            meta_title = f"{name} — {type_label} in {city}"
+        else:
+            meta_title = f"{name} — {type_label}"
+        meta_title = _truncate(meta_title, 60)
+    else:
+        if city:
+            meta_title = f"{name} — {type_label} à {city}"
+        else:
+            meta_title = f"{name} — {type_label}"
+        meta_title = _truncate(meta_title, 60)
+
+    if raw_desc and _contains_vietnam_intent(raw_desc, lang) and 120 <= len(raw_desc) <= 165:
+        meta_description = raw_desc
+    elif lang == "en":
+        if city:
+            meta_description = (
+                f"Plan your Vietnam trip with {name}, verified {type_label} in {city}. "
+                f"Tours, local expertise and travel tips — Inside Vietnam Travel partner page."
+            )
+        else:
+            meta_description = (
+                f"Plan your trip to Vietnam with {name}, verified {type_label}. "
+                f"Local expertise, experiences and travel advice on Inside Vietnam Travel."
+            )
+    else:
+        if city:
+            meta_description = (
+                f"Préparez votre voyage au Vietnam avec {name}, {type_label} vérifié à {city}. "
+                f"Excursions, expertise locale et conseils — fiche partenaire Inside Vietnam Travel."
+            )
+        else:
+            meta_description = (
+                f"Préparez votre voyage Vietnam avec {name}, {type_label} vérifié. "
+                f"Expériences, expertise locale et conseils pratiques — Inside Vietnam Travel."
+            )
+    meta_description = _truncate(meta_description, 158)
+
+    return {
+        "meta_title": meta_title,
+        "meta_description": meta_description,
+        "og_image_alt": (
+            f"{name} — {type_label}" + (f", {city}" if city else "") + ", Vietnam travel"
+            if lang == "en"
+            else f"{name} — {type_label}" + (f", {city}" if city else "") + ", voyage Vietnam"
+        ),
+    }
+
+
+def partner_page_faq_schema(page: dict, partner: dict, lang: str, *, canonical_url: str) -> dict:
+    lang = "en" if lang == "en" else "fr"
+    name = (page.get("title") or partner.get("business_name") or "Partner").strip()
+    extra = page.get("extra") or {}
+    city = (extra.get("city") or partner.get("city") or "").strip()
+    ptype = profile_type_label(partner, lang).lower()
+
+    if lang == "en":
+        items = [
+            {
+                "q": f"Who is {name} on Inside Vietnam Travel?",
+                "a": f"{name} is a verified Vietnam travel {ptype} featured on Inside Vietnam Travel, "
+                f"helping travellers plan authentic trips to Vietnam"
+                + (f" with a focus on {city}." if city else "."),
+            },
+            {
+                "q": f"How do I contact {name} for a Vietnam trip?",
+                "a": "Use the contact button on this page to email the partner directly. "
+                "Inside Vietnam Travel validates partner profiles but bookings are handled by the partner.",
+            },
+            {
+                "q": "Are Inside Vietnam Travel partners verified?",
+                "a": "Yes. Each partner page is reviewed editorially before publication to ensure "
+                "relevant Vietnam travel content and professional presentation.",
+            },
+        ]
+        if city:
+            items.insert(1, {
+                "q": f"Does {name} offer experiences in {city}, Vietnam?",
+                "a": f"This partner profile highlights services and expertise related to {city} "
+                f"and Vietnam travel. See the experiences section for details.",
+            })
+    else:
+        items = [
+            {
+                "q": f"Qui est {name} sur Inside Vietnam Travel ?",
+                "a": f"{name} est un {ptype} voyage Vietnam vérifié sur Inside Vietnam Travel, "
+                f"pour aider les voyageurs à préparer un séjour authentique au Vietnam"
+                + (f" avec une expertise à {city}." if city else "."),
+            },
+            {
+                "q": f"Comment contacter {name} pour un voyage au Vietnam ?",
+                "a": "Utilisez le bouton contact sur cette page pour envoyer un email au partenaire. "
+                "Inside Vietnam Travel valide les fiches mais la réservation se fait avec le partenaire.",
+            },
+            {
+                "q": "Les partenaires Inside Vietnam Travel sont-ils vérifiés ?",
+                "a": "Oui. Chaque fiche est relue éditorialement avant publication pour garantir "
+                "un contenu utile aux voyageurs et une présentation professionnelle.",
+            },
+        ]
+        if city:
+            items.insert(1, {
+                "q": f"{name} propose-t-il des expériences à {city}, Vietnam ?",
+                "a": f"Cette fiche met en avant les prestations et l'expertise liées à {city} "
+                f"et au voyage au Vietnam. Consultez la section expériences pour le détail.",
+            })
+
+    return {
+        "@type": "FAQPage",
+        "@id": f"{canonical_url}#faq",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": item["q"],
+                "acceptedAnswer": {"@type": "Answer", "text": item["a"]},
+            }
+            for item in items
+        ],
+    }
+
+
+def partners_index_faq_schema(lang: str, *, canonical_url: str) -> dict:
+    is_en = lang == "en"
+    if is_en:
+        items = [
+            ("What is the Inside Vietnam Travel partner directory?",
+             "A curated list of verified local guides, travel influencers, bloggers and agencies "
+             "in Vietnam to help you plan your trip with trusted on-the-ground experts."),
+            ("How do I find a local guide in Vietnam?",
+             "Browse partners by type and city, open a profile and contact the guide directly. "
+             "Each page is editorially reviewed for Vietnam travel relevance."),
+            ("Are these partners official Inside Vietnam Travel employees?",
+             "No. They are independent professionals we collaborate with. "
+             "Inside Vietnam Travel provides the platform and editorial validation."),
+            ("I'm a guide or agency in Vietnam — how do I join?",
+             "Apply via the partnership program page. After validation, you get a free partner profile "
+             "and access to the /partners dashboard."),
+        ]
+    else:
+        items = [
+            ("Qu'est-ce que l'annuaire partenaires Inside Vietnam Travel ?",
+             "Une sélection de guides locaux, influenceurs voyage, blogueurs et agences vérifiés "
+             "au Vietnam pour préparer votre séjour avec des experts terrain de confiance."),
+            ("Comment trouver un guide local au Vietnam ?",
+             "Parcourez les partenaires par type et ville, ouvrez une fiche et contactez le guide. "
+             "Chaque page est validée éditorialement pour le voyage au Vietnam."),
+            ("Ces partenaires sont-ils des employés d'Inside Vietnam Travel ?",
+             "Non. Ce sont des professionnels indépendants avec lesquels nous collaborons. "
+             "Inside Vietnam Travel fournit la plateforme et la validation éditoriale."),
+            ("Je suis guide ou agence au Vietnam — comment rejoindre le réseau ?",
+             "Candidatez via la page devenir partenaire. Après validation, vous obtenez une fiche "
+             "gratuite et l'espace /partners."),
+        ]
+    return {
+        "@type": "FAQPage",
+        "@id": f"{canonical_url}#faq",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": q,
+                "acceptedAnswer": {"@type": "Answer", "text": a},
+            }
+            for q, a in items
+        ],
+    }
+
 
 
 def _abs_url(path: str | None) -> str | None:
@@ -186,6 +400,16 @@ def maillage_links(page: dict, partner: dict, lang: str, *, limit: int = 6) -> l
         "url": lang_url("prepare_trip", lang),
         "title": "Plan your Vietnam trip" if lang == "en" else "Préparer son voyage Vietnam",
         "hint": "Guide" if lang == "en" else "Guide",
+    })
+    links.append({
+        "url": lang_url("blog_index", lang),
+        "title": "Vietnam travel blog & tips" if lang == "en" else "Blog voyage Vietnam — conseils",
+        "hint": "Blog" if lang == "en" else "Blog",
+    })
+    links.append({
+        "url": lang_url("itinerary", lang, slug="10-days-vietnam"),
+        "title": "10-day Vietnam itinerary" if lang == "en" else "Itinéraire Vietnam 10 jours",
+        "hint": "Itinerary" if lang == "en" else "Itinéraire",
     })
 
     ptype = partner.get("profile_type") or ""
@@ -276,9 +500,10 @@ def json_ld_graph(page: dict, partner: dict, lang: str, *, canonical_url: str) -
     entity: dict = {
         "@type": schema_type,
         "name": page.get("title") or partner.get("business_name") or "Partner",
-        "description": page.get("seo_description") or page.get("tagline") or "",
+        "description": optimize_partner_meta(page, partner, lang)["meta_description"],
         "url": canonical_url,
         "inLanguage": "en-GB" if lang == "en" else "fr-FR",
+        "knowsAbout": seed_keywords(lang)[:8],
     }
     image = _abs_url(page.get("image_url"))
     if image:
@@ -298,7 +523,7 @@ def json_ld_graph(page: dict, partner: dict, lang: str, *, canonical_url: str) -
     }
     entity["@id"] = f"{canonical_url}#partner"
 
-    return [profile_page, entity]
+    return [profile_page, entity, partner_page_faq_schema(page, partner, lang, canonical_url=canonical_url)]
 
 
 def partner_hero_image(page: dict, partner: dict, *, city: str = "") -> str:
@@ -414,10 +639,14 @@ def build_public_page_context(page: dict, partner: dict, lang: str, *, canonical
     hero_image = partner_hero_image(page, partner, city=city)
     contact = partner_contact_context(page, partner)
     services_html = _services_html_for_display(page, highlights)
+    seo = optimize_partner_meta(page, partner, lang)
+    faq = partner_page_faq_schema(page, partner, lang, canonical_url=canonical_url)
     return {
         "profile_badge": profile_badge(partner, lang),
         "profile_label": profile_type_label(partner, lang),
         "meta_keywords": meta_keywords(page, partner, lang),
+        "optimized_meta": seo,
+        "partner_faq": faq.get("mainEntity", []),
         "maillage_links": maillage_links(page, partner, lang),
         "related_partners": related_partners(
             page.get("slug") or "",
@@ -428,7 +657,7 @@ def build_public_page_context(page: dict, partner: dict, lang: str, *, canonical
         ),
         "json_ld_schemas": json_ld_graph(page, partner, lang, canonical_url=canonical_url),
         "og_image": hero_image if hero_image.startswith("http") else hero_image or None,
-        "og_image_alt": page.get("seo_title") or page.get("title") or "",
+        "og_image_alt": seo.get("og_image_alt") or page.get("seo_title") or page.get("title") or "",
         "partner_city": city,
         "partner_languages": format_partner_languages(partner.get("languages") or ""),
         "partner_highlights": highlights,
@@ -441,25 +670,26 @@ def build_public_page_context(page: dict, partner: dict, lang: str, *, canonical
 
 def partners_index_meta(lang: str) -> dict[str, str]:
     is_en = lang == "en"
+    seeds = ", ".join(seed_keywords("en" if is_en else "fr")[:10])
     return {
         "meta_title": (
-            "Vietnam travel partners — local guides, influencers & agencies"
+            "Vietnam travel partners: local guides, agencies & creators"
             if is_en
-            else "Partenaires voyage Vietnam — guides, influenceurs et agences"
+            else "Partenaires voyage Vietnam : guides, agences & créateurs"
         ),
         "meta_description": (
-            "Meet Inside Vietnam Travel's verified partners: local guides, travel influencers, "
-            "bloggers and agencies across Vietnam. Find the right expert for your trip."
+            "Find verified Vietnam travel partners — local guides, agencies, bloggers and creators. "
+            "Plan your trip to Vietnam with trusted experts in Hanoi, Hoi An, Ho Chi Minh City and more."
             if is_en
-            else "Découvrez les partenaires vérifiés Inside Vietnam Travel : guides locaux, "
-            "influenceurs voyage, blogueurs et agences au Vietnam. Trouvez l'expert idéal pour votre séjour."
+            else "Trouvez des partenaires voyage Vietnam vérifiés — guides locaux, agences, blogueurs et créateurs. "
+            "Préparez votre voyage au Vietnam avec des experts à Hanoï, Hội An, Ho Chi Minh-Ville et plus."
         ),
         "meta_keywords": (
-            "Vietnam travel partners, local guide Vietnam, Vietnam influencer, Vietnam travel blogger, "
-            "Vietnam travel agency, Inside Vietnam Travel partners"
+            "Vietnam travel partners, local guide Vietnam, Vietnam travel agency, plan Vietnam trip, "
+            "Vietnam itinerary, Inside Vietnam Travel partners, " + seeds
             if is_en
-            else "partenaires voyage Vietnam, guide local Vietnam, influenceur Vietnam, blogueur voyage Vietnam, "
-            "agence locale Vietnam, annuaire partenaires Vietnam, Inside Vietnam Travel"
+            else "partenaires voyage Vietnam, guide local Vietnam, agence voyage Vietnam, voyage au Vietnam, "
+            "itinéraire Vietnam, préparer voyage Vietnam, Inside Vietnam Travel, " + seeds
         ),
     }
 
@@ -489,4 +719,4 @@ def partners_index_json_ld(partners: list[dict], lang: str, *, canonical_url: st
             "itemListElement": items,
         },
     }
-    return [collection]
+    return [collection, partners_index_faq_schema(lang, canonical_url=canonical_url)]

@@ -1133,26 +1133,24 @@ def become_partner():
         profile_types=PROFILE_TYPES,
         destination_choices=destination_choices(lang),
         meta_title=(
-            "Vietnam travel partnership program — collaborate with us"
+            "Become a Vietnam travel partner — guides, agencies & creators"
             if is_en
-            else "Devenir partenaire Vietnam — programme de collaboration"
+            else "Devenir partenaire voyage Vietnam — guides, agences & créateurs"
         ),
         meta_description=(
-            "Apply to the Inside Vietnam Travel partnership program: local guides, "
-            "travel influencers, bloggers and agencies. Co-marketing, guest content "
-            "and affiliate collaborations — free partner page after validation."
+            "Join Inside Vietnam Travel's partner program for local guides, influencers, bloggers "
+            "and agencies in Vietnam. Free verified profile, editorial review and co-marketing."
             if is_en
-            else "Rejoignez le programme partenaires Inside Vietnam Travel : guides locaux, "
-            "influenceurs, blogueurs et agences. Co-marketing, contenus invités et "
-            "collaborations affiliation — page partenaire gratuite après validation."
+            else "Rejoignez le programme partenaires Inside Vietnam Travel : guides locaux, influenceurs, "
+            "blogueurs et agences au Vietnam. Fiche vérifiée gratuite, validation éditoriale et co-marketing."
         ),
         meta_keywords=(
-            "Vietnam travel partnership, collaborate Vietnam travel brand, local guide partnership, "
-            "influencer collaboration Vietnam, travel blogger partnership"
+            "Vietnam travel partnership, local guide Vietnam partnership, Vietnam influencer collaboration, "
+            "Vietnam travel blogger, Vietnam travel agency partner, plan trip to Vietnam"
             if is_en
-            else "devenir partenaire Vietnam, partenariat voyage Vietnam, collaboration guide local Vietnam, "
-            "partenariat influenceur voyage, programme partenaires tourisme Vietnam, "
-            "partenariat blog voyage Vietnam, collaboration agence locale Vietnam"
+            else "devenir partenaire Vietnam, partenariat voyage Vietnam, guide local Vietnam, "
+            "influenceur voyage Vietnam, agence locale Vietnam, blog voyage Vietnam, "
+            "programme partenaires tourisme Vietnam, voyage au Vietnam"
         ),
     )
 
@@ -1224,12 +1222,13 @@ def partner_public_page(slug):
     desc = page.get("seo_description") or page.get("tagline") or ""
     canonical = canonical_for_request(lang)
     ctx = build_public_page_context(page, partner, lang, canonical_url=canonical)
+    opt = ctx.get("optimized_meta") or {}
     return render_template(
         "partner_public.html",
         page=page,
         partner=partner,
-        meta_title=title,
-        meta_description=desc,
+        meta_title=opt.get("meta_title") or title,
+        meta_description=opt.get("meta_description") or desc,
         is_private_preview=False,
         **ctx,
     )
@@ -1239,7 +1238,7 @@ def partner_public_page(slug):
 @app.route("/en/vietnam-travel-partners")
 def partners_index():
     from admin.partner_portal_service import list_public_partners
-    from admin.partner_seo import partners_index_json_ld, partners_index_meta, profile_badge, profile_type_label
+    from admin.partner_seo import partners_index_faq_schema, partners_index_json_ld, partners_index_meta, profile_badge, profile_type_label
     from i18n_utils import canonical_for_request
 
     lang = get_lang()
@@ -1253,6 +1252,7 @@ def partners_index():
         meta_description=meta["meta_description"],
         meta_keywords=meta["meta_keywords"],
         json_ld_schemas=partners_index_json_ld(partners, lang, canonical_url=canonical),
+        partners_faq=partners_index_faq_schema(lang, canonical_url=canonical).get("mainEntity", []),
         profile_badge_fn=profile_badge,
         profile_label_fn=profile_type_label,
     )

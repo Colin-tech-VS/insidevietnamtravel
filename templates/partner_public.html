@@ -53,7 +53,8 @@
   <div class="partner-vitrine-hero__media" aria-hidden="true">
     {% if hero_src %}
     <img src="{{ hero_src if '://' in hero_src else (site.SITE_URL ~ (hero_src | static_v)) }}"
-         alt="" width="1200" height="675" loading="eager" decoding="async" fetchpriority="high">
+         alt="{{ og_image_alt if og_image_alt is defined and og_image_alt else (page.title ~ ' — voyage Vietnam') }}"
+         width="1200" height="675" loading="eager" decoding="async" fetchpriority="high">
     {% endif %}
   </div>
   <div class="partner-vitrine-hero__overlay" aria-hidden="true"></div>
@@ -219,6 +220,24 @@
       <div class="partner-vitrine-maillage partner-reveal">
         {{ guide_related_links(maillage_links) }}
       </div>
+      {% endif %}
+
+      {% if partner_faq is defined and partner_faq and not is_private_preview %}
+      <section class="partner-vitrine-section partner-vitrine-section--faq partner-reveal" aria-labelledby="partner-faq-title">
+        <header class="partner-vitrine-section__head">
+          <h2 id="partner-faq-title" class="partner-vitrine-section-title">
+            {% if lang == 'en' %}FAQ — planning your Vietnam trip{% else %}FAQ — préparer votre voyage Vietnam{% endif %}
+          </h2>
+        </header>
+        <div class="partner-directory-faq__list">
+          {% for item in partner_faq %}
+          <details class="partner-faq-item">
+            <summary class="partner-faq-item__q">{{ item.name }}</summary>
+            <p class="partner-faq-item__a">{{ item.acceptedAnswer.text }}</p>
+          </details>
+          {% endfor %}
+        </div>
+      </section>
       {% endif %}
     </article>
 
