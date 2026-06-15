@@ -65,28 +65,47 @@
       <p class="hero-lead">{{ t('home.hero.lead') }}</p>
 
       <div class="hero-discovery" role="search">
-        <button type="button" class="hero-search" data-search-open aria-label="{{ t('home.hero.search_btn') }}">
-          <svg class="hero-search__icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
-          </svg>
-          <span class="hero-search__text">{{ t('home.hero.search_label') }}</span>
-          <kbd class="hero-search__kbd" aria-hidden="true">/</kbd>
-        </button>
+        <div class="hero-discovery__panel">
+          <div class="hero-discovery__head">
+            <span class="hero-discovery__spark" aria-hidden="true">✦</span>
+            <p class="hero-discovery__title">{{ t('home.hero.discover') }}</p>
+          </div>
 
-        {% if chat_enabled %}
-        <button type="button" class="hero-mai" data-mai-open aria-label="{{ t('home.hero.mai_cta') }}">
-          <span class="hero-mai__avatar" aria-hidden="true">🌸</span>
-          <span class="hero-mai__body">
-            <span class="hero-mai__name">{{ t('chat.name') }}</span>
-            <span class="hero-mai__rotator" aria-live="polite">
-              <span class="hero-mai__suggest">{{ t('chat.suggest1') }}</span>
-              <span class="hero-mai__suggest">{{ t('chat.suggest2') }}</span>
-              <span class="hero-mai__suggest">{{ t('chat.suggest3') }}</span>
+          <button type="button" class="hero-discovery__search" data-search-open aria-label="{{ t('home.hero.search_btn') }}">
+            <span class="hero-discovery__search-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
+              </svg>
             </span>
-          </span>
-          <span class="hero-mai__cta">{{ t('home.hero.mai_cta') }}</span>
-        </button>
-        {% endif %}
+            <span class="hero-discovery__search-body">
+              <span class="hero-discovery__search-label">{{ t('search.label') }}</span>
+              <span class="hero-discovery__search-placeholder">{{ t('home.hero.search_label') }}</span>
+            </span>
+            <kbd class="hero-discovery__kbd" aria-hidden="true">/</kbd>
+          </button>
+
+          {% if chat_enabled %}
+          <div class="hero-discovery__split" aria-hidden="true"><span>{{ t('home.hero.or') }}</span></div>
+
+          <button type="button" class="hero-discovery__mai" data-mai-open aria-label="{{ t('home.hero.mai_cta') }}">
+            <span class="hero-discovery__mai-avatar" aria-hidden="true">
+              <span class="hero-discovery__mai-ring"></span>
+              🌸
+            </span>
+            <span class="hero-discovery__mai-body">
+              <span class="hero-discovery__mai-name">{{ t('chat.name') }}</span>
+              <span class="hero-discovery__mai-rotator" aria-live="polite">
+                <span class="hero-discovery__mai-suggest">{{ t('chat.suggest1') }}</span>
+                <span class="hero-discovery__mai-suggest">{{ t('chat.suggest2') }}</span>
+                <span class="hero-discovery__mai-suggest">{{ t('chat.suggest3') }}</span>
+              </span>
+            </span>
+            <svg class="hero-discovery__mai-arrow" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M5 12h14"/><path d="M13 6l6 6-6 6"/>
+            </svg>
+          </button>
+          {% endif %}
+        </div>
       </div>
 
       <div class="hero-actions">
