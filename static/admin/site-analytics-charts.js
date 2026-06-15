@@ -2,46 +2,30 @@
   if (typeof siteAnalyticsData === 'undefined') return;
 
   const viewsCtx = document.getElementById('viewsChart');
-  if (viewsCtx && siteAnalyticsData.dailyViews.length) {
-    const uniqueMap = {};
-    (siteAnalyticsData.dailyUniqueVisitors || []).forEach((d) => {
-      uniqueMap[String(d.day).slice(0, 10)] = d.visitors;
-    });
+  if (viewsCtx && siteAnalyticsData.dailyUniqueVisitors && siteAnalyticsData.dailyUniqueVisitors.length) {
     new Chart(viewsCtx, {
       type: 'line',
       data: {
-        labels: siteAnalyticsData.dailyViews.map((d) => d.day.slice(5)),
-        datasets: [
-          {
-            label: 'Pages vues',
-            data: siteAnalyticsData.dailyViews.map((d) => d.views),
-            borderColor: '#1B4D4A',
-            backgroundColor: 'rgba(27, 77, 74, 0.08)',
-            fill: true,
-            tension: 0.35,
-            yAxisID: 'y',
-          },
-          {
-            label: 'Visiteurs uniques',
-            data: siteAnalyticsData.dailyViews.map((d) => uniqueMap[String(d.day).slice(0, 10)] || 0),
-            borderColor: '#C4654A',
-            backgroundColor: 'transparent',
-            borderDash: [4, 3],
-            tension: 0.35,
-            yAxisID: 'y',
-          },
-        ],
+        labels: siteAnalyticsData.dailyUniqueVisitors.map((d) => String(d.day).slice(5)),
+        datasets: [{
+          label: 'Visiteurs uniques',
+          data: siteAnalyticsData.dailyUniqueVisitors.map((d) => d.visitors),
+          borderColor: '#1B4D4A',
+          backgroundColor: 'rgba(27, 77, 74, 0.12)',
+          fill: true,
+          tension: 0.35,
+        }],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: true, position: 'bottom' } },
+        plugins: { legend: { display: false } },
         scales: {
           x: { grid: { color: '#F0EBE3' }, ticks: { color: '#7A7772', maxTicksLimit: 12 } },
           y: {
             beginAtZero: true,
             grid: { color: '#F0EBE3' },
-            ticks: { color: '#7A7772' },
+            ticks: { color: '#7A7772', precision: 0 },
           },
         },
       },
@@ -83,6 +67,10 @@
     return c.city;
   }
 
+  function visitorCount(row) {
+    return row.visitors != null ? row.visitors : row.views || 0;
+  }
+
   const countriesCtx = document.getElementById('countriesChart');
   if (countriesCtx && countries.length) {
     new Chart(countriesCtx, {
@@ -90,8 +78,8 @@
       data: {
         labels: countries.map((c) => (c.country_code !== '??' ? `${c.country_code} · ${c.country_name}` : c.country_name)),
         datasets: [{
-          label: 'Pages vues',
-          data: countries.map((c) => c.views),
+          label: 'Visiteurs uniques',
+          data: countries.map(visitorCount),
           backgroundColor: countryColors,
           borderRadius: 4,
         }],
@@ -116,8 +104,8 @@
       data: {
         labels: cities.map(cityChartLabel),
         datasets: [{
-          label: 'Pages vues',
-          data: cities.map((c) => c.views),
+          label: 'Visiteurs uniques',
+          data: cities.map(visitorCount),
           backgroundColor: countryColors.slice().reverse(),
           borderRadius: 4,
         }],
@@ -167,7 +155,7 @@
       data: {
         labels: seo.engines_chart.map((s) => s.label),
         datasets: [{
-          label: 'Visites',
+          label: 'Visiteurs uniques',
           data: seo.engines_chart.map((s) => s.views),
           backgroundColor: '#C4A053',
           borderRadius: 4,
@@ -192,7 +180,7 @@
       data: {
         labels: seo.daily_organic.map((d) => d.day.slice(5)),
         datasets: [{
-          label: 'Visites SEO',
+          label: 'Visiteurs uniques SEO',
           data: seo.daily_organic.map((d) => d.views),
           borderColor: '#C4A053',
           backgroundColor: 'rgba(196, 160, 83, 0.12)',
@@ -266,7 +254,7 @@
       data: {
         labels: geo.daily_ai.map((d) => d.day.slice(5)),
         datasets: [{
-          label: 'Vues IA',
+          label: 'Visiteurs uniques IA',
           data: geo.daily_ai.map((d) => d.total),
           backgroundColor: 'rgba(27, 77, 74, 0.75)',
           borderRadius: 4,
@@ -284,7 +272,6 @@
     });
   }
 
-  // ── Realtime timeline (GA4-style sparkline) ─────────
   let realtimeTimelineChart = null;
   const timelineCtx = document.getElementById('realtimeTimelineChart');
 
@@ -300,7 +287,7 @@
       data: {
         labels: [],
         datasets: [{
-          label: 'Pages vues',
+          label: 'Visiteurs uniques',
           data: [],
           backgroundColor: timelineBarColor,
           borderRadius: 2,
@@ -315,7 +302,10 @@
           tooltip: {
             callbacks: {
               title: (items) => items[0].label,
-              label: (item) => `${item.raw} vue${item.raw !== 1 ? 's' : ''}`,
+              label: (item) => {
+                const n = item.raw;
+                return `${n} visiteur${n !== 1 ? 's' : ''} unique${n !== 1 ? 's' : ''}`;
+              },
             },
           },
         },
@@ -339,7 +329,7 @@
         .then((data) => {
           if (!realtimeTimelineChart) return;
           realtimeTimelineChart.data.labels = data.map((d) => d.minute);
-          realtimeTimelineChart.data.datasets[0].data = data.map((d) => d.views);
+          realtimeTimelineChart.data.datasets[0].data = data.map((d) => d.visitors != null ? d.visitors : d.views || 0);
           realtimeTimelineChart.update('none');
         })
         .catch(() => {});
@@ -354,12 +344,11 @@
       .then((r) => r.json())
       .then((d) => {
         const active = document.getElementById('rt-active');
-        const views = document.getElementById('rt-views');
         const unique30 = document.getElementById('rt-unique-30m');
         const clicks = document.getElementById('rt-clicks');
-        if (active) active.textContent = d.active_visitors;
-        if (unique30) unique30.textContent = d.active_visitors;
-        if (views) views.textContent = d.views_30m;
+        const visitors = d.unique_visitors_30m != null ? d.unique_visitors_30m : d.active_visitors;
+        if (active) active.textContent = visitors;
+        if (unique30) unique30.textContent = visitors;
         if (clicks) clicks.textContent = d.clicks_30m;
         const feed = document.getElementById('live-feed');
         if (feed && d.recent) {

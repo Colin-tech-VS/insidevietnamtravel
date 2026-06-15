@@ -62,7 +62,7 @@ def get_dashboard_recommendations(
             icon="◇",
         ))
 
-    if totals.get("total_views", 0) < 50:
+    if totals.get("total_visitors", 0) < 50:
         recos.append(_reco(
             "Booster le trafic initial",
             "Partagez vos articles sur Pinterest et forums voyage. Chaque visite alimente vos analytics.",
@@ -167,22 +167,22 @@ def get_affiliate_recommendations(summary: dict) -> list[dict]:
 
 def get_analytics_recommendations(stats: dict, days: int) -> list[dict]:
     recos: list[dict] = []
-    views = stats.get("views_period", 0)
+    visitors = stats.get("unique_visitors_period", 0)
     top_pages = stats.get("top_pages", [])
 
-    if views == 0:
+    if visitors == 0:
         recos.append(_reco(
             "Démarrer le suivi",
-            "Naviguez sur le site public — chaque page vue apparaîtra ici en quelques secondes.",
+            "Naviguez sur le site public — chaque visiteur unique apparaîtra ici en quelques secondes.",
             priority="haute",
             action_label="Ouvrir le site",
             action_url="/",
             icon="↗",
         ))
-    elif views < 100:
+    elif visitors < 100:
         recos.append(_reco(
             "Trafic en croissance",
-            f"{views} vues sur {days} jours. Publiez 1–2 articles par semaine pour accélérer le SEO.",
+            f"{visitors} visiteurs uniques sur {days} jours. Publiez 1–2 articles par semaine pour accélérer le SEO.",
             priority="moyenne",
             action_label="Guides IA",
             action_url="/admin/guides",
@@ -194,7 +194,7 @@ def get_analytics_recommendations(stats: dict, days: int) -> list[dict]:
         path = best.get("path", "/")
         recos.append(_reco(
             f"Page star : {path}",
-            f"{best.get('c', 0)} vues (24h). Ajoutez des liens affiliés et un article complémentaire sur ce sujet.",
+            f"{best.get('c', 0)} visiteurs uniques (24h). Ajoutez des liens affiliés et un article complémentaire sur ce sujet.",
             priority="haute",
             action_label="Créer un guide",
             action_url="/admin/guides",
@@ -202,7 +202,7 @@ def get_analytics_recommendations(stats: dict, days: int) -> list[dict]:
         ))
 
         blog_pages = [p for p in top_pages if "/blog/" in p.get("path", "")]
-        if not blog_pages and views > 20:
+        if not blog_pages and visitors > 20:
             recos.append(_reco(
                 "Le blog attire peu",
                 "Vos pages destinations performent mieux. Créez des articles qui renvoient vers /hanoi, /hoi-an…",

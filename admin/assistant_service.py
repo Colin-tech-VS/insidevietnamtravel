@@ -238,7 +238,7 @@ def build_site_snapshot() -> dict:
             for s, d in dests.items()
         ],
         "traffic": {
-            "views_30d": stats.get("views_period", 0),
+            "views_30d": stats.get("unique_visitors_period", 0),
             "clicks_30d": stats.get("clicks_period", 0),
             "active_now": stats.get("active_visitors", 0),
             "top_pages_24h": (stats.get("top_pages") or [])[:8],

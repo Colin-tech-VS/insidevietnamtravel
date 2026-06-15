@@ -3,7 +3,7 @@
 {% block page_title %}Analytics{% endblock %}
 
 {% block content %}
-<p class="page-sub">Trafic humain réel uniquement — robots, scanners, localhost et votre IP exclus. <strong>Pages vues</strong> = chargements ; <strong>visiteurs uniques</strong> = IP distinctes sur la période.</p>
+<p class="page-sub">Trafic humain réel uniquement — robots, scanners, localhost et votre IP exclus. Tous les indicateurs ci-dessous sont en <strong>visiteurs uniques</strong> (IP distinctes), sauf les clics affiliés.</p>
 
 <div class="admin-page-layout">
   <div class="admin-page-main">
@@ -28,31 +28,21 @@
           <span class="live-dot" aria-hidden="true"></span>
           <span class="realtime-timeline-title">Activité en direct</span>
         </div>
-        <span class="realtime-timeline-hint">1 barre = 1 min · 30 min</span>
+        <span class="realtime-timeline-hint">1 barre = 1 min · visiteurs uniques · 30 min</span>
       </div>
       <div class="chart-box chart-box--timeline"><canvas id="realtimeTimelineChart"></canvas></div>
     </section>
 
     <div class="kpi-grid">
-      <div class="kpi-card kpi-card--live">
-        <span class="kpi-card__label">Pages vues</span>
-        <span class="kpi-card__value" id="rt-views-period">{{ stats.views_period }}</span>
-        <span class="kpi-card__hint">Total chargements · {{ days }} jours</span>
-      </div>
       <div class="kpi-card kpi-card--gold">
         <span class="kpi-card__label">Visiteurs uniques</span>
         <span class="kpi-card__value">{{ stats.unique_visitors_period }}</span>
         <span class="kpi-card__hint">IP distinctes · {{ days }} jours</span>
       </div>
-      <div class="kpi-card">
-        <span class="kpi-card__label">Pages vues · 30 min</span>
-        <span class="kpi-card__value" id="rt-views">{{ stats.views_30m }}</span>
-        <span class="kpi-card__hint">Fenêtre glissante</span>
-      </div>
-      <div class="kpi-card">
+      <div class="kpi-card kpi-card--live">
         <span class="kpi-card__label">Visiteurs uniques · 30 min</span>
-        <span class="kpi-card__value" id="rt-unique-30m">{{ stats.active_visitors }}</span>
-        <span class="kpi-card__hint">IP distinctes en ligne</span>
+        <span class="kpi-card__value" id="rt-unique-30m">{{ stats.unique_visitors_30m }}</span>
+        <span class="kpi-card__hint">Fenêtre glissante en direct</span>
       </div>
       <div class="kpi-card">
         <span class="kpi-card__label">Clics affiliés · 30 min</span>
@@ -62,7 +52,7 @@
       <div class="kpi-card">
         <span class="kpi-card__label">Trafic réseaux sociaux</span>
         <span class="kpi-card__value">{{ social.total if social else 0 }}</span>
-        <span class="kpi-card__hint">Pages vues UTM · {{ days }} j · <a href="{{ url_for('admin.social') }}">publier</a></span>
+        <span class="kpi-card__hint">Visiteurs uniques UTM · {{ days }} j · <a href="{{ url_for('admin.social') }}">publier</a></span>
       </div>
     </div>
 
@@ -71,7 +61,7 @@
       <h2>Réseaux sociaux — campagnes UTM ({{ days }} j)</h2>
       <div class="admin-table-wrap">
       <table class="admin-table admin-table--compact">
-        <thead><tr><th>Campagne</th><th>Pages vues</th></tr></thead>
+        <thead><tr><th>Campagne</th><th>Visiteurs uniques</th></tr></thead>
         <tbody>
           {% for row in social.by_campaign %}
           <tr><td>{{ row.c }}</td><td>{{ row.n }}</td></tr>
@@ -234,11 +224,11 @@
 
     <div class="chart-grid">
       <section class="chart-panel chart-panel--wide">
-        <h2>Pages vues & visiteurs uniques par jour</h2>
+        <h2>Visiteurs uniques par jour</h2>
         <div class="chart-box"><canvas id="viewsChart"></canvas></div>
       </section>
       <section class="chart-panel">
-        <h2>Top pages (24h)</h2>
+        <h2>Top pages (visiteurs uniques · 24h)</h2>
         <ul class="top-pages-list">
           {% for p in stats.top_pages[:12] %}
           <li>
@@ -275,17 +265,17 @@
     <section class="geo-analytics-section seo-analytics-section" aria-labelledby="seo-title">
       <header class="geo-analytics-header">
         <h2 id="seo-title">SEO — Trafic organique</h2>
-        <p class="page-sub">Pages vues depuis Google, Bing et autres moteurs (referrer) — indicateurs clés pour la croissance du site.</p>
+        <p class="page-sub">Visiteurs uniques depuis Google, Bing et autres moteurs (referrer) — indicateurs clés pour la croissance du site.</p>
       </header>
 
       <div class="kpi-grid">
         <div class="kpi-card kpi-card--gold">
-          <span class="kpi-card__label">Pages vues SEO</span>
+          <span class="kpi-card__label">Visiteurs uniques SEO</span>
           <span class="kpi-card__value">{{ stats.seo.total_organic_views }}</span>
           <span class="kpi-card__hint">{{ stats.seo.organic_share_pct }}% du trafic humain · {{ days }} jours</span>
         </div>
         <div class="kpi-card">
-          <span class="kpi-card__label">Trafic direct</span>
+          <span class="kpi-card__label">Trafic direct (visiteurs uniques)</span>
           <span class="kpi-card__value">{{ stats.seo.direct_views }}</span>
           <span class="kpi-card__hint">{{ stats.seo.direct_share_pct }}% · marque, favoris, URL tapée</span>
         </div>
@@ -319,7 +309,7 @@
           {% endif %}
         </section>
         <section class="chart-panel chart-panel--wide">
-          <h2>Pages vues SEO par jour</h2>
+          <h2>Visiteurs uniques SEO par jour</h2>
           {% if stats.seo.daily_organic %}
           <div class="chart-box chart-box--short"><canvas id="seoDailyChart"></canvas></div>
           {% else %}
@@ -375,7 +365,7 @@
                 {% endif %}
                 {{ c.country_name }}
               </span>
-              <span class="top-pages-list__count">{{ c.views }}</span>
+              <span class="top-pages-list__count">{{ c.visitors }}</span>
             </li>
             {% else %}
             <li class="muted">Pas encore de données géographiques.</li>
@@ -403,7 +393,7 @@
                 <span class="top-pages-list__loc-sub">{{ c.country_name }}</span>
                 {% endif %}
               </span>
-              <span class="top-pages-list__count">{{ c.views }}</span>
+              <span class="top-pages-list__count">{{ c.visitors }}</span>
             </li>
             {% else %}
             <li class="muted">Pas encore de données par ville.</li>
@@ -416,12 +406,12 @@
     <section class="geo-analytics-section" aria-labelledby="geo-title">
       <header class="geo-analytics-header">
         <h2 id="geo-title">GEO — Trafic moteurs IA</h2>
-        <p class="page-sub">Pages vues depuis ChatGPT, Claude, Perplexity, Copilot, Gemini et autres LLM (referrer + user-agent).</p>
+        <p class="page-sub">Visiteurs uniques depuis ChatGPT, Claude, Perplexity, Copilot, Gemini et autres LLM (referrer + user-agent).</p>
       </header>
 
       <div class="kpi-grid">
         <div class="kpi-card kpi-card--teal">
-          <span class="kpi-card__label">Vues IA</span>
+          <span class="kpi-card__label">Visiteurs uniques IA</span>
           <span class="kpi-card__value">{{ stats.geo.total_ai_views }}</span>
           <span class="kpi-card__hint">{{ stats.geo.ai_share_pct }}% du trafic · {{ days }} jours</span>
         </div>
@@ -447,7 +437,7 @@
           {% endif %}
         </section>
         <section class="chart-panel chart-panel--wide">
-          <h2>Vues IA par jour</h2>
+          <h2>Visiteurs uniques IA par jour</h2>
           {% if stats.geo.daily_ai %}
           <div class="chart-box chart-box--short"><canvas id="geoDailyChart"></canvas></div>
           {% else %}
@@ -482,7 +472,6 @@
 {% block scripts %}
 <script>
   const siteAnalyticsData = {
-    dailyViews: {{ stats.daily_views | tojson }},
     dailyUniqueVisitors: {{ stats.daily_unique_visitors | tojson }},
     dailyClicks: {{ stats.daily_clicks | tojson }},
     countries: {{ stats.countries | tojson }},

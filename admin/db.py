@@ -86,7 +86,7 @@ def log_page_view(
 
 
 def get_social_traffic(days: int = 30):
-    """Vues issues des réseaux sociaux (UTM), agrégées par source et campagne.
+    """Visiteurs uniques issus des réseaux sociaux (UTM), agrégés par source et campagne.
 
     Le maillage interne (utm_source='interne') porte aussi des UTM mais N'EST PAS du
     trafic social : on l'exclut ici pour ne pas fausser ce tableau.
@@ -95,15 +95,16 @@ def get_social_traffic(days: int = 30):
 
     since = _since_days(days)
     bot = _human_traffic_sql()
+    distinct = " AND COALESCE(ip_hash, '') <> ''"
     out = {"total": 0, "by_source": [], "by_campaign": []}
     with get_connection() as conn:
         cur = _execute(
             conn,
-            f"SELECT COALESCE(utm_source,'') AS s, COUNT(*) AS n FROM page_views "
-            f"WHERE created_at >= %s AND COALESCE(utm_source,'') NOT IN ('', %s) {bot} "
+            f"SELECT COALESCE(utm_source,'') AS s, COUNT(DISTINCT ip_hash) AS n FROM page_views "
+            f"WHERE created_at >= %s AND COALESCE(utm_source,'') NOT IN ('', %s){distinct}{bot} "
             f"GROUP BY s ORDER BY n DESC",
-            f"SELECT COALESCE(utm_source,'') AS s, COUNT(*) AS n FROM page_views "
-            f"WHERE created_at >= ? AND COALESCE(utm_source,'') NOT IN ('', ?) {bot} "
+            f"SELECT COALESCE(utm_source,'') AS s, COUNT(DISTINCT ip_hash) AS n FROM page_views "
+            f"WHERE created_at >= ? AND COALESCE(utm_source,'') NOT IN ('', ?){distinct}{bot} "
             f"GROUP BY s ORDER BY n DESC",
             (since, INTERNAL_UTM_SOURCE),
         )
@@ -113,13 +114,13 @@ def get_social_traffic(days: int = 30):
 
         cur = _execute(
             conn,
-            f"SELECT COALESCE(utm_campaign,'') AS c, COUNT(*) AS n FROM page_views "
+            f"SELECT COALESCE(utm_campaign,'') AS c, COUNT(DISTINCT ip_hash) AS n FROM page_views "
             f"WHERE created_at >= %s AND COALESCE(utm_campaign,'') <> '' "
-            f"AND COALESCE(utm_source,'') <> %s {bot} "
+            f"AND COALESCE(utm_source,'') <> %s{distinct}{bot} "
             f"GROUP BY c ORDER BY n DESC LIMIT 20",
-            f"SELECT COALESCE(utm_campaign,'') AS c, COUNT(*) AS n FROM page_views "
+            f"SELECT COALESCE(utm_campaign,'') AS c, COUNT(DISTINCT ip_hash) AS n FROM page_views "
             f"WHERE created_at >= ? AND COALESCE(utm_campaign,'') <> '' "
-            f"AND COALESCE(utm_source,'') <> ? {bot} "
+            f"AND COALESCE(utm_source,'') <> ?{distinct}{bot} "
             f"GROUP BY c ORDER BY n DESC LIMIT 20",
             (since, INTERNAL_UTM_SOURCE),
         )
@@ -208,12 +209,6 @@ def get_realtime_stats():
             f"SELECT COUNT(DISTINCT ip_hash) FROM page_views WHERE created_at >= ?{bot}",
             (_since(30),),
         ).fetchone()
-        views_30m = _execute(
-            conn,
-            f"SELECT COUNT(*) AS c FROM page_views WHERE created_at >= %s{bot}",
-            f"SELECT COUNT(*) FROM page_views WHERE created_at >= ?{bot}",
-            (_since(30),),
-        ).fetchone()
         aff = _real_affiliate_click_sql()
         clicks_30m = _execute(
             conn,
@@ -230,15 +225,18 @@ def get_realtime_stats():
         ).fetchall()
         top_pages = _execute(
             conn,
-            f"""SELECT path, COUNT(*) AS c FROM page_views
-               WHERE created_at >= %s{bot} GROUP BY path ORDER BY c DESC LIMIT 10""",
-            f"""SELECT path, COUNT(*) as c FROM page_views
-               WHERE created_at >= ?{bot} GROUP BY path ORDER BY c DESC LIMIT 10""",
+            f"""SELECT path, COUNT(DISTINCT ip_hash) AS c FROM page_views
+               WHERE created_at >= %s AND COALESCE(ip_hash, '') <> ''{bot}
+               GROUP BY path ORDER BY c DESC LIMIT 10""",
+            f"""SELECT path, COUNT(DISTINCT ip_hash) as c FROM page_views
+               WHERE created_at >= ? AND COALESCE(ip_hash, '') <> ''{bot}
+               GROUP BY path ORDER BY c DESC LIMIT 10""",
             (_since(60 * 24),),
         ).fetchall()
+    active_n = active["c"] if isinstance(active, dict) else active[0]
     return {
-        "active_visitors": active["c"] if isinstance(active, dict) else active[0],
-        "views_30m": views_30m["c"] if isinstance(views_30m, dict) else views_30m[0],
+        "active_visitors": active_n,
+        "unique_visitors_30m": active_n,
         "clicks_30m": clicks_30m["c"] if isinstance(clicks_30m, dict) else clicks_30m[0],
         "recent": [_row_dict(r) for r in recent],
         "top_pages": [_row_dict(r) for r in top_pages],
@@ -246,20 +244,21 @@ def get_realtime_stats():
 
 
 def get_realtime_timeline() -> list[dict]:
-    """Per-minute page view counts for the last 30 minutes (GA4-style sparkline)."""
+    """Visiteurs uniques par minute sur les 30 dernières minutes."""
     bot = _human_traffic_sql()
+    distinct = " AND COALESCE(ip_hash, '') <> ''"
     now = datetime.utcnow()
     with get_connection() as conn:
         rows = _execute(
             conn,
-            f"""SELECT date_trunc('minute', created_at) AS minute, COUNT(*) AS views
+            f"""SELECT date_trunc('minute', created_at) AS minute, COUNT(DISTINCT ip_hash) AS visitors
                 FROM page_views
-                WHERE created_at >= %s{bot}
+                WHERE created_at >= %s{distinct}{bot}
                 GROUP BY minute
                 ORDER BY minute""",
-            f"""SELECT strftime('%Y-%m-%dT%H:%M', created_at) AS minute, COUNT(*) AS views
+            f"""SELECT strftime('%Y-%m-%dT%H:%M', created_at) AS minute, COUNT(DISTINCT ip_hash) AS visitors
                 FROM page_views
-                WHERE created_at >= ?{bot}
+                WHERE created_at >= ?{distinct}{bot}
                 GROUP BY minute
                 ORDER BY minute""",
             (_since(30),),
@@ -268,12 +267,12 @@ def get_realtime_timeline() -> list[dict]:
     for row in rows:
         d = _row_dict(row)
         key = d["minute"] if isinstance(d["minute"], str) else d["minute"].isoformat()
-        data[key[:16]] = d["views"]
+        data[key[:16]] = d["visitors"]
     timeline = []
     for i in range(30, 0, -1):
         m = (now - timedelta(minutes=i)).replace(second=0, microsecond=0)
         key = m.strftime("%Y-%m-%dT%H:%M")
-        timeline.append({"minute": m.strftime("%H:%M"), "views": data.get(key, 0)})
+        timeline.append({"minute": m.strftime("%H:%M"), "visitors": data.get(key, 0)})
     return timeline
 
 
@@ -298,19 +297,19 @@ def get_country_stats(days: int = 30) -> list[dict]:
             conn,
             f"""SELECT COALESCE(NULLIF(country_code, ''), '??') AS country_code,
                        COALESCE(NULLIF(country_name, ''), 'Inconnu') AS country_name,
-                       COUNT(*) AS views
+                       COUNT(DISTINCT ip_hash) AS visitors
                 FROM page_views
-                WHERE created_at >= %s{bot}
+                WHERE created_at >= %s AND COALESCE(ip_hash, '') <> ''{bot}
                 GROUP BY country_code, country_name
-                ORDER BY views DESC
+                ORDER BY visitors DESC
                 LIMIT 15""",
             f"""SELECT COALESCE(NULLIF(country_code, ''), '??') AS country_code,
                        COALESCE(NULLIF(country_name, ''), 'Inconnu') AS country_name,
-                       COUNT(*) AS views
+                       COUNT(DISTINCT ip_hash) AS visitors
                 FROM page_views
-                WHERE created_at >= ?{bot}
+                WHERE created_at >= ? AND COALESCE(ip_hash, '') <> ''{bot}
                 GROUP BY country_code, country_name
-                ORDER BY views DESC
+                ORDER BY visitors DESC
                 LIMIT 15""",
             (_since_days(days),),
         ).fetchall()
@@ -325,22 +324,24 @@ def get_city_stats(days: int = 30) -> list[dict]:
             f"""SELECT COALESCE(NULLIF(city, ''), 'Inconnu') AS city,
                        COALESCE(NULLIF(country_code, ''), '??') AS country_code,
                        COALESCE(NULLIF(country_name, ''), 'Inconnu') AS country_name,
-                       COUNT(*) AS views
+                       COUNT(DISTINCT ip_hash) AS visitors
                 FROM page_views
                 WHERE created_at >= %s
-                  AND COALESCE(NULLIF(city, ''), '') <> ''{bot}
+                  AND COALESCE(NULLIF(city, ''), '') <> ''
+                  AND COALESCE(ip_hash, '') <> ''{bot}
                 GROUP BY city, country_code, country_name
-                ORDER BY views DESC
+                ORDER BY visitors DESC
                 LIMIT 15""",
             f"""SELECT COALESCE(NULLIF(city, ''), 'Inconnu') AS city,
                        COALESCE(NULLIF(country_code, ''), '??') AS country_code,
                        COALESCE(NULLIF(country_name, ''), 'Inconnu') AS country_name,
-                       COUNT(*) AS views
+                       COUNT(DISTINCT ip_hash) AS visitors
                 FROM page_views
                 WHERE created_at >= ?
-                  AND COALESCE(NULLIF(city, ''), '') <> ''{bot}
+                  AND COALESCE(NULLIF(city, ''), '') <> ''
+                  AND COALESCE(ip_hash, '') <> ''{bot}
                 GROUP BY city, country_code, country_name
-                ORDER BY views DESC
+                ORDER BY visitors DESC
                 LIMIT 15""",
             (_since_days(days),),
         ).fetchall()
@@ -353,9 +354,9 @@ def get_geo_view_rows(days: int = 30) -> list[dict]:
     with get_connection() as conn:
         rows = _execute(
             conn,
-            f"""SELECT path, referrer, user_agent, created_at::text AS created_at
+            f"""SELECT path, referrer, user_agent, ip_hash, created_at::text AS created_at
                FROM page_views WHERE created_at >= %s{path_excl} ORDER BY id DESC""",
-            f"""SELECT path, referrer, user_agent, created_at
+            f"""SELECT path, referrer, user_agent, ip_hash, created_at
                FROM page_views WHERE created_at >= ?{path_excl} ORDER BY id DESC""",
             (_since_days(days),),
         ).fetchall()
@@ -368,9 +369,9 @@ def get_seo_view_rows(days: int = 30) -> list[dict]:
     with get_connection() as conn:
         rows = _execute(
             conn,
-            f"""SELECT path, referrer, user_agent, created_at::text AS created_at
+            f"""SELECT path, referrer, user_agent, ip_hash, created_at::text AS created_at
                 FROM page_views WHERE created_at >= %s{bot} ORDER BY id DESC""",
-            f"""SELECT path, referrer, user_agent, created_at
+            f"""SELECT path, referrer, user_agent, ip_hash, created_at
                 FROM page_views WHERE created_at >= ?{bot} ORDER BY id DESC""",
             (_since_days(days),),
         ).fetchall()
@@ -454,16 +455,17 @@ def get_revenue_stats():
 
 def get_dashboard_totals():
     bot = _human_traffic_sql()
+    distinct = " AND COALESCE(ip_hash, '') <> ''"
     with get_connection() as conn:
-        total_views = _execute(
+        total_visitors = _execute(
             conn,
-            f"SELECT COUNT(*) AS c FROM page_views WHERE 1=1{bot}",
-            f"SELECT COUNT(*) FROM page_views WHERE 1=1{bot}",
+            f"SELECT COUNT(DISTINCT ip_hash) AS c FROM page_views WHERE 1=1{distinct}{bot}",
+            f"SELECT COUNT(DISTINCT ip_hash) FROM page_views WHERE 1=1{distinct}{bot}",
         ).fetchone()
-        today_views = _execute(
+        today_visitors = _execute(
             conn,
-            f"SELECT COUNT(*) AS c FROM page_views WHERE created_at::date = CURRENT_DATE{bot}",
-            f"SELECT COUNT(*) FROM page_views WHERE date(created_at) = date('now'){bot}",
+            f"SELECT COUNT(DISTINCT ip_hash) AS c FROM page_views WHERE created_at::date = CURRENT_DATE{distinct}{bot}",
+            f"SELECT COUNT(DISTINCT ip_hash) FROM page_views WHERE date(created_at) = date('now'){distinct}{bot}",
         ).fetchone()
         aff = _real_affiliate_click_sql()
         total_clicks = _execute(
@@ -474,8 +476,8 @@ def get_dashboard_totals():
     def _v(row):
         return row["c"] if isinstance(row, dict) else row[0]
     return {
-        "total_views": _v(total_views),
-        "today_views": _v(today_views),
+        "total_visitors": _v(total_visitors),
+        "today_visitors": _v(today_visitors),
         "total_clicks": _v(total_clicks),
     }
 

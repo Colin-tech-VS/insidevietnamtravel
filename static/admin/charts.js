@@ -28,7 +28,7 @@ setInterval(() => {
   fetch('/admin/api/realtime')
     .then(r => r.json())
     .then(d => {
-      const map = { 'rt-active': d.active_visitors, 'rt-views': d.views_30m, 'rt-clicks': d.clicks_30m, 'live-visitors': d.active_visitors };
+      const map = { 'rt-active': d.active_visitors, 'rt-unique-30m': d.unique_visitors_30m != null ? d.unique_visitors_30m : d.active_visitors, 'rt-clicks': d.clicks_30m, 'live-visitors': d.active_visitors };
       Object.entries(map).forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.textContent = val; });
       const feed = document.getElementById('live-feed');
       if (feed && d.recent) {

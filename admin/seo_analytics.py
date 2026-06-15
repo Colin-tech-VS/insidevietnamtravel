@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections import defaultdict
+
 from geo_utils import classify_geo_source
 
 SEARCH_ENGINES: list[tuple[str, str, str]] = [
@@ -97,16 +99,23 @@ CONTENT_TYPE_LABELS = {
 }
 
 
+def _track(bucket: dict[str, set[str]], key: str, ip_hash: str) -> None:
+    if ip_hash:
+        bucket.setdefault(key, set()).add(ip_hash)
+
+
 def aggregate_seo_views(rows: list[dict]) -> dict:
-    by_channel: dict[str, int] = {k: 0 for k in CHANNEL_LABELS}
-    by_engine: dict[str, int] = {eid: 0 for eid, _, _ in SEARCH_ENGINES}
-    by_engine["other"] = 0
-    by_day_organic: dict[str, int] = {}
-    by_path_organic: dict[str, int] = {}
-    by_content_organic: dict[str, int] = {k: 0 for k in CONTENT_TYPE_LABELS}
-    by_content_all: dict[str, int] = {k: 0 for k in CONTENT_TYPE_LABELS}
+    by_channel: dict[str, set[str]] = defaultdict(set)
+    by_engine: dict[str, set[str]] = defaultdict(set)
+    by_day_organic: dict[str, set[str]] = defaultdict(set)
+    by_path_organic: dict[str, set[str]] = defaultdict(set)
+    by_content_organic: dict[str, set[str]] = defaultdict(set)
+    all_visitors: set[str] = set()
 
     for row in rows:
+        ip = (row.get("ip_hash") or "").strip()
+        if not ip:
+            continue
         ref = row.get("referrer") or ""
         ua = row.get("user_agent") or ""
         path = row.get("path") or "/"
@@ -114,50 +123,53 @@ def aggregate_seo_views(rows: list[dict]) -> dict:
         channel = classify_traffic_channel(ref, ua)
         content = classify_content_type(path)
 
-        by_channel[channel] = by_channel.get(channel, 0) + 1
-        by_content_all[content] = by_content_all.get(content, 0) + 1
+        all_visitors.add(ip)
+        by_channel[channel].add(ip)
 
         if channel == "organic":
             engine = classify_search_engine(ref) or "other"
-            by_engine[engine] = by_engine.get(engine, 0) + 1
-            by_path_organic[path] = by_path_organic.get(path, 0) + 1
-            by_content_organic[content] = by_content_organic.get(content, 0) + 1
+            by_engine[engine].add(ip)
+            by_path_organic[path].add(ip)
+            by_content_organic[content].add(ip)
             if day:
-                by_day_organic[day] = by_day_organic.get(day, 0) + 1
+                by_day_organic[day].add(ip)
 
-    total = len(rows)
-    organic = by_channel.get("organic", 0)
-    direct = by_channel.get("direct", 0)
+    total = len(all_visitors)
+    organic = len(by_channel.get("organic", set()))
+    direct = len(by_channel.get("direct", set()))
 
     channels_chart = [
-        {"id": cid, "label": CHANNEL_LABELS[cid], "views": by_channel.get(cid, 0)}
+        {"id": cid, "label": CHANNEL_LABELS[cid], "views": len(by_channel.get(cid, set()))}
         for cid in ("organic", "direct", "social", "referral", "internal")
-        if by_channel.get(cid, 0) > 0
+        if by_channel.get(cid)
     ]
     channels_chart.sort(key=lambda x: -x["views"])
 
     engines_chart = [
-        {"id": eid, "label": search_engine_label(eid if eid != "other" else None), "views": count}
-        for eid, count in by_engine.items()
-        if count > 0
+        {"id": eid, "label": search_engine_label(eid if eid != "other" else None), "views": len(visitors)}
+        for eid, visitors in by_engine.items()
+        if visitors
     ]
     engines_chart.sort(key=lambda x: -x["views"])
 
     content_organic = [
-        {"id": cid, "label": CONTENT_TYPE_LABELS[cid], "views": by_content_organic.get(cid, 0)}
+        {"id": cid, "label": CONTENT_TYPE_LABELS[cid], "views": len(by_content_organic.get(cid, set()))}
         for cid in CONTENT_TYPE_LABELS
-        if by_content_organic.get(cid, 0) > 0
+        if by_content_organic.get(cid)
     ]
     content_organic.sort(key=lambda x: -x["views"])
 
-    top_organic_pages = sorted(by_path_organic.items(), key=lambda x: -x[1])[:12]
+    top_organic_pages = sorted(
+        ((path, len(visitors)) for path, visitors in by_path_organic.items()),
+        key=lambda x: -x[1],
+    )[:12]
     daily_organic = [
-        {"day": day, "views": by_day_organic[day]}
+        {"day": day, "views": len(by_day_organic[day])}
         for day in sorted(by_day_organic.keys())
     ]
 
-    blog_organic = by_content_organic.get("blog", 0)
-    dest_organic = by_content_organic.get("destination", 0)
+    blog_organic = len(by_content_organic.get("blog", set()))
+    dest_organic = len(by_content_organic.get("destination", set()))
 
     return {
         "total_organic_views": organic,
@@ -166,7 +178,7 @@ def aggregate_seo_views(rows: list[dict]) -> dict:
         "direct_share_pct": round(100 * direct / total, 1) if total else 0.0,
         "blog_organic_views": blog_organic,
         "destination_organic_views": dest_organic,
-        "by_channel": by_channel,
+        "by_channel": {k: len(v) for k, v in by_channel.items()},
         "channels_chart": channels_chart,
         "engines_chart": engines_chart,
         "content_organic": content_organic,

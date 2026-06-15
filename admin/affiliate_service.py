@@ -135,7 +135,6 @@ def build_site_analytics(days: int = 30) -> dict:
     from geo_utils import aggregate_geo_views
 
     realtime = db.get_realtime_stats()
-    daily_views = db.get_daily_views(days)
     daily_unique = db.get_daily_unique_visitors(days)
     unique_visitors = db.get_unique_visitors_period(days)
     aff = db.get_affiliate_stats(days)
@@ -149,12 +148,10 @@ def build_site_analytics(days: int = 30) -> dict:
     return {
         "days": days,
         "active_visitors": realtime["active_visitors"],
-        "views_30m": realtime["views_30m"],
+        "unique_visitors_30m": realtime["unique_visitors_30m"],
         "clicks_30m": realtime["clicks_30m"],
-        "views_period": sum(d["views"] for d in daily_views),
         "unique_visitors_period": unique_visitors,
         "clicks_period": aff["total_clicks"],
-        "daily_views": daily_views,
         "daily_unique_visitors": daily_unique,
         "daily_clicks": db.get_daily_affiliate_clicks(days),
         "top_pages": realtime["top_pages"],

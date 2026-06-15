@@ -246,54 +246,68 @@ def geo_faq_for_lang(lang: str) -> list[dict[str, str]]:
 
 
 def aggregate_geo_views(rows: list[dict]) -> dict:
-    by_source: dict[str, int] = {sid: 0 for sid, _, _ in GEO_SOURCES}
-    by_source["organic"] = 0
-    by_day: dict[str, dict[str, int]] = {}
-    by_path: dict[str, int] = {}
-    crawler_hits = 0
-    human_ai_hits = 0
+    by_source: dict[str, set[str]] = {sid: set() for sid, _, _ in GEO_SOURCES}
+    by_source["organic"] = set()
+    by_day: dict[str, dict[str, set[str]]] = {}
+    by_path: dict[str, set[str]] = {}
+    crawler_ips: set[str] = set()
+    human_ai_ips: set[str] = set()
+    all_visitors: set[str] = set()
 
     for row in rows:
+        ip = (row.get("ip_hash") or "").strip()
+        if not ip:
+            continue
         ref = row.get("referrer") or ""
         ua = row.get("user_agent") or ""
         path = row.get("path") or "/"
         day = (row.get("created_at") or "")[:10]
         source = classify_geo_source(ref, ua)
 
+        all_visitors.add(ip)
+
         if source:
-            by_source[source] = by_source.get(source, 0) + 1
-            by_path[path] = by_path.get(path, 0) + 1
+            by_source[source].add(ip)
+            by_path.setdefault(path, set()).add(ip)
             if is_ai_crawler(ua):
-                crawler_hits += 1
+                crawler_ips.add(ip)
             else:
-                human_ai_hits += 1
+                human_ai_ips.add(ip)
         else:
-            by_source["organic"] += 1
+            by_source["organic"].add(ip)
 
         if source and day:
-            by_day.setdefault(day, {sid: 0 for sid, _, _ in GEO_SOURCES})
-            by_day[day][source] = by_day[day].get(source, 0) + 1
+            by_day.setdefault(day, {sid: set() for sid, _, _ in GEO_SOURCES})
+            by_day[day].setdefault(source, set()).add(ip)
 
-    total_ai = sum(by_source[sid] for sid, _, _ in GEO_SOURCES)
-    top_pages = sorted(by_path.items(), key=lambda x: -x[1])[:12]
+    total_ai = sum(len(by_source[sid]) for sid, _, _ in GEO_SOURCES)
+    top_pages = sorted(
+        ((path, len(visitors)) for path, visitors in by_path.items()),
+        key=lambda x: -x[1],
+    )[:12]
     sources_chart = [
-        {"id": sid, "label": label, "views": by_source.get(sid, 0)}
+        {"id": sid, "label": label, "views": len(by_source.get(sid, set()))}
         for sid, label, _ in GEO_SOURCES
-        if by_source.get(sid, 0) > 0
+        if by_source.get(sid)
     ]
     sources_chart.sort(key=lambda x: -x["views"])
 
     daily_ai = [
-        {"day": day, "total": sum(by_day[day].values()), **by_day[day]}
+        {
+            "day": day,
+            "total": sum(len(visitors) for visitors in by_day[day].values()),
+            **{sid: len(by_day[day].get(sid, set())) for sid, _, _ in GEO_SOURCES},
+        }
         for day in sorted(by_day.keys())
     ]
 
+    total_visitors = len(all_visitors)
     return {
         "total_ai_views": total_ai,
-        "crawler_hits": crawler_hits,
-        "human_ai_hits": human_ai_hits,
-        "ai_share_pct": round(100 * total_ai / len(rows), 1) if rows else 0.0,
-        "by_source": by_source,
+        "crawler_hits": len(crawler_ips),
+        "human_ai_hits": len(human_ai_ips),
+        "ai_share_pct": round(100 * total_ai / total_visitors, 1) if total_visitors else 0.0,
+        "by_source": {k: len(v) for k, v in by_source.items()},
         "sources_chart": sources_chart,
         "top_ai_pages": [{"path": p, "views": c} for p, c in top_pages],
         "daily_ai": daily_ai,
