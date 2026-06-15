@@ -524,6 +524,16 @@ def build_report(days: int = 28, query_page: int = 0, query_limit: int = 500) ->
     )
     pages = _rows_to_list(pages_payload, ["page"])
 
+    query_pages_payload = search_analytics_query(
+        site,
+        start_date=start_date,
+        end_date=end_date,
+        dimensions=["query", "page"],
+        row_limit=250,
+    )
+    query_pages = _rows_to_list(query_pages_payload, ["query", "page"])
+    query_pages.sort(key=lambda r: (-r.get("clicks", 0), -r.get("impressions", 0)))
+
     devices_payload = search_analytics_query(
         site,
         start_date=start_date,
@@ -551,6 +561,7 @@ def build_report(days: int = 28, query_page: int = 0, query_limit: int = 500) ->
         "daily": daily,
         "queries": queries,
         "pages": pages,
+        "query_pages": query_pages,
         "devices": devices,
         "countries": countries,
         "query_page": query_page,

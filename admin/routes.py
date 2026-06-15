@@ -1175,6 +1175,22 @@ def analytics():
         days = 30
     stats = build_site_analytics(days)
     profile_stats = db.get_visitor_profile_stats(days)
+
+    gsc_mixed = None
+    gsc_connected = False
+    try:
+        from admin import gsc_service as gsc
+        from admin.seo_insights import build_mixed_insights
+
+        gsc_connected = gsc.is_connected()
+        if gsc_connected:
+            gsc_days = {7: 7, 30: 28, 90: 90}.get(days, 28)
+            gsc.ensure_locked_site()
+            gsc_report = gsc.build_report(days=gsc_days, query_limit=100)
+            gsc_mixed = build_mixed_insights(gsc_report, days)
+    except Exception:  # noqa: BLE001
+        gsc_mixed = None
+
     return render_template(
         "admin/analytics.html",
         stats=stats,
@@ -1182,6 +1198,8 @@ def analytics():
         social=db.get_social_traffic(days),
         profile_stats=profile_stats,
         recommendations=get_analytics_recommendations(stats, days),
+        gsc_mixed=gsc_mixed,
+        gsc_connected=gsc_connected,
     )
 
 
@@ -1209,6 +1227,7 @@ def gsc():
         "days": days,
         "query_page": query_page,
         "report": None,
+        "mixed": None,
         "gsc_error": None,
         "gsc_scope_error": False,
     }
@@ -1217,6 +1236,10 @@ def gsc():
         try:
             ctx["locked_site_url"] = gsc.ensure_locked_site()
             ctx["report"] = gsc.build_report(days=days, query_page=query_page)
+            from admin.seo_insights import build_mixed_insights
+
+            site_days = {7: 7, 28: 30, 90: 90}.get(days, 30)
+            ctx["mixed"] = build_mixed_insights(ctx["report"], site_days)
         except Exception as exc:  # noqa: BLE001
             msg = str(exc)
             ctx["gsc_error"] = msg

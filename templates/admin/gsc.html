@@ -119,6 +119,69 @@
     </div>
   </div>
 
+  {% if mixed %}
+  <div class="gsc-kpi-grid gsc-kpi-grid--mixed">
+    <div class="gsc-kpi gsc-kpi--blend">
+      <span class="gsc-kpi__label">Clics Google (GSC)</span>
+      <span class="gsc-kpi__value">{{ "{:,}".format(mixed.totals.gsc_clicks).replace(",", " ") }}</span>
+      <span class="gsc-kpi__hint">{{ mixed.gsc_start }} → {{ mixed.gsc_end }}</span>
+    </div>
+    <div class="gsc-kpi gsc-kpi--blend">
+      <span class="gsc-kpi__label">Visiteurs uniques site</span>
+      <span class="gsc-kpi__value">{{ mixed.totals.site_unique }}</span>
+      <span class="gsc-kpi__hint">{{ mixed.site_days }} j · analytics interne</span>
+    </div>
+    <div class="gsc-kpi gsc-kpi--blend gsc-kpi--gold">
+      <span class="gsc-kpi__label">Visiteurs SEO site</span>
+      <span class="gsc-kpi__value">{{ mixed.totals.site_organic }}</span>
+      <span class="gsc-kpi__hint">Referrer moteur de recherche</span>
+    </div>
+  </div>
+
+  <section class="gsc-panel gsc-panel--highlight">
+    <header class="gsc-panel__head">
+      <div>
+        <h2 class="gsc-panel__title">Requête × Page</h2>
+        <p class="gsc-panel__subtitle muted">Search Console croisé avec les visiteurs réels par page sur le site.</p>
+      </div>
+    </header>
+    {% if mixed.query_pages %}
+    <div class="gsc-table-scroll">
+      <table class="gsc-table gsc-table--mixed">
+        <thead>
+          <tr>
+            <th class="gsc-table__col-text">Requête</th>
+            <th class="gsc-table__col-text">Page</th>
+            <th class="gsc-table__col-num" title="Clics Google Search">Clics G.</th>
+            <th class="gsc-table__col-num">Impr.</th>
+            <th class="gsc-table__col-num" title="Visiteurs uniques sur cette page (site)">Vis. site</th>
+            <th class="gsc-table__col-num" title="Visiteurs organiques (referrer)">SEO site</th>
+            <th class="gsc-table__col-num">Pos.</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in mixed.query_pages %}
+          <tr>
+            <td class="gsc-table__col-text"><span class="gsc-ellipsis" title="{{ row.query }}">{{ row.query }}</span></td>
+            <td class="gsc-table__col-text">
+              <a href="{{ row.page }}" class="gsc-ellipsis gsc-link gsc-link--path" target="_blank" rel="noopener" title="{{ row.page }}">{{ row.path }}</a>
+            </td>
+            <td class="gsc-table__col-num"><strong>{{ row.clicks }}</strong></td>
+            <td class="gsc-table__col-num">{{ row.impressions }}</td>
+            <td class="gsc-table__col-num">{{ row.site_visitors }}</td>
+            <td class="gsc-table__col-num">{{ row.site_organic }}</td>
+            <td class="gsc-table__col-num">{{ row.position }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="muted">Pas de combinaisons requête/page sur cette période.</p>
+    {% endif %}
+  </section>
+  {% endif %}
+
   <section class="gsc-panel">
     <h2 class="gsc-panel__title">Performance quotidienne</h2>
     {% if report.daily %}
@@ -175,8 +238,45 @@
 
   <div class="gsc-split">
     <section class="gsc-panel gsc-panel--wide">
-      <h2 class="gsc-panel__title">Top pages</h2>
-      {% if report.pages %}
+      <h2 class="gsc-panel__title">Top pages{% if mixed %} — Google + visiteurs site{% endif %}</h2>
+      {% if mixed and mixed.pages_mixed %}
+      <div class="gsc-table-scroll gsc-table-scroll--short">
+        <table class="gsc-table gsc-table--mixed">
+          <thead>
+            <tr>
+              <th class="gsc-table__col-text">Page</th>
+              <th class="gsc-table__col-num">Clics G.</th>
+              <th class="gsc-table__col-num">Vis. site</th>
+              <th class="gsc-table__col-num">SEO site</th>
+              <th class="gsc-table__col-text">Top requêtes Google</th>
+              <th class="gsc-table__col-num">Pos.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in mixed.pages_mixed %}
+            <tr>
+              <td class="gsc-table__col-text">
+                <a href="{{ row.page }}" class="gsc-ellipsis gsc-link gsc-link--path" target="_blank" rel="noopener" title="{{ row.page }}">{{ row.path }}</a>
+              </td>
+              <td class="gsc-table__col-num"><strong>{{ row.clicks }}</strong></td>
+              <td class="gsc-table__col-num">{{ row.site_visitors }}</td>
+              <td class="gsc-table__col-num">{{ row.site_organic }}</td>
+              <td class="gsc-table__col-text gsc-table__queries">
+                {% if row.top_queries %}
+                  {% for q in row.top_queries %}
+                  <span class="gsc-query-chip" title="{{ q.clicks }} clic(s) · pos. {{ q.position }}">{{ q.query }}</span>
+                  {% endfor %}
+                {% else %}
+                  <span class="muted">—</span>
+                {% endif %}
+              </td>
+              <td class="gsc-table__col-num">{{ row.position }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% elif report.pages %}
       <div class="gsc-table-scroll gsc-table-scroll--short">
         <table class="gsc-table">
           <thead>

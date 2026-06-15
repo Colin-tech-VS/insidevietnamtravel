@@ -3984,6 +3984,57 @@ a.partners-stat:hover { border-color: var(--teal-light); color: var(--teal); }
 }
 .gsc-google-btn { margin-top: 0.5rem; }
 
+.gsc-kpi-grid--mixed { margin-bottom: 0.25rem; }
+.gsc-kpi--blend { border-left: 3px solid rgba(27, 77, 74, 0.35); }
+.gsc-kpi__hint {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  color: var(--ink-muted);
+  line-height: 1.35;
+}
+.gsc-panel--highlight {
+  border-color: rgba(27, 77, 74, 0.25);
+  background: linear-gradient(145deg, #f8fcfb 0%, var(--white) 100%);
+}
+.gsc-panel__subtitle {
+  margin: 0.2rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+.gsc-table--mixed .gsc-table__col-num strong { color: var(--teal); }
+.gsc-link--path {
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.82rem;
+}
+.gsc-table__queries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  align-items: center;
+}
+.gsc-query-chip {
+  display: inline-block;
+  max-width: 11rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: var(--rice);
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+.gsc-path-code {
+  font-size: 0.78rem;
+  background: var(--rice);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+.seo-mixed-section { margin-top: 1.5rem; }
+
 /* Espace partenaires — admin partner-portal tab */
 .partner-admin-list { display: flex; flex-direction: column; gap: 0.75rem; }
 .partner-admin-row {
