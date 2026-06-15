@@ -226,6 +226,10 @@ def track_page_view():
     path = request.path
     if path.startswith(("/admin", "/static", "/go/", "/favicon", "/api/")):
         return
+    from admin.analytics_filters import is_analytics_excluded_path
+
+    if is_analytics_excluded_path(path):
+        return
     client_ip = (request.remote_addr or "").strip()
     user_agent = (request.user_agent.string or "")[:200]
     if not should_track_page_view(path=path, user_agent=user_agent, client_ip=client_ip):

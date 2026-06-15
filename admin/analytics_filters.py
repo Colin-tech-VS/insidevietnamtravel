@@ -10,6 +10,9 @@ from geo_utils import GEO_SOURCES, is_ai_crawler
 
 _ANALYTICS_EXCLUDED_PATH_PREFIXES: tuple[str, ...] = (
     "/.well-known/",
+    "/partners/",  # espace partenaire (noindex)
+    "/e/o/",  # pixel ouverture email
+    "/e/c/",  # redirection clic email
 )
 
 # Chemins techniques / SEO / vérification — pas des visites utilisateur.
@@ -19,6 +22,11 @@ _INFRA_ANALYTICS_PATHS: frozenset[str] = frozenset({
     "/llms.txt",
     "/llms-full.txt",
     "/AgodaPartnerVerification.htm",
+    "/site.webmanifest",
+    "/healthz",
+    "/feed.xml",
+    "/en/feed.xml",
+    "/search-index.json",
 })
 
 # Fragments de chemins typiques des scanners de vulnérabilités.
@@ -119,6 +127,22 @@ _EXTRA_BOT_PATTERNS: tuple[str, ...] = (
     "sqlmap",
     "masscan",
     "undici",
+    "applebot",
+    "storebot",
+    "google-inspectiontool",
+    "chrome privacy preserving",
+    "censysinspect",
+    "zgrab",
+    "libredtail",
+    "zmeu",
+    "sitelockspider",
+    "siteauditbot",
+    "seokicks",
+    "serpstatbot",
+    "dataforseo",
+    "megaindex",
+    "seranking",
+    "serpstat",
 )
 
 
