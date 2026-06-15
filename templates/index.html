@@ -33,37 +33,110 @@
 
 {% block content %}
 <section class="hero hero--editorial" aria-labelledby="hero-title">
-  {% set hero_slides = ['halong', 'hoi-an', 'hanoi'] %}
-  {% set hero_mosaic = [
-    ('halong', 'hero-mosaic__cell--main'),
-    ('hoi-an', 'hero-mosaic__cell--b'),
-    ('hanoi', 'hero-mosaic__cell--c'),
-    ('sapa', 'hero-mosaic__cell--d'),
-  ] %}
+  {% set hero_cities = ['halong', 'hoi-an', 'hanoi', 'sapa', 'da-nang', 'phu-quoc'] %}
+  {% set city_regions = {
+    'hanoi': 'north', 'halong': 'north', 'sapa': 'north',
+    'hue': 'central', 'da-nang': 'central', 'hoi-an': 'central',
+    'ho-chi-minh-city': 'south', 'delta-du-mekong': 'south', 'phu-quoc': 'south'
+  } %}
+  {% set hero_spotlight = [] %}
+  {% for slug in hero_cities %}
+    {% if destinations.get(slug) and destinations[slug].image %}
+      {% set _ = hero_spotlight.append((slug, destinations[slug])) %}
+    {% endif %}
+  {% endfor %}
 
-  <div class="hero-slides" aria-hidden="true">
-    {% for slug in hero_slides %}
-    {% set d = destinations.get(slug) %}
-    {% if d and d.image %}
-    <div class="hero-slide" style="--slide-i: {{ loop.index0 }}">
+  <div class="hero-slides" id="hero-slides" aria-hidden="true">
+    {% for slug, d in hero_spotlight %}
+    <div class="hero-slide{% if loop.first %} is-active{% endif %}" data-hero-slide="{{ loop.index0 }}">
       {% if loop.first %}
       {{ responsive_img(d.image, alt=d.image_alt or d.name, width=1920, height=1080, loading='eager', fetchpriority='high', class='hero-slide__img', sizes='100vw') }}
       {% else %}
       {{ responsive_img(d.image, alt=d.image_alt or d.name, width=1920, height=1080, loading='lazy', class='hero-slide__img', sizes='100vw') }}
       {% endif %}
     </div>
-    {% endif %}
     {% endfor %}
   </div>
+
+  <div class="hero-ambient" aria-hidden="true">
+    <span class="hero-ambient__orb hero-ambient__orb--1"></span>
+    <span class="hero-ambient__orb hero-ambient__orb--2"></span>
+    <span class="hero-ambient__orb hero-ambient__orb--3"></span>
+  </div>
   <div class="hero-scrim" aria-hidden="true"></div>
+  <div class="hero-vignette" aria-hidden="true"></div>
   <div class="hero-pattern" aria-hidden="true"></div>
 
   <div class="container hero-layout">
-    <div class="hero-content">
+    <div class="hero-intro">
       <p class="hero-eyebrow">{{ t('home.hero.eyebrow') }}</p>
       <h1 id="hero-title">{{ t('home.hero.title') }}<br><em>{{ t('home.hero.title_em') }}</em></h1>
       <p class="hero-lead">{{ t('home.hero.lead') }}</p>
+    </div>
 
+    {% if hero_spotlight %}
+    <div class="hero-showcase" id="hero-showcase" data-interval="6500"
+         aria-label="{{ t('home.hero.showcase_label') }}">
+      <p class="hero-showcase__label">{{ t('home.hero.showcase_label') }}</p>
+
+      <div class="hero-showcase__stage">
+        {% for slug, d in hero_spotlight %}
+        {% set region = city_regions.get(slug, 'central') %}
+        <article class="hero-showcase__panel{% if loop.first %} is-active{% endif %}"
+                 data-hero-panel
+                 aria-hidden="{{ 'false' if loop.first else 'true' }}">
+          <a href="{{ lang_url('destination_page', slug=slug) }}" class="hero-showcase__link">
+            <div class="hero-showcase__media">
+              {{ responsive_img(
+                d.image,
+                alt=d.image_alt or d.name,
+                width=720,
+                height=900,
+                loading='lazy',
+                class='hero-showcase__img',
+                sizes='(max-width: 1024px) 90vw, 420px'
+              ) }}
+              <span class="hero-showcase__shine" aria-hidden="true"></span>
+            </div>
+            <div class="hero-showcase__caption">
+              <span class="hero-showcase__region">{{ t('prepare.region.' ~ region) }}</span>
+              <h2 class="hero-showcase__name">{{ d.name }}</h2>
+              <p class="hero-showcase__tag">{{ d.tagline }}</p>
+              <span class="hero-showcase__cta">{{ t('home.dest.cta') }}</span>
+            </div>
+          </a>
+        </article>
+        {% endfor %}
+        <div class="hero-showcase__progress" aria-hidden="true">
+          <span class="hero-showcase__progress-bar"></span>
+        </div>
+      </div>
+
+      <div class="hero-showcase__thumbs" role="tablist" aria-label="{{ t('home.hero.showcase_label') }}">
+        {% for slug, d in hero_spotlight %}
+        <button type="button" class="hero-showcase__thumb{% if loop.first %} is-active{% endif %}"
+                role="tab" data-hero-go="{{ loop.index0 }}"
+                aria-selected="{{ 'true' if loop.first else 'false' }}"
+                aria-label="{{ d.name }}">
+          {% if d.image %}
+          {{ responsive_img(
+            d.image,
+            alt='',
+            width=120,
+            height=120,
+            loading='lazy',
+            class='hero-showcase__thumb-img',
+            sizes='64px'
+          ) }}
+          {% endif %}
+          <span class="hero-showcase__thumb-name">{{ d.name }}</span>
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="hero-tools">
       <div class="hero-discovery" role="search">
         <div class="hero-discovery__panel">
           <div class="hero-discovery__head">
@@ -126,28 +199,6 @@
           <span class="stat-label">{{ t('home.hero.stat_free') }}</span>
         </li>
       </ul>
-    </div>
-
-    <div class="hero-mosaic" aria-label="{{ 'Aperçu destinations' if lang == 'fr' else 'Destination preview' }}">
-      {% for slug, cell_class in hero_mosaic %}
-      {% set d = destinations.get(slug) %}
-      {% if d %}
-      <a href="{{ lang_url('destination_page', slug=slug) }}" class="hero-mosaic__cell {{ cell_class }}">
-        {% if d.image %}
-        {{ responsive_img(
-          d.image,
-          alt=d.image_alt or d.name,
-          width=600,
-          height=750,
-          loading='lazy',
-          class='hero-mosaic__img',
-          sizes='(max-width: 1024px) 0px, 280px'
-        ) }}
-        {% endif %}
-        <span class="hero-mosaic__label">{{ d.name }}</span>
-      </a>
-      {% endif %}
-      {% endfor %}
     </div>
   </div>
 </section>
@@ -330,5 +381,6 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/home_hero.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/home_personalize.js') }}" defer></script>
 {% endblock %}
