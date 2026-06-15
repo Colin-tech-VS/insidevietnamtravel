@@ -2770,6 +2770,80 @@ body.is-admin-nav-open { overflow: hidden; }
 }
 .contact-mail-detail__plain.is-hidden { display: none; }
 
+.contact-reply {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--teal);
+  background: linear-gradient(145deg, #f8fcfb 0%, var(--white) 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.contact-reply__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.contact-reply__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--teal);
+}
+.contact-reply__status {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.contact-reply__status--error { color: #b42318; }
+.contact-reply__status--success { color: #027a48; }
+.contact-reply__status--info { color: var(--ink-muted); }
+.contact-reply__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.contact-reply__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
+.contact-reply__input,
+.contact-reply__textarea {
+  width: 100%;
+  max-width: 100%;
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--rice-dark);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  color: var(--ink);
+  box-sizing: border-box;
+}
+.contact-reply__input:read-only {
+  background: var(--rice);
+  color: var(--ink-muted);
+}
+.contact-reply__textarea {
+  resize: vertical;
+  min-height: 8rem;
+  line-height: 1.55;
+}
+.contact-reply__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+.contact-mail-detail__reply.is-active {
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
+}
+
 @media (max-width: 1100px) {
   .contact-mailbox {
     grid-template-columns: 1fr;

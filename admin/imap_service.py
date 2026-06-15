@@ -267,6 +267,7 @@ def _parse_raw_message(raw: bytes, *, uid: str, read: bool) -> dict | None:
 
     subject = _decode_header_value(msg.get("Subject")) or "(sans objet)"
     from_email, from_name, reply_email = _extract_addresses(msg)
+    message_id = (msg.get("Message-ID") or "").strip()
     in_reply_to = (msg.get("In-Reply-To") or "").strip()
     references = (msg.get("References") or "").strip()
     plain_body, html_body = _extract_body_parts(msg)
@@ -302,6 +303,7 @@ def _parse_raw_message(raw: bytes, *, uid: str, read: bool) -> dict | None:
         "message_html": message_html,
         "created_at": _message_datetime(msg),
         "read": read,
+        "message_id": message_id,
         "in_reply_to": in_reply_to,
         "references": references,
         "raw_subject": subject,

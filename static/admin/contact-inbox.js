@@ -11,6 +11,8 @@
   if (!list || !detail || !mailbox || !dataEl) return;
 
   var markReadUrl = mailbox.dataset.markReadUrl || "";
+  var replyUrl = mailbox.dataset.replyUrl || "";
+  var smtpOk = mailbox.dataset.smtpOk === "1";
   var syncMs = Math.max(60000, parseInt(mailbox.dataset.syncSec || "180", 10) * 1000);
 
   var messagesById = {};
@@ -115,12 +117,19 @@
       .catch(function () {});
   }
 
+  function replySubject(subject) {
+    var s = String(subject || "").trim();
+    if (/^(re|fw|fwd|aw|tr|ré|ref)\s*:/i.test(s)) return s;
+    return "Re: " + s;
+  }
+
   function renderDetail(msgId) {
     var m = messagesById[msgId];
     if (!m) return;
 
     var hasHtml = !!m.has_html;
     var plainText = m.message || "";
+    var replyDisabled = !smtpOk || !replyUrl || !m.email;
 
     detail.innerHTML =
       '<div class="contact-mail-detail">' +
@@ -133,7 +142,10 @@
           '<button type="button" class="contact-mail-view-toggle__btn" data-view="plain">Texte</button>' +
           "</div>"
         : "") +
-      '    <a class="btn btn-primary btn-sm contact-mail-detail__reply" href="#">Répondre</a>' +
+      '    <button type="button" class="btn btn-primary btn-sm contact-mail-detail__reply"' +
+      (replyDisabled ? " disabled" : "") +
+      (replyDisabled && !smtpOk ? ' title="SMTP contact non configuré"' : "") +
+      ">Répondre</button>" +
       '    <form method="post" class="contact-mail-detail__delete" onsubmit="return confirm(\'Supprimer ce message ?\');">' +
       '      <input type="hidden" name="action" value="delete">' +
       '      <input type="hidden" name="msg_id" value="' + escapeAttr(m.id) + '">' +
@@ -160,15 +172,32 @@
         ? '<iframe class="contact-mail-detail__iframe" title="Aperçu email" sandbox="" referrerpolicy="no-referrer"></iframe>'
         : "") +
       '<pre class="contact-mail-detail__plain' + (hasHtml ? " is-hidden" : "") + '"></pre>' +
+      '    <div class="contact-reply" id="contact-reply" hidden>' +
+      '      <div class="contact-reply__head">' +
+      '        <h4 class="contact-reply__title">Répondre</h4>' +
+      '        <p class="contact-reply__status" id="contact-reply-status" hidden></p>' +
+      "      </div>" +
+      '      <label class="contact-reply__field">' +
+      '        <span class="contact-reply__label">À</span>' +
+      '        <input type="email" class="contact-reply__input" id="contact-reply-to" readonly value="' +
+      escapeAttr(m.email) + '">' +
+      "      </label>" +
+      '      <label class="contact-reply__field">' +
+      '        <span class="contact-reply__label">Objet</span>' +
+      '        <input type="text" class="contact-reply__input" id="contact-reply-subject" value="' +
+      escapeAttr(replySubject(m.subject)) + '">' +
+      "      </label>" +
+      '      <label class="contact-reply__field contact-reply__field--grow">' +
+      '        <span class="contact-reply__label">Message</span>' +
+      '        <textarea class="contact-reply__textarea" id="contact-reply-body" rows="8" placeholder="Votre réponse…"></textarea>' +
+      "      </label>" +
+      '      <div class="contact-reply__actions">' +
+      '        <button type="button" class="btn btn-primary btn-sm" id="contact-reply-send">Envoyer</button>' +
+      '        <button type="button" class="btn btn-ghost btn-sm" id="contact-reply-cancel">Annuler</button>' +
+      "      </div>" +
+      "    </div>" +
       "  </div>" +
       "</div>";
-
-    var reply = detail.querySelector(".contact-mail-detail__reply");
-    if (reply) {
-      reply.href =
-        "mailto:" + encodeURIComponent(m.email) +
-        "?subject=" + encodeURIComponent("Re: " + (m.subject || ""));
-    }
 
     var plainEl = detail.querySelector(".contact-mail-detail__plain");
     if (plainEl) plainEl.textContent = plainText;
@@ -196,6 +225,102 @@
       back.addEventListener("click", function (e) {
         e.preventDefault();
         closeDetail();
+      });
+    }
+
+    var replyPanel = detail.querySelector("#contact-reply");
+    var replyBtn = detail.querySelector(".contact-mail-detail__reply");
+    var replySend = detail.querySelector("#contact-reply-send");
+    var replyCancel = detail.querySelector("#contact-reply-cancel");
+    var replyBody = detail.querySelector("#contact-reply-body");
+    var replyStatus = detail.querySelector("#contact-reply-status");
+
+    function setReplyOpen(open) {
+      if (!replyPanel) return;
+      replyPanel.hidden = !open;
+      if (replyBtn) replyBtn.classList.toggle("is-active", open);
+      if (open && replyBody) {
+        replyBody.focus();
+        replyPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }
+
+    function setReplyStatus(text, kind) {
+      if (!replyStatus) return;
+      if (!text) {
+        replyStatus.hidden = true;
+        replyStatus.textContent = "";
+        replyStatus.className = "contact-reply__status";
+        return;
+      }
+      replyStatus.hidden = false;
+      replyStatus.textContent = text;
+      replyStatus.className = "contact-reply__status contact-reply__status--" + (kind || "info");
+    }
+
+    if (replyBtn) {
+      replyBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        if (replyBtn.disabled) return;
+        setReplyOpen(replyPanel && replyPanel.hidden);
+      });
+    }
+
+    if (replyCancel) {
+      replyCancel.addEventListener("click", function () {
+        setReplyOpen(false);
+        setReplyStatus("");
+      });
+    }
+
+    if (replySend) {
+      replySend.addEventListener("click", function () {
+        if (!replyUrl) return;
+        var bodyVal = replyBody ? replyBody.value.trim() : "";
+        var subjectEl = detail.querySelector("#contact-reply-subject");
+        var subjectVal = subjectEl ? subjectEl.value.trim() : replySubject(m.subject);
+        if (bodyVal.length < 2) {
+          setReplyStatus("Écrivez un message (au moins 2 caractères).", "error");
+          if (replyBody) replyBody.focus();
+          return;
+        }
+        replySend.disabled = true;
+        if (replyCancel) replyCancel.disabled = true;
+        setReplyStatus("Envoi en cours…", "info");
+        fetch(replyUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            to_email: m.email,
+            subject: subjectVal,
+            body: bodyVal,
+            message_id: m.message_id || "",
+            in_reply_to: m.in_reply_to || "",
+            references: m.references || "",
+          }),
+        })
+          .then(function (r) {
+            return r.json().then(function (data) {
+              return { ok: r.ok, data: data };
+            });
+          })
+          .then(function (res) {
+            if (res.data && res.data.ok) {
+              setReplyStatus("Réponse envoyée à " + (res.data.to || m.email) + ".", "success");
+              if (replyBody) replyBody.value = "";
+              if (replySend) replySend.textContent = "Envoyé";
+            } else {
+              setReplyStatus((res.data && res.data.error) || "Échec de l'envoi.", "error");
+              replySend.disabled = false;
+              if (replyCancel) replyCancel.disabled = false;
+            }
+          })
+          .catch(function () {
+            setReplyStatus("Erreur réseau lors de l'envoi.", "error");
+            replySend.disabled = false;
+            if (replyCancel) replyCancel.disabled = false;
+          });
       });
     }
 

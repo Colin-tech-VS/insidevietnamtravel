@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import uuid
 from datetime import datetime
 
@@ -126,3 +127,71 @@ def submit_contact_form(
         email_sent = result["sent"] > 0
 
     return {"saved": True, "email_sent": email_sent, "id": entry["id"]}
+
+
+_REPLY_PREFIX_RE = re.compile(r"^(re|fw|fwd|aw|tr|ré|ref)\s*:", re.I)
+
+
+def _reply_subject(subject: str) -> str:
+    subject = (subject or "").strip()
+    if _REPLY_PREFIX_RE.match(subject):
+        return subject[:200]
+    return f"Re: {subject}"[:200]
+
+
+def send_inbox_reply(
+    *,
+    to_email: str,
+    subject: str,
+    body: str,
+    message_id: str = "",
+    in_reply_to: str = "",
+    references: str = "",
+) -> dict:
+    """Envoie une réponse depuis la boîte contact@ vers le destinataire."""
+    if not is_contact_smtp_configured():
+        raise ValueError("SMTP contact non configuré.")
+
+    to_email = (to_email or "").strip().lower()
+    body = (body or "").strip()
+    if not to_email or "@" not in to_email:
+        raise ValueError("Destinataire invalide.")
+    if len(body) < 2:
+        raise ValueError("Message trop court.")
+
+    mail_subject = _reply_subject(subject)
+    site = config.SITE_NAME
+    plain_body = body
+    html_body = (
+        f"<p>{body.replace(chr(10), '<br>')}</p>"
+        f'<p style="margin-top:1.5em;font-size:0.85em;color:#666;">'
+        f"— {site}</p>"
+    )
+
+    extra_headers: dict[str, str] = {}
+    thread_id = (message_id or in_reply_to or "").strip()
+    if thread_id:
+        extra_headers["In-Reply-To"] = thread_id
+        refs = (references or "").strip()
+        extra_headers["References"] = f"{refs} {thread_id}".strip() if refs else thread_id
+
+    result = send_email(
+        profile="contact",
+        to_addrs=[to_email],
+        subject=mail_subject,
+        html_body=html_body,
+        plain_body=plain_body,
+        extra_headers=extra_headers or None,
+    )
+    if result["sent"] < 1:
+        err = ""
+        if result.get("errors"):
+            err = next(iter(result["errors"].values()), "")
+        raise ValueError(err or "Échec de l'envoi SMTP.")
+
+    return {
+        "sent": True,
+        "to": to_email,
+        "subject": mail_subject,
+        "from_addr": result.get("from_addr") or "",
+    }

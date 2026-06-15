@@ -98,6 +98,8 @@
         {% if messages %}
         <div class="contact-mailbox" id="contact-mailbox"
              data-mark-read-url="{{ url_for('admin.api_contact_mark_read') }}"
+             data-reply-url="{{ url_for('admin.api_contact_reply') }}"
+             data-smtp-ok="{{ '1' if smtp_ok else '0' }}"
              data-sync-sec="{{ sync_interval_sec }}">
           <div class="contact-mailbox__list-wrap">
             <ul class="contact-mail-list" id="contact-mail-list">
@@ -177,6 +179,7 @@
     <section class="panel">
       <h2>💡 Raccourcis</h2>
       <ul class="status-list">
+        <li class="ok">Répondre envoie depuis contact@ (SMTP).</li>
         <li class="ok">Filtres → tri de la liste uniquement.</li>
         <li class="ok">IMAP relu à chaque actualisation (pas de sync en arrière-plan).</li>
         <li class="warn">Suppression définitive (IMAP).</li>

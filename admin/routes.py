@@ -913,6 +913,39 @@ def api_contact_mark_read():
     return jsonify({"ok": ok})
 
 
+@admin_bp.route("/api/contact/reply", methods=["POST"])
+@login_required
+def api_contact_reply():
+    from admin.contact_service import send_inbox_reply
+    from admin.mail_service import is_contact_smtp_configured
+
+    if not is_contact_smtp_configured():
+        return jsonify({"ok": False, "error": "SMTP contact non configuré."}), 503
+
+    data = request.get_json(silent=True) or {}
+    to_email = (data.get("to_email") or "").strip()
+    subject = (data.get("subject") or "").strip()
+    body = (data.get("body") or "").strip()
+    message_id = (data.get("message_id") or "").strip()
+    in_reply_to = (data.get("in_reply_to") or "").strip()
+    references = (data.get("references") or "").strip()
+
+    try:
+        result = send_inbox_reply(
+            to_email=to_email,
+            subject=subject,
+            body=body,
+            message_id=message_id,
+            in_reply_to=in_reply_to,
+            references=references,
+        )
+        return jsonify({"ok": True, **result})
+    except ValueError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    except Exception as exc:  # noqa: BLE001
+        return jsonify({"ok": False, "error": str(exc)[:300]}), 500
+
+
 @admin_bp.route("/reviews", methods=["GET", "POST"])
 @login_required
 def reviews_admin():
