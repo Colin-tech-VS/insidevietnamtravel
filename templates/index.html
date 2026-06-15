@@ -32,118 +32,31 @@
 {% endblock %}
 
 {% block content %}
-<section class="hero hero--editorial" aria-labelledby="hero-title">
-  {% set hero_cities = ['halong', 'hoi-an', 'hanoi', 'sapa', 'da-nang', 'phu-quoc'] %}
-  {% set city_regions = {
-    'hanoi': 'north', 'halong': 'north', 'sapa': 'north',
-    'hue': 'central', 'da-nang': 'central', 'hoi-an': 'central',
-    'ho-chi-minh-city': 'south', 'delta-du-mekong': 'south', 'phu-quoc': 'south'
-  } %}
-  {% set hero_spotlight = [] %}
-  {% for slug in hero_cities %}
-    {% if destinations.get(slug) and destinations[slug].image %}
-      {% set _ = hero_spotlight.append((slug, destinations[slug])) %}
-    {% endif %}
-  {% endfor %}
+<section class="hero hero--centered" aria-labelledby="hero-title">
+  {% set hero_bg = destinations.halong.image if destinations.get('halong') and destinations.halong.image else '/static/images/destinations/halong-960.webp' %}
+  {% set hero_bg_alt = destinations.halong.image_alt if destinations.get('halong') and destinations.halong.image_alt else "Baie d'Halong, Vietnam — paysage emblématique" %}
 
-  <div class="hero-slides" id="hero-slides" aria-hidden="true">
-    {% for slug, d in hero_spotlight %}
-    <div class="hero-slide{% if loop.first %} is-active{% endif %}" data-hero-slide="{{ loop.index0 }}">
-      {% if loop.first %}
-      {{ responsive_img(d.image, alt=d.image_alt or d.name, width=1920, height=1080, loading='eager', fetchpriority='high', class='hero-slide__img', sizes='100vw') }}
-      {% else %}
-      {{ responsive_img(d.image, alt=d.image_alt or d.name, width=1920, height=1080, loading='lazy', class='hero-slide__img', sizes='100vw') }}
-      {% endif %}
-    </div>
-    {% endfor %}
+  <div class="hero-bg" aria-hidden="true">
+    {{ responsive_img(hero_bg, alt=hero_bg_alt, width=1920, height=1080, loading='eager', fetchpriority='high', class='hero-bg__img', sizes='100vw') }}
   </div>
 
   <div class="hero-ambient" aria-hidden="true">
     <span class="hero-ambient__orb hero-ambient__orb--1"></span>
     <span class="hero-ambient__orb hero-ambient__orb--2"></span>
-    <span class="hero-ambient__orb hero-ambient__orb--3"></span>
   </div>
-  <div class="hero-scrim" aria-hidden="true"></div>
+  <div class="hero-scrim hero-scrim--centered" aria-hidden="true"></div>
   <div class="hero-vignette" aria-hidden="true"></div>
-  <div class="hero-pattern" aria-hidden="true"></div>
 
-  <div class="container hero-layout">
-    <div class="hero-intro">
-      <p class="hero-eyebrow">{{ t('home.hero.eyebrow') }}</p>
-      <h1 id="hero-title">{{ t('home.hero.title') }}<br><em>{{ t('home.hero.title_em') }}</em></h1>
-      <p class="hero-lead">{{ t('home.hero.lead') }}</p>
-    </div>
-
-    {% if hero_spotlight %}
-    <div class="hero-showcase" id="hero-showcase" data-interval="6500"
-         aria-label="{{ t('home.hero.showcase_label') }}">
-      <p class="hero-showcase__label">{{ t('home.hero.showcase_label') }}</p>
-
-      <div class="hero-showcase__stage">
-        {% for slug, d in hero_spotlight %}
-        {% set region = city_regions.get(slug, 'central') %}
-        <article class="hero-showcase__panel{% if loop.first %} is-active{% endif %}"
-                 data-hero-panel
-                 aria-hidden="{{ 'false' if loop.first else 'true' }}">
-          <a href="{{ lang_url('destination_page', slug=slug) }}" class="hero-showcase__link">
-            <div class="hero-showcase__media">
-              {{ responsive_img(
-                d.image,
-                alt=d.image_alt or d.name,
-                width=720,
-                height=900,
-                loading='lazy',
-                class='hero-showcase__img',
-                sizes='(max-width: 1024px) 90vw, 420px'
-              ) }}
-              <span class="hero-showcase__shine" aria-hidden="true"></span>
-            </div>
-            <div class="hero-showcase__caption">
-              <span class="hero-showcase__region">{{ t('prepare.region.' ~ region) }}</span>
-              <h2 class="hero-showcase__name">{{ d.name }}</h2>
-              <p class="hero-showcase__tag">{{ d.tagline }}</p>
-              <span class="hero-showcase__cta">{{ t('home.dest.cta') }}</span>
-            </div>
-          </a>
-        </article>
-        {% endfor %}
-        <div class="hero-showcase__progress" aria-hidden="true">
-          <span class="hero-showcase__progress-bar"></span>
-        </div>
+  <div class="container hero-layout hero-layout--centered">
+    <div class="hero-stack">
+      <div class="hero-intro">
+        <p class="hero-eyebrow">{{ t('home.hero.eyebrow') }}</p>
+        <h1 id="hero-title">{{ t('home.hero.title') }}<br><em>{{ t('home.hero.title_em') }}</em></h1>
+        <p class="hero-lead">{{ t('home.hero.lead') }}</p>
       </div>
 
-      <div class="hero-showcase__thumbs" role="tablist" aria-label="{{ t('home.hero.showcase_label') }}">
-        {% for slug, d in hero_spotlight %}
-        <button type="button" class="hero-showcase__thumb{% if loop.first %} is-active{% endif %}"
-                role="tab" data-hero-go="{{ loop.index0 }}"
-                aria-selected="{{ 'true' if loop.first else 'false' }}"
-                aria-label="{{ d.name }}">
-          {% if d.image %}
-          {{ responsive_img(
-            d.image,
-            alt='',
-            width=120,
-            height=120,
-            loading='lazy',
-            class='hero-showcase__thumb-img',
-            sizes='64px'
-          ) }}
-          {% endif %}
-          <span class="hero-showcase__thumb-name">{{ d.name }}</span>
-        </button>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-
-    <div class="hero-tools">
       <div class="hero-discovery" role="search">
         <div class="hero-discovery__panel">
-          <div class="hero-discovery__head">
-            <span class="hero-discovery__spark" aria-hidden="true">✦</span>
-            <p class="hero-discovery__title">{{ t('home.hero.discover') }}</p>
-          </div>
-
           <button type="button" class="hero-discovery__search" data-search-open aria-label="{{ t('home.hero.search_btn') }}">
             <span class="hero-discovery__search-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
@@ -185,6 +98,7 @@
         <a href="{{ lang_url('destinations_index') }}" class="btn btn-primary">{{ t('home.hero.cta_dest') }}</a>
         <a href="{{ lang_url('prepare_trip') }}" class="btn btn-ghost btn-ghost--on-dark">{{ t('nav.prepare') }}</a>
       </div>
+
       <ul class="hero-stats" aria-label="{{ 'Points clés' if lang == 'fr' else 'Highlights' }}">
         <li class="stat">
           <span class="stat-number">{{ destinations|length }}</span>
@@ -385,6 +299,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/home_hero.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/home_personalize.js') }}" defer></script>
 {% endblock %}

@@ -612,6 +612,102 @@ body.is-nav-open { overflow: hidden; }
   width: 100%;
 }
 
+/* Hero accueil — centré, image plein écran */
+.hero--centered {
+  justify-content: center;
+  text-align: center;
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.hero-bg__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 42%;
+  transform: scale(1.06);
+  animation: heroKenBurns 32s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+.hero-scrim--centered {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(15, 51, 48, 0.45) 0%,
+      rgba(15, 51, 48, 0.62) 35%,
+      rgba(15, 51, 48, 0.82) 70%,
+      rgba(15, 51, 48, 0.92) 100%
+    ),
+    radial-gradient(ellipse 90% 70% at 50% 40%, rgba(15, 51, 48, 0.25), rgba(15, 51, 48, 0.75) 100%);
+}
+
+.hero-layout--centered {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: clamp(2.5rem, 8vh, 5rem) 1.5rem;
+  min-height: calc(100vh - var(--header-h));
+  min-height: calc(100dvh - var(--header-h));
+}
+
+.hero-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 42rem;
+  margin: 0 auto;
+}
+
+.hero--centered .hero-intro {
+  max-width: none;
+  margin-bottom: 0.25rem;
+}
+
+.hero--centered .hero-lead {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 36rem;
+}
+
+.hero--centered .hero-discovery {
+  width: 100%;
+  max-width: 28rem;
+  margin: 0 auto 1.5rem;
+}
+
+.hero--centered .hero-discovery__panel {
+  padding: 1.1rem 1.15rem;
+}
+
+.hero--centered .hero-actions {
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.hero--centered .hero-stats {
+  justify-content: center;
+  width: 100%;
+  padding-top: 1.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-bg__img {
+    animation: none;
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 640px) {
+  .hero--centered h1 { font-size: clamp(2rem, 9vw, 2.65rem); }
+  .hero--centered .hero-discovery { max-width: 100%; }
+}
+
 .hero-intro {
   grid-area: intro;
   max-width: 640px;
