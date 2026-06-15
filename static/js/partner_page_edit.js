@@ -107,13 +107,8 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.classList.toggle('is-selected', on);
       btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
-    const city = selectedBtn?.dataset.city || '';
-    if (city === 'Autre') {
-      cityOtherWrap.hidden = false;
-      cityInput.value = (cityOther?.value || '').trim();
-    } else {
-      cityOtherWrap.hidden = true;
-      cityInput.value = city;
+    if (cityInput) {
+      cityInput.value = selectedBtn?.dataset.slug || selectedBtn?.dataset.city || '';
     }
     updateReadiness();
   }
@@ -129,17 +124,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function initCity() {
     const val = (cityInput?.value || '').trim();
-    const preset = cityButtons.find((b) => b.dataset.city === val);
+    const preset = cityButtons.find((b) => b.dataset.slug === val || b.dataset.name === val || b.dataset.city === val);
     if (preset) {
       syncCitySelection(preset);
-      return;
-    }
-    if (val) {
-      const autre = cityButtons.find((b) => b.dataset.city === 'Autre');
-      if (autre) {
-        syncCitySelection(autre);
-        if (cityOther) cityOther.value = val;
-      }
     }
   }
 

@@ -212,8 +212,14 @@
               <input type="text" id="pp-business" name="business_name" maxlength="120" required placeholder="Hanoi Insider Tours" autocomplete="organization">
             </div>
             <div class="form-field">
-              <label for="pp-city">{{ 'City or region in Vietnam' if is_en else 'Ville ou région au Vietnam' }}</label>
-              <input type="text" id="pp-city" name="city" maxlength="80" placeholder="Hanoï, Da Nang, Sapa…">
+              <label for="pp-city">{{ 'Main destination' if is_en else 'Destination principale' }} *</label>
+              <select id="pp-city" name="city" required>
+                <option value="">{{ 'Choose a destination' if is_en else 'Choisir une destination' }}</option>
+                {% for d in destination_choices %}
+                <option value="{{ d.slug }}">{{ d.name }}</option>
+                {% endfor %}
+              </select>
+              <p class="form-field__hint">{{ 'Only destinations covered on our site — your page will be linked from that guide.' if is_en else 'Uniquement les destinations couvertes sur le site — votre fiche sera liée depuis ce guide.' }}</p>
             </div>
           </div>
           <div class="form-field">

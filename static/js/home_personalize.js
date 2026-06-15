@@ -59,6 +59,25 @@
     var prepareBtn = root.querySelector('[data-profile-prepare]');
     if (prepareBtn && data.prepare_url) prepareBtn.href = data.prepare_url;
 
+    var partnersWrap = root.querySelector('[data-profile-partners-wrap]');
+    var partnersEl = root.querySelector('[data-profile-partners]');
+    if (partnersWrap && partnersEl && data.partners && data.partners.length) {
+      partnersEl.innerHTML = data.partners.map(function (p) {
+        var img = p.image
+          ? '<span class="destination-partners__media"><img src="' + esc(p.image) + '" alt="" loading="lazy" width="200" height="125"></span>'
+          : '';
+        return '<a class="destination-partners__card destination-partners__card--compact" href="' + esc(p.url) + '">'
+          + img
+          + '<span class="destination-partners__body">'
+          + '<span class="destination-partners__badge">' + esc(p.profile_label) + '</span>'
+          + '<span class="destination-partners__title">' + esc(p.title) + '</span>'
+          + '</span></a>';
+      }).join('');
+      partnersWrap.hidden = false;
+    } else if (partnersWrap) {
+      partnersWrap.hidden = true;
+    }
+
     root.hidden = false;
   }
 

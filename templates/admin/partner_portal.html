@@ -69,8 +69,13 @@
                placeholder="Obligatoire sauf influenceur">
       </div>
       <div class="social-field">
-        <label for="pp-city">Ville</label>
-        <input type="text" id="pp-city" name="city" maxlength="80" placeholder="ex. Hội An">
+        <label for="pp-city">Destination principale</label>
+        <select id="pp-city" name="city" class="social-select">
+          <option value="">— Choisir —</option>
+          {% for d in destination_choices %}
+          <option value="{{ d.slug }}">{{ d.name }}</option>
+          {% endfor %}
+        </select>
       </div>
       <div class="social-field">
         <label for="pp-phone">Téléphone</label>

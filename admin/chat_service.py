@@ -214,6 +214,13 @@ def build_knowledge_chunks(lang: str, track_url_fn) -> list[dict]:
     for chunk in _extended_knowledge_chunks(lang, track_url_fn):
         add(chunk)
 
+    try:
+        from admin.partner_discovery import partner_knowledge_chunks
+        for chunk in partner_knowledge_chunks(lang):
+            add(chunk)
+    except Exception:
+        pass
+
     return chunks
 
 
@@ -589,6 +596,17 @@ def retrieve(query: str, lang: str, track_url_fn, top_n: int = CHAT_RETRIEVE_TOP
             hay_l = hay.lower()
             if any(tag in hay_l or tag.replace("-", " ") in hay_l for tag in profile_tags if len(tag) > 2):
                 score += 2
+        if chunk.get("group") == "Partenaires" or chunk.get("id", "").startswith("partner-rich:"):
+            from admin.partner_discovery import is_partner_search_query
+            if is_partner_search_query(query):
+                score += 5
+            if any(w in hay for w in ("guide", "partenaire", "partner", "influenceur", "agence", "local")):
+                score += 2
+            pslug = chunk.get("destination_slug") or ""
+            if pslug and pslug in mentioned_slugs:
+                score += 5
+            if profile_tags and pslug and pslug in profile_tags:
+                score += 4
         if score > 0:
             scored.append((score, chunk))
 

@@ -1587,6 +1587,7 @@ def _search_partners_result(ps, brief: str, report) -> dict:
 @admin_bp.route("/partner-portal", methods=["GET", "POST"])
 @login_required
 def partner_portal_admin():
+    from admin.partner_discovery import destination_choices
     from admin.partner_portal_service import (
         ACCOUNT_STATUS_LABELS,
         PAGE_STATUS_LABELS,
@@ -1660,6 +1661,7 @@ def partner_portal_admin():
         profile_types=PROFILE_TYPES,
         page_status_labels=PAGE_STATUS_LABELS,
         account_status_labels=ACCOUNT_STATUS_LABELS,
+        destination_choices=destination_choices("fr"),
     )
 
 

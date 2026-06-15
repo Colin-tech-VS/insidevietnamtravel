@@ -417,12 +417,30 @@ def resolve_from_profile(
             {"key": "visa", "title": t_fn("tools.visa", lang), "url": lang_url_fn("visa_tool", lang)},
         ]
 
+    partner_items: list[dict] = []
+    try:
+        from admin.partner_discovery import recommend_partners
+        preferred_types: list[str] = []
+        if s in ("culture", "nature", "adventure"):
+            preferred_types.append("guide")
+        if "food" in interest_set:
+            preferred_types.append("guide")
+        partner_items = recommend_partners(
+            destination_slugs=dest_slugs,
+            profile_types=preferred_types or None,
+            lang=lang,
+            limit=4,
+        )
+    except Exception:
+        partner_items = []
+
     return {
         "personalized": _has_signal(profile),
         "summary": profile_summary(profile, lang, t_fn),
         "destinations": dest_items[:6],
         "itineraries": itin_items[:4],
         "tools": tool_items[:5],
+        "partners": partner_items,
         "prepare_url": lang_url_fn("prepare_trip", lang),
         "profile": {
             "group": g,
@@ -444,6 +462,8 @@ def retrieve_boost_tags(profile: dict | None) -> set[str]:
     tags.update(profile.get("c") or [])
     for interest in profile.get("i") or []:
         tags.add(interest.replace("dest:", ""))
+        if interest in ("guide", "partner", "local"):
+            tags.update(("guide", "partenaire", "partner", "local"))
         if ":" in interest:
             tags.add(interest.split(":", 1)[1])
         else:

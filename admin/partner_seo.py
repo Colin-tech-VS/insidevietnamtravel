@@ -226,6 +226,8 @@ def related_partners(
     *,
     limit: int = 4,
 ) -> list[dict]:
+    from admin.partner_discovery import partner_destination_slug
+
     lang = "en" if lang == "en" else "fr"
     current_slug = (current_slug or "").strip().lower()
     city = (city or "").strip().lower()
@@ -239,6 +241,7 @@ def related_partners(
         partner = entry.get("partner") or {}
         extra = entry.get("extra") or {}
         entry_city = (extra.get("city") or partner.get("city") or "").strip().lower()
+        entry_dest = partner_destination_slug(entry) or ""
         score = 0
         if ptype and partner.get("profile_type") == ptype:
             score += 2
@@ -246,6 +249,9 @@ def related_partners(
             score += 3
         elif city and entry_city and city in entry_city:
             score += 1
+        dest_slug = _city_slug(city) if city else None
+        if dest_slug and entry_dest == dest_slug:
+            score += 4
         scored.append((score, entry))
 
     scored.sort(key=lambda x: (-x[0], x[1].get("title") or ""))

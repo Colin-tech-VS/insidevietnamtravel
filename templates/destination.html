@@ -130,6 +130,34 @@
       </ul>
     </section>
 
+    {% if local_partners %}
+    <section class="content-block destination-partners" aria-label="{{ 'Local partners' if lang == 'en' else 'Partenaires locaux' }}">
+      <h2>{% if lang == 'en' %}Local partners in {{ dest.name }}{% else %}Partenaires à {{ dest.name }}{% endif %}</h2>
+      <p class="section-intro">{% if lang == 'en' %}Verified guides, agencies and creators we work with in this area.{% else %}Guides, agences et créateurs vérifiés avec lesquels nous collaborons sur place.{% endif %}</p>
+      <ul class="destination-partners__grid">
+        {% for p in local_partners %}
+        <li>
+          <a class="destination-partners__card" href="{{ p.url }}">
+            {% if p.image %}
+            <span class="destination-partners__media">
+              <img src="{{ p.image | static_v }}" alt="" width="320" height="200" loading="lazy" decoding="async">
+            </span>
+            {% endif %}
+            <span class="destination-partners__body">
+              <span class="destination-partners__badge">{{ p.profile_label }}</span>
+              <span class="destination-partners__title">{{ p.title }}</span>
+              {% if p.tagline %}<span class="destination-partners__tag">{{ p.tagline }}</span>{% endif %}
+            </span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+      <p class="destination-partners__more">
+        <a href="{{ lang_url('partners_index') }}">{% if lang == 'en' %}Browse all partners{% else %}Voir tous nos partenaires{% endif %}</a>
+      </p>
+    </section>
+    {% endif %}
+
     {{ affiliate_disclosure() }}
   </article>
 

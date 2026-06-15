@@ -16,6 +16,7 @@ from flask import (
 from admin import ai_client
 from admin import draft_store
 from admin.groq_partner_page import generate_and_review_partner_page, suggest_partner_page_fixes
+from admin.partner_discovery import destination_choices
 from admin.partner_portal_service import (
     PAGE_STATUS_LABELS,
     PROFILE_TYPE_LABELS,
@@ -381,6 +382,7 @@ def page_edit():
         partner=partner,
         page=page,
         extra=extra,
+        destination_choices=destination_choices("fr"),
         is_hidden_account=is_hidden,
         profile_label=PROFILE_TYPE_LABELS.get(partner.get("profile_type"), ""),
         profile_types=PROFILE_TYPES,

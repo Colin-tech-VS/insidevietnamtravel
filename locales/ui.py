@@ -543,6 +543,7 @@ UI: dict[str, dict[str, str]] = {
     },
     "profile.continue": {"fr": "Reprendre votre exploration", "en": "Continue exploring"},
     "profile.destinations": {"fr": "Destinations pour vous", "en": "Destinations for you"},
+    "profile.partners": {"fr": "Partenaires pour vous", "en": "Partners for you"},
     "profile.itineraries": {"fr": "Itinéraires adaptés", "en": "Matching itineraries"},
     "profile.tools": {"fr": "Outils utiles pour votre profil", "en": "Tools for your profile"},
     "profile.prepare_cta": {"fr": "Affiner mon profil voyage", "en": "Refine my trip profile"},

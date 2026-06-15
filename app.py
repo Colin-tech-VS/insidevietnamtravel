@@ -1124,12 +1124,14 @@ def about():
 @app.route("/en/become-a-partner")
 def become_partner():
     from admin.partner_portal_service import PROFILE_TYPES
+    from admin.partner_discovery import destination_choices
 
     lang = get_lang()
     is_en = lang == "en"
     return render_template(
         "partner_apply.html",
         profile_types=PROFILE_TYPES,
+        destination_choices=destination_choices(lang),
         meta_title=(
             "Vietnam travel partnership program — collaborate with us"
             if is_en
@@ -1517,9 +1519,12 @@ def destination_page(slug):
     dest = _destinations(lang).get(slug)
     if not dest:
         abort(404)
+    from admin.partner_discovery import partners_for_destination
+    local_partners = partners_for_destination(slug, lang, limit=6)
     return render_template(
         "destination.html",
         dest=dest,
+        local_partners=local_partners,
         meta_title=dest.get("meta_title") or build_meta_title(f"Guide {dest['name']} Vietnam"),
         meta_description=truncate_text(dest.get("meta_description", ""), 160),
         meta_keywords=t("meta.dest.kw", lang, name=dest["name"]),
@@ -1603,6 +1608,20 @@ def search_index():
             "u": lang_url(endpoint, lang),
             "g": "tool",
         })
+
+    try:
+        from admin.partner_discovery import partner_card
+        from admin.partner_portal_service import list_public_partners
+        for entry in list_public_partners():
+            card = partner_card(entry, lang)
+            items.append({
+                "t": card["title"],
+                "s": f"{card['profile_label']} · {card['city']}".strip(" ·"),
+                "u": card["url"],
+                "g": "partner",
+            })
+    except Exception:
+        pass
 
     return jsonify(items)
 

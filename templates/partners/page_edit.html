@@ -134,26 +134,12 @@
         <div class="form-field">
           <label>Ville / région *</label>
           <div class="partner-chip-grid partner-chip-grid--select" id="city-chips">
-            {% for city in [
-              'Hanoï', 'Ho Chi Minh-Ville', 'Đà Nẵng', 'Hội An', 'Huế', 'Nha Trang',
-              'Phú Quốc', 'Sapa', 'Ha Long', 'Ninh Bình', 'Dalat', 'Phong Nha', 'Autre'
-            ] %}
-            <button type="button" class="partner-chip partner-chip--radio" data-city="{{ city }}"
-                    {% if current_city == city or (city == 'Autre' and current_city and current_city not in [
-                      'Hanoï', 'Ho Chi Minh-Ville', 'Đà Nẵng', 'Hội An', 'Huế', 'Nha Trang',
-                      'Phú Quốc', 'Sapa', 'Ha Long', 'Ninh Bình', 'Dalat', 'Phong Nha'
-                    ]) %}aria-pressed="true"{% endif %}>{{ city }}</button>
+            {% for d in destination_choices %}
+            <button type="button" class="partner-chip partner-chip--radio" data-slug="{{ d.slug }}" data-name="{{ d.name }}"
+                    {% if current_city == d.name or extra.destination_slug == d.slug %}aria-pressed="true"{% endif %}>{{ d.name }}</button>
             {% endfor %}
           </div>
-          <input type="hidden" name="city" id="city" value="{{ current_city }}">
-          <div class="form-field partner-city-other" id="city-other-wrap" hidden>
-            <label for="city-other">Précisez la ville</label>
-            <input type="text" id="city-other" maxlength="80" placeholder="Mũi Né, Cần Thơ…"
-                   value="{{ current_city if current_city and current_city not in [
-                     'Hanoï', 'Ho Chi Minh-Ville', 'Đà Nẵng', 'Hội An', 'Huế', 'Nha Trang',
-                     'Phú Quốc', 'Sapa', 'Ha Long', 'Ninh Bình', 'Dalat', 'Phong Nha', 'Autre'
-                   ] else '' }}">
-          </div>
+          <input type="hidden" name="city" id="city" value="{{ extra.destination_slug or current_city }}">
         </div>
 
         <div class="form-field">

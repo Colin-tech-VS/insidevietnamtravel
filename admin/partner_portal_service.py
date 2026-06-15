@@ -603,6 +603,10 @@ def register_partner(
     if not (bio or "").strip() or len((bio or "").strip()) < 40:
         raise ValueError("Présentez votre activité (40 caractères minimum).")
 
+    from admin.partner_discovery import location_from_destination
+    loc = location_from_destination(city, required=True)
+    city = loc["name"]
+
     if find_account_by_email(email):
         raise ValueError("Un compte existe déjà avec cet email.")
 
@@ -682,6 +686,10 @@ def create_partner_by_admin(
         raise ValueError("Nom de l'activité / marque obligatoire pour ce type de profil.")
     if find_account_by_email(email):
         raise ValueError("Un compte espace partenaire existe déjà avec cet email.")
+
+    from admin.partner_discovery import location_from_destination
+    if (city or "").strip():
+        city = location_from_destination(city, required=True)["name"]
 
     pid = uuid.uuid4().hex[:16]
     now = _now_iso()
@@ -951,6 +959,9 @@ def save_page_draft(
     if not account:
         raise ValueError("Compte introuvable.")
 
+    from admin.partner_discovery import location_from_destination
+    loc = location_from_destination(city or account.get("city"), required=True)
+
     existing = get_page_by_partner(partner_id)
     now = _now_iso()
     prev_extra = (existing or {}).get("extra") if isinstance((existing or {}).get("extra"), dict) else {}
@@ -959,7 +970,8 @@ def save_page_draft(
         "pitch": pitch,
         "highlights": highlights,
         "offer_details": offer_details,
-        "city": (city or account.get("city") or "").strip(),
+        "city": loc["name"],
+        "destination_slug": loc["slug"],
         "contact_note": (contact_note or "").strip(),
     }
     if "profile_highlights" not in extra or not _coerce_profile_highlights(extra.get("profile_highlights")):
@@ -968,6 +980,19 @@ def save_page_draft(
         elif highlights:
             extra["profile_highlights"] = _highlights_from_extra({"highlights": highlights})
     extra_json = json.dumps(extra, ensure_ascii=False)
+
+    with get_connection() as conn:
+        cur = conn.cursor()
+        if is_postgres():
+            cur.execute(
+                "UPDATE partner_accounts SET city = %s, updated_at = %s WHERE id = %s",
+                (loc["name"], now, partner_id),
+            )
+        else:
+            cur.execute(
+                "UPDATE partner_accounts SET city = ?, updated_at = ? WHERE id = ?",
+                (loc["name"], now, partner_id),
+            )
 
     if existing:
         if existing.get("status") == "ai_review":
