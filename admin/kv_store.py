@@ -86,7 +86,13 @@ def set_json(key: str, data: Any, *, file_name: str | None = None):
 
     if is_postgres():
         _pg_set(key, data)
-        return
+    else:
+        _write_json_file(file_path, data)
+        _invalidate_cache(key)
 
-    _write_json_file(file_path, data)
-    _invalidate_cache(key)
+    try:
+        from admin.content_cache import invalidate_all
+
+        invalidate_all()
+    except ImportError:
+        pass

@@ -5,12 +5,9 @@
 <head>
 
   {% if google_ads_id %}
-  <!-- Google tag (gtag.js) — Google Ads -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id={{ google_ads_id }}"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
     gtag('consent', 'default', {
       ad_storage: 'denied',
       ad_user_data: 'denied',
@@ -18,7 +15,26 @@
       analytics_storage: 'denied',
       wait_for_update: 500
     });
-    gtag('config', '{{ google_ads_id }}');
+    (function () {
+      var adsId = {{ google_ads_id | tojson }};
+      function loadAdsTag() {
+        if (window.__adsTagLoaded) return;
+        window.__adsTagLoaded = true;
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(adsId);
+        s.onload = function () {
+          gtag('js', new Date());
+          gtag('config', adsId);
+        };
+        document.head.appendChild(s);
+      }
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(loadAdsTag, { timeout: 2500 });
+      } else {
+        window.addEventListener('load', loadAdsTag, { once: true });
+      }
+    })();
   </script>
   {% endif %}
 
@@ -127,9 +143,9 @@
 
 
 
-  <link rel="preload" href="{{ url_for('static', filename='css/style.css') }}" as="style">
+  <link rel="preload" href="{{ url_for('static', filename=main_css) }}" as="style">
 
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename=main_css) }}">
 
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
 

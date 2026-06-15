@@ -8,4 +8,5 @@ Pillow==11.1.0
 requests==2.32.3
 ddgs==9.14.4
 reportlab==4.4.3
+rcssmin==1.2.1
 stripe==11.4.1

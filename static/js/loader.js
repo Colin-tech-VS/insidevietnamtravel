@@ -2,7 +2,7 @@
   const loader = document.getElementById('page-loader');
   if (!loader) return;
 
-  const MIN_VISIBLE_MS = 380;
+  const MIN_VISIBLE_MS = 80;
   const MAX_VISIBLE_MS = 3500;
   const loadStarted = performance.now();
   let hideScheduled = false;

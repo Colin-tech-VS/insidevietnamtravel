@@ -1,7 +1,10 @@
 """Inside Vietnam Travel — affiliate travel guide (Flask)."""
 
+import hashlib
+import json
 import threading
 from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 from urllib.parse import quote, unquote, urlparse
 
@@ -42,6 +45,7 @@ from seo_utils import (
 from admin import admin_bp
 from partners import partners_bp
 from admin import db as analytics_db
+from admin.content_cache import get_or_set, register_invalidate_hook
 from admin.image_service import persistent_image_url
 from admin.store import get_articles, get_article_by_slug, get_categories, get_settings, get_destinations_dict
 from data.trip_planner import destinations_by_region
@@ -105,6 +109,22 @@ app.register_blueprint(partners_bp)
 # si /healthz affiche une heure ancienne, c'est que le code en ligne n'a PAS été
 # redéployé (cause n°1 des « ça bloque encore » alors que le correctif est sur main).
 APP_BOOT_TIME = datetime.utcnow()
+MAIN_CSS_PATH = "css/style.css"
+
+try:
+    from admin.static_assets import ensure_minified_css as _ensure_minified_css
+
+    MAIN_CSS_PATH = _ensure_minified_css(app.static_folder)
+except Exception:
+    pass
+
+
+def _refresh_main_css_path() -> str:
+    global MAIN_CSS_PATH
+    from admin.static_assets import ensure_minified_css
+
+    MAIN_CSS_PATH = ensure_minified_css(app.static_folder)
+    return MAIN_CSS_PATH
 
 
 @app.route("/healthz")
@@ -123,14 +143,22 @@ def healthz():
 
 
 def _articles(lang=None):
-    articles = get_articles(lang or get_lang())
-    for a in articles:
-        a["image"] = persistent_image_url(a.get("image"), a.get("image_photo_id"), a.get("image_source_url"))
-    return articles
+    lang = lang or get_lang()
+
+    def _build():
+        articles = get_articles(lang)
+        for a in articles:
+            a["image"] = persistent_image_url(
+                a.get("image"), a.get("image_photo_id"), a.get("image_source_url")
+            )
+        return articles
+
+    return get_or_set(f"articles:{lang}", _build)
 
 
 def _categories(lang=None):
-    return get_categories(lang or get_lang())
+    lang = lang or get_lang()
+    return get_or_set(f"categories:{lang}", lambda: get_categories(lang))
 
 
 def _destinations(lang=None):
@@ -138,10 +166,14 @@ def _destinations(lang=None):
     from admin.image_service import enrich_destination_for_display
 
     lang = lang or get_lang()
-    return {
-        slug: enrich_destination_for_display(d)
-        for slug, d in get_destinations_dict(lang).items()
-    }
+
+    def _build():
+        return {
+            slug: enrich_destination_for_display(d)
+            for slug, d in get_destinations_dict(lang).items()
+        }
+
+    return get_or_set(f"dest:{lang}", _build)
 
 
 def _home_featured_destinations(dests: dict, limit: int = 6) -> list[tuple[str, dict]]:
@@ -168,10 +200,10 @@ def _home_featured_destinations(dests: dict, limit: int = 6) -> list[tuple[str, 
 
 def _itineraries(lang=None):
     lang = lang or get_lang()
-    return {
-        slug: localize_itinerary(it, lang)
-        for slug, it in ITINERARIES.items()
-    }
+    return get_or_set(
+        f"itin:{lang}",
+        lambda: {slug: localize_itinerary(it, lang) for slug, it in ITINERARIES.items()},
+    )
 
 
 def _localized_block(block: dict, lang: str) -> dict:
@@ -299,7 +331,8 @@ def add_static_version(endpoint, values):
 
 @app.after_request
 def add_performance_headers(response):
-    if request.path.startswith("/static/"):
+    path = request.path
+    if path.startswith("/static/"):
         # immutable 1 an UNIQUEMENT pour les URLs versionnées (?v=mtime) : une
         # réponse immutable sur une URL stable (image du store référencée en dur)
         # figeait l'ancienne photo chez les visiteurs pendant un an après un
@@ -308,16 +341,41 @@ def add_performance_headers(response):
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         else:
             response.headers["Cache-Control"] = "public, max-age=3600, must-revalidate"
-    if request.path.startswith("/go/"):
+    elif path == "/search-index.json":
+        response.headers.setdefault("Cache-Control", "public, max-age=300, stale-while-revalidate=600")
+    elif path.startswith("/api/map/") and response.status_code == 200:
+        response.headers.setdefault("Cache-Control", "public, max-age=3600, stale-while-revalidate=86400")
+    if path.startswith("/go/"):
         response.headers["X-Robots-Tag"] = "noindex, nofollow"
     return response
 
 
+def _admin_context_minimal():
+    """Contexte léger pour l'admin — évite destinations/itinéraires sur chaque page."""
+    lang = get_lang()
+    return {
+        "site": app.config,
+        "lang": lang,
+        "current_year": datetime.now().year,
+        "t": t,
+        "lang_url": lang_url,
+        "html_lang": "en" if lang == "en" else "fr",
+        "main_css": MAIN_CSS_PATH,
+    }
+
+
 @app.context_processor
 def inject_globals():
-    settings = get_settings()
+    if request.path.startswith("/admin"):
+        return _admin_context_minimal()
+
+    settings = get_or_set("settings", get_settings)
     lang = get_lang()
     dests = _destinations(lang)
+    regions = get_or_set(
+        f"regions:{lang}",
+        lambda: destinations_by_region(dests, lang, t),
+    )
     try:
         from partners.auth import current_partner
         partner_account = current_partner()
@@ -326,10 +384,11 @@ def inject_globals():
     return {
         "site": app.config,
         "lang": lang,
+        "main_css": MAIN_CSS_PATH,
         "categories": _categories(lang),
         "current_year": datetime.now().year,
         "destinations": dests,
-        "destinations_by_region": destinations_by_region(dests, lang, t),
+        "destinations_by_region": regions,
         "itineraries": _itineraries(lang),
         "pillars": pillars.thematic_list(lang, lang_url),
         "pdf": {"PDF_GUIDE": _localized_block(PDF_GUIDE, lang)},
@@ -363,11 +422,14 @@ def inject_globals():
 
 
 def _chat_enabled() -> bool:
-    try:
-        from admin import chat_service
-        return chat_service.is_enabled()
-    except Exception:
-        return False
+    def _check():
+        try:
+            from admin import chat_service
+            return chat_service.is_enabled()
+        except Exception:
+            return False
+
+    return get_or_set("chat_enabled", _check)
 
 
 @app.template_global()
@@ -455,6 +517,19 @@ def _variant_exists(static_rel: str) -> bool:
     return (Path(app.static_folder) / static_rel).is_file()
 
 
+@lru_cache(maxsize=1024)
+def _static_mtime(rel_path: str) -> int:
+    try:
+        return int((Path(app.static_folder) / rel_path).stat().st_mtime)
+    except OSError:
+        return 0
+
+
+def clear_static_image_caches() -> None:
+    _static_mtime.cache_clear()
+    _responsive_image_cached.cache_clear()
+
+
 def _static_versioned(static_url: str) -> str:
     """Ajoute ?v=<mtime> à une URL /static/ écrite en dur (image du store).
 
@@ -466,11 +541,11 @@ def _static_versioned(static_url: str) -> str:
     base = static_url.split("?", 1)[0]
     if not base.startswith("/static/"):
         return static_url
-    try:
-        mtime = (Path(app.static_folder) / base.removeprefix("/static/")).stat().st_mtime
-    except OSError:
+    rel = base.removeprefix("/static/")
+    mtime = _static_mtime(rel)
+    if not mtime:
         return static_url
-    return f"{base}?v={int(mtime)}"
+    return f"{base}?v={mtime}"
 
 
 @app.template_filter("static_v")
@@ -482,6 +557,11 @@ def static_v_filter(path: str) -> str:
 @app.template_global()
 def responsive_image(image_url: str, *, card: bool = False) -> dict:
     """src + srcset pour images WebP locales avec variantes -640/-960."""
+    return _responsive_image_cached(image_url or "", card)
+
+
+@lru_cache(maxsize=512)
+def _responsive_image_cached(image_url: str, card: bool) -> dict:
     fallback = url_for("static", filename="images/og-default.jpg")
     if not image_url:
         return {"src": fallback, "srcset": "", "sizes": ""}
@@ -491,7 +571,6 @@ def responsive_image(image_url: str, *, card: bool = False) -> dict:
         return {"src": fallback, "srcset": "", "sizes": ""}
 
     rel = image_url.removeprefix("/static/")
-    full_rel = rel
     stem_rel = rel[:-5]
     parts = []
     for suffix, width in (("-640", 640), ("-960", 960)):
@@ -511,6 +590,9 @@ def responsive_image(image_url: str, *, card: bool = False) -> dict:
         "srcset": ", ".join(parts),
         "sizes": sizes,
     }
+
+
+register_invalidate_hook(clear_static_image_caches)
 
 
 @app.template_global()
@@ -1564,11 +1646,7 @@ def destination_page(slug):
 
 # ── Recherche (index client) ──────────────────────────────────────────
 
-@app.route("/search-index.json")
-def search_index():
-    from flask import jsonify
-
-    lang = "en" if (request.args.get("lang") == "en") else "fr"
+def _build_search_index(lang: str) -> list[dict]:
     items = []
 
     for slug, d in _destinations(lang).items():
@@ -1580,7 +1658,6 @@ def search_index():
         })
         loc = affiliate_location(slug)
         dest_name = d.get("name", slug)
-        # Hôtels — uniquement des liens affiliés trackés (Booking / Agoda).
         for hotel in (d.get("hotels") or []):
             provider = hotel.get("provider")
             if not provider:
@@ -1593,7 +1670,6 @@ def search_index():
                 "g": "hotel",
                 "x": 1,
             })
-        # Activités & tours — liens affiliés trackés (GetYourGuide / Viator).
         for act in (d.get("activities") or []):
             provider = act.get("provider")
             if not provider:
@@ -1661,7 +1737,27 @@ def search_index():
     except Exception:
         pass
 
-    return jsonify(items)
+    return items
+
+
+def _search_index_payload(lang: str) -> tuple[str, str]:
+    items = get_or_set(f"search:{lang}", lambda: _build_search_index(lang))
+    body = json.dumps(items, ensure_ascii=False, separators=(",", ":"))
+    etag = f'W/"{hashlib.md5(body.encode()).hexdigest()}"'
+    return body, etag
+
+
+@app.route("/search-index.json")
+def search_index():
+    lang = "en" if (request.args.get("lang") == "en") else "fr"
+    body, etag = _search_index_payload(lang)
+    if request.headers.get("If-None-Match") == etag:
+        return Response(status=304)
+    return Response(
+        body,
+        mimetype="application/json; charset=utf-8",
+        headers={"ETag": etag},
+    )
 
 
 @app.route("/api/visitor-recommendations")
@@ -1970,7 +2066,15 @@ def not_found(e):
 def _startup_tasks():
     from admin.image_service import ensure_responsive_variants, sync_destination_images
 
+    try:
+        _refresh_main_css_path()
+    except Exception:
+        pass
     ensure_responsive_variants()
+    try:
+        clear_static_image_caches()
+    except Exception:
+        pass
     try:
         sync_destination_images(allow_network=False)
     except Exception:
