@@ -334,6 +334,7 @@ def inject_globals():
         "pdf": {"PDF_GUIDE": _localized_block(PDF_GUIDE, lang)},
         "newsletter": {"NEWSLETTER": _localized_block(NEWSLETTER, lang)},
         "ga4_id": settings.get("ga4_measurement_id", ""),
+        "google_ads_id": config.GOOGLE_ADS_ID,
         "canonical_url": canonical_for_request(lang),
         "hreflang_urls": hreflang_urls(),
         "switch_lang_url": switch_lang_url(),

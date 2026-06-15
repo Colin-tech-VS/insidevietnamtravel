@@ -4,6 +4,24 @@
 
 <head>
 
+  {% if google_ads_id %}
+  <!-- Google tag (gtag.js) — Google Ads -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ google_ads_id }}"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('consent', 'default', {
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied',
+      analytics_storage: 'denied',
+      wait_for_update: 500
+    });
+    gtag('config', '{{ google_ads_id }}');
+  </script>
+  {% endif %}
+
   <meta charset="UTF-8">
   <meta name="agd-partner-manual-verification" />
 
@@ -98,7 +116,7 @@
 
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-  {% if ga4_id %}
+  {% if ga4_id or google_ads_id %}
   <link rel="dns-prefetch" href="https://www.googletagmanager.com">
   <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
   {% endif %}

@@ -32,9 +32,30 @@
     }));
   };
 
+  const grantTracking = () => {
+    if (typeof window.gtag !== 'function') return;
+    window.gtag('consent', 'update', {
+      ad_storage: 'granted',
+      ad_user_data: 'granted',
+      ad_personalization: 'granted',
+      analytics_storage: 'granted',
+    });
+    const ga4Id = document.body.dataset.ga4Id;
+    if (ga4Id) {
+      window.gtag('config', ga4Id, { anonymize_ip: true });
+    }
+  };
+
   const loadAnalytics = () => {
     const ga4Id = document.body.dataset.ga4Id;
-    if (!ga4Id) return;
+    if (!ga4Id) {
+      grantTracking();
+      return;
+    }
+    if (typeof window.gtag === 'function') {
+      grantTracking();
+      return;
+    }
     window.dataLayer = window.dataLayer || [];
     window.gtag = function gtag() { window.dataLayer.push(arguments); };
     const script = document.createElement('script');
@@ -42,7 +63,7 @@
     script.src = `https://www.googletagmanager.com/gtag/js?id=${ga4Id}`;
     script.onload = () => {
       window.gtag('js', new Date());
-      window.gtag('config', ga4Id, { anonymize_ip: true });
+      grantTracking();
     };
     document.head.appendChild(script);
   };

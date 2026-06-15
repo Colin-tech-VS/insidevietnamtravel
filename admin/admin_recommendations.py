@@ -212,7 +212,7 @@ def get_analytics_recommendations(stats: dict, days: int) -> list[dict]:
             ))
 
     clicks = stats.get("clicks_30m", 0)
-    if views > 50 and clicks == 0:
+    if visitors > 50 and clicks == 0:
         recos.append(_reco(
             "Trafic sans clics affiliés",
             "Vérifiez que vos IDs affiliés sont configurés et que les CTA sont visibles dans les articles.",
@@ -234,7 +234,7 @@ def get_analytics_recommendations(stats: dict, days: int) -> list[dict]:
     organic = seo.get("total_organic_views", 0)
     organic_share = seo.get("organic_share_pct", 0)
 
-    if views > 20 and organic == 0:
+    if visitors > 20 and organic == 0:
         recos.append(_reco(
             "Peu de trafic SEO détecté",
             "Les visites viennent surtout du direct ou des liens. Publiez des articles ciblés, "
@@ -244,7 +244,7 @@ def get_analytics_recommendations(stats: dict, days: int) -> list[dict]:
             action_url="/admin/guides",
             icon="🔍",
         ))
-    elif views > 50 and organic_share < 15:
+    elif visitors > 50 and organic_share < 15:
         recos.append(_reco(
             f"SEO à {organic_share}% du trafic",
             f"Seulement {organic} visites organiques sur {days} jours. Optimisez titres/meta "
@@ -270,7 +270,7 @@ def get_analytics_recommendations(stats: dict, days: int) -> list[dict]:
     ai_views = geo.get("total_ai_views", 0)
     ai_share = geo.get("ai_share_pct", 0)
 
-    if views > 0 and ai_views == 0:
+    if visitors > 0 and ai_views == 0:
         recos.append(_reco(
             "Activer la visibilité GEO",
             "Soumettez /llms.txt à Google Search Console et partagez vos guides sur Perplexity ou ChatGPT. "

@@ -77,3 +77,4 @@ SITE_SOCIAL_URLS = [
     u.strip() for u in os.environ.get("SITE_SOCIAL_URLS", "").split(",") if u.strip()
 ]
 LEGAL_UPDATED = "8 juin 2026"
+GOOGLE_ADS_ID = os.environ.get("GOOGLE_ADS_ID", "AW-18240796234").strip()
