@@ -1142,6 +1142,7 @@ def attach_image_to_article(
     *,
     force_regenerate: bool = False,
     image_nonce: int | None = None,
+    draft_preview: bool = False,
 ) -> dict:
     """Une image Vietnam unique par article — WebP 1200×675.
 
@@ -1186,7 +1187,13 @@ def attach_image_to_article(
                 log(f"IMAGE done  slug={slug} en {time.time() - t0:.1f}s pool_ref photo_id={pid}")
                 return _article_image_meta(article, slug, pid, placeholder=False,
                                            image_url=f"/static/images/pool/{pid}.webp")
-        # Aucun fichier pool disponible (anormal) → on bascule sur le chemin réseau/encodage.
+        if draft_preview:
+            log(f"IMAGE preview slug={slug} placeholder (pool absent)")
+            return _article_image_meta(article, slug, photo_id, placeholder=True)
+
+    if draft_preview:
+        log(f"IMAGE preview slug={slug} placeholder (pas de pool local)")
+        return _article_image_meta(article, slug, photo_id, placeholder=True)
 
     # ── Chemin IA / Pixabay (opt-in) ou pool absent : gather + encodage bornés ──
     raw: bytes | None = None
@@ -1285,6 +1292,7 @@ def attach_image_to_destination(
     *,
     force_regenerate: bool = False,
     image_nonce: int | None = None,
+    draft_preview: bool = False,
 ) -> dict:
     slug = dest["slug"]
     out_path = DEST_IMAGES_DIR / f"{slug}.webp"
@@ -1314,9 +1322,19 @@ def attach_image_to_destination(
         pool_candidates = _photo_ids_for_destination(slug) or [photo_id]
         for pid in pool_candidates:
             if _local_pool_path(pid).exists():
+                if draft_preview:
+                    log(f"IMAGE dest preview slug={slug} en {time.time() - t0:.1f}s pool_ref photo_id={pid}")
+                    return _meta(pid, placeholder=False, image_url=pool_image_url(pid))
                 _commit_pool_photo_to_destination(slug, pid)
                 log(f"IMAGE dest done slug={slug} en {time.time() - t0:.1f}s pool_commit photo_id={pid}")
                 return _meta(pid, placeholder=False, image_url=_canonical_destination_image_url(slug))
+        if draft_preview:
+            for pid in [photo_id] + [p[0] for p in VIETNAM_PHOTO_POOL]:
+                if _local_pool_path(pid).exists():
+                    return _meta(pid, placeholder=False, image_url=pool_image_url(pid))
+            if out_path.exists():
+                return _meta(photo_id, placeholder=False)
+            return _meta(photo_id, placeholder=True)
 
     def _gather() -> tuple[bytes, str]:
         if want_ai:

@@ -174,11 +174,12 @@ def _generate_draft(report, topic: str, guide_type: str, city: str) -> dict:
     import time
     article = groq_ai.generate_guide(topic=topic, guide_type=guide_type, city=city, progress=report)
     article["city"] = city
-    report("Génération de l'image Vietnam (WebP)…")
+    report("Image de couverture (aperçu rapide)…")
     article.update(attach_image_to_article(
         article,
         article.get("image_prompt"),
         image_nonce=int(time.time() * 1000) % 1_000_000,
+        draft_preview=True,
     ))
     report("Finalisation de l'article…")
     return article
@@ -267,22 +268,13 @@ def guides():
         action = request.form.get("action")
         try:
             if action == "generate":
-                city = request.form.get("city", "").strip()
-                if not city or city not in ALL_CITY_VALUES:
-                    flash("Veuillez sélectionner une ville dans la liste.", "error")
-                    return redirect(url_for("admin.guides"))
-                article = _generate_draft(
-                    topic=request.form.get("topic", ""),
-                    guide_type=request.form.get("guide_type", "article blog"),
-                    city=city,
-                )
-                _store_draft("article", article)
-                flash("Guide généré — vérifiez l'aperçu avant publication.", "success")
+                flash("Utilisez le bouton « Générer » de l'onglet IA (génération en arrière-plan).", "error")
+                return redirect(url_for("admin.guides"))
             elif action == "publish" and _get_draft("article"):
                 article = _get_draft("article")
                 if request.form.get("featured") == "on":
                     article["featured"] = True
-                if not article.get("image"):
+                if not article.get("image") or article.get("image_placeholder"):
                     article.update(attach_image_to_article(article, article.get("image_prompt")))
                 add_article(article)
                 _clear_draft("article")
@@ -546,11 +538,12 @@ def api_update_destination_image(slug):
 def _generate_destination_draft(report, city: str, notes: str = "") -> dict:
     import time
     dest = groq_destinations.generate_destination(city, notes, progress=report)
-    report("Génération de l'image de la destination (WebP)…")
+    report("Image de couverture (aperçu rapide)…")
     dest.update(attach_image_to_destination(
         dest,
         dest.get("image_prompt"),
         image_nonce=int(time.time() * 1000) % 1_000_000,
+        draft_preview=True,
     ))
     report("Finalisation de la page…")
     return dest
@@ -565,6 +558,8 @@ def destinations_admin():
             if action == "publish" and _get_draft("destination"):
                 dest = _get_draft("destination")
                 editing_slug = dest.pop("editing_slug", "")
+                if not dest.get("image") or dest.get("image_placeholder"):
+                    dest.update(attach_image_to_destination(dest, dest.get("image_prompt")))
                 add_or_update_destination(dest)
                 if editing_slug and editing_slug != dest["slug"]:
                     delete_destination(editing_slug)

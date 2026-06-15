@@ -160,11 +160,13 @@ def chat_completion(
         time.sleep(pause_before)
 
     api_key = require_api_key()
+    chosen = model or main_model()
+    headroom = 768 if chosen == fast_model() else OUTPUT_HEADROOM
     payload: dict = {
-        "model": model or main_model(),
+        "model": chosen,
         "messages": messages,
         "temperature": temperature,
-        "max_tokens": min(int(max_tokens) + OUTPUT_HEADROOM, MAX_OUTPUT_TOKENS),
+        "max_tokens": min(int(max_tokens) + headroom, MAX_OUTPUT_TOKENS),
         "stream": True,
     }
     if json_mode:

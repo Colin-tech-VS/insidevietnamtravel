@@ -7,13 +7,13 @@ from datetime import date
 from admin import ai_client
 from admin.store import slugify
 
-MIN_WORDS = 1200
-TARGET_WORDS = 1500
+MIN_WORDS = 900
+TARGET_WORDS = 1100
 # max_tokens dimensionné sur la cible (≈ mots × 2,2 + JSON) plutôt que 8192,
 # pour ne pas réserver tout le budget tokens/minute de Groq.
-GEN_MAX_TOKENS = 5120
+GEN_MAX_TOKENS = 4096
 # On ne relance un enrichissement que si la page est nettement sous la cible.
-EXPAND_TOLERANCE = 0.9
+EXPAND_TOLERANCE = 0.85
 
 SYSTEM_PROMPT = """Tu es un expert SEO voyage Vietnam pour "Inside Vietnam Travel".
 
@@ -136,13 +136,14 @@ La page doit convaincre un voyageur de visiter {city} et l'aider à planifier : 
                     "content": (
                         f"L'overview est trop court ({_total_words(dest)} mots). "
                         f"Enrichis pour atteindre {MIN_WORDS}+ mots. "
-                        f"Destination : {city}\n\n{json.dumps(dest, ensure_ascii=False)}"
+                        f"Destination : {city}\n\n"
+                        f"{json.dumps({k: dest.get(k) for k in ('name', 'tagline', 'overview', 'things_to_do', 'tips')}, ensure_ascii=False)}"
                     ),
                 },
             ],
             temperature=0.5,
             max_tokens=GEN_MAX_TOKENS,
-            pause_before=1.5,
+            pause_before=0.5,
         )
         data = ai_client.parse_json(expand.choices[0].message.content)
         dest = _build_destination(data, city, slug)
@@ -196,13 +197,13 @@ def improve_destination(dest: dict, instructions: str, progress=None) -> dict:
                         f"La page est encore trop courte ({_total_words(improved)} mots). "
                         f"Enrichis pour atteindre {MIN_WORDS}+ mots.\n"
                         f"Instructions : {instructions}\n\n"
-                        f"{json.dumps(improved, ensure_ascii=False)}"
+                        f"{json.dumps({k: improved.get(k) for k in ('name', 'tagline', 'overview', 'things_to_do', 'tips')}, ensure_ascii=False)}"
                     ),
                 },
             ],
             temperature=0.5,
             max_tokens=GEN_MAX_TOKENS,
-            pause_before=1.5,
+            pause_before=0.5,
         )
         data = ai_client.parse_json(expand.choices[0].message.content)
         improved = _build_destination(data, city, slug)

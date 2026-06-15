@@ -31,7 +31,8 @@ FALLBACK_PROVIDER = "groq"
 # plusieurs minutes — c'est ce qui donnait l'impression que « ça ne génère pas, ça
 # bloque ». Ce plafond, imposé par un thread, garantit qu'on abandonne et qu'on remonte
 # une erreur (ou qu'on bascule en repli) au lieu d'attendre indéfiniment.
-DEFAULT_DEADLINE = 120  # secondes (modèles rapides : 10-40 s ; coupe vite un appel figé)
+DEFAULT_DEADLINE = 120  # secondes (modèles principaux)
+FAST_DEADLINE = 75      # rédaction / enrichissement : coupe plus tôt un appel figé
 
 
 def _run_with_deadline(fn, seconds: float | None):
@@ -167,8 +168,15 @@ def friendly_error(error: Exception) -> str:
     return _impl(provider()).friendly_error(error)
 
 
-def _provider_order(*, vitrine: bool = False) -> list[str]:
+def _provider_order(*, vitrine: bool = False, fast: bool = False) -> list[str]:
     """Ordre des fournisseurs : vitrine = Mistral d'abord ; admin = réglage actif."""
+    # Rédaction rapide : Groq 8B (30k TPM, ~3× plus véloce) en priorité si disponible.
+    if fast and _has_key("groq"):
+        order: list[str] = ["groq"]
+        active = provider()
+        if _has_key("mistral") and active == "mistral" and "mistral" not in order:
+            order.append("mistral")
+        return order
     if vitrine:
         order: list[str] = []
         if _has_key("mistral"):
@@ -208,7 +216,7 @@ def chat_completion(
         last_error: Exception | None = None
         attempted = False
 
-        for idx, name in enumerate(_provider_order(vitrine=vitrine)):
+        for idx, name in enumerate(_provider_order(vitrine=vitrine, fast=fast)):
             if not _has_key(name):
                 continue
             impl = _impl(name)
@@ -245,8 +253,9 @@ def chat_completion(
             )
         raise RuntimeError("Appel IA échoué")
 
+    effective_deadline = FAST_DEADLINE if fast and deadline == DEFAULT_DEADLINE else deadline
     try:
-        return _run_with_deadline(_dispatch, deadline)
+        return _run_with_deadline(_dispatch, effective_deadline)
     except TimeoutError as exc:
         log(f"AI TIMEOUT global deadline={deadline}s -- {exc}")
         raise

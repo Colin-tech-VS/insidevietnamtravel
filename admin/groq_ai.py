@@ -25,7 +25,7 @@ DEFAULT_SEO = {"min": 1000, "target": 1200, "max_tokens": 4608}
 # On ne relance un enrichissement (appel supplémentaire) que si l'article est
 # nettement sous la cible. Un texte à 90 %+ du minimum est déjà publiable et
 # évite un second appel coûteux en tokens et en temps.
-EXPAND_TOLERANCE = 0.9
+EXPAND_TOLERANCE = 0.85
 
 SYSTEM_PROMPT = """Tu es un rédacteur SEO senior spécialisé voyage au Vietnam pour "Inside Vietnam Travel".
 
@@ -154,14 +154,17 @@ def _expand_if_short(article: dict, guide_type: str, progress=None, link_block: 
 
     expand_prompt = f"""L'article ci-dessous fait seulement {current} mots. Il DOIT atteindre au minimum {min_words} mots (cible {target['target']} mots).
 Type : {guide_type}. Ville : {article.get('city', 'Vietnam')}.
+Titre : {article.get('title', '')}
+Excerpt : {article.get('excerpt', '')}
 
 Enrichis SANS changer le slug implicite ni le sujet :
 - Ajoute des sections pratiques, FAQ, budget, erreurs à éviter
 - Garde le HTML existant et complète
 - Voyageurs français préparant un trip Vietnam
+- Réponds en JSON complet (title, meta_title, meta_description, excerpt, content, tags, image_prompt, focus_keyword)
 
-Article :
-{json.dumps({k: article[k] for k in ('title', 'excerpt', 'content', 'tags', 'city') if k in article}, ensure_ascii=False)}""" + _links_section(link_block)
+Contenu actuel (enrichis-le, ne raccourcis pas) :
+{article.get('content', '')[:12000]}""" + _links_section(link_block)
 
     # Enrichissement sur le modèle rapide : bucket tokens/minute distinct du
     # modèle principal (ne grignote pas son quota) et nettement plus véloce.
@@ -172,7 +175,7 @@ Article :
         ],
         target["max_tokens"],
         fast=True,
-        pause_before=1.5,
+        pause_before=0.5,
     )
 
     article.update({
