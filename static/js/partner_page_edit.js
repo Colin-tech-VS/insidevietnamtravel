@@ -340,10 +340,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const isVitrineSave = action === 'save_vitrine';
 
     if (isVitrineSave) {
-      if (!validateStep(4)) {
-        e.preventDefault();
-        go(4);
-      }
       return;
     }
 

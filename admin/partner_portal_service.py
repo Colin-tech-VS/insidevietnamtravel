@@ -359,11 +359,14 @@ def save_page_vitrine(
     text = (profile_highlights_text or "").strip()
     if text:
         highlights = _parse_profile_highlights_lines(text)
-        if len(highlights) < 3:
-            raise ValueError(
-                "Ajoutez au moins 3 points pour « Pourquoi choisir ce partenaire » (une ligne par point)."
-            )
-        extra["profile_highlights"] = highlights
+        if len(highlights) >= 3:
+            extra["profile_highlights"] = highlights
+        elif len(highlights) > 0:
+            pass
+        else:
+            resolved = _resolve_public_highlights(page, extra=extra)
+            if len(resolved) >= 3:
+                extra["profile_highlights"] = resolved[:8]
     else:
         resolved = _resolve_public_highlights(page, extra=extra)
         if len(resolved) >= 3:
@@ -373,10 +376,10 @@ def save_page_vitrine(
             if len(wizard_hl) >= 3:
                 extra["profile_highlights"] = wizard_hl
 
-    if clear_image:
-        new_image = ""
-    elif image_file:
+    if image_file:
         new_image = _store_partner_image(slug, file_bytes=image_file)
+    elif clear_image:
+        new_image = ""
     elif (image_url or "").strip():
         new_image = _store_partner_image(slug, image_url=image_url.strip())
 

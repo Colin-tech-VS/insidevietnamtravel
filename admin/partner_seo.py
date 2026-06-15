@@ -405,6 +405,7 @@ def _services_html_for_display(page: dict, highlights: list[str]) -> str:
 
 def build_public_page_context(page: dict, partner: dict, lang: str, *, canonical_url: str) -> dict:
     """Variables template pour partner_public.html."""
+    from admin.partner_content import public_content_sections
     from admin.partner_portal_service import ensure_page_profile_highlights
 
     extra = page.get("extra") or {}
@@ -433,6 +434,7 @@ def build_public_page_context(page: dict, partner: dict, lang: str, *, canonical
         "partner_highlights": highlights,
         "services_html_display": services_html,
         "hero_image": hero_image,
+        "profile_content_sections": public_content_sections(page, partner, lang=lang),
         **contact,
     }
 

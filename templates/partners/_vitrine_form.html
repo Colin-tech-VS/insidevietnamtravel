@@ -6,6 +6,7 @@
   <p class="flash flash--success">Vérification en cours — modification de la vitrine indisponible.</p>
   {% else %}
   {% include "partners/_vitrine_fields.html" %}
+  {% include "partners/_profile_content_fields.html" %}
   <div class="partner-vitrine-form__actions">
     <button type="submit" class="btn btn-primary">Enregistrer la vitrine</button>
     {% if page and page.status in ('approved', 'published') %}

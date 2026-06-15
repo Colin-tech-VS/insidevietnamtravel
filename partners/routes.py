@@ -16,6 +16,7 @@ from flask import (
 from admin import ai_client
 from admin import draft_store
 from admin.groq_partner_page import generate_and_review_partner_page, suggest_partner_page_fixes
+from admin.partner_content import content_blocks_for_profile, get_profile_content
 from admin.partner_discovery import destination_choices
 from admin.partner_portal_service import (
     PAGE_STATUS_LABELS,
@@ -81,6 +82,29 @@ def _flash_vitrine_error(exc: Exception) -> None:
         return
     current_app.logger.exception("partner vitrine save failed")
     flash("Erreur lors de l'enregistrement de la vitrine — réessayez.", "error")
+
+
+def _save_partner_vitrine(partner: dict) -> None:
+    """Photo, highlights et contenu personnalisé selon le type de profil."""
+    from admin.partner_content import save_profile_content_from_form
+
+    photo = _vitrine_form_photo()
+    save_page_vitrine(
+        partner["id"],
+        profile_highlights_text=profile_highlights_text_from_form(
+            request.form.getlist("profile_highlights[]"),
+            fallback=request.form.get("profile_highlights", ""),
+        ),
+        image_url=request.form.get("image_url", ""),
+        image_file=photo,
+        clear_image=request.form.get("clear_image") == "1" and not photo,
+    )
+    save_profile_content_from_form(
+        partner["id"],
+        partner.get("profile_type") or "autre",
+        request.form,
+        request.files,
+    )
 
 
 _PARTNER_META = {
@@ -284,16 +308,7 @@ def dashboard():
     partner = current_partner()
     if request.method == "POST" and request.form.get("action") == "save_vitrine":
         try:
-            save_page_vitrine(
-                partner["id"],
-                profile_highlights_text=profile_highlights_text_from_form(
-                    request.form.getlist("profile_highlights[]"),
-                    fallback=request.form.get("profile_highlights", ""),
-                ),
-                image_url=request.form.get("image_url", ""),
-                image_file=_vitrine_form_photo(),
-                clear_image=request.form.get("clear_image") == "1",
-            )
+            _save_partner_vitrine(partner)
             flash("Vitrine enregistrée — visible sur votre page publique.", "success")
         except Exception as exc:
             _flash_vitrine_error(exc)
@@ -312,6 +327,8 @@ def dashboard():
         workflow=partner_page_workflow(page, publication=publication, is_hidden=is_hidden),
         page_vitrine=page_vitrine_checklist(page),
         ai_ready=ai_client.is_configured(),
+        content_blocks=content_blocks_for_profile(partner.get("profile_type")),
+        profile_content=get_profile_content(page),
     )
 
 
@@ -335,16 +352,7 @@ def page_edit():
                 )
                 flash("Brouillon enregistré.", "success")
             elif action == "save_vitrine":
-                page = save_page_vitrine(
-                    partner["id"],
-                    profile_highlights_text=profile_highlights_text_from_form(
-                    request.form.getlist("profile_highlights[]"),
-                    fallback=request.form.get("profile_highlights", ""),
-                ),
-                    image_url=request.form.get("image_url", ""),
-                    image_file=_vitrine_form_photo(),
-                    clear_image=request.form.get("clear_image") == "1",
-                )
+                _save_partner_vitrine(partner)
                 flash("Vitrine enregistrée.", "success")
                 return redirect(url_for("partners.page_edit", step=4))
             elif action == "submit_ai":
@@ -389,6 +397,8 @@ def page_edit():
         ai_ready=ai_client.is_configured(),
         page_vitrine=vitrine,
         wizard_step=wizard_step,
+        content_blocks=content_blocks_for_profile(partner.get("profile_type")),
+        profile_content=get_profile_content(page),
     )
 
 
@@ -402,16 +412,7 @@ def page_vitrine():
         return redirect(url_for("partners.page_edit"))
     if request.method == "POST":
         try:
-            save_page_vitrine(
-                partner["id"],
-                profile_highlights_text=profile_highlights_text_from_form(
-                    request.form.getlist("profile_highlights[]"),
-                    fallback=request.form.get("profile_highlights", ""),
-                ),
-                image_url=request.form.get("image_url", ""),
-                image_file=_vitrine_form_photo(),
-                clear_image=request.form.get("clear_image") == "1",
-            )
+            _save_partner_vitrine(partner)
             flash("Vitrine enregistrée — visible sur votre page publique.", "success")
             return redirect(url_for("partners.dashboard"))
         except Exception as exc:
@@ -423,6 +424,9 @@ def page_vitrine():
         page=page,
         profile_label=PROFILE_TYPE_LABELS.get(partner.get("profile_type"), ""),
         vitrine=page_vitrine_checklist(page),
+        page_vitrine=page_vitrine_checklist(page),
+        content_blocks=content_blocks_for_profile(partner.get("profile_type")),
+        profile_content=get_profile_content(page),
     )
 
 

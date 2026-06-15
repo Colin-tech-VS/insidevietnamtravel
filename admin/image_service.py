@@ -1702,6 +1702,28 @@ def store_partner_cover_webp(
     return f"/static/images/partners/{safe}.webp"
 
 
+def store_partner_gallery_webp(partner_slug: str, item_id: str, file_bytes: bytes) -> str:
+    """Image galerie partenaire — sous-dossier par slug."""
+    safe = _partner_cover_slug(partner_slug)
+    item_safe = re.sub(r"[^a-z0-9\-]+", "-", (item_id or "img").lower()).strip("-")[:24] or "img"
+    gal_dir = PARTNER_IMAGES_DIR / safe
+    try:
+        gal_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        raise ValueError("Impossible d'enregistrer la photo sur le serveur — réessayez.") from exc
+    out_path = gal_dir / f"gallery-{item_safe}.webp"
+    raw = validate_image_bytes(file_bytes, max_bytes=MAX_PARTNER_COVER_BYTES)
+    try:
+        _write_uploaded_webp(raw, out_path)
+    except Exception as exc:
+        raise ValueError(
+            "Impossible de convertir l'image en WebP — essayez un autre fichier (JPG ou PNG)."
+        ) from exc
+    if not out_path.is_file() or out_path.stat().st_size < 100:
+        raise ValueError("La conversion WebP a échoué — réessayez avec une autre image.")
+    return f"/static/images/partners/{safe}/gallery-{item_safe}.webp"
+
+
 def _write_uploaded_webp(raw: bytes, out_path: Path) -> None:
     """Encode un fichier importé en WebP 1200×675 (+ variantes si possible)."""
     try:

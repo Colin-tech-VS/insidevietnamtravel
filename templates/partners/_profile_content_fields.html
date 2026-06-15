@@ -1,0 +1,109 @@
+{% set profile_content = profile_content if profile_content is defined else {} %}
+{% set content_blocks = content_blocks if content_blocks is defined else [] %}
+
+{% if content_blocks %}
+<section class="partner-vitrine-panel partner-vitrine-panel--content" aria-labelledby="vitrine-content-title">
+  <header class="partner-vitrine-panel__head">
+    <span class="partner-vitrine-panel__icon" aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+    </span>
+    <div class="partner-vitrine-panel__intro">
+      <h3 class="partner-vitrine-panel__title" id="vitrine-content-title">Contenu {{ profile_label }}</h3>
+      <p class="partner-vitrine-panel__lead">Ajoutez les éléments propres à votre profil — activités, photos, vidéos… Visible sur votre fiche publique.</p>
+    </div>
+  </header>
+
+  <div class="partner-content-blocks" id="partner-content-blocks">
+    {% for block in content_blocks %}
+    {% set block_items = profile_content.get(block.id, []) %}
+    <div class="partner-content-block" data-block-id="{{ block.id }}" data-block-type="{{ block.type }}" data-block-max="{{ block.max }}">
+      <h4 class="partner-content-block__title">{{ block.label }}</h4>
+
+      {% if block.type == 'items' %}
+      <div class="partner-content-rows" data-content-rows="{{ block.id }}">
+        {% set row_count = [block_items|length, 3]|max %}
+        {% for i in range(row_count) %}
+        {% set item = block_items[i] if i < block_items|length else {} %}
+        <div class="partner-content-row" data-content-row>
+          <input type="text" name="pc_{{ block.id }}_title[]" class="partner-content-row__input"
+                 value="{{ item.get('title', '') }}" maxlength="200"
+                 placeholder="{{ block.placeholder_title or 'Titre' }}">
+          <input type="text" name="pc_{{ block.id }}_detail[]" class="partner-content-row__input"
+                 value="{{ item.get('detail', '') }}" maxlength="400"
+                 placeholder="{{ block.placeholder_detail or 'Détail (optionnel)' }}">
+          <button type="button" class="partner-content-row__remove" data-content-remove aria-label="Supprimer">×</button>
+        </div>
+        {% endfor %}
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm partner-content-add" data-content-add="{{ block.id }}">+ Ajouter</button>
+
+      {% elif block.type == 'links' %}
+      <div class="partner-content-rows" data-content-rows="{{ block.id }}">
+        {% set row_count = [block_items|length, 1]|max %}
+        {% for i in range(row_count) %}
+        {% set item = block_items[i] if i < block_items|length else {} %}
+        <div class="partner-content-row" data-content-row>
+          <input type="text" name="pc_{{ block.id }}_label[]" class="partner-content-row__input"
+                 value="{{ item.get('label', '') }}" maxlength="120"
+                 placeholder="{{ block.placeholder_title or 'Libellé' }}">
+          <input type="url" name="pc_{{ block.id }}_url[]" class="partner-content-row__input"
+                 value="{{ item.get('url', '') }}" maxlength="500"
+                 placeholder="{{ block.placeholder_url or 'https://…' }}">
+          <button type="button" class="partner-content-row__remove" data-content-remove aria-label="Supprimer">×</button>
+        </div>
+        {% endfor %}
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm partner-content-add" data-content-add="{{ block.id }}">+ Ajouter un lien</button>
+
+      {% elif block.type == 'videos' %}
+      <div class="partner-content-rows" data-content-rows="{{ block.id }}">
+        {% set row_count = [block_items|length, 1]|max %}
+        {% for i in range(row_count) %}
+        {% set item = block_items[i] if i < block_items|length else {} %}
+        <div class="partner-content-row" data-content-row>
+          <input type="text" name="pc_{{ block.id }}_title[]" class="partner-content-row__input"
+                 value="{{ item.get('title', '') }}" maxlength="160"
+                 placeholder="{{ block.placeholder_title or 'Titre' }}">
+          <input type="url" name="pc_{{ block.id }}_url[]" class="partner-content-row__input"
+                 value="{{ item.get('url', '') }}" maxlength="500"
+                 placeholder="{{ block.placeholder_url or 'Lien YouTube, TikTok…' }}">
+          <button type="button" class="partner-content-row__remove" data-content-remove aria-label="Supprimer">×</button>
+        </div>
+        {% endfor %}
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm partner-content-add" data-content-add="{{ block.id }}">+ Ajouter une vidéo</button>
+
+      {% elif block.type == 'gallery' %}
+      <div class="partner-gallery-rows" data-content-rows="{{ block.id }}">
+        {% set row_count = [block_items|length, 1]|max %}
+        {% for i in range(row_count) %}
+        {% set item = block_items[i] if i < block_items|length else {} %}
+        <div class="partner-gallery-row" data-content-row data-gallery-index="{{ i }}">
+          <div class="partner-gallery-row__preview">
+            {% if item.get('url') %}
+            <img src="{{ item.url if '://' in item.url else url_for('static', filename=item.url.removeprefix('/static/')) }}"
+                 alt="" width="120" height="80" loading="lazy">
+            {% else %}
+            <span class="partner-gallery-row__empty">Aucune image</span>
+            {% endif %}
+          </div>
+          <div class="partner-gallery-row__fields">
+            <input type="hidden" name="pc_{{ block.id }}_existing[]" value="{{ item.get('url', '') }}">
+            <input type="text" name="pc_{{ block.id }}_caption[]" class="partner-content-row__input"
+                   value="{{ item.get('caption', '') }}" maxlength="160" placeholder="Légende (optionnel)">
+            <label class="partner-gallery-row__file">
+              <span class="btn btn-ghost btn-sm">Choisir une photo</span>
+              <input type="file" name="pc_{{ block.id }}_file_{{ i }}" accept="image/jpeg,image/png,image/webp,image/gif" class="partner-gallery-row__input-file">
+            </label>
+          </div>
+          <button type="button" class="partner-content-row__remove" data-content-remove aria-label="Supprimer">×</button>
+        </div>
+        {% endfor %}
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm partner-content-add partner-content-add--gallery" data-content-add="{{ block.id }}" data-content-type="gallery">+ Ajouter une photo</button>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}

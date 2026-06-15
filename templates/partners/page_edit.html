@@ -91,11 +91,22 @@
         </aside>
 
         <div class="partner-chip-grid" id="highlight-chips">
-          {% for chip in [
+          {% if partner.profile_type == 'influenceur' %}
+          {% set chips = ['Instagram / Reels', 'TikTok voyage', 'YouTube Vlog', 'Photo & drone', 'Food & lifestyle', 'Conseils voyage', 'Contenu bilingue', 'Audience francophone'] %}
+          {% elif partner.profile_type == 'agence' %}
+          {% set chips = ['Circuits sur mesure', 'Petits groupes', 'Vols & transferts', 'Guides francophones', 'Luxe & premium', 'Familles', 'MICE & groupes', 'Assurance incluse'] %}
+          {% elif partner.profile_type == 'hotel' %}
+          {% set chips = ['Centre-ville', 'Petit-déjeuner inclus', 'Piscine', 'Vue mer / rizières', 'Chambres familiales', 'Navette aéroport', 'Spa & bien-être', 'Réservation directe'] %}
+          {% elif partner.profile_type == 'blogueur' %}
+          {% set chips = ['Guides détaillés', 'Itinéraires', 'Budget voyage', 'Photo voyage', 'Conseils pratiques', 'Vietnam hors sentiers', 'Contenu FR/EN', 'Partenariats marques'] %}
+          {% else %}
+          {% set chips = [
             'Visites privées', 'Petits groupes', 'Guide francophone', 'Guide anglophone',
             'Food tour & gastronomie', 'Trek & nature', 'Familles & enfants',
             'Expérience authentique', 'Certifié / licencié', 'Luxe & premium'
           ] %}
+          {% endif %}
+          {% for chip in chips %}
           <button type="button" class="partner-chip" data-chip="{{ chip }}">{{ chip }}</button>
           {% endfor %}
         </div>
@@ -206,11 +217,12 @@
       <div class="prepare-step partner-page-step" data-step="4" hidden>
         <header class="prepare-step__head">
           <h2>Vitrine publique</h2>
-          <p class="prepare-step__hint">Photo de couverture et points « Pourquoi choisir ce partenaire » — visibles sur votre fiche en ligne.</p>
+          <p class="prepare-step__hint">Photo de couverture, atouts et contenu personnalisé ({{ profile_label }}) — visible sur votre fiche en ligne.</p>
         </header>
         {% if page_vitrine.can_edit %}
         {% set vitrine = page_vitrine %}
         {% include "partners/_vitrine_fields.html" %}
+        {% include "partners/_profile_content_fields.html" %}
         <div class="partner-vitrine-form__actions">
           <button type="submit" name="action" value="save_vitrine" class="btn btn-primary">Enregistrer la vitrine</button>
         </div>
@@ -249,5 +261,6 @@ window.PARTNER_PAGE_DATA = {
 };
 </script>
 <script src="{{ url_for('static', filename='js/partner_vitrine.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/partner_profile_content.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/partner_page_edit.js') }}" defer></script>
 {% endblock %}

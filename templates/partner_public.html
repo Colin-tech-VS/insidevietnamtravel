@@ -143,6 +143,59 @@
       </section>
       {% endif %}
 
+      {% if profile_content_sections is defined and profile_content_sections %}
+      {% for section in profile_content_sections %}
+      <section class="partner-vitrine-section partner-vitrine-section--custom partner-reveal" aria-labelledby="partner-content-{{ section.id }}">
+        <header class="partner-vitrine-section__head">
+          <h2 id="partner-content-{{ section.id }}" class="partner-vitrine-section-title">{{ section.label }}</h2>
+        </header>
+
+        {% if section.type == 'gallery' %}
+        <div class="partner-content-gallery">
+          {% for item in section.items %}
+          <figure class="partner-content-gallery__item">
+            <img src="{{ item.url if '://' in item.url else (site.SITE_URL ~ (item.url | static_v)) }}"
+                 alt="{{ item.caption or '' }}" width="400" height="300" loading="lazy">
+            {% if item.caption %}<figcaption>{{ item.caption }}</figcaption>{% endif %}
+          </figure>
+          {% endfor %}
+        </div>
+
+        {% elif section.type == 'videos' %}
+        <ul class="partner-content-list partner-content-list--videos">
+          {% for item in section.items %}
+          <li class="partner-content-list__item">
+            <a href="{{ item.url }}" class="partner-content-link" target="_blank" rel="noopener noreferrer">
+              <span class="partner-content-link__icon" aria-hidden="true">▶</span>
+              <span>{{ item.title }}</span>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+
+        {% elif section.type == 'links' %}
+        <ul class="partner-content-list partner-content-list--links">
+          {% for item in section.items %}
+          <li class="partner-content-list__item">
+            <a href="{{ item.url }}" class="partner-content-link" target="_blank" rel="noopener noreferrer">{{ item.label }}</a>
+          </li>
+          {% endfor %}
+        </ul>
+
+        {% else %}
+        <ul class="partner-content-list partner-content-list--items">
+          {% for item in section.items %}
+          <li class="partner-content-list__item">
+            <strong>{{ item.title }}</strong>
+            {% if item.detail %}<span class="muted"> — {{ item.detail }}</span>{% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </section>
+      {% endfor %}
+      {% endif %}
+
       {% if related_partners %}
       <section class="partner-vitrine-section partner-reveal" aria-labelledby="related-partners-title">
         <header class="partner-vitrine-section__head">

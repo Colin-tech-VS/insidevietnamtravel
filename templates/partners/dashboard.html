@@ -118,7 +118,7 @@
     <header class="partner-vitrine-dash__head">
       <div>
         <h2>Vitrine publique</h2>
-        <p class="muted">Complétez la photo et les points forts visibles sur votre fiche.</p>
+        <p class="muted">Photo, atouts et contenu {{ profile_label|lower }} — visible sur votre fiche.</p>
       </div>
       {% if page.status in ('approved', 'published') %}
       <a href="{{ url_for('partners.page_preview') }}" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">Aperçu ↗</a>
@@ -146,4 +146,5 @@
 
 {% block partner_scripts %}
 <script src="{{ url_for('static', filename='js/partner_vitrine.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/partner_profile_content.js') }}" defer></script>
 {% endblock %}
