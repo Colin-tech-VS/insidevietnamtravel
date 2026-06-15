@@ -5886,6 +5886,13 @@ a.article-category:hover { text-decoration: underline; }
   opacity: 1;
   transform: translateY(0);
 }
+
+/* Cartes dans une section déjà révélée (évite points forts invisibles) */
+.partner-reveal--visible .partner-vitrine-highlight-card,
+.partner-reveal--visible .partner-vitrine-related-card {
+  opacity: 1;
+  transform: translateY(0);
+}
 .partner-vitrine-highlight-card.partner-reveal--pending,
 .partner-vitrine-related-card.partner-reveal--pending,
 .partner-directory__card.partner-reveal--pending {

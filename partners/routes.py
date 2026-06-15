@@ -406,7 +406,6 @@ def page_preview():
     """Aperçu privé de la page (obligatoire pour le compte test invisible)."""
     import config as site_config
     from admin.partner_seo import build_public_page_context
-    from admin.partner_portal_service import page_public_highlights
     from i18n_utils import lang_url
 
     partner = current_partner()
@@ -421,8 +420,10 @@ def page_preview():
     )
     try:
         ctx = build_public_page_context(page, partner, lang, canonical_url=canonical)
+        page = get_page_by_partner(partner["id"]) or page
     except Exception:
         from admin.partner_seo import contact_note_display, format_partner_languages
+        from admin.partner_portal_service import ensure_page_profile_highlights
         ctx = {
             "profile_badge": PROFILE_TYPE_LABELS.get(partner.get("profile_type"), "Partenaire"),
             "profile_label": PROFILE_TYPE_LABELS.get(partner.get("profile_type"), "Partenaire"),
@@ -434,7 +435,7 @@ def page_preview():
             "og_image_alt": page.get("title") or "",
             "partner_city": (page.get("extra") or {}).get("city") or partner.get("city") or "",
             "partner_languages": format_partner_languages(partner.get("languages") or ""),
-            "partner_highlights": page_public_highlights(page),
+            "partner_highlights": ensure_page_profile_highlights(page, persist=True),
             "services_html_display": page.get("services_html") or "",
             "hero_image": page.get("image_url") or "",
             "contact_note": (page.get("extra") or {}).get("contact_note") or "",
