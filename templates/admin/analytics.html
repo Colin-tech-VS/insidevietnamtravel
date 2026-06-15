@@ -69,7 +69,8 @@
     {% if social and social.by_campaign %}
     <section class="chart-panel">
       <h2>Réseaux sociaux — campagnes UTM ({{ days }} j)</h2>
-      <table class="admin-table">
+      <div class="admin-table-wrap">
+      <table class="admin-table admin-table--compact">
         <thead><tr><th>Campagne</th><th>Pages vues</th></tr></thead>
         <tbody>
           {% for row in social.by_campaign %}
@@ -77,6 +78,7 @@
           {% endfor %}
         </tbody>
       </table>
+      </div>
     </section>
     {% endif %}
 
@@ -127,7 +129,8 @@
       </div>
       {% if mai.by_lang %}
       <h3 style="margin-top:1.25rem;font-size:1rem">Messages par langue</h3>
-      <table class="admin-table">
+      <div class="admin-table-wrap">
+      <table class="admin-table admin-table--compact">
         <thead><tr><th>Langue</th><th>Messages</th></tr></thead>
         <tbody>
           {% for row in mai.by_lang %}
@@ -135,10 +138,12 @@
           {% endfor %}
         </tbody>
       </table>
+      </div>
       {% endif %}
       {% if mai.recent_errors %}
       <h3 style="margin-top:1.25rem;font-size:1rem">Erreurs fréquentes</h3>
-      <table class="admin-table">
+      <div class="admin-table-wrap">
+      <table class="admin-table admin-table--compact">
         <thead><tr><th>Type</th><th>Occurrences</th></tr></thead>
         <tbody>
           {% for row in mai.recent_errors %}
@@ -146,6 +151,7 @@
           {% endfor %}
         </tbody>
       </table>
+      </div>
       {% endif %}
       {% if mai.recent_questions %}
       <h3 style="margin-top:1.25rem;font-size:1rem">Questions posées à Mai</h3>
@@ -199,7 +205,8 @@
       </div>
       {% if profile_stats.by_style %}
       <h3 style="margin-top:1.25rem;font-size:1rem">Styles de voyage</h3>
-      <table class="admin-table">
+      <div class="admin-table-wrap">
+      <table class="admin-table admin-table--compact">
         <thead><tr><th>Style</th><th>Profils</th></tr></thead>
         <tbody>
           {% for row in profile_stats.by_style %}
@@ -207,10 +214,12 @@
           {% endfor %}
         </tbody>
       </table>
+      </div>
       {% endif %}
       {% if profile_stats.by_group %}
       <h3 style="margin-top:1.25rem;font-size:1rem">Composition du groupe</h3>
-      <table class="admin-table">
+      <div class="admin-table-wrap">
+      <table class="admin-table admin-table--compact">
         <thead><tr><th>Groupe</th><th>Profils</th></tr></thead>
         <tbody>
           {% for row in profile_stats.by_group %}
@@ -218,6 +227,7 @@
           {% endfor %}
         </tbody>
       </table>
+      </div>
       {% endif %}
     </section>
     {% endif %}

@@ -37,6 +37,8 @@
 html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+  max-width: 100%;
 }
 
 body {
@@ -48,6 +50,8 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-x: clip;
+  max-width: 100%;
 }
 
 img { max-width: 100%; height: auto; display: block; }
@@ -1183,6 +1187,11 @@ body.is-nav-open { overflow: hidden; }
   margin-bottom: 1.5rem;
 }
 
+.breadcrumb li {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
 .breadcrumb li:not(:last-child)::after {
   content: '›';
   margin-left: 0.5rem;
@@ -1247,6 +1256,7 @@ body.is-nav-open { overflow: hidden; }
   font-size: 1.0625rem;
   line-height: 1.8;
   color: var(--ink-soft);
+  overflow-wrap: break-word;
 }
 
 .prose h2 {
@@ -1285,6 +1295,25 @@ body.is-nav-open { overflow: hidden; }
   border-radius: 0 var(--radius-md) var(--radius-md) 0;
   font-style: italic;
   color: var(--ink);
+}
+
+.prose img,
+.prose video,
+.prose iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+.prose table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.prose pre {
+  overflow-x: auto;
+  max-width: 100%;
 }
 
 /* Sidebar */
@@ -3481,6 +3510,10 @@ a.article-category:hover { text-decoration: underline; }
   margin-top: 1.5rem;
 }
 
+@media (max-width: 640px) {
+  .prepare-progress__label { display: none; }
+}
+
 @media (max-width: 720px) {
   .prepare-options--duo,
   .prepare-options--trio { grid-template-columns: 1fr; }
@@ -4170,6 +4203,10 @@ a.article-category:hover { text-decoration: underline; }
     grid-template-columns: repeat(2, 1fr);
   }
   .partner-program-process__steps li:not(:last-child)::after { display: none; }
+}
+
+@media (max-width: 640px) {
+  .partner-type-grid.prepare-options--grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 720px) {
@@ -5665,6 +5702,21 @@ a.article-category:hover { text-decoration: underline; }
   font-size: 1.04rem;
   line-height: 1.78;
   color: var(--ink-soft);
+  overflow-wrap: break-word;
+}
+
+.partner-vitrine-prose img,
+.partner-vitrine-prose video,
+.partner-vitrine-prose iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+.partner-vitrine-prose table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .partner-vitrine-prose--about p:first-child {
@@ -5878,6 +5930,7 @@ a.article-category:hover { text-decoration: underline; }
   border-radius: 8px;
   background: var(--rice, #faf8f4);
   border-left: 3px solid var(--gold, #d4b86a);
+  overflow-wrap: break-word;
 }
 
 .partner-vitrine-contact__actions {
@@ -5889,6 +5942,7 @@ a.article-category:hover { text-decoration: underline; }
 .partner-vitrine-contact__cta {
   width: 100%;
   justify-content: center;
+  word-break: break-word;
 }
 
 .partner-vitrine-cta {
@@ -6136,6 +6190,7 @@ a.article-category:hover { text-decoration: underline; }
 @media (max-width: 960px) {
   .partner-vitrine-layout { grid-template-columns: 1fr; }
   .partner-vitrine-aside {
+    order: -1;
     position: static;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -6167,6 +6222,34 @@ a.article-category:hover { text-decoration: underline; }
   .partner-contact-card__surface { min-height: 6.75rem; padding: 0.85rem 0.5rem 0.75rem; }
   .partner-page-wizard .partner-wizard__nav-right { width: 100%; }
   .partner-page-wizard .partner-wizard__nav-right .btn { flex: 1; justify-content: center; }
+}
+
+@media (max-width: 640px) {
+  .partner-vitrine-hero {
+    min-height: clamp(300px, 48vh, 420px);
+    padding: 2rem 0 1.75rem;
+  }
+  .partner-vitrine-section { padding: 1rem 0.9rem; }
+  .partner-vitrine-highlights { grid-template-columns: 1fr; }
+  .partner-vitrine-panel__head { flex-wrap: wrap; }
+  .partner-vitrine-panel__status {
+    width: 100%;
+    flex-shrink: 1;
+    text-align: center;
+  }
+  .partner-portal-subnav__label { white-space: normal; }
+  .partner-directory__filter {
+    font-size: 0.82rem;
+    padding: 0.4rem 0.7rem;
+  }
+  .partner-contact-grid { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .partner-vitrine-hero__media img {
+    animation: none;
+    transform: none;
+  }
 }
 
 /* ── Piliers SEO (hubs thématiques) ─────────────────────────────────── */

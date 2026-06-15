@@ -34,6 +34,11 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+html {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
 body.admin-body {
   font-family: var(--font-body);
   font-size: 0.9375rem;
@@ -42,6 +47,8 @@ body.admin-body {
   background: var(--rice);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+  max-width: 100%;
 }
 
 a { color: var(--teal); text-decoration: none; transition: color var(--transition); }
@@ -242,6 +249,7 @@ a:hover { color: var(--terracotta); }
 }
 .stat-grid--3 { grid-template-columns: repeat(3, 1fr); }
 .stat-grid--4 { grid-template-columns: repeat(4, 1fr); }
+.stat-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
 .stat-card {
   background: var(--white);
@@ -854,7 +862,7 @@ code {
 
 .partners-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
   gap: 1.25rem;
 }
 
@@ -1098,6 +1106,12 @@ code {
 }
 
 /* ── WYSIWYG style Word ─────────────────────────── */
+.wysiwyg-field {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+}
+
 .wysiwyg-field textarea.wysiwyg-editor {
   min-height: 120px;
   font-family: "Times New Roman", Times, Georgia, serif;
@@ -1115,6 +1129,7 @@ code {
   border-radius: 4px !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   overflow: hidden;
+  max-width: 100%;
 }
 
 .wysiwyg-field .tox .tox-editor-header {
@@ -1918,7 +1933,19 @@ select optgroup { font-weight: 700; color: var(--teal); }
   width: 100%;
   border-collapse: collapse;
   font-size: 0.875rem;
+}
+.admin-table-wrap .admin-table,
+.table-scroll-x .admin-table,
+.table-scroll .admin-table {
   min-width: 640px;
+}
+.admin-table--compact {
+  min-width: 0;
+}
+.admin-table--compact th,
+.admin-table--compact td {
+  white-space: normal;
+  word-break: break-word;
 }
 .admin-table th,
 .admin-table td {
@@ -1947,6 +1974,8 @@ select optgroup { font-weight: 700; color: var(--teal); }
 .admin-table__actions .btn { margin-top: 0.5rem; margin-right: 0.5rem; }
 .table-scroll .data-table { min-width: 480px; margin: 0; }
 
+.nowrap { white-space: nowrap; }
+
 @media (max-width: 1200px) {
   .admin-page-layout,
   .guides-layout,
@@ -1955,6 +1984,9 @@ select optgroup { font-weight: 700; color: var(--teal); }
   .guides-aside { position: static; }
   .suggestions-list { max-height: none; }
   .kpi-grid--aff { grid-template-columns: repeat(2, 1fr); }
+  .stat-grid--3,
+  .stat-grid--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .panel-grid { grid-template-columns: 1fr; }
 }
 
 /* Collapse chart-grid at 960px — avoids panels too narrow when sidebar is visible */
@@ -1967,6 +1999,25 @@ select optgroup { font-weight: 700; color: var(--teal); }
   .add-partner-form .form-row { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; }
   .input-row { flex-direction: column; }
+  .inline-input,
+  .draft-test-input { min-width: 0; width: 100%; }
+  .draft-action-form--improve { min-width: 0; width: 100%; }
+  .draft-action-form--improve .inline-input { min-width: 0; }
+  .admin-table__actions { min-width: 0; }
+  .partner-row__fields {
+    flex: 1 1 100%;
+    grid-template-columns: 1fr;
+  }
+  .partners-filter {
+    margin-left: 0;
+    width: 100%;
+  }
+  .partners-filter .social-select { width: 100%; }
+  .contact-filter {
+    margin-left: 0;
+    width: 100%;
+  }
+  .contact-filter__btn { flex: 1 1 auto; min-width: 5rem; }
 }
 
 .admin-sidebar-toggle {
@@ -2105,7 +2156,7 @@ body.is-admin-nav-open { overflow: hidden; }
   .admin-topbar { padding: 1rem 1.25rem; }
   .admin-main { padding: 1rem 1.25rem 1.5rem; }
   .admin-topbar__title { font-size: 1.45rem; }
-  .panel-grid, .stat-grid--3, .stat-grid--4 { grid-template-columns: 1fr; }
+  .panel-grid, .stat-grid--3, .stat-grid--4, .stat-grid--2 { grid-template-columns: 1fr; }
 
   .analytics-toolbar {
     flex-direction: column;
@@ -2134,19 +2185,25 @@ body.is-admin-nav-open { overflow: hidden; }
     padding-top: 1.25rem;
   }
 
-  /* Tables — défilement horizontal sur mobile. On annule le min-width : sur un
-     bloc, overflow-x ne fait défiler que le contenu, donc un min-width forcerait
-     le bloc lui-même au-delà du viewport et décalerait toute la page. */
-  .admin-table {
-    display: block;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    min-width: 0;
+  /* Tables — défilement horizontal via le wrapper uniquement */
+  .admin-table-wrap,
+  .table-scroll-x,
+  .table-scroll {
     max-width: 100%;
   }
 }
 
 @media (max-width: 640px) {
+  .partners-search {
+    flex-direction: column;
+  }
+  .partners-search .social-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+  }
+  .partners-search .btn { width: 100%; }
+
   /* Topbar & contenu — gain d'espace sur petit écran */
   .admin-topbar { padding: 1.25rem 1.1rem 1.1rem; }
   .admin-main { padding: 1rem 1.1rem 2rem; }
@@ -2713,7 +2770,7 @@ body.is-admin-nav-open { overflow: hidden; }
 }
 .contact-mail-detail__plain.is-hidden { display: none; }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .contact-mailbox {
     grid-template-columns: 1fr;
     min-height: 0;
