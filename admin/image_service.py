@@ -17,6 +17,7 @@ from admin.genlog import log
 
 BLOG_IMAGES_DIR = Path(__file__).parent.parent / "static" / "images" / "blog"
 DEST_IMAGES_DIR = Path(__file__).parent.parent / "static" / "images" / "destinations"
+PARTNER_IMAGES_DIR = Path(__file__).parent.parent / "static" / "images" / "partners"
 # Pool de vraies photos Vietnam EMBARQUÉES dans le repo (static/images/pool/<id>.webp).
 # C'est la source par défaut : aucun appel réseau au moment de générer → l'étape image
 # est INSTANTANÉE et ne peut plus « bloquer » (le réseau sortant de l'hébergeur, lent ou
@@ -1029,9 +1030,24 @@ def _cover_1200x675(img: Image.Image) -> Image.Image:
     return ImageOps.fit(img, (1200, 675), Image.Resampling.LANCZOS, centering=(0.5, 0.42))
 
 
+def _decode_upload_image(raw: bytes) -> Image.Image:
+    """Décode une image importée : EXIF (rotation iPhone), transparence → fond blanc."""
+    with Image.open(io.BytesIO(raw)) as src:
+        img = ImageOps.exif_transpose(src)
+        if img.mode in ("RGBA", "LA"):
+            bg = Image.new("RGB", img.size, (255, 255, 255))
+            bg.paste(img, mask=img.split()[-1])
+            return bg
+        if img.mode == "P":
+            img = img.convert("RGBA")
+            bg = Image.new("RGB", img.size, (255, 255, 255))
+            bg.paste(img, mask=img.split()[-1])
+            return bg
+        return img.convert("RGB")
+
+
 def _to_webp(raw: bytes, out_path: Path) -> None:
-    img = Image.open(io.BytesIO(raw)).convert("RGB")
-    img = _cover_1200x675(img)
+    img = _cover_1200x675(_decode_upload_image(raw))
     out_path.parent.mkdir(parents=True, exist_ok=True)
     img.save(out_path, "WEBP", quality=82, method=WEBP_METHOD)
     # force=True : on vient d'écrire une NOUVELLE image principale — les variantes
@@ -1043,7 +1059,7 @@ def _to_webp(raw: bytes, out_path: Path) -> None:
 def _write_webp_fast(raw: bytes, out_path: Path) -> None:
     """Écriture WebP minimale (method=0, sans variantes) — repli si l'encodage soigné
     dépasse son échéance. Garantit qu'un fichier image valide existe toujours."""
-    img = _cover_1200x675(Image.open(io.BytesIO(raw)).convert("RGB"))
+    img = _cover_1200x675(_decode_upload_image(raw))
     out_path.parent.mkdir(parents=True, exist_ok=True)
     img.save(out_path, "WEBP", quality=80, method=0)
     # Pas de variantes ici (chemin rapide) : on supprime celles de l'ancienne image
@@ -1582,6 +1598,37 @@ def set_remote_image_for_destination(dest: dict, image_url: str, alt: str | None
 
 
 MAX_UPLOAD_BYTES = 12 * 1024 * 1024
+MAX_PARTNER_COVER_BYTES = 5 * 1024 * 1024
+
+
+def normalize_image_url(url: str) -> str:
+    """Ajoute https:// si l'URL est saisie sans schéma (champ partenaire)."""
+    url = (url or "").strip()
+    if not url:
+        return ""
+    if not url.lower().startswith(("http://", "https://")):
+        return f"https://{url.lstrip('/')}"
+    return url
+
+
+def validate_image_bytes(raw: bytes, *, max_bytes: int = MAX_UPLOAD_BYTES) -> bytes:
+    """Valide les octets d'une image importée avant conversion WebP."""
+    if not raw or len(raw) < 200:
+        raise ValueError("Fichier image vide ou invalide.")
+    if len(raw) > max_bytes:
+        max_mb = max(1, max_bytes // (1024 * 1024))
+        raise ValueError(f"Photo trop volumineuse (max {max_mb} Mo).")
+    try:
+        with Image.open(io.BytesIO(raw)) as img:
+            img.verify()
+        with Image.open(io.BytesIO(raw)) as img:
+            if img.format not in ("JPEG", "PNG", "WEBP", "GIF", "MPO"):
+                raise ValueError("Format non supporté — utilisez JPG, PNG ou WebP.")
+    except ValueError:
+        raise
+    except Exception as exc:
+        raise ValueError("Format d'image non supporté (JPG, PNG ou WebP).") from exc
+    return raw
 
 
 def read_uploaded_image_bytes(file_storage) -> bytes:
@@ -1589,21 +1636,52 @@ def read_uploaded_image_bytes(file_storage) -> bytes:
     if not file_storage or not getattr(file_storage, "filename", None):
         raise ValueError("Fichier image manquant.")
     raw = file_storage.read()
-    if not raw or len(raw) < 200:
-        raise ValueError("Fichier image vide ou invalide.")
-    if len(raw) > MAX_UPLOAD_BYTES:
-        raise ValueError("Image trop lourde (maximum 12 Mo).")
+    return validate_image_bytes(raw, max_bytes=MAX_UPLOAD_BYTES)
+
+
+def _partner_cover_slug(slug: str) -> str:
+    from admin.store import slugify
+
+    safe = re.sub(r"[^a-z0-9\-]+", "-", slugify(slug or "partenaire")).strip("-")[:60]
+    return safe or "partenaire"
+
+
+def store_partner_cover_webp(
+    slug: str,
+    *,
+    file_bytes: bytes | None = None,
+    image_url: str = "",
+) -> str:
+    """Enregistre la photo de couverture partenaire en WebP 1200×675 (+ variantes)."""
+    safe = _partner_cover_slug(slug)
     try:
-        with Image.open(io.BytesIO(raw)) as img:
-            img.verify()
-        with Image.open(io.BytesIO(raw)) as img:
-            if img.format not in ("JPEG", "PNG", "WEBP", "GIF"):
-                raise ValueError("Format non supporté.")
-    except ValueError:
-        raise
-    except Exception as exc:
-        raise ValueError("Format d'image non supporté (JPEG, PNG, WebP, GIF).") from exc
-    return raw
+        PARTNER_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        raise ValueError("Impossible d'enregistrer la photo sur le serveur — réessayez.") from exc
+    out_path = PARTNER_IMAGES_DIR / f"{safe}.webp"
+    if file_bytes:
+        raw = validate_image_bytes(file_bytes, max_bytes=MAX_PARTNER_COVER_BYTES)
+        try:
+            _write_uploaded_webp(raw, out_path)
+        except Exception as exc:
+            raise ValueError(
+                "Impossible de convertir l'image en WebP — essayez un autre fichier (JPG ou PNG)."
+            ) from exc
+    elif (image_url or "").strip():
+        url = normalize_image_url(image_url)
+        try:
+            _write_remote_webp(url, out_path)
+        except (ValueError, TimeoutError) as exc:
+            raise ValueError(str(exc)) from exc
+        except Exception as exc:
+            raise ValueError(
+                "Impossible de télécharger ou convertir l'image depuis l'URL."
+            ) from exc
+    else:
+        raise ValueError("Photo manquante — uploadez un fichier ou indiquez une URL.")
+    if not out_path.is_file() or out_path.stat().st_size < 100:
+        raise ValueError("La conversion WebP a échoué — réessayez avec une autre image.")
+    return f"/static/images/partners/{safe}.webp"
 
 
 def _write_uploaded_webp(raw: bytes, out_path: Path) -> None:

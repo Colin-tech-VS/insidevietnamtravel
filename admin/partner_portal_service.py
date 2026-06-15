@@ -323,32 +323,9 @@ def page_vitrine_checklist(page: dict | None) -> dict:
 
 
 def _store_partner_image(slug: str, *, file_bytes: bytes | None = None, image_url: str = "") -> str:
-    from pathlib import Path
+    from admin.image_service import store_partner_cover_webp
 
-    from admin.image_service import (
-        IMAGE_ENCODE_DEADLINE,
-        _run_with_deadline,
-        _to_webp,
-        _write_remote_webp,
-        _write_webp_fast,
-        resolve_direct_image_url,
-    )
-
-    slug = _SLUG_RE.sub("-", slugify(slug or "partenaire")).strip("-")[:60] or "partenaire"
-    out_dir = Path(__file__).resolve().parent.parent / "static" / "images" / "partners"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / f"{slug}.webp"
-    if file_bytes:
-        try:
-            _run_with_deadline(_to_webp, IMAGE_ENCODE_DEADLINE, file_bytes, out_path)
-        except Exception:  # noqa: BLE001
-            _write_webp_fast(file_bytes, out_path)
-    elif image_url.strip():
-        resolved = resolve_direct_image_url(image_url.strip()) or image_url.strip()
-        _write_remote_webp(resolved, out_path)
-    else:
-        raise ValueError("Photo manquante — uploadez un fichier ou indiquez une URL.")
-    return f"/static/images/partners/{slug}.webp"
+    return store_partner_cover_webp(slug, file_bytes=file_bytes, image_url=image_url)
 
 
 def profile_highlights_text_from_form(raw_list: list[str] | None, *, fallback: str = "") -> str:

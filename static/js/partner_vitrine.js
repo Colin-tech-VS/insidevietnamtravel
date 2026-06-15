@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function resetPreviewLabel() {
-    if (filenameEl) filenameEl.textContent = 'JPG, PNG ou WebP';
+    if (filenameEl) filenameEl.textContent = 'JPG ou PNG (→ WebP)';
     dropzone?.classList.remove('is-selected');
   }
 

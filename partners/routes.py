@@ -58,6 +58,30 @@ partners_bp = Blueprint("partners", __name__, url_prefix="/partners")
 
 _JOB_KEY = "partner_page_job_token"
 
+
+def _vitrine_form_photo() -> bytes | None:
+    """Lit la photo uploadée depuis le formulaire vitrine (max 5 Mo, validée)."""
+    from admin.image_service import MAX_PARTNER_COVER_BYTES, validate_image_bytes
+
+    photo = request.files.get("photo_file")
+    if not photo or not photo.filename:
+        return None
+    raw = photo.read()
+    if not raw:
+        return None
+    return validate_image_bytes(raw, max_bytes=MAX_PARTNER_COVER_BYTES)
+
+
+def _flash_vitrine_error(exc: Exception) -> None:
+    from flask import current_app
+
+    if isinstance(exc, ValueError):
+        flash(str(exc), "error")
+        return
+    current_app.logger.exception("partner vitrine save failed")
+    flash("Erreur lors de l'enregistrement de la vitrine — réessayez.", "error")
+
+
 _PARTNER_META = {
     "partners.login": ("Connexion partenaire", "Connectez-vous à votre espace partenaire Inside Vietnam Travel."),
     "partners.forgot_password": ("Mot de passe oublié", "Réinitialisez le mot de passe de votre espace partenaire."),
@@ -259,10 +283,6 @@ def dashboard():
     partner = current_partner()
     if request.method == "POST" and request.form.get("action") == "save_vitrine":
         try:
-            photo = request.files.get("photo_file")
-            file_bytes = photo.read() if photo and photo.filename else None
-            if file_bytes and len(file_bytes) > 5 * 1024 * 1024:
-                raise ValueError("Photo trop volumineuse (max 5 Mo).")
             save_page_vitrine(
                 partner["id"],
                 profile_highlights_text=profile_highlights_text_from_form(
@@ -270,12 +290,12 @@ def dashboard():
                     fallback=request.form.get("profile_highlights", ""),
                 ),
                 image_url=request.form.get("image_url", ""),
-                image_file=file_bytes,
+                image_file=_vitrine_form_photo(),
                 clear_image=request.form.get("clear_image") == "1",
             )
             flash("Vitrine enregistrée — visible sur votre page publique.", "success")
-        except ValueError as exc:
-            flash(str(exc), "error")
+        except Exception as exc:
+            _flash_vitrine_error(exc)
         return redirect(url_for("partners.dashboard"))
     page = get_page_by_partner(partner["id"]) if partner else None
     is_hidden = is_hidden_test_partner(partner) if partner else False
@@ -314,10 +334,6 @@ def page_edit():
                 )
                 flash("Brouillon enregistré.", "success")
             elif action == "save_vitrine":
-                photo = request.files.get("photo_file")
-                file_bytes = photo.read() if photo and photo.filename else None
-                if file_bytes and len(file_bytes) > 5 * 1024 * 1024:
-                    raise ValueError("Photo trop volumineuse (max 5 Mo).")
                 page = save_page_vitrine(
                     partner["id"],
                     profile_highlights_text=profile_highlights_text_from_form(
@@ -325,7 +341,7 @@ def page_edit():
                     fallback=request.form.get("profile_highlights", ""),
                 ),
                     image_url=request.form.get("image_url", ""),
-                    image_file=file_bytes,
+                    image_file=_vitrine_form_photo(),
                     clear_image=request.form.get("clear_image") == "1",
                 )
                 flash("Vitrine enregistrée.", "success")
@@ -347,6 +363,8 @@ def page_edit():
                     return redirect(url_for("partners.page_review"))
         except ValueError as e:
             flash(str(e), "error")
+        except Exception as exc:
+            _flash_vitrine_error(exc)
         page = get_page_by_partner(partner["id"])
     elif request.method == "GET" and page and page.get("status") == "ai_review":
         token = _sync_job_token(page, session.get(_JOB_KEY))
@@ -382,10 +400,6 @@ def page_vitrine():
         return redirect(url_for("partners.page_edit"))
     if request.method == "POST":
         try:
-            photo = request.files.get("photo_file")
-            file_bytes = photo.read() if photo and photo.filename else None
-            if file_bytes and len(file_bytes) > 5 * 1024 * 1024:
-                raise ValueError("Photo trop volumineuse (max 5 Mo).")
             save_page_vitrine(
                 partner["id"],
                 profile_highlights_text=profile_highlights_text_from_form(
@@ -393,13 +407,13 @@ def page_vitrine():
                     fallback=request.form.get("profile_highlights", ""),
                 ),
                 image_url=request.form.get("image_url", ""),
-                image_file=file_bytes,
+                image_file=_vitrine_form_photo(),
                 clear_image=request.form.get("clear_image") == "1",
             )
             flash("Vitrine enregistrée — visible sur votre page publique.", "success")
             return redirect(url_for("partners.dashboard"))
-        except ValueError as exc:
-            flash(str(exc), "error")
+        except Exception as exc:
+            _flash_vitrine_error(exc)
         page = get_page_by_partner(partner["id"])
     return render_template(
         "partners/page_vitrine.html",
