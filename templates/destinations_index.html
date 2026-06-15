@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% from "macros/images.html" import responsive_img with context %}
+{% from "macros/seo.html" import json_ld_graph with context %}
+
+{% block structured_data %}
+{% set list_name = "Destinations Vietnam" if lang == 'fr' else "Vietnam destinations" %}
+{{ json_ld_graph([
+  seo_item_list(list_name, dest_schema_items),
+  seo_breadcrumb([
+    (t('nav.home'), site.SITE_URL ~ lang_url('index')),
+    (t('destinations.page.title'), None),
+  ]),
+]) }}
+{% endblock %}
+
+{% block content %}
+<header class="pillar-hero destinations-hero">
+  <div class="pillar-hero__media" aria-hidden="true">
+    <img src="{{ url_for('static', filename='images/destinations/ha-long-qu-ng-ninh-960.webp') }}"
+         alt="" width="960" height="640" loading="eager" decoding="async" fetchpriority="high" class="pillar-hero__img">
+  </div>
+  <div class="container destinations-hero__inner">
+    <nav class="breadcrumb breadcrumb--light" aria-label="{{ t('breadcrumb.aria') }}">
+      <ol>
+        <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+        <li aria-current="page">{{ t('destinations.page.title') }}</li>
+      </ol>
+    </nav>
+    <p class="pillar-hero__eyebrow">{{ t('nav.destinations') }}</p>
+    <h1 class="pillar-hero__title">{{ t('destinations.page.title') }}</h1>
+    <p class="pillar-hero__lede">{{ t('destinations.page.sub') }}</p>
+    <p class="destinations-hero__count"><strong>{{ destinations|length }}</strong> {{ t('home.hero.stat_dest') }}</p>
+  </div>
+</header>
+
+<section class="section destinations-directory" aria-label="{{ t('destinations.page.title') }}">
+  <div class="container">
+    {% for region in destinations_by_region %}
+    <div class="destinations-directory__region">
+      <h2 class="destinations-directory__region-title">{{ region.label }}</h2>
+      <div class="dest-grid">
+        {% for item in region.destinations %}
+        {% set slug = item.slug %}
+        {% set d = destinations[slug] %}
+        <a href="{{ lang_url('destination_page', slug=slug) }}" class="dest-card">
+          {% if d.image %}
+          {{ responsive_img(
+            d.image,
+            alt=d.image_alt or ('Guide ' ~ d.name ~ ', Vietnam'),
+            width=400,
+            height=225,
+            loading='lazy',
+            class='dest-card__img',
+            sizes='(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px'
+          ) }}
+          {% endif %}
+          <span class="dest-card__overlay"></span>
+          <span class="dest-card__content">
+            <span class="dest-card__name">{{ d.name }}</span>
+            <span class="dest-card__tag">{{ d.tagline }}</span>
+            <span class="dest-card__cta">{{ t('home.dest.cta') }}</span>
+          </span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

@@ -63,10 +63,35 @@
       <p class="hero-eyebrow">{{ t('home.hero.eyebrow') }}</p>
       <h1 id="hero-title">{{ t('home.hero.title') }}<br><em>{{ t('home.hero.title_em') }}</em></h1>
       <p class="hero-lead">{{ t('home.hero.lead') }}</p>
+
+      <div class="hero-discovery" role="search">
+        <button type="button" class="hero-search" data-search-open aria-label="{{ t('home.hero.search_btn') }}">
+          <svg class="hero-search__icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
+          </svg>
+          <span class="hero-search__text">{{ t('home.hero.search_label') }}</span>
+          <kbd class="hero-search__kbd" aria-hidden="true">/</kbd>
+        </button>
+
+        {% if chat_enabled %}
+        <button type="button" class="hero-mai" data-mai-open aria-label="{{ t('home.hero.mai_cta') }}">
+          <span class="hero-mai__avatar" aria-hidden="true">🌸</span>
+          <span class="hero-mai__body">
+            <span class="hero-mai__name">{{ t('chat.name') }}</span>
+            <span class="hero-mai__rotator" aria-live="polite">
+              <span class="hero-mai__suggest">{{ t('chat.suggest1') }}</span>
+              <span class="hero-mai__suggest">{{ t('chat.suggest2') }}</span>
+              <span class="hero-mai__suggest">{{ t('chat.suggest3') }}</span>
+            </span>
+          </span>
+          <span class="hero-mai__cta">{{ t('home.hero.mai_cta') }}</span>
+        </button>
+        {% endif %}
+      </div>
+
       <div class="hero-actions">
-        <a href="#destinations" class="btn btn-primary">{{ t('home.hero.cta_dest') }}</a>
+        <a href="{{ lang_url('destinations_index') }}" class="btn btn-primary">{{ t('home.hero.cta_dest') }}</a>
         <a href="{{ lang_url('prepare_trip') }}" class="btn btn-ghost btn-ghost--on-dark">{{ t('nav.prepare') }}</a>
-        <a href="{{ pdf_checkout_url() }}" class="btn btn-ghost btn-ghost--on-dark" data-no-loader>{{ t('home.hero.cta_pdf') }}</a>
       </div>
       <ul class="hero-stats" aria-label="{{ 'Points clés' if lang == 'fr' else 'Highlights' }}">
         <li class="stat">
@@ -158,7 +183,7 @@
       <p>{{ t('home.dest.sub') }}</p>
     </header>
     <div class="dest-grid">
-      {% for slug, d in destinations.items() %}
+      {% for slug, d in home_destinations %}
       <a href="{{ lang_url('destination_page', slug=slug) }}" class="dest-card">
         {% if d.image %}
         {{ responsive_img(
@@ -180,6 +205,11 @@
       </a>
       {% endfor %}
     </div>
+    {% if destinations|length > home_destinations|length %}
+    <p class="section-cta">
+      <a href="{{ lang_url('destinations_index') }}" class="btn btn-primary">{{ t('home.dest.see_all') }}</a>
+    </p>
+    {% endif %}
   </div>
 </section>
 
@@ -190,7 +220,7 @@
       <p>{{ t('home.itin.sub') }}</p>
     </header>
     <div class="itin-grid">
-      {% for slug, it in itineraries.items() %}
+      {% for slug, it in home_itineraries %}
       <article class="itin-card{% if it.hero_image %} itin-card--with-image{% endif %}">
         {% if it.hero_image %}
         <a href="{{ lang_url('itinerary', slug=slug) }}" class="itin-card__media" tabindex="-1" aria-hidden="true">
@@ -205,10 +235,40 @@
       </article>
       {% endfor %}
     </div>
+    {% if itineraries|length > home_itineraries|length %}
+    <p class="section-cta">
+      <a href="{{ lang_url('pillar', slug='itineraires-vietnam') }}" class="btn btn-primary">{{ t('home.itin.see_all') }}</a>
+    </p>
+    {% endif %}
   </div>
 </section>
 
-<section class="section" aria-labelledby="blog-title">
+<section class="section home-partner" aria-labelledby="partner-title">
+  <div class="container home-partner__inner">
+    <div class="home-partner__content">
+      <p class="home-partner__eyebrow">{{ t('home.partner.eyebrow') }}</p>
+      <h2 id="partner-title">{{ t('home.partner.title') }}</h2>
+      <p class="home-partner__lede">{{ t('home.partner.sub') }}</p>
+      <ul class="home-partner__benefits">
+        <li>{{ t('home.partner.benefit1') }}</li>
+        <li>{{ t('home.partner.benefit2') }}</li>
+        <li>{{ t('home.partner.benefit3') }}</li>
+      </ul>
+      <div class="home-partner__actions">
+        <a href="{{ lang_url('become_partner') }}" class="btn btn-primary">{{ t('home.partner.cta_apply') }}</a>
+        <a href="{{ lang_url('partners_index') }}" class="btn btn-secondary">{{ t('home.partner.cta_directory') }}</a>
+      </div>
+    </div>
+    <div class="home-partner__visual" aria-hidden="true">
+      <div class="home-partner__card">
+        <span class="home-partner__card-icon">🤝</span>
+        <span class="home-partner__card-label">{{ 'Guides · Créateurs · Agences' if lang == 'fr' else 'Guides · Creators · Agencies' }}</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section--alt" aria-labelledby="blog-title">
   <div class="container">
     <header class="section-header">
       <h2 id="blog-title">{{ t('home.blog.title') }}</h2>

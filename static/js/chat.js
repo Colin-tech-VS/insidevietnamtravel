@@ -676,4 +676,13 @@
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 88) + 'px';
   });
+
+  document.querySelectorAll('[data-mai-open]').forEach(function (el) {
+    el.addEventListener('click', function (e) {
+      e.preventDefault();
+      openPanel();
+    });
+  });
+
+  window.ivtOpenMaiChat = openPanel;
 })();

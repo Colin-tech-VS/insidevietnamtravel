@@ -49,6 +49,23 @@ UI: dict[str, dict[str, str]] = {
     },
     "home.hero.cta_dest": {"fr": "Explorer les destinations", "en": "Explore destinations"},
     "home.hero.cta_pdf": {"fr": "Télécharger le guide PDF", "en": "Download the PDF guide"},
+    "home.hero.search_label": {"fr": "Rechercher une destination, un itinéraire…", "en": "Search a destination, itinerary…"},
+    "home.hero.search_btn": {"fr": "Rechercher sur le site", "en": "Search the site"},
+    "home.hero.mai_label": {"fr": "Posez votre question à Mai", "en": "Ask Mai your question"},
+    "home.hero.mai_cta": {"fr": "Discuter avec Mai →", "en": "Chat with Mai →"},
+    "home.dest.see_all": {"fr": "Voir toutes les destinations", "en": "See all destinations"},
+    "home.itin.see_all": {"fr": "Voir tous les itinéraires", "en": "See all itineraries"},
+    "home.partner.eyebrow": {"fr": "Programme partenaires", "en": "Partner program"},
+    "home.partner.title": {"fr": "Devenir partenaire Inside Vietnam Travel", "en": "Become an Inside Vietnam Travel partner"},
+    "home.partner.sub": {
+        "fr": "Guides locaux, créateurs, blogueurs et agences — rejoignez notre réseau vérifié et bénéficiez d'une page dédiée, d'une visibilité éditoriale et d'opportunités de co-marketing.",
+        "en": "Local guides, creators, bloggers and agencies — join our verified network with a dedicated page, editorial visibility and co-marketing opportunities.",
+    },
+    "home.partner.benefit1": {"fr": "Fiche partenaire gratuite", "en": "Free partner page"},
+    "home.partner.benefit2": {"fr": "Validation éditoriale IA", "en": "AI editorial review"},
+    "home.partner.benefit3": {"fr": "Espace partenaire dédié", "en": "Dedicated partner dashboard"},
+    "home.partner.cta_apply": {"fr": "Candidater", "en": "Apply now"},
+    "home.partner.cta_directory": {"fr": "Voir nos partenaires", "en": "Browse our partners"},
     "home.hero.stat_dest": {"fr": "guides destinations", "en": "destination guides"},
     "home.hero.stat_itin": {"fr": "itinéraires clés en main", "en": "ready-made itineraries"},
     "home.hero.stat_free": {"fr": "planificateur gratuit", "en": "free trip planner"},
@@ -541,6 +558,23 @@ UI: dict[str, dict[str, str]] = {
     "loader.aria": {"fr": "Chargement en cours", "en": "Loading"},
 
     # SEO meta (pages statiques)
+    "meta.destinations.title": {
+        "fr": "Destinations Vietnam — guides complets par ville",
+        "en": "Vietnam destinations — complete city guides",
+    },
+    "meta.destinations.desc": {
+        "fr": "Toutes nos destinations au Vietnam : guides par ville, que faire, où dormir et activités incontournables — Nord, Centre et Sud.",
+        "en": "All our Vietnam destinations: city guides, what to do, where to stay and must-see activities — North, Central and South.",
+    },
+    "meta.destinations.kw": {
+        "fr": "destinations Vietnam, guide voyage Vietnam, villes Vietnam, Hanoi, Hoi An, Halong",
+        "en": "Vietnam destinations, Vietnam travel guide, Vietnam cities, Hanoi, Hoi An, Halong",
+    },
+    "destinations.page.title": {"fr": "Toutes les destinations au Vietnam", "en": "All destinations in Vietnam"},
+    "destinations.page.sub": {
+        "fr": "Guides complets par ville et par région — que faire, où dormir, activités incontournables",
+        "en": "Complete guides by city and region — what to do, where to stay, must-see activities",
+    },
     "meta.home.title": {
         "fr": "Voyage Vietnam 2026 : guides, itinéraires et conseils pratiques",
         "en": "Vietnam travel 2026: guides, itineraries and practical tips",

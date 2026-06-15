@@ -143,6 +143,28 @@ def _destinations(lang=None):
     }
 
 
+def _home_featured_destinations(dests: dict, limit: int = 6) -> list[tuple[str, dict]]:
+    """Destinations mises en avant sur l'accueil (ordre trip planner, puis le reste)."""
+    from data.trip_planner import PLANNER_CITIES
+
+    out: list[tuple[str, dict]] = []
+    seen: set[str] = set()
+    for city in PLANNER_CITIES:
+        slug = city["slug"]
+        if slug in dests and slug not in seen:
+            out.append((slug, dests[slug]))
+            seen.add(slug)
+        if len(out) >= limit:
+            return out
+    for slug, d in dests.items():
+        if slug not in seen:
+            out.append((slug, d))
+            seen.add(slug)
+        if len(out) >= limit:
+            break
+    return out
+
+
 def _itineraries(lang=None):
     lang = lang or get_lang()
     return {
@@ -626,12 +648,37 @@ def index():
     lang = get_lang()
     articles = _articles(lang)
     featured_articles = [a for a in articles if a.get("featured")]
+    dests = _destinations(lang)
+    itins = _itineraries(lang)
     return render_template(
         "index.html",
         featured_articles=featured_articles,
+        home_destinations=_home_featured_destinations(dests, 6),
+        home_itineraries=list(itins.items())[:3],
         meta_title=t("meta.home.title", lang),
         meta_description=t("meta.home.desc", lang),
         meta_keywords=t("meta.home.kw", lang),
+    )
+
+
+@app.route("/destinations-vietnam")
+@app.route("/en/vietnam-destinations")
+def destinations_index():
+    lang = get_lang()
+    dests = _destinations(lang)
+    dest_items = [
+        {
+            "name": ("Guide " if lang == "fr" else "Guide ") + d["name"],
+            "url": config.SITE_URL + lang_url("destination_page", slug=slug, lang=lang),
+        }
+        for slug, d in dests.items()
+    ]
+    return render_template(
+        "destinations_index.html",
+        meta_title=t("meta.destinations.title", lang),
+        meta_description=t("meta.destinations.desc", lang),
+        meta_keywords=t("meta.destinations.kw", lang),
+        dest_schema_items=dest_items,
     )
 
 

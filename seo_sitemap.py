@@ -15,6 +15,7 @@ from i18n_utils import ROUTE_PATHS, SUPPORTED_LANGS, lang_url
 # Pages statiques indexables (clés = ROUTE_PATHS)
 SITEMAP_STATIC: dict[str, dict[str, str]] = {
     "index": {"priority": "1.0", "changefreq": "weekly"},
+    "destinations_index": {"priority": "0.92", "changefreq": "weekly"},
     "blog_index": {"priority": "0.9", "changefreq": "daily"},
     "prepare_trip": {"priority": "0.95", "changefreq": "weekly"},
     "best_season": {"priority": "0.85", "changefreq": "monthly"},

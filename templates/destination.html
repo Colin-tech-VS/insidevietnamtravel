@@ -38,7 +38,7 @@
   dest_schema,
   seo_breadcrumb([
     (t('nav.home'), site.SITE_URL ~ lang_url('index')),
-    (t('nav.destinations'), site.SITE_URL ~ "/#destinations"),
+    (t('nav.destinations'), site.SITE_URL ~ lang_url('destinations_index')),
     (("Guide " if lang == 'fr' else "Guide ") ~ dest.name, None),
   ]),
 ]) }}
