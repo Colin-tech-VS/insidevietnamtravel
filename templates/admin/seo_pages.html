@@ -5,15 +5,15 @@
 {% block page_title %}Pages SEO{% endblock %}
 
 {% block content %}
-<p class="page-sub">Créez des pages SEO landing ciblant plusieurs mots-clés — manuellement ou par IA — avec aperçu, publication automatique au sitemap et maillage interne.</p>
+<p class="page-sub">Landing pages SEO multi-mots-clés — propositions, matrice manuelle ou IA, génération simple ou par lot, publication automatique au sitemap.</p>
 
 <div id="ai-loader" class="ai-loader" hidden aria-live="polite">
   <div class="ai-loader__panel">
     <div class="ai-loader__spinner" aria-hidden="true"></div>
-    <p class="ai-loader__title">Génération IA en cours</p>
+    <p class="ai-loader__title" id="ai-loader-title">Génération IA en cours</p>
     <p class="ai-loader__text" id="ai-loader-text">Analyse des mots-clés…</p>
     <div class="ai-loader__bar" role="progressbar"><span class="ai-loader__bar-fill" id="ai-loader-bar"></span></div>
-    <p class="ai-loader__timing"><span id="ai-loader-elapsed">0:00</span></p>
+    <p class="ai-loader__timing"><span id="ai-loader-elapsed">0:00</span> · <span class="muted">SEO maximal — lot possiblement long</span></p>
   </div>
 </div>
 
@@ -25,27 +25,32 @@
   <div class="admin-page-main">
     <section class="panel guides-form-panel">
       <div class="content-tabs" role="tablist">
-        <button type="button" class="content-tab{% if not draft_is_manual %} is-active{% endif %}" data-tab="ai" id="tab-btn-ai">✦ Avec IA</button>
-        <button type="button" class="content-tab{% if draft_is_manual %} is-active{% endif %}" data-tab="manual" id="tab-btn-manual">✎ Manuellement</button>
+        <button type="button" class="content-tab{% if not draft and not draft_is_manual %} is-active{% endif %}" data-tab="matrix" id="tab-btn-matrix">⊞ Matrice</button>
+        <button type="button" class="content-tab{% if draft and not draft_is_manual %} is-active{% endif %}" data-tab="ai" id="tab-btn-ai">✦ Une page (IA)</button>
+        <button type="button" class="content-tab{% if draft_is_manual %} is-active{% endif %}" data-tab="manual" id="tab-btn-manual">✎ Manuel</button>
       </div>
 
-      <div id="tab-ai" class="content-panel" role="tabpanel" {% if draft_is_manual %}hidden{% endif %}>
-        <h2>✦ Nouvelle page SEO (IA)</h2>
-        <form id="seo-form-ai" class="guide-form" data-no-loader>
-          <div class="form-field">
-            <label for="topic">Sujet / angle principal</label>
-            <input type="text" id="topic" name="topic" placeholder="Ex : Visa Vietnam 2026 pour les Français" value="{{ request.args.get('topic', '') }}">
-          </div>
-          <div class="form-field">
-            <label for="keywords">Mots-clés cibles (mix, séparés par virgules ou lignes)</label>
-            <textarea id="keywords" name="keywords" rows="4" placeholder="visa vietnam, evisa vietnam, formalités vietnam, voyage vietnam sans visa…">{{ request.args.get('keywords', '') }}</textarea>
-            <p class="field-hint">L'IA intègre naturellement tous ces mots-clés dans titres, contenu et FAQ.</p>
+      <div id="tab-matrix" class="content-panel" role="tabpanel" {% if draft or draft_is_manual %}hidden{% endif %}>
+        <h2>⊞ Matrice de mots-clés</h2>
+        <p class="muted">Combinez des axes (intentions × villes/modificateurs) ou laissez l'IA proposer des clusters. Générez jusqu'à {{ max_batch }} pages d'un coup.</p>
+
+        <div class="matrix-builder">
+          <h3>Construction manuelle (A × B)</h3>
+          <div class="form-row">
+            <div class="form-field">
+              <label for="axis_a">Axe A — intentions / thèmes (1 par ligne)</label>
+              <textarea id="axis_a" rows="5" placeholder="visa vietnam&#10;budget voyage&#10;que faire&#10;croisière halong"></textarea>
+            </div>
+            <div class="form-field">
+              <label for="axis_b">Axe B — modificateurs / villes (1 par ligne)</label>
+              <textarea id="axis_b" rows="5" placeholder="hanoi&#10;hoi an&#10;2026&#10;en famille&#10;pas cher"></textarea>
+            </div>
           </div>
           <div class="form-row">
             <div class="form-field">
-              <label for="city">Ville / région (optionnel)</label>
-              <select id="city" name="city">
-                <option value="">— Vietnam (général) —</option>
+              <label for="matrix_city">Ville focus (optionnel)</label>
+              <select id="matrix_city">
+                <option value="">— Variable selon la ligne —</option>
                 {% for region, cities in vietnam_cities.items() %}
                 <optgroup label="{{ region }}">
                   {% for c in cities %}
@@ -56,111 +61,220 @@
               </select>
             </div>
             <div class="form-field">
-              <label for="page_type">Type de page</label>
-              <select id="page_type" name="page_type">
+              <label for="matrix_page_type">Type par défaut</label>
+              <select id="matrix_page_type">
                 <option value="landing">Landing SEO</option>
                 <option value="guide">Guide thématique</option>
-                <option value="comparison">Comparatif / choix</option>
-                <option value="faq">FAQ approfondie</option>
+                <option value="comparison">Comparatif</option>
+                <option value="faq">FAQ</option>
               </select>
             </div>
           </div>
-          <button type="submit" class="btn btn-primary" {% if not groq_ok %}disabled{% endif %}>Générer la page SEO</button>
+          <button type="button" class="btn btn-secondary" id="btn-matrix-build">Construire la matrice</button>
+        </div>
+
+        <div class="matrix-builder matrix-builder--ai">
+          <h3>Matrice par IA</h3>
+          <div class="form-field">
+            <label for="matrix_brief">Brief SEO (angle, lacunes à combler…)</label>
+            <textarea id="matrix_brief" rows="2" placeholder="Ex : clusters visa + budget + villes du Nord peu couverts"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-field">
+              <label for="matrix_ai_count">Nombre de pages</label>
+              <input type="number" id="matrix_ai_count" min="4" max="24" value="10">
+            </div>
+            <div class="form-field">
+              <label for="matrix_ai_city">Ville focus IA</label>
+              <select id="matrix_ai_city">
+                <option value="">— Mix national —</option>
+                {% for region, cities in vietnam_cities.items() %}
+                <optgroup label="{{ region }}">
+                  {% for c in cities %}
+                  <option value="{{ c.value }}">{{ c.label }}</option>
+                  {% endfor %}
+                </optgroup>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary" id="btn-matrix-ai" {% if not groq_ok %}disabled{% endif %}>Générer matrice IA</button>
+        </div>
+
+        <div id="matrix-panel" class="matrix-panel" hidden>
+          <div class="matrix-panel__head">
+            <h3>Matrice <span id="matrix-count" class="muted"></span></h3>
+            <div class="matrix-panel__actions">
+              <label class="checkbox"><input type="checkbox" id="matrix-select-all" checked> Tout sélectionner</label>
+              <button type="button" class="btn btn-primary" id="btn-batch-generate" {% if not groq_ok %}disabled{% endif %}>Générer les pages sélectionnées</button>
+            </div>
+          </div>
+          <div class="matrix-table-wrap">
+            <table class="matrix-table" id="matrix-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Priorité</th>
+                  <th>Sujet / H1</th>
+                  <th>Mots-clés</th>
+                  <th>Ville</th>
+                </tr>
+              </thead>
+              <tbody id="matrix-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-ai" class="content-panel" role="tabpanel" {% if not draft or draft_is_manual %}hidden{% endif %}>
+        <h2>✦ Une page SEO (IA)</h2>
+        <form id="seo-form-ai" class="guide-form" data-no-loader>
+          <div class="form-field">
+            <label for="topic">Sujet / angle principal</label>
+            <input type="text" id="topic" name="topic" placeholder="Ex : Visa Vietnam 2026 pour les Français" value="{{ request.args.get('topic', '') }}">
+          </div>
+          <div class="form-field">
+            <label for="keywords">Mots-clés cibles</label>
+            <textarea id="keywords" name="keywords" rows="4" placeholder="visa vietnam, evisa vietnam, formalités…">{{ request.args.get('keywords', '') }}</textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-field">
+              <label for="city">Ville (optionnel)</label>
+              <select id="city" name="city">
+                <option value="">— Vietnam (général) —</option>
+                {% for region, cities in vietnam_cities.items() %}
+                <optgroup label="{{ region }}">
+                  {% for c in cities %}<option value="{{ c.value }}">{{ c.label }}</option>{% endfor %}
+                </optgroup>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="page_type">Type</label>
+              <select id="page_type" name="page_type">
+                <option value="landing">Landing SEO</option>
+                <option value="guide">Guide</option>
+                <option value="comparison">Comparatif</option>
+                <option value="faq">FAQ</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" {% if not groq_ok %}disabled{% endif %}>Générer (SEO max)</button>
         </form>
       </div>
 
       <div id="tab-manual" class="content-panel" role="tabpanel" {% if not draft_is_manual %}hidden{% endif %}>
-        <h2>✎ Page SEO manuelle</h2>
+        <h2>✎ Page manuelle</h2>
         <form method="post" class="guide-form">
           <input type="hidden" name="editing_slug" value="{{ draft.editing_slug if draft and draft.editing_slug else '' }}">
           <div class="form-row">
             <div class="form-field">
-              <label for="title_fr">Titre (H1) FR *</label>
+              <label for="title_fr">Titre FR *</label>
               <input type="text" id="title_fr" name="title_fr" required value="{{ draft.title if draft else '' }}">
             </div>
             <div class="form-field">
-              <label for="slug">Slug URL (/seo/…)</label>
-              <input type="text" id="slug" name="slug" value="{{ draft.slug if draft else '' }}" placeholder="auto depuis le titre">
+              <label for="slug">Slug (/seo/…)</label>
+              <input type="text" id="slug" name="slug" value="{{ draft.slug if draft else '' }}">
             </div>
           </div>
           <div class="form-field">
-            <label for="keywords_manual">Mots-clés cibles</label>
+            <label for="keywords_manual">Mots-clés</label>
             <textarea id="keywords_manual" name="keywords" rows="2">{% if draft and draft.target_keywords %}{{ draft.target_keywords | join(', ') }}{% endif %}</textarea>
           </div>
           <div class="form-row">
-            <div class="form-field">
-              <label for="meta_title_fr">Meta title FR</label>
-              <input type="text" id="meta_title_fr" name="meta_title_fr" maxlength="70" value="{{ draft.meta_title if draft else '' }}">
-            </div>
-            <div class="form-field">
-              <label for="focus_keyword">Mot-clé principal</label>
-              <input type="text" id="focus_keyword" name="focus_keyword" value="{{ draft.focus_keyword if draft else '' }}">
-            </div>
+            <div class="form-field"><label for="meta_title_fr">Meta title</label><input type="text" id="meta_title_fr" name="meta_title_fr" maxlength="70" value="{{ draft.meta_title if draft else '' }}"></div>
+            <div class="form-field"><label for="focus_keyword">Focus keyword</label><input type="text" id="focus_keyword" name="focus_keyword" value="{{ draft.focus_keyword if draft else '' }}"></div>
           </div>
-          <div class="form-field">
-            <label for="meta_description_fr">Meta description FR</label>
-            <textarea id="meta_description_fr" name="meta_description_fr" rows="2" maxlength="160">{{ draft.meta_description if draft else '' }}</textarea>
-          </div>
-          <div class="form-field">
-            <label for="excerpt_fr">Extrait (sous le H1)</label>
-            <textarea id="excerpt_fr" name="excerpt_fr" rows="2">{{ draft.excerpt if draft else '' }}</textarea>
-          </div>
-          <div class="form-field">
-            <label for="content_fr">Contenu HTML FR *</label>
-            <textarea id="content_fr" name="content_fr" rows="14" required>{{ draft.content if draft else '' }}</textarea>
-          </div>
-          <details class="form-details">
-            <summary>Version anglaise (optionnel — traduite auto à la publication si vide)</summary>
-            <div class="form-field"><label for="title_en">Titre EN</label><input type="text" id="title_en" name="title_en"></div>
-            <div class="form-field"><label for="content_en">Contenu EN</label><textarea id="content_en" name="content_en" rows="8"></textarea></div>
-          </details>
+          <div class="form-field"><label for="meta_description_fr">Meta description</label><textarea id="meta_description_fr" name="meta_description_fr" rows="2">{{ draft.meta_description if draft else '' }}</textarea></div>
+          <div class="form-field"><label for="content_fr">Contenu HTML FR *</label><textarea id="content_fr" name="content_fr" rows="12" required>{{ draft.content if draft else '' }}</textarea></div>
           {{ cover_image_field("manual-") }}
           <div class="form-actions">
-            <button type="submit" name="action" value="manual_draft" class="btn btn-secondary">Enregistrer brouillon</button>
+            <button type="submit" name="action" value="manual_draft" class="btn btn-secondary">Brouillon</button>
             <button type="submit" name="action" value="manual_publish" class="btn btn-primary">Publier</button>
           </div>
         </form>
       </div>
     </section>
 
-    {% if draft %}
+    {% if batch and batch.pages %}
+    <section class="panel draft-panel batch-panel">
+      <div class="draft-panel__header">
+        <span class="draft-badge">Lot généré</span>
+        <h2>{{ batch.completed or batch.pages|length }} / {{ batch.total or batch.pages|length }} pages prêtes</h2>
+        {% if batch.errors %}
+        <p class="alert alert--warn">{{ batch.errors|length }} erreur(s) : {% for e in batch.errors %}{{ e.topic }} ; {% endfor %}</p>
+        {% endif %}
+      </div>
+      <ul class="batch-list">
+        {% for p in batch.pages %}
+        <li class="batch-list__item">
+          <strong>{{ p.title }}</strong>
+          <span class="muted">/seo/{{ p.slug }} · {{ p.word_count or '?' }} mots</span>
+          <div class="batch-list__actions">
+            <form method="post" class="inline-form"><input type="hidden" name="action" value="load_batch_page"><input type="hidden" name="index" value="{{ loop.index0 }}"><button type="submit" class="btn btn-small btn-secondary">Aperçu</button></form>
+            <form method="post" class="inline-form"><input type="hidden" name="action" value="publish_batch_one"><input type="hidden" name="index" value="{{ loop.index0 }}"><button type="submit" class="btn btn-small btn-primary">Publier</button></form>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      <div class="draft-actions">
+        <form method="post" class="draft-action-form"><input type="hidden" name="action" value="publish_batch"><button type="submit" class="btn btn-primary">Tout publier ({{ batch.pages|length }})</button></form>
+        <form method="post" class="inline-form"><input type="hidden" name="action" value="clear_batch"><button type="submit" class="btn btn-secondary">Vider le lot</button></form>
+      </div>
+    </section>
+    {% endif %}
+
+    {% if draft and not draft.batch %}
     <section class="panel draft-panel">
       <div class="draft-panel__header">
-        <div>
-          <span class="draft-badge">{% if draft.manual %}Brouillon manuel{% else %}Aperçu IA{% endif %}</span>
-          <h2>{{ draft.title }}</h2>
-          <p class="draft-meta">
-            {% if draft.city %}<span>📍 {{ draft.city }}</span>{% endif %}
-            {% if draft.read_time %}<span>{{ draft.read_time }} min</span>{% endif %}
-            {% if draft.word_count %}<span>{{ draft.word_count }} mots</span>{% endif %}
-            <span>/seo/{{ draft.slug }}</span>
-            {% if draft.focus_keyword %}<span>🔑 {{ draft.focus_keyword }}</span>{% endif %}
-          </p>
-          {% if draft.target_keywords %}
-          <p class="draft-keywords"><strong>Mots-clés :</strong> {{ draft.target_keywords | join(' · ') }}</p>
-          {% endif %}
-        </div>
+        <span class="draft-badge">{% if draft.manual %}Manuel{% else %}Aperçu IA{% endif %}</span>
+        <h2>{{ draft.title }}</h2>
+        <p class="draft-meta">
+          <span>/seo/{{ draft.slug }}</span>
+          {% if draft.word_count %}<span>{{ draft.word_count }} mots</span>{% endif %}
+          {% if draft.focus_keyword %}<span>🔑 {{ draft.focus_keyword }}</span>{% endif %}
+        </p>
+        {% if draft.target_keywords %}<p class="draft-keywords">{{ draft.target_keywords | join(' · ') }}</p>{% endif %}
       </div>
-      {% if draft.image %}
-      <figure class="draft-cover">
-        <img src="{{ draft.image | static_v }}" alt="{{ draft.image_alt or draft.title }}" loading="lazy">
-      </figure>
-      {% endif %}
-      <p class="draft-excerpt"><strong>Meta :</strong> {{ draft.meta_description or draft.excerpt }}</p>
+      {% if draft.image %}<figure class="draft-cover"><img src="{{ draft.image | static_v }}" alt="" loading="lazy"></figure>{% endif %}
       <div class="preview-box"><div class="preview-content">{{ draft.content | safe }}</div></div>
-      <div class="draft-actions">
-        <form method="post" class="draft-action-form">
-          <input type="hidden" name="action" value="publish">
-          <button type="submit" class="btn btn-primary">Publier sur le site (/seo/{{ draft.slug }})</button>
-        </form>
-      </div>
+      <form method="post" class="draft-action-form"><input type="hidden" name="action" value="publish"><button type="submit" class="btn btn-primary">Publier</button></form>
     </section>
     {% endif %}
   </div>
 
   <aside class="admin-page-aside">
+    <section class="panel suggestions-panel">
+      <div class="suggestions-panel__head">
+        <h2>💡 Propositions SEO</h2>
+        <button type="button" class="btn btn-secondary btn-sm" id="refresh-seo-suggestions" {% if not groq_ok %}disabled{% endif %}>Idées IA</button>
+      </div>
+      <p class="muted suggestions-intro">Cliquez pour l'onglet « Une page » ou « + Matrice » pour ajouter au lot.</p>
+      <ul class="suggestions-list" id="seo-suggestions-list">
+        {% for s in suggestions %}
+        <li>
+          <button type="button" class="suggestion-card seo-suggestion-card"
+            data-topic="{{ s.topic }}"
+            data-keywords="{{ s.keywords | join(', ') }}"
+            data-city="{{ s.city }}"
+            data-type="{{ s.page_type }}">
+            <span class="suggestion-card__priority suggestion-card__priority--{{ s.priority }}">{{ s.priority }}</span>
+            <span class="suggestion-card__topic">{{ s.topic }}</span>
+            <span class="suggestion-card__meta">
+              {% if s.volume_hint %}<span>📈 {{ s.volume_hint }}</span>{% endif %}
+              {% if s.city %}<span>📍 {{ s.city }}</span>{% endif %}
+            </span>
+            {% if s.reason %}<span class="suggestion-card__reason">{{ s.reason }}</span>{% endif %}
+            <span class="suggestion-card__kw muted small">{{ s.keywords[:4] | join(' · ') }}</span>
+          </button>
+        </li>
+        {% endfor %}
+      </ul>
+      <button type="button" class="btn btn-secondary btn-sm btn-block" id="btn-suggestions-to-matrix">Ajouter les propositions à la matrice</button>
+    </section>
+
     <section class="panel">
-      <h2>Pages publiées</h2>
+      <h2>Publiées</h2>
       {% if pages %}
       <ul class="published-list">
         {% for p in pages %}
@@ -168,35 +282,15 @@
           <div>
             <a href="{{ url_for('seo_page', slug=p.slug) }}" target="_blank" rel="noopener"><strong>{{ p.title }}</strong></a>
             <span class="muted">/seo/{{ p.slug }}</span>
-            {% if p.target_keywords %}<br><span class="muted small">{{ p.target_keywords[:4] | join(' · ') }}</span>{% endif %}
           </div>
           <div class="published-list__actions">
-            <form method="post" class="inline-form">
-              <input type="hidden" name="action" value="edit">
-              <input type="hidden" name="slug" value="{{ p.slug }}">
-              <button type="submit" class="btn btn-small btn-secondary">Modifier</button>
-            </form>
-            <form method="post" class="inline-form" onsubmit="return confirm('Supprimer cette page SEO ?');">
-              <input type="hidden" name="action" value="delete">
-              <input type="hidden" name="slug" value="{{ p.slug }}">
-              <button type="submit" class="btn btn-small btn-danger">Suppr.</button>
-            </form>
+            <form method="post" class="inline-form"><input type="hidden" name="action" value="edit"><input type="hidden" name="slug" value="{{ p.slug }}"><button type="submit" class="btn btn-small btn-secondary">Edit</button></form>
+            <form method="post" class="inline-form" onsubmit="return confirm('Supprimer ?');"><input type="hidden" name="action" value="delete"><input type="hidden" name="slug" value="{{ p.slug }}"><button type="submit" class="btn btn-small btn-danger">×</button></form>
           </div>
         </li>
         {% endfor %}
       </ul>
-      {% else %}
-      <p class="muted">Aucune page SEO publiée — créez-en une avec l'IA ou le formulaire manuel.</p>
-      {% endif %}
-    </section>
-    <section class="panel panel--hint">
-      <h3>SEO & maillage</h3>
-      <ul class="hint-list">
-        <li>URL : <code>/seo/slug</code> (FR) et <code>/en/seo/slug</code> (EN)</li>
-        <li>Ajout automatique au <code>sitemap.xml</code></li>
-        <li>Maillage interne dans le contenu + blocs latéraux</li>
-        <li>Linh peut aussi générer et publier via l'assistant</li>
-      </ul>
+      {% else %}<p class="muted">Aucune page publiée.</p>{% endif %}
     </section>
   </aside>
 </div>

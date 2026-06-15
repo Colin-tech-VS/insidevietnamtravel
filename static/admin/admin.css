@@ -4060,3 +4060,20 @@ a.partners-stat:hover { border-color: var(--teal-light); color: var(--teal); }
   align-items: flex-start;
 }
 
+/* Pages SEO — matrice & lots */
+.matrix-builder { margin-bottom: 1.5rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--admin-border, #e5e7eb); }
+.matrix-builder--ai { border-bottom: none; }
+.matrix-panel { margin-top: 1.25rem; }
+.matrix-panel__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+.matrix-panel__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+.matrix-table-wrap { overflow-x: auto; }
+.matrix-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.matrix-table th, .matrix-table td { padding: 0.5rem 0.65rem; text-align: left; border-bottom: 1px solid var(--admin-border, #e5e7eb); vertical-align: top; }
+.matrix-table .matrix-kw { max-width: 220px; color: var(--admin-muted, #6b7280); font-size: 0.82rem; }
+.matrix-row--dup { opacity: 0.55; }
+.batch-panel .batch-list { list-style: none; padding: 0; margin: 0 0 1rem; }
+.batch-list__item { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; padding: 0.65rem 0; border-bottom: 1px solid var(--admin-border, #e5e7eb); }
+.batch-list__actions { display: flex; gap: 0.35rem; margin-left: auto; }
+.btn-block { width: 100%; margin-top: 0.5rem; }
+.suggestion-card__kw { display: block; margin-top: 0.25rem; }
+

@@ -132,7 +132,7 @@ SUGGESTIONS = [
 _ADMIN_PAGE_NOTES = {
     "admin.dashboard": ("Dashboard", "Vue d'ensemble : trafic, revenus, recommandations, choix du moteur IA (Groq/Mistral)."),
     "admin.guides": ("Guides IA", "Génération d'articles SEO par IA (ville + sujet + type), amélioration IA, rédaction manuelle, publication sur /blog."),
-    "admin.seo_pages_admin": ("Pages SEO", "Landing pages SEO multi-mots-clés (IA ou manuel), aperçu, publication sur /seo/slug, sitemap et maillage automatiques."),
+    "admin.seo_pages_admin": ("Pages SEO", "Landing pages SEO : propositions, matrice manuelle/IA de mots-clés, génération simple ou par lot (max 12), publication /seo/slug, sitemap et maillage auto."),
     "admin.destinations_admin": ("Destinations", "Création/édition des pages destinations (IA ou manuel), images WebP, choix de la section Nord/Centre/Sud, publication sur /<slug>."),
     "admin.map_admin": ("Carte", "Points d'intérêt et pins affiliés (hôtels, activités) sur les cartes interactives des destinations."),
     "admin.newsletter_admin": ("Newsletter", "Composition d'emails (IA ou manuel), envoi test / abonné / tous, gestion des abonnés, contact direct des partenaires."),
@@ -718,7 +718,9 @@ def _system_prompt() -> str:
         "Pour un simple remplacement sans choix, update_image avec query suffit (recherche auto)\n"
         '- {"name":"audit_site","params":{}} — relancer l\'audit complet et présenter les résultats\n'
         '- {"name":"generate_guide","params":{"city":"…","topic":"…","guide_type":"article blog"}} — guide SEO (job en arrière-plan)\n'
-        '- {"name":"generate_seo_page","params":{"topic":"…","keywords":"mot1, mot2, mot3","city":"…","page_type":"landing"}} — page SEO landing multi-mots-clés sur /seo/slug (job en arrière-plan)\n'
+        '- {"name":"generate_seo_page","params":{"topic":"…","keywords":"mot1, mot2, mot3","city":"…","page_type":"landing"}} — une page SEO landing sur /seo/slug (job arrière-plan, SEO max)\n'
+        '- {"name":"generate_seo_matrix","params":{"brief":"…","count":10,"city":"…"}} — matrice de pages SEO (clusters mots-clés) sans rédiger encore\n'
+        '- {"name":"generate_seo_batch","params":{"rows":[{"topic":"…","keywords":["…"],"city":"…","page_type":"landing"}]}} — générer PLUSIEURS pages SEO d\'un coup (max 12, job long)\n'
         '- {"name":"generate_destination","params":{"city":"…","notes":"…"}} — page destination (job en arrière-plan)\n'
         '- {"name":"generate_newsletter","params":{"topic":"…","email_type":"actualite","notes":"…"}} — email newsletter (job en arrière-plan)\n'
         '- {"name":"generate_social_post","params":{"page_id":"…","brief":"…","network":"facebook|pinterest|reddit|telegram|x|threads|instagram"}} — post réseau social rédigé selon les codes du réseau choisi (network optionnel, facebook par défaut ; page_id du bloc PAGES PUBLIQUES, ou brief libre)\n'
@@ -733,7 +735,7 @@ def _system_prompt() -> str:
         '- {"name":"update_images","params":{"items":[{"target":"article|destination","slug":"…","query":"…","image_url":"…","alt":"…"},…]}} — mettre à jour PLUSIEURS images en UNE SEULE action (une seule confirmation, puis job en arrière-plan image par image, sans doublon de photo). Dès que l\'admin demande plus d\'une image (ex. « change les bannières de toutes les destinations »), utilise update_images, JAMAIS update_image en boucle. Raccourci : {"all_destinations":true,"query":"ambiance optionnelle (ex. sunset)"} = nouvelle bannière pour CHAQUE destination publiée. query optionnelle par item (mots-clés auto sinon)\n'
         '- {"name":"add_map_points","params":{"city":"slug ou nom de la ville","points":[{"title":"…","address":"adresse complète","kind":"restaurant","desc":"…","price_hint":"…","image_url":"https://…"}]}} — ajouter des points sur la carte interactive : restaurants, bars, hôtels, activités, lieux… kind de préférence ∈ hotel|activity|restaurant|bar|poi|service, mais tout autre type est accepté (ex. « spa », « marché nocturne ») : il est créé automatiquement avec sa couleur et sa légende ; address = adresse la plus précise possible (géocodée via OpenStreetMap), sinon « Nom, Ville » ; image_url facultative (lien DIRECT vers une photo du lieu) — sans elle une photo est cherchée automatiquement dans les banques d\'images libres (confirmation auto)\n'
         '- {"name":"update_map_images","params":{"title":"nom du point","city":"ville","image_url":"https://… ou mots-clés"}} ou {"all_missing":true} — mettre à jour la photo d\'un point existant de la carte (URL directe, mots-clés, ou vide = recherche auto), ou trouver une photo pour TOUS les points sans image (job en arrière-plan) (confirmation auto)\n'
-        '- {"name":"publish_draft","params":{"kind":"article"}} ou {"kind":"destination"} ou {"kind":"seo_page"} — publier le brouillon en attente (confirmation auto)\n'
+        '- {"name":"publish_draft","params":{"kind":"article|destination|seo_page|seo_batch"}} — publier le brouillon en attente (confirmation auto)\n'
         '- {"name":"publish_facebook","params":{}} — publier le dernier post généré sur Facebook (confirmation auto)\n'
         '- {"name":"publish_social","params":{"network":"…"}} — publier le dernier post généré sur le réseau indiqué (doit être connecté sur /admin/social ; confirmation auto)\n'
         '- {"name":"send_newsletter","params":{"scope":"test","email":"…"}} ou {"scope":"all"} — envoyer la newsletter (confirmation auto)\n'
@@ -883,6 +885,8 @@ def execute_confirmation(token: str) -> dict:
         return _exec_publish_article()
     if action == "publish_seo_page":
         return _exec_publish_seo_page()
+    if action == "publish_seo_batch":
+        return _exec_publish_seo_batch()
     if action == "publish_destination":
         return _exec_publish_destination()
     if action == "publish_facebook":
@@ -994,6 +998,13 @@ def _get_draft(kind: str) -> dict | None:
     return draft_store.get_draft(session.get(_draft_token_key(kind)))
 
 
+def _store_draft(kind: str, draft: dict) -> None:
+    from admin import draft_store
+    token = draft_store.new_token()
+    draft_store.set_draft(token, draft)
+    session[_draft_token_key(kind)] = token
+
+
 def _start_job(kind: str, fn, initial_phase: str) -> None:
     from admin import draft_store
     from admin import ai_client
@@ -1006,7 +1017,7 @@ def job_status(kind: str) -> dict:
     """Statut d'un job de génération + carte de confirmation quand c'est prêt."""
     from admin import draft_store
 
-    if kind not in ("article", "destination", "newsletter", "social", "seo_page"):
+    if kind not in ("article", "destination", "newsletter", "social", "seo_page", "seo_batch"):
         return {"status": "missing", "error": "", "phase": ""}
     st = draft_store.status(session.get(_draft_token_key(kind)))
     result = {"status": st["status"], "error": st["error"], "phase": st["phase"], "kind": kind}
@@ -1025,6 +1036,17 @@ def _describe_draft(kind: str, draft: dict) -> dict:
             "confirm": create_confirmation(
                 "publish_article", {}, "Publier l'article sur le site ?",
                 f"« {title} » sera publié sur /blog/{draft.get('slug', '?')} (FR + EN).",
+            ),
+        }
+    if kind == "seo_batch":
+        n = len((draft or {}).get("pages") or [])
+        total = (draft or {}).get("total") or n
+        return {
+            "summary": f"Lot SEO prêt : {n}/{total} page(s) générée(s) — aperçu et publication sur /admin/seo-pages.",
+            "preview_url": "/admin/seo-pages",
+            "confirm": create_confirmation(
+                "publish_seo_batch", {}, f"Publier les {n} pages SEO du lot ?",
+                f"{n} landing(s) seront publiées sur /seo/… (FR+EN, sitemap).",
             ),
         }
     if kind == "seo_page":
@@ -1108,6 +1130,30 @@ def _exec_publish_seo_page() -> dict:
         add_seo_page(page)
     draft_store.clear(session.pop(_draft_token_key("seo_page"), None))
     return {"message": f"✅ Page SEO publiée : /seo/{page['slug']}", "url": f"/seo/{page['slug']}"}
+
+
+def _exec_publish_seo_batch() -> dict:
+    from admin import draft_store
+    from admin.image_service import attach_image_to_article
+    from admin.seo_pages_service import add_seo_page
+
+    batch = _get_draft("seo_batch") or {}
+    pages = list(batch.get("pages") or [])
+    if not pages:
+        raise ValueError("Aucun lot SEO — générez d'abord un batch.")
+    published = 0
+    urls: list[str] = []
+    for page in pages:
+        if not page.get("image"):
+            page.update(attach_image_to_article(page, page.get("image_prompt")))
+        add_seo_page(page)
+        published += 1
+        urls.append(f"/seo/{page['slug']}")
+    draft_store.clear(session.pop(_draft_token_key("seo_batch"), None))
+    return {
+        "message": f"✅ {published} page(s) SEO publiée(s).",
+        "urls": urls[:5],
+    }
 
 
 def _exec_publish_destination() -> dict:
@@ -1685,6 +1731,52 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
 
         _start_job("seo_page", _gen, "Analyse des mots-clés SEO…")
         return {"job": {"kind": "seo_page"}}
+
+    if name == "generate_seo_matrix":
+        from admin import ai_client
+        from admin.seo_keyword_matrix import build_manual_matrix, generate_matrix_ai
+
+        brief = (params.get("brief") or "").strip()
+        city = (params.get("city") or "").strip()
+        axis_a = (params.get("axis_a") or "").strip()
+        axis_b = (params.get("axis_b") or "").strip()
+        try:
+            count = int(params.get("count") or 10)
+        except ValueError:
+            count = 10
+        if axis_a and axis_b:
+            rows = build_manual_matrix(axis_a, axis_b, city=city, page_type=params.get("page_type") or "landing")
+        else:
+            if not ai_client.is_configured():
+                raise ValueError("Clé IA requise pour générer une matrice par IA.")
+            rows = generate_matrix_ai(brief=brief, count=count, city=city)
+        _store_draft("seo_matrix", {"matrix": True, "rows": rows})
+        topics = ", ".join(f"« {r.get('topic', '')[:40]} »" for r in rows[:4])
+        return {
+            "message": f"Matrice SEO prête : {len(rows)} lignes ({topics}{'…' if len(rows) > 4 else ''}).",
+            "actions": [{"label": "Ouvrir la matrice", "url": "/admin/seo-pages"}],
+            "matrix_rows": len(rows),
+        }
+
+    if name == "generate_seo_batch":
+        from admin import groq_seo_page
+        from admin.seo_keyword_matrix import clamp_batch_rows
+
+        rows = params.get("rows")
+        if not rows:
+            matrix_draft = _get_draft("seo_matrix") or {}
+            rows = matrix_draft.get("rows") or []
+        if not isinstance(rows, list) or not rows:
+            raise ValueError("Matrice vide — lance generate_seo_matrix d'abord ou passe rows.")
+        selected = [r for r in rows if r.get("selected", True) and not r.get("duplicate")]
+        if not selected:
+            selected = rows
+
+        def _batch(report):
+            return groq_seo_page.generate_seo_batch(clamp_batch_rows(selected), progress=report)
+
+        _start_job("seo_batch", _batch, "Préparation du lot SEO…")
+        return {"job": {"kind": "seo_batch"}}
 
     if name == "generate_destination":
         city = (params.get("city") or "").strip()
@@ -2361,7 +2453,8 @@ def _normalize_reply(data) -> dict:
 
 
 _KNOWN_TOOLS = {
-    "web_search", "search_images", "audit_site", "generate_guide", "generate_seo_page", "generate_destination",
+    "web_search", "search_images", "audit_site", "generate_guide", "generate_seo_page",
+    "generate_seo_matrix", "generate_seo_batch", "generate_destination",
     "generate_newsletter", "generate_social_post", "set_destination_region",
     "update_article", "add_category", "improve_article", "update_destination",
     "improve_destination", "update_pages", "update_image", "update_images",

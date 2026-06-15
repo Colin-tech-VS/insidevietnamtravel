@@ -470,9 +470,17 @@ def _generate_seo_page_draft(report, topic: str, keywords: str, city: str, page_
     return page
 
 
+def _generate_seo_batch_draft(report, rows: list[dict]) -> dict:
+    from admin import groq_seo_page
+    from admin.seo_keyword_matrix import clamp_batch_rows
+
+    return groq_seo_page.generate_seo_batch(clamp_batch_rows(rows), progress=report)
+
+
 @admin_bp.route("/seo-pages", methods=["GET", "POST"])
 @login_required
 def seo_pages_admin():
+    from admin.seo_page_suggestions import get_seo_page_suggestions
     from admin.seo_pages_service import (
         add_seo_page,
         build_manual_seo_page,
@@ -500,6 +508,58 @@ def seo_pages_admin():
                     add_seo_page(page)
                     flash(f"Page SEO publiée : /seo/{page['slug']}", "success")
                 _clear_draft("seo_page")
+                return redirect(url_for("admin.seo_pages_admin"))
+            elif action == "publish_batch":
+                batch = _get_draft("seo_batch") or {}
+                pages = batch.get("pages") or []
+                if not pages:
+                    flash("Aucun lot de pages à publier.", "error")
+                else:
+                    published = 0
+                    for page in pages:
+                        try:
+                            if not page.get("image"):
+                                page.update(attach_image_to_article(page, page.get("image_prompt")))
+                            add_seo_page(page)
+                            published += 1
+                        except ValueError as exc:
+                            flash(f"Non publié « {page.get('title', '?')} » : {exc}", "error")
+                    _clear_draft("seo_batch")
+                    flash(f"{published} page(s) SEO publiée(s) sur le site.", "success")
+                    return redirect(url_for("admin.seo_pages_admin"))
+            elif action == "publish_batch_one":
+                batch = _get_draft("seo_batch") or {}
+                pages = list(batch.get("pages") or [])
+                try:
+                    idx = int(request.form.get("index", "-1"))
+                except ValueError:
+                    idx = -1
+                if idx < 0 or idx >= len(pages):
+                    flash("Page du lot introuvable.", "error")
+                else:
+                    page = pages.pop(idx)
+                    if not page.get("image"):
+                        page.update(attach_image_to_article(page, page.get("image_prompt")))
+                    add_seo_page(page)
+                    if pages:
+                        _store_draft("seo_batch", {**batch, "pages": pages})
+                    else:
+                        _clear_draft("seo_batch")
+                    flash(f"Page publiée : /seo/{page['slug']}", "success")
+                    return redirect(url_for("admin.seo_pages_admin"))
+            elif action == "load_batch_page":
+                batch = _get_draft("seo_batch") or {}
+                pages = batch.get("pages") or []
+                try:
+                    idx = int(request.form.get("index", "-1"))
+                except ValueError:
+                    idx = -1
+                if 0 <= idx < len(pages):
+                    _store_draft("seo_page", pages[idx])
+                    flash("Page chargée dans l'aperçu — relisez puis publiez.", "success")
+            elif action == "clear_batch":
+                _clear_draft("seo_batch")
+                flash("Lot de pages SEO supprimé.", "success")
                 return redirect(url_for("admin.seo_pages_admin"))
             elif action == "edit":
                 slug = (request.form.get("slug") or "").strip()
@@ -544,14 +604,18 @@ def seo_pages_admin():
             flash(ai_client.friendly_error(e), "error")
 
     draft = _get_draft("seo_page")
+    batch = _get_draft("seo_batch")
     return render_template(
         "admin/seo_pages.html",
         draft=draft,
+        batch=batch if (batch or {}).get("batch") else None,
+        suggestions=get_seo_page_suggestions(use_ai=False),
         pages=get_seo_pages()[:30],
         groq_ok=ai_client.is_configured(),
         ai_provider_label=ai_client.provider_label(),
         vietnam_cities=VIETNAM_CITIES,
         draft_is_manual=bool((draft or {}).get("manual")),
+        max_batch=12,
     )
 
 
@@ -583,6 +647,87 @@ def api_generate_seo_page():
 @login_required
 def api_seo_page_draft_status():
     return jsonify(_draft_status("seo_page"))
+
+
+@admin_bp.route("/api/seo-pages/suggestions", methods=["POST"])
+@login_required
+def api_seo_page_suggestions():
+    from admin.seo_page_suggestions import get_seo_page_suggestions
+
+    if not ai_client.is_configured():
+        return jsonify({"ok": False, "error": "Aucune clé IA configurée"}), 400
+    try:
+        return jsonify({"ok": True, "suggestions": get_seo_page_suggestions(use_ai=True)})
+    except Exception as e:
+        return jsonify({"ok": False, "error": ai_client.friendly_error(e)}), 500
+
+
+@admin_bp.route("/api/seo-pages/matrix/build", methods=["POST"])
+@login_required
+def api_seo_matrix_build():
+    from admin.seo_keyword_matrix import build_manual_matrix
+
+    data = request.get_json(silent=True) or {}
+    try:
+        rows = build_manual_matrix(
+            data.get("axis_a") or "",
+            data.get("axis_b") or "",
+            city=(data.get("city") or "").strip(),
+            page_type=(data.get("page_type") or "landing").strip(),
+        )
+        return jsonify({"ok": True, "rows": rows})
+    except ValueError as e:
+        return jsonify({"ok": False, "error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"ok": False, "error": ai_client.friendly_error(e)}), 500
+
+
+@admin_bp.route("/api/seo-pages/matrix/generate", methods=["POST"])
+@login_required
+def api_seo_matrix_generate():
+    from admin.seo_keyword_matrix import generate_matrix_ai
+
+    if not ai_client.is_configured():
+        return jsonify({"ok": False, "error": "Aucune clé IA configurée"}), 400
+    data = request.get_json(silent=True) or {}
+    brief = (data.get("brief") or "").strip()
+    city = (data.get("city") or "").strip()
+    try:
+        count = int(data.get("count") or 12)
+    except ValueError:
+        count = 12
+    if city and city not in ALL_CITY_VALUES:
+        return jsonify({"ok": False, "error": "Ville invalide"}), 400
+    try:
+        rows = generate_matrix_ai(brief=brief, count=count, city=city)
+        return jsonify({"ok": True, "rows": rows})
+    except ValueError as e:
+        return jsonify({"ok": False, "error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"ok": False, "error": ai_client.friendly_error(e)}), 500
+
+
+@admin_bp.route("/api/seo-pages/batch-generate", methods=["POST"])
+@login_required
+def api_seo_batch_generate():
+    if not ai_client.is_configured():
+        return jsonify({"ok": False, "error": "Aucune clé IA configurée"}), 400
+    data = request.get_json(silent=True) or {}
+    rows = data.get("rows") or []
+    if not isinstance(rows, list) or not rows:
+        return jsonify({"ok": False, "error": "Matrice vide — sélectionnez des lignes."}), 400
+    _start_draft_job(
+        "seo_batch",
+        lambda report: _generate_seo_batch_draft(report, rows),
+        initial_phase="Préparation du lot SEO…",
+    )
+    return jsonify({"ok": True, "started": True})
+
+
+@admin_bp.route("/api/seo-pages/batch-status")
+@login_required
+def api_seo_batch_status():
+    return jsonify(_draft_status("seo_batch"))
 
 
 @admin_bp.route("/api/content/job-status")
