@@ -290,11 +290,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     if (step === 4) {
-      const hlField = document.getElementById('profile_highlights');
-      const lines = (hlField?.value || '').split(/\n+/).map((s) => s.trim()).filter(Boolean);
+      const hlInputs = Array.from(document.querySelectorAll('[data-hl-input]'));
+      const lines = hlInputs.map((el) => el.value.trim()).filter(Boolean);
       if (lines.length > 0 && lines.length < 3) {
-        showError('Minimum 3 points pour « Pourquoi choisir ce partenaire ».');
-        hlField?.focus();
+        showError('Minimum 3 atouts pour « Pourquoi choisir ce partenaire ».');
+        hlInputs.find((el) => !el.value.trim())?.focus();
         return false;
       }
     }

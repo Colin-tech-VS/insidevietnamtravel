@@ -67,7 +67,7 @@
       </span>
       <div class="partner-vitrine-panel__intro">
         <h3 class="partner-vitrine-panel__title" id="vitrine-hl-title">Pourquoi choisir ce partenaire</h3>
-        <p class="partner-vitrine-panel__lead">3 à 8 points courts — une ligne par atout, affichés sur votre page publique.</p>
+        <p class="partner-vitrine-panel__lead">3 à 8 atouts courts — un encadré par point, affichés sur votre fiche publique.</p>
       </div>
       <span class="partner-vitrine-panel__status{% if vitrine.highlights_ok %} partner-vitrine-panel__status--ok{% endif %}" id="vitrine-hl-status">
         {{ vitrine.highlights_count }} point{{ 's' if vitrine.highlights_count != 1 else '' }}
@@ -75,10 +75,31 @@
     </header>
 
     <div class="partner-vitrine-highlights-edit">
-      <label class="sr-only" for="profile_highlights">Points forts</label>
-      <textarea id="profile_highlights" name="profile_highlights" rows="7" maxlength="2000"
-                class="partner-vitrine-highlights-edit__textarea"
-                placeholder="Guide francophone à Hô Chi Minh-Ville&#10;Visites privées et sur mesure&#10;Street food et quartiers authentiques">{{ vitrine.highlights_text }}</textarea>
+      <div class="partner-vitrine-hl-fields" id="partner-hl-fields">
+        {% for item in vitrine.highlights_items %}
+        <div class="partner-vitrine-hl-field" data-hl-field>
+          <label class="partner-vitrine-hl-field__label" for="profile-hl-{{ loop.index }}">
+            <span class="partner-vitrine-hl-field__num" aria-hidden="true">{{ loop.index }}</span>
+            <span class="partner-vitrine-hl-field__title">Atout {{ loop.index }}</span>
+          </label>
+          <div class="partner-vitrine-hl-field__wrap">
+            <input type="text"
+                   id="profile-hl-{{ loop.index }}"
+                   name="profile_highlights[]"
+                   class="partner-vitrine-hl-field__input"
+                   value="{{ item }}"
+                   maxlength="220"
+                   placeholder="{% if loop.index == 1 %}Ex. : guide francophone à Hô Chi Minh-Ville{% elif loop.index == 2 %}Ex. : visites privées et sur mesure{% else %}Un atout concret pour vos voyageurs{% endif %}"
+                   data-hl-input>
+            <button type="button" class="partner-vitrine-hl-field__remove" data-hl-remove aria-label="Supprimer cet atout"{% if loop.index <= 3 %} hidden{% endif %}>×</button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <button type="button" class="btn btn-ghost btn-sm partner-vitrine-hl-add" id="partner-hl-add"{% if vitrine.highlights_items|length >= 8 %} hidden{% endif %}>
+        + Ajouter un atout
+      </button>
 
       <div class="partner-vitrine-hl-meter{% if vitrine.highlights_ok %} is-complete{% endif %}" id="vitrine-hl-meter">
         <div class="partner-vitrine-hl-meter__track" role="progressbar"
@@ -88,7 +109,7 @@
         </div>
         <p class="partner-vitrine-hl-meter__label">
           <span id="vitrine-hl-count">{{ vitrine.highlights_count }}</span> / 8 points
-          <span class="partner-vitrine-hl-meter__min" id="vitrine-hl-min-hint">{% if vitrine.highlights_ok %}✓ minimum atteint{% else %}· minimum 3 lignes{% endif %}</span>
+          <span class="partner-vitrine-hl-meter__min" id="vitrine-hl-min-hint">{% if vitrine.highlights_ok %}✓ minimum atteint{% else %}· minimum 3 atouts{% endif %}</span>
         </p>
       </div>
 

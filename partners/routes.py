@@ -34,6 +34,7 @@ from admin.partner_portal_service import (
     partner_page_can_preview,
     partner_page_publication,
     partner_page_workflow,
+    profile_highlights_text_from_form,
     publish_partner_page,
     release_page_from_ai_review,
     request_partner_password_reset,
@@ -264,7 +265,10 @@ def dashboard():
                 raise ValueError("Photo trop volumineuse (max 5 Mo).")
             save_page_vitrine(
                 partner["id"],
-                profile_highlights_text=request.form.get("profile_highlights", ""),
+                profile_highlights_text=profile_highlights_text_from_form(
+                    request.form.getlist("profile_highlights[]"),
+                    fallback=request.form.get("profile_highlights", ""),
+                ),
                 image_url=request.form.get("image_url", ""),
                 image_file=file_bytes,
                 clear_image=request.form.get("clear_image") == "1",
@@ -316,7 +320,10 @@ def page_edit():
                     raise ValueError("Photo trop volumineuse (max 5 Mo).")
                 page = save_page_vitrine(
                     partner["id"],
-                    profile_highlights_text=request.form.get("profile_highlights", ""),
+                    profile_highlights_text=profile_highlights_text_from_form(
+                    request.form.getlist("profile_highlights[]"),
+                    fallback=request.form.get("profile_highlights", ""),
+                ),
                     image_url=request.form.get("image_url", ""),
                     image_file=file_bytes,
                     clear_image=request.form.get("clear_image") == "1",
@@ -381,7 +388,10 @@ def page_vitrine():
                 raise ValueError("Photo trop volumineuse (max 5 Mo).")
             save_page_vitrine(
                 partner["id"],
-                profile_highlights_text=request.form.get("profile_highlights", ""),
+                profile_highlights_text=profile_highlights_text_from_form(
+                    request.form.getlist("profile_highlights[]"),
+                    fallback=request.form.get("profile_highlights", ""),
+                ),
                 image_url=request.form.get("image_url", ""),
                 image_file=file_bytes,
                 clear_image=request.form.get("clear_image") == "1",

@@ -265,6 +265,7 @@ def page_vitrine_checklist(page: dict | None) -> dict:
             "highlights_count": 0,
             "highlights_ok": False,
             "highlights_text": "",
+            "highlights_items": ["", "", ""],
             "can_edit": False,
             "checklist": [],
             "image_url": "",
@@ -280,6 +281,13 @@ def page_vitrine_checklist(page: dict | None) -> dict:
         highlights_text = str(extra.get("highlights") or "").replace(",", "\n")
     else:
         highlights_text = ""
+    base_items = stored if stored else (highlights[:8] if highlights else [])
+    if not base_items and extra.get("highlights"):
+        base_items = _highlights_from_extra({"highlights": extra.get("highlights")})
+    highlights_items = list(base_items[:8])
+    slot_count = max(3, min(8, len(highlights_items) if highlights_items else 3))
+    while len(highlights_items) < slot_count:
+        highlights_items.append("")
     has_photo = bool((page.get("image_url") or "").strip())
     can_edit = page.get("status") != "ai_review"
     checklist = [
@@ -307,6 +315,7 @@ def page_vitrine_checklist(page: dict | None) -> dict:
         "highlights_count": len(highlights),
         "highlights_ok": len(highlights) >= 3,
         "highlights_text": highlights_text,
+        "highlights_items": highlights_items,
         "can_edit": can_edit,
         "checklist": checklist,
         "image_url": (page.get("image_url") or "").strip(),
@@ -340,6 +349,14 @@ def _store_partner_image(slug: str, *, file_bytes: bytes | None = None, image_ur
     else:
         raise ValueError("Photo manquante — uploadez un fichier ou indiquez une URL.")
     return f"/static/images/partners/{slug}.webp"
+
+
+def profile_highlights_text_from_form(raw_list: list[str] | None, *, fallback: str = "") -> str:
+    """Combine les champs profile_highlights[] du formulaire vitrine."""
+    lines = [str(v).strip() for v in (raw_list or []) if str(v).strip()]
+    if lines:
+        return "\n".join(lines)
+    return (fallback or "").strip()
 
 
 def save_page_vitrine(

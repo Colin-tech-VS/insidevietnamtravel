@@ -4919,6 +4919,98 @@ a.article-category:hover { text-decoration: underline; }
   transition: border-color var(--transition), box-shadow var(--transition);
 }
 
+.partner-vitrine-hl-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.partner-vitrine-hl-field {
+  padding: 0.85rem 0.95rem;
+  border-radius: 10px;
+  border: 1px solid var(--rice-dark, #e8e4dc);
+  background: #fff;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.partner-vitrine-hl-field:focus-within {
+  border-color: var(--teal-light, #2a6b67);
+  box-shadow: 0 0 0 3px rgba(27, 77, 74, 0.1);
+}
+
+.partner-vitrine-hl-field__label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.45rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.partner-vitrine-hl-field__num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--teal, #1b4d4a);
+  background: rgba(27, 77, 74, 0.1);
+}
+
+.partner-vitrine-hl-field__wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.partner-vitrine-hl-field__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  padding: 0.15rem 0;
+  font: inherit;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: var(--ink);
+  background: transparent;
+}
+
+.partner-vitrine-hl-field__input:focus { outline: none; }
+
+.partner-vitrine-hl-field__input::placeholder {
+  color: var(--ink-muted, #7a7772);
+  opacity: 0.85;
+}
+
+.partner-vitrine-hl-field__remove {
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid var(--rice-dark, #e8e4dc);
+  border-radius: 8px;
+  background: var(--rice, #faf8f4);
+  color: var(--ink-muted, #7a7772);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+
+.partner-vitrine-hl-field__remove:hover {
+  background: #fff;
+  color: #b42318;
+  border-color: rgba(180, 35, 24, 0.35);
+}
+
+.partner-vitrine-hl-add {
+  margin-top: 0.35rem;
+  align-self: flex-start;
+}
+
 .partner-vitrine-highlights-edit__textarea:focus {
   outline: none;
   border-color: var(--teal-light, #2a6b67);
