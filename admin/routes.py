@@ -451,6 +451,140 @@ def api_guide_draft_status():
     return jsonify(_draft_status("article"))
 
 
+# ── Pages SEO landing ───────────────────────────────────────────────────
+
+def _generate_seo_page_draft(report, topic: str, keywords: str, city: str, page_type: str) -> dict:
+    from admin import groq_seo_page
+    from admin.seo_pages_service import _parse_keywords
+
+    page = groq_seo_page.generate_seo_page(
+        topic=topic,
+        keywords=_parse_keywords(keywords),
+        city=city,
+        page_type=page_type,
+        progress=report,
+    )
+    report("Génération de l'image Vietnam (WebP)…")
+    page.update(attach_image_to_article(page, page.get("image_prompt")))
+    report("Finalisation de la page SEO…")
+    return page
+
+
+@admin_bp.route("/seo-pages", methods=["GET", "POST"])
+@login_required
+def seo_pages_admin():
+    from admin.seo_pages_service import (
+        add_seo_page,
+        build_manual_seo_page,
+        delete_seo_page,
+        get_seo_page_raw,
+        get_seo_pages,
+        replace_seo_page,
+    )
+
+    if request.method == "POST":
+        action = request.form.get("action")
+        try:
+            if action == "generate":
+                flash("Utilisez le bouton « Générer » de l'onglet IA (génération en arrière-plan).", "error")
+                return redirect(url_for("admin.seo_pages_admin"))
+            elif action == "publish" and _get_draft("seo_page"):
+                page = _get_draft("seo_page")
+                if not page.get("image") or page.get("image_placeholder"):
+                    page.update(attach_image_to_article(page, page.get("image_prompt")))
+                editing_slug = (page.pop("editing_slug", None) or "").strip()
+                if editing_slug:
+                    replace_seo_page(editing_slug, page)
+                    flash(f"Page SEO mise à jour : /seo/{page['slug']}", "success")
+                else:
+                    add_seo_page(page)
+                    flash(f"Page SEO publiée : /seo/{page['slug']}", "success")
+                _clear_draft("seo_page")
+                return redirect(url_for("admin.seo_pages_admin"))
+            elif action == "edit":
+                slug = (request.form.get("slug") or "").strip()
+                page = get_seo_page_raw(slug)
+                if not page:
+                    flash("Page SEO introuvable.", "error")
+                else:
+                    draft = {**page, "manual": True, "editing_slug": slug}
+                    _store_draft("seo_page", draft)
+                    flash(f"« {page.get('title', slug)} » chargé — modifiez puis publiez.", "success")
+            elif action == "delete":
+                slug = (request.form.get("slug") or "").strip()
+                delete_seo_page(slug)
+                flash(f"Page SEO supprimée : {slug}", "success")
+                return redirect(url_for("admin.seo_pages_admin"))
+            elif action in ("manual_draft", "manual_publish"):
+                page = build_manual_seo_page(request.form)
+                editing_slug = (request.form.get("editing_slug") or "").strip()
+                existing = get_seo_page_raw(editing_slug) if editing_slug else None
+                if existing:
+                    for key in ("image", "image_photo_id", "image_alt", "image_source_url", "image_placeholder"):
+                        if existing.get(key) and not page.get(key):
+                            page[key] = existing[key]
+                    page["editing_slug"] = editing_slug
+                _apply_form_cover_image(page, is_destination=False)
+                if action == "manual_publish":
+                    if editing_slug:
+                        page.pop("editing_slug", None)
+                        replace_seo_page(editing_slug, page)
+                        _clear_draft("seo_page")
+                        flash(f"Page SEO mise à jour : /seo/{page['slug']}", "success")
+                        return redirect(url_for("admin.seo_pages_admin"))
+                    add_seo_page(page)
+                    _clear_draft("seo_page")
+                    flash(f"Page SEO publiée : /seo/{page['slug']}", "success")
+                    return redirect(url_for("admin.seo_pages_admin"))
+                _store_draft("seo_page", page)
+                flash("Brouillon enregistré — vérifiez l'aperçu.", "success")
+        except ValueError as e:
+            flash(str(e), "error")
+        except Exception as e:
+            flash(ai_client.friendly_error(e), "error")
+
+    draft = _get_draft("seo_page")
+    return render_template(
+        "admin/seo_pages.html",
+        draft=draft,
+        pages=get_seo_pages()[:30],
+        groq_ok=ai_client.is_configured(),
+        ai_provider_label=ai_client.provider_label(),
+        vietnam_cities=VIETNAM_CITIES,
+        draft_is_manual=bool((draft or {}).get("manual")),
+    )
+
+
+@admin_bp.route("/api/seo-pages/generate", methods=["POST"])
+@login_required
+def api_generate_seo_page():
+    data = request.get_json(silent=True) or {}
+    topic = (data.get("topic") or "").strip()
+    keywords = (data.get("keywords") or "").strip()
+    city = (data.get("city") or "").strip()
+    page_type = (data.get("page_type") or "landing").strip()
+
+    if not ai_client.is_configured():
+        return jsonify({"ok": False, "error": "Aucune clé IA configurée"}), 400
+    if not topic and not keywords:
+        return jsonify({"ok": False, "error": "Sujet ou mots-clés obligatoires"}), 400
+    if city and city not in ALL_CITY_VALUES:
+        return jsonify({"ok": False, "error": "Ville invalide"}), 400
+
+    _start_draft_job(
+        "seo_page",
+        lambda report: _generate_seo_page_draft(report, topic, keywords, city, page_type),
+        initial_phase="Analyse des mots-clés SEO…",
+    )
+    return jsonify({"ok": True, "started": True})
+
+
+@admin_bp.route("/api/seo-pages/draft-status")
+@login_required
+def api_seo_page_draft_status():
+    return jsonify(_draft_status("seo_page"))
+
+
 @admin_bp.route("/api/content/job-status")
 @login_required
 def api_content_job_status():

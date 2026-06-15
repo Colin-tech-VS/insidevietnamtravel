@@ -89,6 +89,9 @@
           <a href="{{ url_for('admin.guides') }}" class="admin-nav__link {% if request.endpoint == 'admin.guides' %}is-active{% endif %}">
             <span class="admin-nav__icon" aria-hidden="true">✦</span> Guides IA
           </a>
+          <a href="{{ url_for('admin.seo_pages_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.seo_pages_admin' %}is-active{% endif %}">
+            <span class="admin-nav__icon" aria-hidden="true">◎</span> Pages SEO
+          </a>
           <a href="{{ url_for('admin.destinations_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.destinations_admin' %}is-active{% endif %}">
             <span class="admin-nav__icon" aria-hidden="true">🏙</span> Destinations
           </a>

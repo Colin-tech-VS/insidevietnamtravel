@@ -98,6 +98,19 @@ def _partner_page_entries() -> list[tuple[str, str | None, str | None]]:
     return entries
 
 
+def _seo_page_entries() -> list[tuple[str, str | None, str | None]]:
+    from admin.seo_pages_service import get_published_seo_pages
+
+    entries: list[tuple[str, str | None, str | None]] = []
+    for page in get_published_seo_pages():
+        slug = (page.get("slug") or "").strip()
+        if not slug:
+            continue
+        lastmod = page.get("updated_at") or page.get("published_at") or page.get("date")
+        entries.append((slug, lastmod, _abs_image(page.get("image"))))
+    return entries
+
+
 SITEMAP_DYNAMIC: dict[str, dict] = {
     "article": {
         "priority": "0.8",
@@ -134,6 +147,12 @@ SITEMAP_DYNAMIC: dict[str, dict] = {
         "changefreq": "monthly",
         "param": "slug",
         "items": _partner_page_entries,
+    },
+    "seo_page": {
+        "priority": "0.78",
+        "changefreq": "weekly",
+        "param": "slug",
+        "items": _seo_page_entries,
     },
 }
 

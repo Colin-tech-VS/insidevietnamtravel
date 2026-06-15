@@ -280,6 +280,7 @@ ROUTE_PATHS: dict[str, dict[str, str]] = {
     "newsletter_subscribe": {"fr": "/newsletter", "en": "/en/newsletter"},
     "category": {"fr": "/categorie/{category}", "en": "/en/category/{category}"},
     "article": {"fr": "/blog/{slug}", "en": "/en/blog/{slug}"},
+    "seo_page": {"fr": "/seo/{slug}", "en": "/en/seo/{slug}"},
     "itinerary": {"fr": "/itineraries/{slug}", "en": "/en/itineraries/{slug}"},
     "itinerary_guide_subscribe": {
         "fr": "/itineraries/{slug}/guide",
@@ -345,6 +346,8 @@ def switch_lang_url() -> str:
         return lang_url("category", alt, category=view_args.get("category", ""))
     if base_endpoint == "article":
         return lang_url("article", alt, slug=view_args.get("slug", ""))
+    if base_endpoint == "seo_page":
+        return lang_url("seo_page", alt, slug=view_args.get("slug", ""))
     if base_endpoint == "itinerary":
         return lang_url("itinerary", alt, slug=view_args.get("slug", ""))
     if base_endpoint == "itinerary_guide_download":

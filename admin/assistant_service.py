@@ -132,6 +132,7 @@ SUGGESTIONS = [
 _ADMIN_PAGE_NOTES = {
     "admin.dashboard": ("Dashboard", "Vue d'ensemble : trafic, revenus, recommandations, choix du moteur IA (Groq/Mistral)."),
     "admin.guides": ("Guides IA", "Génération d'articles SEO par IA (ville + sujet + type), amélioration IA, rédaction manuelle, publication sur /blog."),
+    "admin.seo_pages_admin": ("Pages SEO", "Landing pages SEO multi-mots-clés (IA ou manuel), aperçu, publication sur /seo/slug, sitemap et maillage automatiques."),
     "admin.destinations_admin": ("Destinations", "Création/édition des pages destinations (IA ou manuel), images WebP, choix de la section Nord/Centre/Sud, publication sur /<slug>."),
     "admin.map_admin": ("Carte", "Points d'intérêt et pins affiliés (hôtels, activités) sur les cartes interactives des destinations."),
     "admin.newsletter_admin": ("Newsletter", "Composition d'emails (IA ou manuel), envoi test / abonné / tous, gestion des abonnés, contact direct des partenaires."),
@@ -674,6 +675,7 @@ def _system_prompt() -> str:
         "Après une recherche web, tu peux enchaîner directement un outil d'action (ex. "
         "add_map_points avec les restaurants trouvés et leurs adresses). "
         f"VILLES autorisées pour generate_guide/generate_destination : {cities}. "
+        f"generate_seo_page : city optionnelle (vide = Vietnam général).\n"
         f"CATÉGORIES blog existantes (clé du champ category) : {blog_categories}. "
         "RÉSEAUX SOCIAUX (/admin/social) — tu les connais tous : publication multi-réseaux "
         "avec rédaction IA adaptée aux codes de chaque plateforme et suivi UTM "
@@ -716,6 +718,7 @@ def _system_prompt() -> str:
         "Pour un simple remplacement sans choix, update_image avec query suffit (recherche auto)\n"
         '- {"name":"audit_site","params":{}} — relancer l\'audit complet et présenter les résultats\n'
         '- {"name":"generate_guide","params":{"city":"…","topic":"…","guide_type":"article blog"}} — guide SEO (job en arrière-plan)\n'
+        '- {"name":"generate_seo_page","params":{"topic":"…","keywords":"mot1, mot2, mot3","city":"…","page_type":"landing"}} — page SEO landing multi-mots-clés sur /seo/slug (job en arrière-plan)\n'
         '- {"name":"generate_destination","params":{"city":"…","notes":"…"}} — page destination (job en arrière-plan)\n'
         '- {"name":"generate_newsletter","params":{"topic":"…","email_type":"actualite","notes":"…"}} — email newsletter (job en arrière-plan)\n'
         '- {"name":"generate_social_post","params":{"page_id":"…","brief":"…","network":"facebook|pinterest|reddit|telegram|x|threads|instagram"}} — post réseau social rédigé selon les codes du réseau choisi (network optionnel, facebook par défaut ; page_id du bloc PAGES PUBLIQUES, ou brief libre)\n'
@@ -730,7 +733,7 @@ def _system_prompt() -> str:
         '- {"name":"update_images","params":{"items":[{"target":"article|destination","slug":"…","query":"…","image_url":"…","alt":"…"},…]}} — mettre à jour PLUSIEURS images en UNE SEULE action (une seule confirmation, puis job en arrière-plan image par image, sans doublon de photo). Dès que l\'admin demande plus d\'une image (ex. « change les bannières de toutes les destinations »), utilise update_images, JAMAIS update_image en boucle. Raccourci : {"all_destinations":true,"query":"ambiance optionnelle (ex. sunset)"} = nouvelle bannière pour CHAQUE destination publiée. query optionnelle par item (mots-clés auto sinon)\n'
         '- {"name":"add_map_points","params":{"city":"slug ou nom de la ville","points":[{"title":"…","address":"adresse complète","kind":"restaurant","desc":"…","price_hint":"…","image_url":"https://…"}]}} — ajouter des points sur la carte interactive : restaurants, bars, hôtels, activités, lieux… kind de préférence ∈ hotel|activity|restaurant|bar|poi|service, mais tout autre type est accepté (ex. « spa », « marché nocturne ») : il est créé automatiquement avec sa couleur et sa légende ; address = adresse la plus précise possible (géocodée via OpenStreetMap), sinon « Nom, Ville » ; image_url facultative (lien DIRECT vers une photo du lieu) — sans elle une photo est cherchée automatiquement dans les banques d\'images libres (confirmation auto)\n'
         '- {"name":"update_map_images","params":{"title":"nom du point","city":"ville","image_url":"https://… ou mots-clés"}} ou {"all_missing":true} — mettre à jour la photo d\'un point existant de la carte (URL directe, mots-clés, ou vide = recherche auto), ou trouver une photo pour TOUS les points sans image (job en arrière-plan) (confirmation auto)\n'
-        '- {"name":"publish_draft","params":{"kind":"article"}} ou {"kind":"destination"} — publier le brouillon en attente (confirmation auto)\n'
+        '- {"name":"publish_draft","params":{"kind":"article"}} ou {"kind":"destination"} ou {"kind":"seo_page"} — publier le brouillon en attente (confirmation auto)\n'
         '- {"name":"publish_facebook","params":{}} — publier le dernier post généré sur Facebook (confirmation auto)\n'
         '- {"name":"publish_social","params":{"network":"…"}} — publier le dernier post généré sur le réseau indiqué (doit être connecté sur /admin/social ; confirmation auto)\n'
         '- {"name":"send_newsletter","params":{"scope":"test","email":"…"}} ou {"scope":"all"} — envoyer la newsletter (confirmation auto)\n'
@@ -744,6 +747,7 @@ def _system_prompt() -> str:
         "PRÉ-REMPLI, ajoute ?prefill=1&<champ>=<valeur> à l'URL (champ = attribut name du "
         "formulaire). Exemples : /admin/map?prefill=1&title=…&address=…&kind=food&city=… · "
         "/admin/guides?prefill=1&city=…&topic=… · /admin/destinations?prefill=1&city=…&notes=… · "
+        "/admin/seo-pages?prefill=1&topic=…&keywords=mot1,mot2 · "
         "/admin/newsletter?prefill=1&topic=…&notes=… "
         'Réponds STRICTEMENT en JSON : {"message":"…","actions":[{"label":"…","url":"/…"}],"tool":null}'
     )
@@ -877,6 +881,8 @@ def execute_confirmation(token: str) -> dict:
 
     if action == "publish_article":
         return _exec_publish_article()
+    if action == "publish_seo_page":
+        return _exec_publish_seo_page()
     if action == "publish_destination":
         return _exec_publish_destination()
     if action == "publish_facebook":
@@ -1000,7 +1006,7 @@ def job_status(kind: str) -> dict:
     """Statut d'un job de génération + carte de confirmation quand c'est prêt."""
     from admin import draft_store
 
-    if kind not in ("article", "destination", "newsletter", "social"):
+    if kind not in ("article", "destination", "newsletter", "social", "seo_page"):
         return {"status": "missing", "error": "", "phase": ""}
     st = draft_store.status(session.get(_draft_token_key(kind)))
     result = {"status": st["status"], "error": st["error"], "phase": st["phase"], "kind": kind}
@@ -1019,6 +1025,16 @@ def _describe_draft(kind: str, draft: dict) -> dict:
             "confirm": create_confirmation(
                 "publish_article", {}, "Publier l'article sur le site ?",
                 f"« {title} » sera publié sur /blog/{draft.get('slug', '?')} (FR + EN).",
+            ),
+        }
+    if kind == "seo_page":
+        title = draft.get("title", "(sans titre)")
+        return {
+            "summary": f"Page SEO prête : « {title} » (/seo/{draft.get('slug', '?')}) — relisez l'aperçu avant publication.",
+            "preview_url": "/admin/seo-pages",
+            "confirm": create_confirmation(
+                "publish_seo_page", {}, "Publier la page SEO sur le site ?",
+                f"« {title} » sera publiée sur /seo/{draft.get('slug', '?')} (FR + EN, sitemap + maillage).",
             ),
         }
     if kind == "destination":
@@ -1073,6 +1089,25 @@ def _exec_publish_article() -> dict:
     add_article(article)
     draft_store.clear(session.pop(_draft_token_key("article"), None))
     return {"message": f"✅ Article publié : /blog/{article['slug']}", "url": f"/blog/{article['slug']}"}
+
+
+def _exec_publish_seo_page() -> dict:
+    from admin import draft_store
+    from admin.image_service import attach_image_to_article
+    from admin.seo_pages_service import add_seo_page, replace_seo_page
+
+    page = _get_draft("seo_page")
+    if not page:
+        raise ValueError("Aucun brouillon de page SEO — demandez d'abord une génération.")
+    if not page.get("image"):
+        page.update(attach_image_to_article(page, page.get("image_prompt")))
+    editing_slug = (page.pop("editing_slug", None) or "").strip()
+    if editing_slug:
+        replace_seo_page(editing_slug, page)
+    else:
+        add_seo_page(page)
+    draft_store.clear(session.pop(_draft_token_key("seo_page"), None))
+    return {"message": f"✅ Page SEO publiée : /seo/{page['slug']}", "url": f"/seo/{page['slug']}"}
 
 
 def _exec_publish_destination() -> dict:
@@ -1617,6 +1652,39 @@ def _handle_tool(tool: dict, snapshot: dict) -> dict:
 
         _start_job("article", _gen, "Rédaction du guide SEO…")
         return {"job": {"kind": "article"}}
+
+    if name == "generate_seo_page":
+        topic = (params.get("topic") or "").strip()
+        keywords = (params.get("keywords") or params.get("target_keywords") or "").strip()
+        city = (params.get("city") or "").strip()
+        if city and city not in ALL_CITY_VALUES:
+            raise ValueError(f"Ville invalide « {city} » — laissez vide pour Vietnam général.")
+        if not topic and not keywords:
+            raise ValueError("Indiquez topic et/ou keywords (mots-clés séparés par des virgules).")
+        from admin import groq_seo_page
+        from admin.image_service import attach_image_to_article
+        from admin.seo_pages_service import _parse_keywords
+
+        page_type = (params.get("page_type") or "landing").strip()
+
+        def _gen(report):
+            page = groq_seo_page.generate_seo_page(
+                topic=topic,
+                keywords=_parse_keywords(keywords),
+                city=city,
+                page_type=page_type,
+                progress=report,
+            )
+            report("Génération de l'image Vietnam (WebP)…")
+            page.update(attach_image_to_article(
+                page, page.get("image_prompt"),
+                image_nonce=int(time.time() * 1000) % 1_000_000,
+            ))
+            report("Finalisation de la page SEO…")
+            return page
+
+        _start_job("seo_page", _gen, "Analyse des mots-clés SEO…")
+        return {"job": {"kind": "seo_page"}}
 
     if name == "generate_destination":
         city = (params.get("city") or "").strip()
@@ -2293,7 +2361,7 @@ def _normalize_reply(data) -> dict:
 
 
 _KNOWN_TOOLS = {
-    "web_search", "search_images", "audit_site", "generate_guide", "generate_destination",
+    "web_search", "search_images", "audit_site", "generate_guide", "generate_seo_page", "generate_destination",
     "generate_newsletter", "generate_social_post", "set_destination_region",
     "update_article", "add_category", "improve_article", "update_destination",
     "improve_destination", "update_pages", "update_image", "update_images",

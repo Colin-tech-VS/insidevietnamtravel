@@ -1,0 +1,207 @@
+{% extends "admin/layout.html" %}
+{% from "admin/_image_upload.html" import cover_image_field %}
+
+{% block title %}Pages SEO{% endblock %}
+{% block page_title %}Pages SEO{% endblock %}
+
+{% block content %}
+<p class="page-sub">Créez des pages SEO landing ciblant plusieurs mots-clés — manuellement ou par IA — avec aperçu, publication automatique au sitemap et maillage interne.</p>
+
+<div id="ai-loader" class="ai-loader" hidden aria-live="polite">
+  <div class="ai-loader__panel">
+    <div class="ai-loader__spinner" aria-hidden="true"></div>
+    <p class="ai-loader__title">Génération IA en cours</p>
+    <p class="ai-loader__text" id="ai-loader-text">Analyse des mots-clés…</p>
+    <div class="ai-loader__bar" role="progressbar"><span class="ai-loader__bar-fill" id="ai-loader-bar"></span></div>
+    <p class="ai-loader__timing"><span id="ai-loader-elapsed">0:00</span></p>
+  </div>
+</div>
+
+{% if not groq_ok %}
+<div class="alert alert--warn">Ajoutez <code>GROQ_API_KEY</code> ou <code>MISTRAL_API_KEY</code> pour la génération IA. L'onglet <strong>Manuel</strong> reste disponible.</div>
+{% endif %}
+
+<div class="admin-page-layout admin-page-layout--wide">
+  <div class="admin-page-main">
+    <section class="panel guides-form-panel">
+      <div class="content-tabs" role="tablist">
+        <button type="button" class="content-tab{% if not draft_is_manual %} is-active{% endif %}" data-tab="ai" id="tab-btn-ai">✦ Avec IA</button>
+        <button type="button" class="content-tab{% if draft_is_manual %} is-active{% endif %}" data-tab="manual" id="tab-btn-manual">✎ Manuellement</button>
+      </div>
+
+      <div id="tab-ai" class="content-panel" role="tabpanel" {% if draft_is_manual %}hidden{% endif %}>
+        <h2>✦ Nouvelle page SEO (IA)</h2>
+        <form id="seo-form-ai" class="guide-form" data-no-loader>
+          <div class="form-field">
+            <label for="topic">Sujet / angle principal</label>
+            <input type="text" id="topic" name="topic" placeholder="Ex : Visa Vietnam 2026 pour les Français" value="{{ request.args.get('topic', '') }}">
+          </div>
+          <div class="form-field">
+            <label for="keywords">Mots-clés cibles (mix, séparés par virgules ou lignes)</label>
+            <textarea id="keywords" name="keywords" rows="4" placeholder="visa vietnam, evisa vietnam, formalités vietnam, voyage vietnam sans visa…">{{ request.args.get('keywords', '') }}</textarea>
+            <p class="field-hint">L'IA intègre naturellement tous ces mots-clés dans titres, contenu et FAQ.</p>
+          </div>
+          <div class="form-row">
+            <div class="form-field">
+              <label for="city">Ville / région (optionnel)</label>
+              <select id="city" name="city">
+                <option value="">— Vietnam (général) —</option>
+                {% for region, cities in vietnam_cities.items() %}
+                <optgroup label="{{ region }}">
+                  {% for c in cities %}
+                  <option value="{{ c.value }}">{{ c.label }}</option>
+                  {% endfor %}
+                </optgroup>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="page_type">Type de page</label>
+              <select id="page_type" name="page_type">
+                <option value="landing">Landing SEO</option>
+                <option value="guide">Guide thématique</option>
+                <option value="comparison">Comparatif / choix</option>
+                <option value="faq">FAQ approfondie</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" {% if not groq_ok %}disabled{% endif %}>Générer la page SEO</button>
+        </form>
+      </div>
+
+      <div id="tab-manual" class="content-panel" role="tabpanel" {% if not draft_is_manual %}hidden{% endif %}>
+        <h2>✎ Page SEO manuelle</h2>
+        <form method="post" class="guide-form">
+          <input type="hidden" name="editing_slug" value="{{ draft.editing_slug if draft and draft.editing_slug else '' }}">
+          <div class="form-row">
+            <div class="form-field">
+              <label for="title_fr">Titre (H1) FR *</label>
+              <input type="text" id="title_fr" name="title_fr" required value="{{ draft.title if draft else '' }}">
+            </div>
+            <div class="form-field">
+              <label for="slug">Slug URL (/seo/…)</label>
+              <input type="text" id="slug" name="slug" value="{{ draft.slug if draft else '' }}" placeholder="auto depuis le titre">
+            </div>
+          </div>
+          <div class="form-field">
+            <label for="keywords_manual">Mots-clés cibles</label>
+            <textarea id="keywords_manual" name="keywords" rows="2">{% if draft and draft.target_keywords %}{{ draft.target_keywords | join(', ') }}{% endif %}</textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-field">
+              <label for="meta_title_fr">Meta title FR</label>
+              <input type="text" id="meta_title_fr" name="meta_title_fr" maxlength="70" value="{{ draft.meta_title if draft else '' }}">
+            </div>
+            <div class="form-field">
+              <label for="focus_keyword">Mot-clé principal</label>
+              <input type="text" id="focus_keyword" name="focus_keyword" value="{{ draft.focus_keyword if draft else '' }}">
+            </div>
+          </div>
+          <div class="form-field">
+            <label for="meta_description_fr">Meta description FR</label>
+            <textarea id="meta_description_fr" name="meta_description_fr" rows="2" maxlength="160">{{ draft.meta_description if draft else '' }}</textarea>
+          </div>
+          <div class="form-field">
+            <label for="excerpt_fr">Extrait (sous le H1)</label>
+            <textarea id="excerpt_fr" name="excerpt_fr" rows="2">{{ draft.excerpt if draft else '' }}</textarea>
+          </div>
+          <div class="form-field">
+            <label for="content_fr">Contenu HTML FR *</label>
+            <textarea id="content_fr" name="content_fr" rows="14" required>{{ draft.content if draft else '' }}</textarea>
+          </div>
+          <details class="form-details">
+            <summary>Version anglaise (optionnel — traduite auto à la publication si vide)</summary>
+            <div class="form-field"><label for="title_en">Titre EN</label><input type="text" id="title_en" name="title_en"></div>
+            <div class="form-field"><label for="content_en">Contenu EN</label><textarea id="content_en" name="content_en" rows="8"></textarea></div>
+          </details>
+          {{ cover_image_field("manual-") }}
+          <div class="form-actions">
+            <button type="submit" name="action" value="manual_draft" class="btn btn-secondary">Enregistrer brouillon</button>
+            <button type="submit" name="action" value="manual_publish" class="btn btn-primary">Publier</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    {% if draft %}
+    <section class="panel draft-panel">
+      <div class="draft-panel__header">
+        <div>
+          <span class="draft-badge">{% if draft.manual %}Brouillon manuel{% else %}Aperçu IA{% endif %}</span>
+          <h2>{{ draft.title }}</h2>
+          <p class="draft-meta">
+            {% if draft.city %}<span>📍 {{ draft.city }}</span>{% endif %}
+            {% if draft.read_time %}<span>{{ draft.read_time }} min</span>{% endif %}
+            {% if draft.word_count %}<span>{{ draft.word_count }} mots</span>{% endif %}
+            <span>/seo/{{ draft.slug }}</span>
+            {% if draft.focus_keyword %}<span>🔑 {{ draft.focus_keyword }}</span>{% endif %}
+          </p>
+          {% if draft.target_keywords %}
+          <p class="draft-keywords"><strong>Mots-clés :</strong> {{ draft.target_keywords | join(' · ') }}</p>
+          {% endif %}
+        </div>
+      </div>
+      {% if draft.image %}
+      <figure class="draft-cover">
+        <img src="{{ draft.image | static_v }}" alt="{{ draft.image_alt or draft.title }}" loading="lazy">
+      </figure>
+      {% endif %}
+      <p class="draft-excerpt"><strong>Meta :</strong> {{ draft.meta_description or draft.excerpt }}</p>
+      <div class="preview-box"><div class="preview-content">{{ draft.content | safe }}</div></div>
+      <div class="draft-actions">
+        <form method="post" class="draft-action-form">
+          <input type="hidden" name="action" value="publish">
+          <button type="submit" class="btn btn-primary">Publier sur le site (/seo/{{ draft.slug }})</button>
+        </form>
+      </div>
+    </section>
+    {% endif %}
+  </div>
+
+  <aside class="admin-page-aside">
+    <section class="panel">
+      <h2>Pages publiées</h2>
+      {% if pages %}
+      <ul class="published-list">
+        {% for p in pages %}
+        <li class="published-list__item">
+          <div>
+            <a href="{{ url_for('seo_page', slug=p.slug) }}" target="_blank" rel="noopener"><strong>{{ p.title }}</strong></a>
+            <span class="muted">/seo/{{ p.slug }}</span>
+            {% if p.target_keywords %}<br><span class="muted small">{{ p.target_keywords[:4] | join(' · ') }}</span>{% endif %}
+          </div>
+          <div class="published-list__actions">
+            <form method="post" class="inline-form">
+              <input type="hidden" name="action" value="edit">
+              <input type="hidden" name="slug" value="{{ p.slug }}">
+              <button type="submit" class="btn btn-small btn-secondary">Modifier</button>
+            </form>
+            <form method="post" class="inline-form" onsubmit="return confirm('Supprimer cette page SEO ?');">
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="slug" value="{{ p.slug }}">
+              <button type="submit" class="btn btn-small btn-danger">Suppr.</button>
+            </form>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="muted">Aucune page SEO publiée — créez-en une avec l'IA ou le formulaire manuel.</p>
+      {% endif %}
+    </section>
+    <section class="panel panel--hint">
+      <h3>SEO & maillage</h3>
+      <ul class="hint-list">
+        <li>URL : <code>/seo/slug</code> (FR) et <code>/en/seo/slug</code> (EN)</li>
+        <li>Ajout automatique au <code>sitemap.xml</code></li>
+        <li>Maillage interne dans le contenu + blocs latéraux</li>
+        <li>Linh peut aussi générer et publier via l'assistant</li>
+      </ul>
+    </section>
+  </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='admin/seo-pages.js') }}"></script>
+{% endblock %}

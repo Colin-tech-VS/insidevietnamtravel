@@ -108,6 +108,16 @@ def build_catalog(exclude_slug: str | None = None) -> list[dict]:
     except Exception:
         pass
 
+    try:
+        from admin.seo_pages_service import get_published_seo_pages
+        for page in get_published_seo_pages("fr"):
+            slug = page.get("slug")
+            title = (page.get("title") or "").strip()
+            if slug and title:
+                catalog.append({"url": f"/seo/{slug}", "title": title})
+    except Exception:
+        pass
+
     # Dédoublonnage par URL.
     seen: set[str] = set()
     out: list[dict] = []

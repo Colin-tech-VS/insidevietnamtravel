@@ -75,6 +75,7 @@ RESERVED_SLUGS = frozenset({
     "esim-assurance-vietnam", "esim-insurance-vietnam",
     "applications-utiles-vietnam", "useful-apps-vietnam",
     "devenir-partenaire", "become-a-partner", "partenaire", "partner", "partners",
+    "seo",
 })
 
 load_dotenv()
@@ -972,6 +973,35 @@ def article(slug):
     )
 
 
+@app.route("/seo/<slug>")
+@app.route("/en/seo/<slug>")
+def seo_page(slug):
+    from admin.seo_page_seo import json_ld_schemas, page_context
+    from admin.seo_pages_service import get_seo_page_by_slug
+
+    lang = get_lang()
+    page = get_seo_page_by_slug(slug, lang)
+    if not page:
+        abort(404)
+    page["image"] = persistent_image_url(
+        page.get("image"), page.get("image_photo_id"), page.get("image_source_url"),
+    )
+    ctx = page_context(page, lang)
+    canonical = config.SITE_URL.rstrip("/") + ctx["canonical_path"]
+    faq_items = extract_faq_from_html(page.get("content") or "")
+    return render_template(
+        "seo_page.html",
+        page=page,
+        maillage_links=ctx["maillage_links"],
+        related_seo_pages=ctx["related_seo_pages"],
+        meta_title=article_meta_title(page),
+        meta_description=article_meta_description(page, lang),
+        meta_keywords=ctx["meta_keywords"],
+        og_image=page.get("image"),
+        seo_schemas=json_ld_schemas(page, lang, canonical_url=canonical, faq_items=faq_items),
+    )
+
+
 @app.route("/categorie/<category>")
 @app.route("/en/category/<category>")
 def category(category):
@@ -1589,6 +1619,14 @@ def search_index():
             "s": a.get("excerpt", ""),
             "u": lang_url("article", lang, slug=a["slug"]),
             "g": "article",
+        })
+    from admin.seo_pages_service import get_published_seo_pages
+    for p in get_published_seo_pages(lang):
+        items.append({
+            "t": p.get("title", ""),
+            "s": p.get("excerpt", ""),
+            "u": lang_url("seo_page", lang, slug=p["slug"]),
+            "g": "seo_page",
         })
     for endpoint, key in (
         ("best_season", "tools.season"),

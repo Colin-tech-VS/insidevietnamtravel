@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% from "macros/affiliates.html" import sim_banner, insurance_banner, pdf_banner with context %}
+{% from "macros/images.html" import responsive_img with context %}
+{% from "macros/seo.html" import json_ld_graph, og_image_tags with context %}
+
+{% block og_type %}article{% endblock %}
+
+{% block og_image %}
+{% if page.image %}
+{{ og_image_tags(site.SITE_URL ~ (page.image | static_v)) }}
+{% else %}
+{{ super() }}
+{% endif %}
+{% endblock %}
+
+{% block head_preload %}
+{% if page.image %}
+{% set hero = responsive_image(page.image, card=false) %}
+<link rel="preload" as="image" href="{{ hero.src }}"{% if hero.srcset %} imagesrcset="{{ hero.srcset }}" imagesizes="100vw"{% endif %}>
+{% endif %}
+{% endblock %}
+
+{% block structured_data %}
+{% set faq_items = seo_faq_from_html(page.content) %}
+{{ json_ld_graph(seo_schemas) }}
+{% endblock %}
+
+{% block content %}
+<article class="article-page seo-page">
+  <header class="article-hero{% if page.image %} article-hero--with-image{% endif %}">
+    {% if page.image %}
+    <div class="article-hero__media" aria-hidden="true">
+      {{ responsive_img(
+        page.image,
+        alt=page.image_alt or page.title,
+        width=1200,
+        height=675,
+        loading='eager',
+        fetchpriority='high',
+        sizes='100vw'
+      ) }}
+    </div>
+    {% endif %}
+    <div class="container article-hero-inner">
+      <nav class="breadcrumb" aria-label="{{ t('breadcrumb.aria') }}">
+        <ol>
+          <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+          <li><a href="{{ lang_url('blog_index') }}">{{ t('nav.blog') }}</a></li>
+          <li aria-current="page">{{ page.title[:50] }}{% if page.title|length > 50 %}…{% endif %}</li>
+        </ol>
+      </nav>
+      {% if page.focus_keyword %}
+      <p class="seo-page__focus">{{ page.focus_keyword }}</p>
+      {% endif %}
+      <h1>{{ page.title }}</h1>
+      <p class="article-excerpt">{{ page.excerpt }}</p>
+      <div class="article-meta">
+        <span class="article-byline">{{ t('article.by') }} <a href="{{ lang_url('about') }}">{{ site.SITE_AUTHOR }}</a></span>
+        {% if page.updated_at and page.updated_at != page.date %}
+        <span>{{ t('article.updated') }} <time datetime="{{ page.updated_at }}">{{ page.updated_at }}</time></span>
+        {% else %}
+        <time datetime="{{ page.date or page.published_at }}">{{ page.date or page.published_at }}</time>
+        {% endif %}
+        {% if page.read_time %}
+        <span>{{ page.read_time }} {{ t('article.read_time') }}</span>
+        {% endif %}
+      </div>
+      {% if page.target_keywords %}
+      <div class="article-tags seo-page__keywords" aria-label="{% if lang == 'en' %}Topics{% else %}Sujets{% endif %}">
+        {% for kw in page.target_keywords[:8] %}
+        <span class="tag">#{{ kw }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="container article-layout">
+    <div class="article-content prose">
+      {{ page.content | safe }}
+    </div>
+    <aside class="article-sidebar">
+      {{ pdf_banner() }}
+      {% if maillage_links %}
+      <div class="sidebar-card sidebar-card--pillar">
+        <h3>{% if lang == 'en' %}Useful links{% else %}Liens utiles{% endif %}</h3>
+        <ul>
+          {% for link in maillage_links %}
+          <li><a href="{{ link.url }}">{{ link.title }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      {% if related_seo_pages %}
+      <div class="sidebar-card">
+        <h3>{% if lang == 'en' %}Related guides{% else %}Guides associés{% endif %}</h3>
+        <ul>
+          {% for p in related_seo_pages %}
+          <li><a href="{{ p.url }}">{{ p.title }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </aside>
+  </div>
+
+  {% if maillage_links %}
+  <section class="seo-page__mesh container" aria-label="{% if lang == 'en' %}Explore more{% else %}Explorer le site{% endif %}">
+    <h2>{% if lang == 'en' %}Continue planning your Vietnam trip{% else %}Poursuivre la préparation de votre voyage au Vietnam{% endif %}</h2>
+    <ul class="seo-page__mesh-grid">
+      {% for link in maillage_links %}
+      <li><a href="{{ link.url }}">{{ link.title }}</a></li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+</article>
+{% endblock %}
