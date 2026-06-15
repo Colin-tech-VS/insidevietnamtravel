@@ -1596,6 +1596,8 @@ def partner_portal_admin():
         ACCOUNT_STATUS_LABELS,
         PAGE_STATUS_LABELS,
         PROFILE_TYPE_LABELS,
+        PROFILE_TYPES,
+        create_partner_by_admin,
         list_accounts,
         list_pages,
         portal_stats,
@@ -1607,7 +1609,30 @@ def partner_portal_admin():
         action = request.form.get("action")
         partner_id = (request.form.get("partner_id") or "").strip()
         try:
-            if action == "suspend_account" and set_account_status(partner_id, "suspended"):
+            if action == "create_account":
+                result = create_partner_by_admin(
+                    first_name=request.form.get("first_name", ""),
+                    last_name=request.form.get("last_name", ""),
+                    email=request.form.get("email", ""),
+                    password=request.form.get("password", ""),
+                    profile_type=request.form.get("profile_type", ""),
+                    business_name=request.form.get("business_name", ""),
+                    phone=request.form.get("phone", ""),
+                    city=request.form.get("city", ""),
+                    website=request.form.get("website", ""),
+                    languages=request.form.get("languages", ""),
+                    bio=request.form.get("bio", ""),
+                    admin_note=request.form.get("admin_note", ""),
+                    create_page=bool(request.form.get("create_page")),
+                )
+                acc = result.get("account") or {}
+                name = acc.get("business_name") or f"{acc.get('first_name', '')} {acc.get('last_name', '')}".strip()
+                flash(
+                    f"Compte créé pour « {name} » ({acc.get('email', '')}). "
+                    f"Mot de passe à communiquer au partenaire : {result.get('temp_password', '')}",
+                    "success",
+                )
+            elif action == "suspend_account" and set_account_status(partner_id, "suspended"):
                 flash("Compte partenaire suspendu.", "success")
             elif action == "activate_account" and set_account_status(partner_id, "active"):
                 flash("Compte réactivé.", "success")
@@ -1619,6 +1644,8 @@ def partner_portal_admin():
                 flash("Page refusée.", "success")
             elif action == "unpublish_page" and set_page_status(partner_id, "draft"):
                 flash("Page dépubliée.", "success")
+        except ValueError as e:
+            flash(str(e), "error")
         except Exception as e:  # noqa: BLE001
             flash(f"Erreur : {e}", "error")
         return redirect(url_for("admin.partner_portal_admin"))
@@ -1635,6 +1662,7 @@ def partner_portal_admin():
         rows=rows,
         stats=portal_stats(),
         profile_labels=PROFILE_TYPE_LABELS,
+        profile_types=PROFILE_TYPES,
         page_status_labels=PAGE_STATUS_LABELS,
         account_status_labels=ACCOUNT_STATUS_LABELS,
     )

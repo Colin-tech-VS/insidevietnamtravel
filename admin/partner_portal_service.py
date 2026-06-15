@@ -645,6 +645,132 @@ def register_partner(
     return get_account_by_id(pid) or {}
 
 
+def create_partner_by_admin(
+    *,
+    first_name: str,
+    last_name: str,
+    email: str,
+    password: str = "",
+    profile_type: str,
+    business_name: str = "",
+    phone: str = "",
+    city: str = "",
+    website: str = "",
+    languages: str = "",
+    bio: str = "",
+    admin_note: str = "",
+    create_page: bool = True,
+) -> dict:
+    """Crée un compte espace partenaire depuis l'admin (contact bouche-à-oreille, etc.)."""
+    first_name = (first_name or "").strip()
+    last_name = (last_name or "").strip()
+    email = (email or "").strip().lower()
+    business_name = (business_name or "").strip()
+    profile_type = (profile_type or "").strip().lower()
+    bio = (bio or "").strip()
+    temp_password = (password or "").strip() or secrets.token_urlsafe(10)
+
+    if len(first_name) < 2 or len(last_name) < 2:
+        raise ValueError("Prénom et nom obligatoires (2 caractères minimum).")
+    if not email or "@" not in email:
+        raise ValueError("Email invalide.")
+    if len(temp_password) < 8:
+        raise ValueError("Mot de passe : 8 caractères minimum (ou laissez vide pour génération auto).")
+    if profile_type not in PROFILE_TYPE_KEYS:
+        raise ValueError("Type de profil invalide.")
+    if not business_name and profile_type != "influenceur":
+        raise ValueError("Nom de l'activité / marque obligatoire pour ce type de profil.")
+    if find_account_by_email(email):
+        raise ValueError("Un compte espace partenaire existe déjà avec cet email.")
+
+    pid = uuid.uuid4().hex[:16]
+    now = _now_iso()
+    pw_hash = generate_password_hash(temp_password)
+    services_json = json.dumps([], ensure_ascii=False)
+    social_json = json.dumps([], ensure_ascii=False)
+
+    with get_connection() as conn:
+        cur = conn.cursor()
+        if is_postgres():
+            cur.execute(
+                """INSERT INTO partner_accounts
+                   (id, email, password_hash, first_name, last_name, profile_type,
+                    business_name, phone, city, website, languages, bio, services,
+                    social_links, status, created_at, updated_at)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'active',%s,%s)""",
+                (
+                    pid, email, pw_hash, first_name, last_name, profile_type,
+                    business_name, (phone or "").strip(), (city or "").strip(),
+                    (website or "").strip(), (languages or "").strip(), bio,
+                    services_json, social_json, now, now,
+                ),
+            )
+        else:
+            cur.execute(
+                """INSERT INTO partner_accounts
+                   (id, email, password_hash, first_name, last_name, profile_type,
+                    business_name, phone, city, website, languages, bio, services,
+                    social_links, status, created_at, updated_at)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,'active',?,?)""",
+                (
+                    pid, email, pw_hash, first_name, last_name, profile_type,
+                    business_name, (phone or "").strip(), (city or "").strip(),
+                    (website or "").strip(), (languages or "").strip(), bio,
+                    services_json, social_json, now, now,
+                ),
+            )
+
+    account = get_account_by_id(pid) or {}
+    if create_page:
+        _ensure_partner_draft_page(
+            pid,
+            account,
+            extra_fields={
+                "created_by_admin": True,
+                "admin_onboarding_note": (admin_note or "").strip()[:500],
+            },
+        )
+    return {"account": account, "temp_password": temp_password}
+
+
+def _ensure_partner_draft_page(
+    partner_id: str,
+    account: dict,
+    *,
+    extra_fields: dict | None = None,
+) -> dict:
+    """Crée une page brouillon si le partenaire n'en a pas encore."""
+    existing = get_page_by_partner(partner_id)
+    if existing:
+        return existing
+    now = _now_iso()
+    page_id = uuid.uuid4().hex[:16]
+    slug = _unique_slug(
+        account.get("business_name") or f"{account.get('first_name')}-{account.get('last_name')}"
+    )
+    extra = {"city": (account.get("city") or "").strip()}
+    if extra_fields:
+        extra.update({k: v for k, v in extra_fields.items() if v is not None})
+    extra_json = json.dumps(extra, ensure_ascii=False)
+    with get_connection() as conn:
+        cur = conn.cursor()
+        if is_postgres():
+            cur.execute(
+                """INSERT INTO partner_pages
+                   (id, partner_id, slug, status, extra_json, created_at, updated_at)
+                   VALUES (%s,%s,%s,'draft',%s,%s,%s)""",
+                (page_id, partner_id, slug, extra_json, now, now),
+            )
+        else:
+            cur.execute(
+                """INSERT INTO partner_pages
+                   (id, partner_id, slug, status, extra_json, created_at, updated_at)
+                   VALUES (?,?,?,'draft',?,?,?)""",
+                (page_id, partner_id, slug, extra_json, now, now),
+            )
+    return get_page_by_partner(partner_id) or {}
+
+
 def authenticate_partner(email: str, password: str) -> dict | None:
     email = (email or "").strip().lower()
     account = find_account_by_email(email)

@@ -3,7 +3,12 @@
 {% block page_title %}Espace partenaires{% endblock %}
 
 {% block content %}
-<p class="page-sub">Inscriptions publiques via <a href="{{ url_for('become_partner') }}" target="_blank" rel="noopener">/devenir-partenaire</a> — dashboard <code>/partners</code> — pages publiées sur <code>/partenaire/slug</code>.</p>
+<p class="page-sub">
+  Comptes avec page publique <code>/partenaire/slug</code> et dashboard <code>/partners</code>.
+  Inscriptions en ligne via <a href="{{ url_for('become_partner') }}" target="_blank" rel="noopener">/devenir-partenaire</a>.
+  Pour le suivi de prospection (contacts à relancer, emails), utilisez
+  <a href="{{ url_for('admin.partnerships') }}">Partenariats</a>.
+</p>
 
 <div class="stat-grid stat-grid--4">
   <div class="stat-card">
@@ -23,6 +28,84 @@
     <span class="stat-value">{{ stats.pages_rejected }}</span>
   </div>
 </div>
+
+<section class="panel" style="margin-top:1.25rem">
+  <details class="partners-add">
+    <summary><span class="social-card__icon" aria-hidden="true">＋</span> Créer un compte partenaire manuellement</summary>
+    <p class="muted" style="margin:0.75rem 0 1rem">
+      Pour les contacts bouche-à-oreille ou par email : crée un accès <code>/partners</code> et une page brouillon.
+      Communiquez le mot de passe au partenaire (ou laissez vide pour en générer un).
+    </p>
+    <form method="post" class="partners-add__form">
+      <input type="hidden" name="action" value="create_account">
+      <div class="social-field">
+        <label for="pp-first">Prénom <span class="social-req">obligatoire</span></label>
+        <input type="text" id="pp-first" name="first_name" required maxlength="80">
+      </div>
+      <div class="social-field">
+        <label for="pp-last">Nom <span class="social-req">obligatoire</span></label>
+        <input type="text" id="pp-last" name="last_name" required maxlength="80">
+      </div>
+      <div class="social-field">
+        <label for="pp-email">Email <span class="social-req">obligatoire</span></label>
+        <input type="email" id="pp-email" name="email" required maxlength="200" autocomplete="off">
+      </div>
+      <div class="social-field">
+        <label for="pp-password">Mot de passe</label>
+        <input type="text" id="pp-password" name="password" minlength="8" maxlength="120"
+               placeholder="Laisser vide = génération automatique" autocomplete="new-password">
+      </div>
+      <div class="social-field">
+        <label for="pp-type">Type de profil <span class="social-req">obligatoire</span></label>
+        <select id="pp-type" name="profile_type" class="social-select" required>
+          {% for key, label in profile_types %}
+          <option value="{{ key }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="social-field">
+        <label for="pp-business">Activité / marque</label>
+        <input type="text" id="pp-business" name="business_name" maxlength="160"
+               placeholder="Obligatoire sauf influenceur">
+      </div>
+      <div class="social-field">
+        <label for="pp-city">Ville</label>
+        <input type="text" id="pp-city" name="city" maxlength="80" placeholder="ex. Hội An">
+      </div>
+      <div class="social-field">
+        <label for="pp-phone">Téléphone</label>
+        <input type="text" id="pp-phone" name="phone" maxlength="40">
+      </div>
+      <div class="social-field">
+        <label for="pp-website">Site web</label>
+        <input type="url" id="pp-website" name="website" maxlength="300" placeholder="https://…">
+      </div>
+      <div class="social-field">
+        <label for="pp-lang">Langues</label>
+        <input type="text" id="pp-lang" name="languages" maxlength="120" placeholder="Français, anglais…">
+      </div>
+      <div class="social-field partners-add__wide">
+        <label for="pp-bio">Présentation courte</label>
+        <textarea id="pp-bio" name="bio" rows="3" maxlength="2000"
+                  placeholder="Optionnel — le partenaire pourra compléter dans son espace"></textarea>
+      </div>
+      <div class="social-field partners-add__wide">
+        <label for="pp-note">Note interne admin</label>
+        <input type="text" id="pp-note" name="admin_note" maxlength="500"
+               placeholder="ex. Recommandé par X, contact salon voyage…">
+      </div>
+      <div class="social-field">
+        <label class="checkbox-label">
+          <input type="checkbox" name="create_page" value="1" checked>
+          Créer une page brouillon (wizard partenaire)
+        </label>
+      </div>
+      <div class="partners-add__actions">
+        <button type="submit" class="btn btn-primary">Créer le compte</button>
+      </div>
+    </form>
+  </details>
+</section>
 
 <section class="panel" style="margin-top:1.25rem">
   <h2>Partenaires inscrits</h2>
