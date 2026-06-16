@@ -1,0 +1,141 @@
+{% extends "admin/layout.html" %}
+{% block title %}NPS{% endblock %}
+{% block page_title %}NPS — Pertinence du contenu{% endblock %}
+
+{% block content %}
+<p class="page-sub">
+  Notation des visiteurs (1 à 5 étoiles) sur la pertinence du contenu, page par page.
+  Le widget est {% if nps_enabled %}<span class="badge badge--ok">activé</span>{% else %}<span class="badge badge--warn">désactivé</span>{% endif %} sur le site public.
+</p>
+
+<div class="admin-page-layout admin-page-layout--wide">
+  <div class="admin-page-main">
+
+    <section class="panel">
+      <h2>{% if nps_enabled %}🟢 Widget activé{% else %}⚪ Widget désactivé{% endif %}</h2>
+      <p class="page-sub" style="margin-top:0;">
+        Active ou désactive le widget de notation affiché aux visiteurs en production.
+      </p>
+      <form method="post" class="nps-switch-form">
+        <input type="hidden" name="action" value="toggle">
+        <label class="nps-switch">
+          <input type="checkbox" name="nps_enabled" {% if nps_enabled %}checked{% endif %}
+                 onchange="this.form.submit()">
+          <span class="nps-switch__track" aria-hidden="true"><span class="nps-switch__thumb"></span></span>
+          <span class="nps-switch__label">{% if nps_enabled %}Activé — visible sur le site{% else %}Désactivé — masqué{% endif %}</span>
+        </label>
+        <noscript><button type="submit" class="btn btn-primary btn-sm">Enregistrer</button></noscript>
+      </form>
+    </section>
+
+    <div class="analytics-toolbar">
+      <div class="analytics-toolbar__period">
+        <span class="analytics-toolbar__label">Période</span>
+        <div class="period-pills">
+          <a href="{{ url_for('admin.nps_admin', days=7) }}" class="period-pill {% if days == 7 %}is-active{% endif %}">7 jours</a>
+          <a href="{{ url_for('admin.nps_admin', days=30) }}" class="period-pill {% if days == 30 %}is-active{% endif %}">30 jours</a>
+          <a href="{{ url_for('admin.nps_admin', days=90) }}" class="period-pill {% if days == 90 %}is-active{% endif %}">90 jours</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card kpi-card--gold">
+        <span class="kpi-card__label">Note moyenne</span>
+        <span class="kpi-card__value">{{ stats.average }}<span style="font-size:0.5em;color:var(--text-muted);"> / 5</span></span>
+        <span class="kpi-card__hint">{{ '★' * (stats.average | round(0, 'common') | int) }}{{ '☆' * (5 - (stats.average | round(0, 'common') | int)) }}</span>
+      </div>
+      <div class="kpi-card kpi-card--teal">
+        <span class="kpi-card__label">Réponses</span>
+        <span class="kpi-card__value">{{ stats.total }}</span>
+        <span class="kpi-card__hint">{{ days }} jours</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-card__label">Satisfaits (4-5★)</span>
+        <span class="kpi-card__value">{{ stats.satisfied_pct }}%</span>
+        <span class="kpi-card__hint">part des notes ≥ 4</span>
+      </div>
+    </div>
+
+    <section class="panel">
+      <h2>Répartition des notes</h2>
+      {% if stats.total %}
+      <div class="nps-dist">
+        {% for d in stats.distribution %}
+        <div class="nps-dist__row">
+          <span class="nps-dist__star">{{ d.rating }}★</span>
+          <span class="nps-dist__bar">
+            <span class="nps-dist__fill" style="width:{{ (d.count / stats.total * 100) | round(1) }}%;"></span>
+          </span>
+          <span class="nps-dist__count">{{ d.count }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="page-sub">Aucune réponse sur cette période.</p>
+      {% endif %}
+    </section>
+
+    {% if stats.by_page %}
+    <section class="panel">
+      <h2>Par page</h2>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr><th>Page</th><th>Réponses</th><th>Note moy.</th></tr>
+          </thead>
+          <tbody>
+            {% for p in stats.by_page %}
+            <tr>
+              <td style="white-space:normal;max-width:360px;"><a href="{{ p.path }}" target="_blank" rel="noopener">{{ p.path }}</a></td>
+              <td>{{ p.responses }}</td>
+              <td style="color:var(--gold);white-space:nowrap;">{{ p.avg_rating }} ★</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    {% endif %}
+
+    {% if stats.recent %}
+    <section class="panel">
+      <h2>Réponses récentes</h2>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr><th>Date</th><th>Note</th><th>Page</th><th>Commentaire</th><th>Pays</th></tr>
+          </thead>
+          <tbody>
+            {% for r in stats.recent %}
+            <tr>
+              <td style="white-space:nowrap;">{{ r.created_at[:16] | replace('T', ' ') }}</td>
+              <td style="color:var(--gold);white-space:nowrap;">{{ '★' * r.rating }}</td>
+              <td style="white-space:normal;max-width:240px;"><a href="{{ r.path or '#' }}" target="_blank" rel="noopener">{{ r.path or '—' }}</a></td>
+              <td style="white-space:normal;max-width:280px;">{{ r.comment or '—' }}</td>
+              <td>{{ r.country_name or '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    {% endif %}
+
+  </div>
+
+  <aside class="admin-page-aside">
+    <section class="panel">
+      <h2>💡 Bon à savoir</h2>
+      <ul class="status-list">
+        <li class="{% if nps_enabled %}ok{% else %}warn{% endif %}">
+          Le widget {% if nps_enabled %}est visible{% else %}est masqué{% endif %} sur toutes les pages du site public.
+        </li>
+        <li class="ok">La note et la page consultée sont enregistrées à chaque réponse.</li>
+        <li class="ok">Un visiteur n'est re-sollicité qu'après 30 jours sur une même page.</li>
+        <li class="warn">Aucune donnée personnelle n'est stockée (IP anonymisée).</li>
+      </ul>
+    </section>
+  </aside>
+</div>
+{% endblock %}

@@ -794,3 +794,148 @@ def get_mai_chat_stats(days: int = 30, site_unique_visitors: int = 0) -> dict:
             min(100.0, out["unique_users"] / site_unique_visitors * 100), 1
         )
     return out
+
+
+# ── NPS / satisfaction contenu ────────────────────────────────────────
+def log_nps_response(
+    rating: int,
+    *,
+    path: str = "",
+    comment: str = "",
+    lang: str = "fr",
+    ip_hash: str = "",
+    visitor_hash: str = "",
+    country_code: str = "",
+    country_name: str = "",
+):
+    """Enregistre une notation 1-5 de pertinence du contenu d'une page."""
+    rating = max(1, min(5, int(rating)))
+    with get_connection() as conn:
+        _execute(
+            conn,
+            """INSERT INTO nps_responses
+               (rating, comment, path, lang, ip_hash, visitor_hash,
+                country_code, country_name, created_at)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+            """INSERT INTO nps_responses
+               (rating, comment, path, lang, ip_hash, visitor_hash,
+                country_code, country_name, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?)""",
+            (
+                rating,
+                (comment or "")[:500],
+                (path or "")[:300],
+                (lang or "fr")[:5],
+                (ip_hash or "")[:32],
+                (visitor_hash or "")[:32],
+                (country_code or "")[:5],
+                (country_name or "")[:80],
+                _now_iso(),
+            ),
+        )
+
+
+def get_nps_stats(days: int = 30) -> dict:
+    since = _since_days(days)
+    out = {
+        "total": 0,
+        "average": 0.0,
+        "satisfied_pct": 0.0,
+        "distribution": [
+            {"rating": 5, "count": 0},
+            {"rating": 4, "count": 0},
+            {"rating": 3, "count": 0},
+            {"rating": 2, "count": 0},
+            {"rating": 1, "count": 0},
+        ],
+        "by_page": [],
+        "daily": [],
+        "recent": [],
+    }
+    try:
+        with get_connection() as conn:
+            row = _execute(
+                conn,
+                "SELECT COUNT(*) AS c, AVG(rating) AS a FROM nps_responses WHERE created_at >= %s",
+                "SELECT COUNT(*) AS c, AVG(rating) AS a FROM nps_responses WHERE created_at >= ?",
+                (since,),
+            ).fetchone()
+            row = _row_dict(row)
+            out["total"] = int(row.get("c") or 0)
+            out["average"] = round(float(row.get("a") or 0), 2)
+
+            if out["total"]:
+                row = _execute(
+                    conn,
+                    "SELECT COUNT(*) AS c FROM nps_responses WHERE created_at >= %s AND rating >= 4",
+                    "SELECT COUNT(*) AS c FROM nps_responses WHERE created_at >= ? AND rating >= 4",
+                    (since,),
+                ).fetchone()
+                satisfied = (row["c"] if isinstance(row, dict) else row[0]) or 0
+                out["satisfied_pct"] = round(satisfied / out["total"] * 100, 1)
+
+            counts = {}
+            rows = _execute(
+                conn,
+                "SELECT rating, COUNT(*) AS c FROM nps_responses WHERE created_at >= %s GROUP BY rating",
+                "SELECT rating, COUNT(*) AS c FROM nps_responses WHERE created_at >= ? GROUP BY rating",
+                (since,),
+            ).fetchall()
+            for r in rows:
+                d = _row_dict(r)
+                counts[int(d.get("rating") or 0)] = int(d.get("c") or 0)
+            for item in out["distribution"]:
+                item["count"] = counts.get(item["rating"], 0)
+
+            rows = _execute(
+                conn,
+                """SELECT path, COUNT(*) AS responses, AVG(rating) AS avg_rating
+                   FROM nps_responses WHERE created_at >= %s AND COALESCE(path, '') <> ''
+                   GROUP BY path ORDER BY responses DESC, avg_rating ASC LIMIT 50""",
+                """SELECT path, COUNT(*) AS responses, AVG(rating) AS avg_rating
+                   FROM nps_responses WHERE created_at >= ? AND COALESCE(path, '') <> ''
+                   GROUP BY path ORDER BY responses DESC, avg_rating ASC LIMIT 50""",
+                (since,),
+            ).fetchall()
+            out["by_page"] = []
+            for r in rows:
+                d = _row_dict(r)
+                out["by_page"].append({
+                    "path": d.get("path") or "—",
+                    "responses": int(d.get("responses") or 0),
+                    "avg_rating": round(float(d.get("avg_rating") or 0), 2),
+                })
+
+            rows = _execute(
+                conn,
+                """SELECT created_at::date AS day, COUNT(*) AS c, AVG(rating) AS a
+                   FROM nps_responses WHERE created_at >= %s
+                   GROUP BY day ORDER BY day""",
+                """SELECT date(created_at) AS day, COUNT(*) AS c, AVG(rating) AS a
+                   FROM nps_responses WHERE created_at >= ?
+                   GROUP BY day ORDER BY day""",
+                (since,),
+            ).fetchall()
+            out["daily"] = []
+            for r in rows:
+                d = _row_dict(r)
+                out["daily"].append({
+                    "day": d.get("day"),
+                    "count": int(d.get("c") or 0),
+                    "avg_rating": round(float(d.get("a") or 0), 2),
+                })
+
+            rows = _execute(
+                conn,
+                """SELECT created_at, rating, comment, path, lang, country_name
+                   FROM nps_responses WHERE created_at >= %s
+                   ORDER BY created_at DESC LIMIT 100""",
+                """SELECT created_at, rating, comment, path, lang, country_name
+                   FROM nps_responses WHERE created_at >= ?
+                   ORDER BY created_at DESC LIMIT 100""",
+                (since,),
+            ).fetchall()
+            out["recent"] = [_row_dict(r) for r in rows]
+    except Exception:
+        pass
+    return out

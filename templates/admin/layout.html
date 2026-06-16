@@ -147,6 +147,9 @@
           <a href="{{ url_for('admin.gsc') }}" class="admin-nav__link {% if gsc_active %}is-active{% endif %}">
             <span class="admin-nav__icon" aria-hidden="true">🔍</span> Search Console
           </a>
+          <a href="{{ url_for('admin.nps_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.nps_admin' %}is-active{% endif %}">
+            <span class="admin-nav__icon" aria-hidden="true">⭐</span> NPS
+          </a>
         </div>
       </nav>
 

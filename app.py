@@ -241,6 +241,20 @@ def _log_mai_chat_event_async(**kwargs):
         pass
 
 
+def _log_nps_response_async(client_ip: str, **kwargs):
+    try:
+        from admin.geoip import resolve_location
+
+        country_code, country_name, _city = resolve_location(client_ip)
+        analytics_db.log_nps_response(
+            country_code=country_code,
+            country_name=country_name,
+            **kwargs,
+        )
+    except Exception:
+        pass
+
+
 def _mai_question_log_text(message: str) -> str:
     return (message or "").strip()[:500]
 
@@ -417,6 +431,7 @@ def inject_globals():
         "og_locale": "en_GB" if lang == "en" else "fr_FR",
         "llms_txt_url": config.SITE_URL.rstrip("/") + "/llms.txt",
         "chat_enabled": _chat_enabled(),
+        "nps_enabled": bool(settings.get("nps_enabled", False)),
         "partner_account": partner_account,
     }
 
@@ -2006,6 +2021,66 @@ def api_chat_event():
 @app.route("/en/api/chat", methods=["POST"])
 def api_chat_en():
     return api_chat()
+
+
+@app.route("/api/nps", methods=["POST"])
+@app.route("/en/api/nps", methods=["POST"])
+def api_nps():
+    """Reçoit une notation 1-5 de pertinence du contenu depuis le widget public."""
+    from flask import jsonify
+
+    settings = get_or_set("settings", get_settings)
+    if not settings.get("nps_enabled", False):
+        return jsonify({"ok": False}), 503
+
+    payload = request.get_json(silent=True) or {}
+    try:
+        rating = int(payload.get("rating"))
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "error": "invalid rating"}), 400
+    if rating < 1 or rating > 5:
+        return jsonify({"ok": False, "error": "invalid rating"}), 400
+
+    from urllib.parse import urlparse
+
+    from admin.analytics_filters import analytics_ip_hash
+
+    lang = "en" if payload.get("lang") == "en" else get_lang()
+    comment = (payload.get("comment") or "").strip()[:500]
+
+    path = (payload.get("path") or "").strip()
+    if not path:
+        ref = request.referrer or ""
+        path = urlparse(ref).path if ref else ""
+    path = path[:300]
+
+    client_ip = (request.remote_addr or "").strip()
+    ip_hash = analytics_ip_hash(client_ip)
+
+    visitor_hash = ""
+    try:
+        from data.visitor_profile import PROFILE_COOKIE, parse_cookie
+
+        profile = parse_cookie(request.cookies.get(PROFILE_COOKIE))
+        if profile and profile.get("id"):
+            visitor_hash = profile["id"][:32]
+    except Exception:
+        pass
+
+    threading.Thread(
+        target=_log_nps_response_async,
+        kwargs={
+            "client_ip": client_ip,
+            "rating": rating,
+            "path": path,
+            "comment": comment,
+            "lang": lang,
+            "ip_hash": ip_hash,
+            "visitor_hash": visitor_hash,
+        },
+        daemon=True,
+    ).start()
+    return jsonify({"ok": True})
 
 
 # ── SEO ───────────────────────────────────────────────────────────────

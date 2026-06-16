@@ -1,0 +1,36 @@
+{% macro nps_widget() %}
+{% if nps_enabled %}
+<div class="nps-widget" id="nps-widget"
+     data-api-url="{{ url_for('api_nps') }}"
+     data-lang="{{ lang }}"
+     data-star-label="{{ t('nps.star_label') }}">
+  <button type="button" class="nps-widget__close" id="nps-close" aria-label="{{ t('nps.close') }}">✕</button>
+
+  <div class="nps-widget__body" id="nps-body">
+    <p class="nps-widget__question">{{ t('nps.question') }}</p>
+    <p class="nps-widget__subtitle">{{ t('nps.subtitle') }}</p>
+
+    <div class="nps-widget__stars" id="nps-stars" role="radiogroup" aria-label="{{ t('nps.subtitle') }}">
+      {% for n in [1, 2, 3, 4, 5] %}
+      <button type="button" class="nps-widget__star" data-value="{{ n }}"
+              role="radio" aria-checked="false"
+              aria-label="{{ t('nps.star_label') | replace('{n}', n|string) }}">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M12 2.5l2.9 5.9 6.5.95-4.7 4.58 1.11 6.47L12 17.9l-5.81 3.06 1.11-6.47-4.7-4.58 6.5-.95z"/>
+        </svg>
+      </button>
+      {% endfor %}
+    </div>
+
+    <div class="nps-widget__followup" id="nps-followup" hidden>
+      <textarea class="nps-widget__comment" id="nps-comment" rows="2"
+                maxlength="500" placeholder="{{ t('nps.comment_placeholder') }}"></textarea>
+      <button type="button" class="nps-widget__submit" id="nps-submit">{{ t('nps.submit') }}</button>
+    </div>
+  </div>
+
+  <p class="nps-widget__thanks" id="nps-thanks" hidden>{{ t('nps.thanks') }}</p>
+  <p class="nps-widget__error" id="nps-error" hidden>{{ t('nps.error') }}</p>
+</div>
+{% endif %}
+{% endmacro %}

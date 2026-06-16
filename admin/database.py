@@ -90,6 +90,20 @@ CREATE TABLE IF NOT EXISTS mai_chat_events (
 CREATE INDEX IF NOT EXISTS idx_mai_created ON mai_chat_events(created_at);
 CREATE INDEX IF NOT EXISTS idx_mai_event ON mai_chat_events(event_type);
 CREATE INDEX IF NOT EXISTS idx_mai_visitor ON mai_chat_events(visitor_hash);
+CREATE TABLE IF NOT EXISTS nps_responses (
+    id SERIAL PRIMARY KEY,
+    rating INTEGER NOT NULL,
+    comment TEXT,
+    path TEXT,
+    lang TEXT,
+    ip_hash TEXT,
+    visitor_hash TEXT,
+    country_code TEXT,
+    country_name TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_nps_created ON nps_responses(created_at);
+CREATE INDEX IF NOT EXISTS idx_nps_path ON nps_responses(path);
 """
 
 
@@ -306,6 +320,50 @@ def _migrate_mai_chat_table(conn, *, postgres: bool) -> None:
             pass
 
 
+def _migrate_nps_table(conn, *, postgres: bool) -> None:
+    if postgres:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS nps_responses (
+                    id SERIAL PRIMARY KEY,
+                    rating INTEGER NOT NULL,
+                    comment TEXT,
+                    path TEXT,
+                    lang TEXT,
+                    ip_hash TEXT,
+                    visitor_hash TEXT,
+                    country_code TEXT,
+                    country_name TEXT,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )""")
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_nps_created ON nps_responses(created_at)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_nps_path ON nps_responses(path)"
+            )
+    else:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS nps_responses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                rating INTEGER NOT NULL,
+                comment TEXT,
+                path TEXT,
+                lang TEXT,
+                ip_hash TEXT,
+                visitor_hash TEXT,
+                country_code TEXT,
+                country_name TEXT,
+                created_at TEXT NOT NULL
+            )""")
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_nps_created ON nps_responses(created_at)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_nps_path ON nps_responses(path)"
+        )
+
+
 def _init_postgres():
     import psycopg2
 
@@ -322,6 +380,7 @@ def _init_postgres():
         _migrate_mai_chat_table(conn, postgres=True)
         _migrate_email_tracking_table(conn, postgres=True)
         _migrate_partner_portal_tables(conn, postgres=True)
+        _migrate_nps_table(conn, postgres=True)
         conn.commit()
     finally:
         conn.close()
@@ -367,6 +426,7 @@ def _init_sqlite():
         _migrate_mai_chat_table(conn, postgres=False)
         _migrate_email_tracking_table(conn, postgres=False)
         _migrate_partner_portal_tables(conn, postgres=False)
+        _migrate_nps_table(conn, postgres=False)
 
 
 def _migrate_email_tracking_table(conn, *, postgres: bool) -> None:

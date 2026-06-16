@@ -36,6 +36,10 @@ def get_settings() -> dict:
         # Vietnam réelles (immédiates et fiables). Flux est lent et faisait pendre
         # la génération. Passer à true pour réactiver la génération d'image par IA.
         "ai_image_enabled": False,
+        # Widget NPS public (notation pertinence du contenu, 1-5 étoiles).
+        # Désactivé par défaut : on l'active depuis l'admin (onglet NPS) quand on
+        # veut collecter du feedback en production.
+        "nps_enabled": False,
         "commission_estimates": {
             "booking": 8.0,
             "agoda": 6.0,

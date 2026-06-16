@@ -1280,6 +1280,34 @@ def reviews_admin():
     )
 
 
+@admin_bp.route("/nps", methods=["GET", "POST"])
+@login_required
+def nps_admin():
+    if request.method == "POST":
+        action = request.form.get("action")
+        if action == "toggle":
+            enabled = request.form.get("nps_enabled") == "on"
+            save_settings({"nps_enabled": enabled})
+            flash(
+                "Widget NPS activé sur le site." if enabled
+                else "Widget NPS désactivé.",
+                "success",
+            )
+        return redirect(url_for("admin.nps_admin"))
+
+    days = int(request.args.get("days", 30))
+    if days not in (7, 30, 90):
+        days = 30
+    settings = get_settings()
+    stats = db.get_nps_stats(days)
+    return render_template(
+        "admin/nps.html",
+        stats=stats,
+        days=days,
+        nps_enabled=bool(settings.get("nps_enabled", False)),
+    )
+
+
 @admin_bp.context_processor
 def admin_globals():
     try:

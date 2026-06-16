@@ -846,6 +846,35 @@ UI: dict[str, dict[str, str]] = {
         "en": "How do I prepare my visa?",
     },
 
+    # ── Widget NPS (pertinence du contenu) ───────────────────────────
+    "nps.question": {
+        "fr": "Cette page vous a-t-elle été utile ?",
+        "en": "Was this page helpful?",
+    },
+    "nps.subtitle": {
+        "fr": "Notez la pertinence du contenu",
+        "en": "Rate how relevant the content is",
+    },
+    "nps.star_label": {
+        "fr": "Noter {n} sur 5",
+        "en": "Rate {n} out of 5",
+    },
+    "nps.comment_placeholder": {
+        "fr": "Un commentaire ? (facultatif)",
+        "en": "Any feedback? (optional)",
+    },
+    "nps.submit": {"fr": "Envoyer", "en": "Send"},
+    "nps.thanks": {
+        "fr": "Merci pour votre retour ! 🙏",
+        "en": "Thanks for your feedback! 🙏",
+    },
+    "nps.error": {
+        "fr": "Oups, réessayez dans un instant.",
+        "en": "Oops, please try again in a moment.",
+    },
+    "nps.close": {"fr": "Fermer", "en": "Close"},
+    "nps.open": {"fr": "Donner mon avis", "en": "Give feedback"},
+
     # ── Filtres blog ─────────────────────────────────────────────────
     "blog.filter.all": {"fr": "Tout", "en": "All"},
     "blog.filter.label": {"fr": "Filtrer par thème", "en": "Filter by topic"},
