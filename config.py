@@ -21,6 +21,10 @@ SITE_TAGLINE_I18N = {
     "en": "Guides, itineraries and tips for travelling in Vietnam",
 }
 SITE_URL = _resolve_site_url()
+# Environnement de staging : empêche l'indexation Google du double public du site
+# (X-Robots-Tag noindex + robots.txt Disallow all). Désactivé par défaut → aucun
+# impact en production. Activer en posant SITE_NOINDEX=true sur l'app de staging.
+SITE_NOINDEX = os.environ.get("SITE_NOINDEX", "").strip().lower() in ("1", "true", "yes", "on")
 SITE_PUBLIC_DOMAIN = os.environ.get("SITE_PUBLIC_DOMAIN", "insidevietnamtravel.fr").strip().lower()
 SITE_CANONICAL_URL = (
     os.environ.get("SITE_CANONICAL_URL", f"https://www.{SITE_PUBLIC_DOMAIN}").strip().rstrip("/")

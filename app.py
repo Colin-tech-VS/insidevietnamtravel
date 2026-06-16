@@ -359,7 +359,10 @@ def add_performance_headers(response):
         response.headers.setdefault("Cache-Control", "public, max-age=300, stale-while-revalidate=600")
     elif path.startswith("/api/map/") and response.status_code == 200:
         response.headers.setdefault("Cache-Control", "public, max-age=3600, stale-while-revalidate=86400")
-    if path.startswith("/go/"):
+    if config.SITE_NOINDEX:
+        # Staging : interdit l'indexation de tout le site (double public de la prod).
+        response.headers["X-Robots-Tag"] = "noindex, nofollow, noarchive"
+    elif path.startswith("/go/"):
         response.headers["X-Robots-Tag"] = "noindex, nofollow"
     return response
 

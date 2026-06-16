@@ -153,6 +153,9 @@ GEO_ROBOTS_AGENTS = [
 
 def render_robots_txt() -> str:
     base = config.SITE_URL.rstrip("/")
+    if getattr(config, "SITE_NOINDEX", False):
+        # Staging : bloque entièrement les crawlers (double public de la prod).
+        return "User-agent: *\nDisallow: /\n"
     lines = [
         "User-agent: *",
         "Allow: /",
