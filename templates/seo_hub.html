@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% from "macros/images.html" import responsive_img with context %}
+{% from "macros/seo.html" import json_ld_graph with context %}
+
+{% block structured_data %}
+{{ json_ld_graph(seo_schemas) }}
+{% endblock %}
+
+{% block head_preload %}
+<style>
+  .seo-hub__search { position: relative; max-width: 560px; margin: 1.5rem auto 0; }
+  .seo-hub__search-input {
+    width: 100%; padding: 0.85rem 1rem 0.85rem 2.75rem; font-size: 1rem;
+    border: 1px solid var(--border, #d8d8d8); border-radius: 999px;
+    background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .seo-hub__search-input:focus { outline: 2px solid var(--accent, #1f7a5a); outline-offset: 1px; }
+  .seo-hub__search-icon {
+    position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
+    width: 1.1rem; height: 1.1rem; opacity: .55; pointer-events: none;
+  }
+  .seo-hub__count { text-align: center; margin: 1rem 0 0; color: var(--muted, #666); font-size: .95rem; }
+  .seo-hub__no-results { text-align: center; padding: 2rem 1rem; color: var(--muted, #666); }
+  .seo-hub__card .card-keywords { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .5rem; }
+  .seo-hub__card .card-keywords .tag { font-size: .72rem; opacity: .8; }
+  .seo-hub__card[hidden] { display: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<header class="page-hero">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="{{ t('breadcrumb.aria') }}">
+      <ol>
+        <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+        <li aria-current="page">{{ t('seo_hub.eyebrow') }}</li>
+      </ol>
+    </nav>
+    <p class="page-hero__eyebrow">{{ t('seo_hub.eyebrow') }}</p>
+    <h1>{{ t('seo_hub.title') }}</h1>
+    <p>{{ t('seo_hub.intro') }}</p>
+
+    {% if pages %}
+    <div class="seo-hub__search">
+      <svg class="seo-hub__search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <label class="sr-only" for="seo-hub-search">{{ t('seo_hub.search_label') }}</label>
+      <input type="search" id="seo-hub-search" class="seo-hub__search-input"
+             placeholder="{{ t('seo_hub.search_placeholder') }}"
+             autocomplete="off" aria-controls="seo-hub-grid">
+    </div>
+    <p class="seo-hub__count" id="seo-hub-count"
+       data-one="{{ t('seo_hub.count_one') }}" data-many="{{ t('seo_hub.count_many') }}">
+      {{ pages|length }} {{ t('seo_hub.count_many') if pages|length > 1 else t('seo_hub.count_one') }}
+    </p>
+    {% endif %}
+  </div>
+</header>
+
+<section class="section">
+  <div class="container">
+    {% if pages %}
+    <div class="articles-grid" id="seo-hub-grid">
+      {% for page in pages %}
+      {% set search_blob = (page.title ~ ' ' ~ (page.excerpt or '') ~ ' ' ~ (page.focus_keyword or '') ~ ' ' ~ (page.city or '') ~ ' ' ~ (page.target_keywords | join(' '))) | lower %}
+      <article class="card card--article seo-hub__card" data-search="{{ search_blob }}">
+        <div class="card-visual">
+          <a href="{{ lang_url('seo_page', slug=page.slug) }}" class="card-visual__link" tabindex="-1" aria-hidden="true">
+            {% if page.image %}
+            {{ responsive_img(
+              page.image,
+              alt=page.image_alt or page.title,
+              width=400,
+              height=225,
+              loading='lazy',
+              class='card-visual__img',
+              sizes='(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px'
+            ) }}
+            {% else %}
+            <div class="card-visual__placeholder card-visual--{{ (loop.index0 % 6) + 1 }}" aria-hidden="true"></div>
+            {% endif %}
+          </a>
+          {% if page.city %}
+          <span class="card-category">{{ page.city }}</span>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          <a href="{{ lang_url('seo_page', slug=page.slug) }}" class="card-link">
+            <h2 class="card-title">{{ page.title }}</h2>
+            <p class="card-excerpt">{{ page.excerpt }}</p>
+            {% if page.read_time %}
+            <span class="card-meta">{{ page.read_time }} {{ t('article.read_time') }}</span>
+            {% endif %}
+          </a>
+          {% if page.target_keywords %}
+          <div class="card-keywords" aria-hidden="true">
+            {% for kw in page.target_keywords[:3] %}
+            <span class="tag">#{{ kw }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    <p class="seo-hub__no-results" id="seo-hub-no-results" hidden>{{ t('seo_hub.no_results') }}</p>
+    {% else %}
+    <p class="empty-state">{{ t('seo_hub.empty') }}</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{% if pages %}
+<script>
+(function () {
+  var input = document.getElementById('seo-hub-search');
+  var grid = document.getElementById('seo-hub-grid');
+  if (!input || !grid) return;
+  var cards = Array.prototype.slice.call(grid.querySelectorAll('.seo-hub__card'));
+  var count = document.getElementById('seo-hub-count');
+  var noResults = document.getElementById('seo-hub-no-results');
+  var one = count ? count.getAttribute('data-one') : '';
+  var many = count ? count.getAttribute('data-many') : '';
+
+  function normalize(s) {
+    return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function apply() {
+    var q = normalize(input.value.trim());
+    var visible = 0;
+    cards.forEach(function (card) {
+      var hay = normalize(card.getAttribute('data-search'));
+      var match = !q || hay.indexOf(q) !== -1;
+      card.hidden = !match;
+      if (match) visible++;
+    });
+    if (count) count.textContent = visible + ' ' + (visible > 1 ? many : one);
+    if (noResults) noResults.hidden = visible !== 0;
+  }
+
+  var timer;
+  input.addEventListener('input', function () {
+    clearTimeout(timer);
+    timer = setTimeout(apply, 80);
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -202,11 +202,12 @@ def add_revenue(source: str, amount: float, note: str = "", currency: str = "EUR
 
 def get_realtime_stats():
     bot = _human_traffic_sql()
+    distinct = " AND COALESCE(ip_hash, '') <> ''"
     with get_connection() as conn:
         active = _execute(
             conn,
-            f"SELECT COUNT(DISTINCT ip_hash) AS c FROM page_views WHERE created_at >= %s{bot}",
-            f"SELECT COUNT(DISTINCT ip_hash) FROM page_views WHERE created_at >= ?{bot}",
+            f"SELECT COUNT(DISTINCT ip_hash) AS c FROM page_views WHERE created_at >= %s{distinct}{bot}",
+            f"SELECT COUNT(DISTINCT ip_hash) FROM page_views WHERE created_at >= ?{distinct}{bot}",
             (_since(30),),
         ).fetchone()
         aff = _real_affiliate_click_sql()

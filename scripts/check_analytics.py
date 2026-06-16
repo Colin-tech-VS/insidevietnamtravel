@@ -60,8 +60,8 @@ with get_connection() as conn:
     )
 
     active = count(
-        f"SELECT COUNT(DISTINCT ip_hash) AS c FROM page_views WHERE created_at >= %s{bot_sql}",
-        f"SELECT COUNT(DISTINCT ip_hash) as c FROM page_views WHERE created_at >= ?{bot_sql}",
+        f"SELECT COUNT(DISTINCT ip_hash) AS c FROM page_views WHERE created_at >= %s AND COALESCE(ip_hash, '') <> ''{bot_sql}",
+        f"SELECT COUNT(DISTINCT ip_hash) as c FROM page_views WHERE created_at >= ? AND COALESCE(ip_hash, '') <> ''{bot_sql}",
         (since_30m,),
     )
 

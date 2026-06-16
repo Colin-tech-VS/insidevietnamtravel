@@ -17,6 +17,7 @@ SITEMAP_STATIC: dict[str, dict[str, str]] = {
     "index": {"priority": "1.0", "changefreq": "weekly"},
     "destinations_index": {"priority": "0.92", "changefreq": "weekly"},
     "blog_index": {"priority": "0.9", "changefreq": "daily"},
+    "seo_hub": {"priority": "0.85", "changefreq": "weekly"},
     "prepare_trip": {"priority": "0.95", "changefreq": "weekly"},
     "best_season": {"priority": "0.85", "changefreq": "monthly"},
     "budget_tool": {"priority": "0.85", "changefreq": "monthly"},
