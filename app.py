@@ -79,7 +79,7 @@ RESERVED_SLUGS = frozenset({
     "esim-assurance-vietnam", "esim-insurance-vietnam",
     "applications-utiles-vietnam", "useful-apps-vietnam",
     "devenir-partenaire", "become-a-partner", "partenaire", "partner", "partners",
-    "seo",
+    "seo", "ressources-voyage-vietnam", "vietnam-travel-resources",
 })
 
 load_dotenv()
@@ -1052,6 +1052,46 @@ def article(slug):
         meta_description=article_meta_description(post, lang),
         meta_keywords=", ".join(post.get("tags", [])[:10]),
         og_image=post.get("image"),
+    )
+
+
+@app.route("/ressources-voyage-vietnam")
+@app.route("/en/vietnam-travel-resources")
+def seo_hub():
+    """Page hub « Ressources voyage » — index public et maillé de toutes les pages SEO."""
+    from admin.seo_pages_service import get_published_seo_pages
+
+    lang = get_lang()
+    pages = get_published_seo_pages(lang)
+    for p in pages:
+        p["image"] = persistent_image_url(
+            p.get("image"), p.get("image_photo_id"), p.get("image_source_url"),
+        )
+    canonical = canonical_for_request(lang)
+    base = config.SITE_URL.rstrip("/")
+    name = t("seo_hub.title", lang)
+    schemas = [
+        webpage_schema(name, t("seo_hub.meta_description", lang), canonical, lang=lang),
+        breadcrumb_schema([
+            (t("nav.home", lang), base + lang_url("index", lang)),
+            (t("seo_hub.eyebrow", lang), None),
+        ]),
+    ]
+    if pages:
+        schemas.append(item_list_schema(name, [
+            {
+                "name": p.get("title", ""),
+                "url": base + lang_url("seo_page", lang, slug=p["slug"]),
+            }
+            for p in pages
+        ]))
+    return render_template(
+        "seo_hub.html",
+        pages=pages,
+        meta_title=t("seo_hub.meta_title", lang),
+        meta_description=t("seo_hub.meta_description", lang),
+        meta_keywords=t("seo_hub.eyebrow", lang),
+        seo_schemas=schemas,
     )
 
 

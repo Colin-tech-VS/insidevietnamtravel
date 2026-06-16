@@ -29,6 +29,7 @@ UI: dict[str, dict[str, str]] = {
     "footer.destinations": {"fr": "Destinations", "en": "Destinations"},
     "footer.itineraries_blog": {"fr": "Itinéraires & Blog", "en": "Itineraries & Blog"},
     "footer.all_articles": {"fr": "Tous les articles", "en": "All articles"},
+    "footer.resources": {"fr": "Ressources voyage", "en": "Travel resources"},
     "footer.copyright": {
         "fr": "Site indépendant — non affilié à une agence de voyage.",
         "en": "Independent site — not affiliated with a travel agency.",
@@ -38,6 +39,45 @@ UI: dict[str, dict[str, str]] = {
     "footer.unsubscribe": {"fr": "Désinscription newsletter", "en": "Unsubscribe newsletter"},
     "footer.cookies": {"fr": "Cookies", "en": "Cookies"},
     "footer.legal_nav": {"fr": "Informations légales", "en": "Legal information"},
+
+    # Hub Ressources voyage (pages SEO)
+    "seo_hub.eyebrow": {"fr": "Ressources voyage Vietnam", "en": "Vietnam travel resources"},
+    "seo_hub.title": {
+        "fr": "Ressources & guides pratiques pour voyager au Vietnam",
+        "en": "Resources & practical guides for traveling to Vietnam",
+    },
+    "seo_hub.intro": {
+        "fr": "Tous nos guides pratiques, conseils et ressources pour préparer "
+              "votre voyage au Vietnam : formalités, budget, saisons, régions et bien plus.",
+        "en": "All our practical guides, tips and resources to plan your trip to "
+              "Vietnam: formalities, budget, seasons, regions and much more.",
+    },
+    "seo_hub.meta_title": {
+        "fr": "Ressources voyage Vietnam : guides pratiques & conseils",
+        "en": "Vietnam travel resources: practical guides & tips",
+    },
+    "seo_hub.meta_description": {
+        "fr": "Retrouvez toutes nos ressources et guides pratiques pour organiser "
+              "votre voyage au Vietnam : visa, budget, météo, itinéraires et conseils d'experts.",
+        "en": "Find all our resources and practical guides to organize your trip to "
+              "Vietnam: visa, budget, weather, itineraries and expert tips.",
+    },
+    "seo_hub.search_label": {"fr": "Rechercher une ressource", "en": "Search a resource"},
+    "seo_hub.search_placeholder": {
+        "fr": "Rechercher un guide, un sujet, une ville…",
+        "en": "Search a guide, a topic, a city…",
+    },
+    "seo_hub.count_one": {"fr": "ressource", "en": "resource"},
+    "seo_hub.count_many": {"fr": "ressources", "en": "resources"},
+    "seo_hub.no_results": {
+        "fr": "Aucune ressource ne correspond à votre recherche.",
+        "en": "No resource matches your search.",
+    },
+    "seo_hub.empty": {
+        "fr": "Les ressources arrivent bientôt. Revenez vite !",
+        "en": "Resources are coming soon. Check back shortly!",
+    },
+    "seo_hub.read_more": {"fr": "Lire la ressource", "en": "Read resource"},
 
     # Homepage
     "home.hero.eyebrow": {"fr": "Guide voyage Vietnam", "en": "Vietnam travel guide"},

@@ -281,6 +281,7 @@ ROUTE_PATHS: dict[str, dict[str, str]] = {
     "category": {"fr": "/categorie/{category}", "en": "/en/category/{category}"},
     "article": {"fr": "/blog/{slug}", "en": "/en/blog/{slug}"},
     "seo_page": {"fr": "/seo/{slug}", "en": "/en/seo/{slug}"},
+    "seo_hub": {"fr": "/ressources-voyage-vietnam", "en": "/en/vietnam-travel-resources"},
     "itinerary": {"fr": "/itineraries/{slug}", "en": "/en/itineraries/{slug}"},
     "itinerary_guide_subscribe": {
         "fr": "/itineraries/{slug}/guide",
