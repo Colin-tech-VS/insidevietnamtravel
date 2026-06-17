@@ -698,6 +698,19 @@ code {
   margin-top: 0.35rem;
 }
 .kpi-card__hint a { font-weight: 500; }
+.kpi-card__badge {
+  display: inline-block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 0.4rem;
+  padding: 0.05rem 0.35rem;
+  margin-left: 0.3rem;
+  vertical-align: middle;
+}
 
 .chart-grid {
   display: grid;

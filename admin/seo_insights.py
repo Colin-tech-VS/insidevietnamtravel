@@ -125,7 +125,8 @@ def build_mixed_insights(gsc_report: dict, site_days: int) -> dict:
         })
     queries_mixed.sort(key=lambda r: (-r["clicks"], -r["impressions"]))
 
-    gsc_clicks = int((gsc_report.get("totals") or {}).get("clicks") or 0)
+    gsc_totals = gsc_report.get("totals") or {}
+    gsc_clicks = int(gsc_totals.get("clicks") or 0)
     site_organic_total = sum(organic_visitors.values())
 
     return {
@@ -137,6 +138,9 @@ def build_mixed_insights(gsc_report: dict, site_days: int) -> dict:
         "queries_mixed": queries_mixed[:80],
         "totals": {
             "gsc_clicks": gsc_clicks,
+            "gsc_impressions": int(gsc_totals.get("impressions") or 0),
+            "gsc_ctr": gsc_totals.get("ctr") or 0,
+            "gsc_position": gsc_totals.get("position") or 0,
             "site_unique": site_unique_total,
             "site_organic": site_organic_total,
         },
