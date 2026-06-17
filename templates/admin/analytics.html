@@ -265,12 +265,18 @@
     <section class="geo-analytics-section seo-analytics-section" aria-labelledby="seo-title">
       <header class="geo-analytics-header">
         <h2 id="seo-title">SEO — Trafic organique</h2>
-        <p class="page-sub">Visiteurs uniques depuis Google, Bing et autres moteurs (referrer) — indicateurs clés pour la croissance du site.</p>
+        <p class="page-sub">
+          Visiteurs uniques depuis Google (web + app mobile + moteurs régionaux), Bing,
+          DuckDuckGo, Baidu, Naver et autres, détectés par <em>referrer</em>.
+          ⚠️ <strong>Estimation minimale</strong> : certains navigateurs (apps, mode confidentialité)
+          n'envoient aucun referrer, donc une partie du SEO réel reste comptée en « Direct ».
+          {% if gsc_connected %}Pour le chiffre fiable, voir <a href="#seo-mixed-title">Clics Google (Search Console)</a> ci-dessous.{% endif %}
+        </p>
       </header>
 
       <div class="kpi-grid">
         <div class="kpi-card kpi-card--gold">
-          <span class="kpi-card__label">Visiteurs uniques SEO</span>
+          <span class="kpi-card__label">Visiteurs uniques SEO <span class="kpi-card__badge" title="Estimation minimale (referrer)">min.</span></span>
           <span class="kpi-card__value">{{ stats.seo.total_organic_views }}</span>
           <span class="kpi-card__hint">{{ stats.seo.organic_share_pct }}% du trafic humain · {{ days }} jours</span>
         </div>
@@ -353,16 +359,32 @@
 
       <div class="kpi-grid" style="margin-bottom:1rem">
         <div class="kpi-card kpi-card--gold">
-          <span class="kpi-card__label">Clics Google</span>
+          <span class="kpi-card__label">Clics Google (réels)</span>
           <span class="kpi-card__value">{{ gsc_mixed.totals.gsc_clicks }}</span>
-          <span class="kpi-card__hint">Search Console</span>
+          <span class="kpi-card__hint">Source fiable · Search Console</span>
         </div>
         <div class="kpi-card">
-          <span class="kpi-card__label">Visiteurs SEO site</span>
-          <span class="kpi-card__value">{{ gsc_mixed.totals.site_organic }}</span>
-          <span class="kpi-card__hint">Referrer moteur · {{ days }} j</span>
+          <span class="kpi-card__label">Impressions</span>
+          <span class="kpi-card__value">{{ '{:,}'.format(gsc_mixed.totals.gsc_impressions).replace(',', ' ') }}</span>
+          <span class="kpi-card__hint">Apparitions dans Google</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-card__label">CTR moyen</span>
+          <span class="kpi-card__value">{{ gsc_mixed.totals.gsc_ctr }}%</span>
+          <span class="kpi-card__hint">Clics ÷ impressions</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-card__label">Position moyenne</span>
+          <span class="kpi-card__value">{{ gsc_mixed.totals.gsc_position }}</span>
+          <span class="kpi-card__hint">Rang Google moyen</span>
         </div>
       </div>
+      <p class="page-sub" style="margin-top:-.4rem">
+        Comparatif : le compteur « Visiteurs uniques SEO » plus haut (mesuré par referrer)
+        détecte <strong>{{ gsc_mixed.totals.site_organic }}</strong> visiteur(s) organique(s) sur {{ days }} j —
+        nettement moins que les <strong>{{ gsc_mixed.totals.gsc_clicks }}</strong> clics réels de Google,
+        car beaucoup de navigateurs n'envoient pas le referrer. Fiez-vous aux clics Google ci-dessus.
+      </p>
 
       <section class="chart-panel chart-panel--wide">
         <h2>Requête → Page (top combinaisons)</h2>
