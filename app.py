@@ -577,6 +577,18 @@ def static_v_filter(path: str) -> str:
     return _static_versioned(path) if path else path
 
 
+@app.template_filter("admin_thumb")
+def admin_thumb_filter(path: str) -> str:
+    """Miniature admin légère (-640) pour les couvertures partenaires WebP."""
+    if not path or not path.endswith(".webp") or "/images/partners/" not in path:
+        return static_v_filter(path)
+    thumb = f"{path[:-5]}-640.webp"
+    rel = thumb.removeprefix("/static/")
+    if _variant_exists(rel):
+        return _static_versioned(thumb)
+    return _static_versioned(path)
+
+
 @app.template_global()
 def responsive_image(image_url: str, *, card: bool = False) -> dict:
     """src + srcset pour images WebP locales avec variantes -640/-960."""

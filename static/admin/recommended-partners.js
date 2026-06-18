@@ -127,5 +127,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btn) btn.disabled = false;
       }
     });
+  document.querySelectorAll('form[enctype="multipart/form-data"]').forEach((form) => {
+    form.addEventListener('submit', () => {
+      const hasFile = Array.from(form.querySelectorAll('input[type="file"]')).some(
+        (input) => input.files && input.files.length > 0,
+      );
+      if (!hasFile) return;
+      form.querySelectorAll('button[type="submit"]').forEach((btn) => {
+        btn.disabled = true;
+        if (!btn.dataset.origLabel) btn.dataset.origLabel = btn.textContent.trim();
+        btn.textContent = 'Envoi en cours…';
+      });
+    });
   });
 });

@@ -1053,9 +1053,10 @@ PARTNER_VARIANTS = (
     (960, "-960", 86),
     (1280, "-1280", 88),
 )
-# method=2 : encodage WebP rapide (Scalingo CPU limité). Les variantes srcset
-# sont générées en tâche de fond pour ne pas faire timeout le POST admin (~60 s).
-PARTNER_FAST_WEBP_METHOD = 2
+# method=0 : encodage WebP le plus rapide (Scalingo CPU limité). Les variantes
+# -960/-1280 sont générées en tâche de fond ; -640 est écrite en premier pour
+# l'aperçu admin et le srcset mobile.
+PARTNER_FAST_WEBP_METHOD = 0
 
 
 def _cover_partner(img: Image.Image) -> Image.Image:
@@ -1078,22 +1079,51 @@ def _create_partner_responsive_variants(
         resized.save(out, "WEBP", quality=quality, method=method)
 
 
-def _write_partner_cover_master(raw: bytes, out_path: Path) -> None:
-    """Master 1920×1080 — encodage rapide, sans variantes (réponse HTTP immédiate)."""
+def _write_partner_cover_master(
+    raw: bytes,
+    out_path: Path,
+    *,
+    prevalidated: bool = False,
+    on_thumb_ready: Callable[[], None] | None = None,
+) -> None:
+    """Master 1920×1080 + variante -640 (aperçu admin) — encodage rapide."""
+    if not prevalidated:
+        raw = validate_image_bytes(raw, max_bytes=MAX_PARTNER_COVER_BYTES)
+    img = None
     with _pil_lock:
-        img = _cover_partner(_decode_upload_image(raw))
+        img = _cover_partner(_decode_upload_image_unlocked(raw))
         out_path.parent.mkdir(parents=True, exist_ok=True)
+        w, h = img.size
+        thumb_path = out_path.parent / f"{out_path.stem}-640.webp"
+        nh = max(1, int(h * 640 / w))
+        img.resize((640, nh), Image.Resampling.LANCZOS).save(
+            thumb_path, "WEBP", quality=84, method=PARTNER_FAST_WEBP_METHOD,
+        )
+    if on_thumb_ready:
+        on_thumb_ready()
+    with _pil_lock:
         img.save(out_path, "WEBP", quality=PARTNER_WEBP_QUALITY, method=PARTNER_FAST_WEBP_METHOD)
 
 
 def _partner_variants_worker(out_path: Path) -> None:
-    """Génère les variantes srcset hors requête HTTP (thread daemon)."""
+    """Génère les variantes -960/-1280 hors requête HTTP (thread daemon)."""
     try:
         with _pil_lock:
             if not out_path.is_file():
                 return
             img = Image.open(out_path).convert("RGB")
-            _create_partner_responsive_variants(img, out_path, force=True)
+            w, h = img.size
+            method = PARTNER_FAST_WEBP_METHOD
+            for target_w, suffix, quality in PARTNER_VARIANTS:
+                if suffix == "-640":
+                    continue
+                variant = out_path.parent / f"{out_path.stem}{suffix}.webp"
+                if variant.is_file():
+                    continue
+                nh = max(1, int(h * target_w / w))
+                img.resize((target_w, nh), Image.Resampling.LANCZOS).save(
+                    variant, "WEBP", quality=quality, method=method,
+                )
     except Exception:  # noqa: BLE001
         pass
 
@@ -1105,9 +1135,9 @@ def _schedule_partner_variants(out_path: Path) -> None:
 def _write_partner_gallery_master(raw: bytes, out_path: Path) -> None:
     """Galerie activité — 1200×675, une seule taille (affichée en petit)."""
     with _pil_lock:
-        img = _cover_1200x675(_decode_upload_image(raw))
+        img = _cover_1200x675(_decode_upload_image_unlocked(raw))
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        img.save(out_path, "WEBP", quality=84, method=PARTNER_FAST_WEBP_METHOD)
+        img.save(out_path, "WEBP", quality=82, method=PARTNER_FAST_WEBP_METHOD)
 
 
 def _to_partner_webp(raw: bytes, out_path: Path) -> None:
@@ -1127,21 +1157,26 @@ def _write_partner_webp_fast(raw: bytes, out_path: Path) -> None:
         _create_partner_responsive_variants(img, out_path, force=True)
 
 
+def _decode_upload_image_unlocked(raw: bytes) -> Image.Image:
+    """Décode une image importée (appelant doit tenir _pil_lock si besoin)."""
+    with Image.open(io.BytesIO(raw)) as src:
+        img = ImageOps.exif_transpose(src)
+        if img.mode in ("RGBA", "LA"):
+            bg = Image.new("RGB", img.size, (255, 255, 255))
+            bg.paste(img, mask=img.split()[-1])
+            return bg
+        if img.mode == "P":
+            img = img.convert("RGBA")
+            bg = Image.new("RGB", img.size, (255, 255, 255))
+            bg.paste(img, mask=img.split()[-1])
+            return bg
+        return img.convert("RGB")
+
+
 def _decode_upload_image(raw: bytes) -> Image.Image:
     """Décode une image importée : EXIF (rotation iPhone), transparence → fond blanc."""
     with _pil_lock:
-        with Image.open(io.BytesIO(raw)) as src:
-            img = ImageOps.exif_transpose(src)
-            if img.mode in ("RGBA", "LA"):
-                bg = Image.new("RGB", img.size, (255, 255, 255))
-                bg.paste(img, mask=img.split()[-1])
-                return bg
-            if img.mode == "P":
-                img = img.convert("RGBA")
-                bg = Image.new("RGB", img.size, (255, 255, 255))
-                bg.paste(img, mask=img.split()[-1])
-                return bg
-            return img.convert("RGB")
+        return _decode_upload_image_unlocked(raw)
 
 
 def _to_webp(raw: bytes, out_path: Path) -> None:
@@ -1745,10 +1780,9 @@ def validate_image_bytes(raw: bytes, *, max_bytes: int = MAX_UPLOAD_BYTES) -> by
     try:
         with _pil_lock:
             with Image.open(io.BytesIO(raw)) as img:
-                img.verify()
-            with Image.open(io.BytesIO(raw)) as img:
                 if img.format not in ("JPEG", "PNG", "WEBP", "GIF", "MPO"):
                     raise ValueError("Format non supporté — utilisez JPG, PNG ou WebP.")
+                img.load()
     except ValueError:
         raise
     except Exception as exc:
@@ -1776,6 +1810,8 @@ def store_partner_cover_webp(
     *,
     file_bytes: bytes | None = None,
     image_url: str = "",
+    prevalidated: bool = False,
+    on_thumb_ready: Callable[[], None] | None = None,
 ) -> str:
     """Enregistre la photo de couverture partenaire en WebP 1920×1080 (+ variantes)."""
     safe = _partner_cover_slug(slug)
@@ -1785,8 +1821,12 @@ def store_partner_cover_webp(
         raise ValueError("Impossible d'enregistrer la photo sur le serveur — réessayez.") from exc
     out_path = PARTNER_IMAGES_DIR / f"{safe}.webp"
     if file_bytes:
-        raw = validate_image_bytes(file_bytes, max_bytes=MAX_PARTNER_COVER_BYTES)
-        _write_partner_cover_master(raw, out_path)
+        _write_partner_cover_master(
+            file_bytes,
+            out_path,
+            prevalidated=prevalidated,
+            on_thumb_ready=on_thumb_ready,
+        )
         _schedule_partner_variants(out_path)
     elif (image_url or "").strip():
         url = normalize_image_url(image_url)
@@ -1805,7 +1845,9 @@ def store_partner_cover_webp(
     return f"/static/images/partners/{safe}.webp"
 
 
-def store_partner_gallery_webp(partner_slug: str, item_id: str, file_bytes: bytes) -> str:
+def store_partner_gallery_webp(
+    partner_slug: str, item_id: str, file_bytes: bytes, *, prevalidated: bool = False,
+) -> str:
     """Image galerie partenaire — sous-dossier par slug."""
     safe = _partner_cover_slug(partner_slug)
     item_safe = re.sub(r"[^a-z0-9\-]+", "-", (item_id or "img").lower()).strip("-")[:24] or "img"
@@ -1815,7 +1857,7 @@ def store_partner_gallery_webp(partner_slug: str, item_id: str, file_bytes: byte
     except OSError as exc:
         raise ValueError("Impossible d'enregistrer la photo sur le serveur — réessayez.") from exc
     out_path = gal_dir / f"gallery-{item_safe}.webp"
-    raw = validate_image_bytes(file_bytes, max_bytes=MAX_PARTNER_COVER_BYTES)
+    raw = file_bytes if prevalidated else validate_image_bytes(file_bytes, max_bytes=MAX_PARTNER_COVER_BYTES)
     _write_partner_gallery_master(raw, out_path)
     if not out_path.is_file() or out_path.stat().st_size < 100:
         raise ValueError("La conversion WebP a échoué — réessayez avec une autre image.")

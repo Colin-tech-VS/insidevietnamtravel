@@ -62,7 +62,7 @@
   </div>
   <div class="form-field">
     <label>Logo / image du partenaire <span class="field-hint" style="display:inline">(optionnel)</span></label>
-    {% if p and p.image %}<div class="rp-thumb"><img src="{{ p.image | static_v }}" alt="" width="120" height="68"></div>{% endif %}
+    {% if p and p.image %}<div class="rp-thumb"><img src="{{ p.image | admin_thumb }}" alt="" width="120" height="68" loading="lazy" decoding="async"></div>{% endif %}
     <input type="file" name="image_file" accept="image/jpeg,image/png,image/webp">
     <input type="url" name="image_url" placeholder="… ou coller une URL d'image" style="margin-top:.4rem">
     <input type="text" name="image_alt" placeholder="Texte alternatif (accessibilité/SEO)" value="{{ p.image_alt if p else '' }}" style="margin-top:.4rem">
@@ -76,7 +76,7 @@
 {% macro activity_image_inputs(pg=None) %}
   <div class="form-field">
     <label>Image de couverture <span class="field-hint" style="display:inline">(optionnel — sinon image IA)</span></label>
-    {% if pg and pg.image %}<div class="rp-thumb"><img src="{{ pg.image | static_v }}" alt="" width="120" height="68"></div>{% endif %}
+    {% if pg and pg.image %}<div class="rp-thumb"><img src="{{ pg.image | admin_thumb }}" alt="" width="120" height="68" loading="lazy" decoding="async"></div>{% endif %}
     <input type="file" name="cover_file" accept="image/jpeg,image/png,image/webp">
     <input type="url" name="cover_url" placeholder="… ou coller une URL d'image" style="margin-top:.4rem">
   </div>
@@ -86,7 +86,7 @@
     <div class="rp-gallery">
       {% for img in pg.images %}
       <label class="rp-gallery__item">
-        <img src="{{ img | static_v }}" alt="" width="90" height="60">
+        <img src="{{ img | admin_thumb }}" alt="" width="90" height="60" loading="lazy" decoding="async">
         <span><input type="checkbox" name="remove_image" value="{{ img }}"> retirer</span>
       </label>
       {% endfor %}
@@ -232,7 +232,7 @@
     {% set com = activity_commission(p, pg) %}
     <li class="rp-activity">
       <div class="rp-activity__row">
-        {% if pg.image %}<img class="rp-activity__thumb" src="{{ pg.image | static_v }}" alt="" width="64" height="40" loading="lazy">{% endif %}
+        {% if pg.image %}<img class="rp-activity__thumb" src="{{ pg.image | admin_thumb }}" alt="" width="64" height="40" loading="lazy" decoding="async">{% endif %}
         <span class="rp-page__title">
           {{ pg.title }}
           {% if p.enabled and pg.enabled %}

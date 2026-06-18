@@ -2070,12 +2070,32 @@ def _defer_reco_partner_image(
 
     def _job() -> None:
         from admin import recommended_partners as rp
-        from admin.image_service import store_partner_cover_webp
+        from admin.image_service import (
+            MAX_PARTNER_COVER_BYTES,
+            store_partner_cover_webp,
+            validate_image_bytes,
+            _partner_cover_slug,
+        )
         from admin.genlog import log
+
+        master_url = f"/static/images/partners/{_partner_cover_slug(slug)}.webp"
+
+        def _publish_thumb() -> None:
+            rp.update_partner(
+                partner_id,
+                {"image": master_url, "image_alt": alt},
+                schedule_i18n=False,
+            )
 
         try:
             if file_bytes:
-                saved = store_partner_cover_webp(slug, file_bytes=file_bytes)
+                raw = validate_image_bytes(file_bytes, max_bytes=MAX_PARTNER_COVER_BYTES)
+                saved = store_partner_cover_webp(
+                    slug,
+                    file_bytes=raw,
+                    prevalidated=True,
+                    on_thumb_ready=_publish_thumb,
+                )
             elif image_url:
                 saved = store_partner_cover_webp(slug, image_url=image_url)
             else:
@@ -2131,18 +2151,48 @@ def _defer_reco_activity_images(
 
     def _job() -> None:
         from admin import recommended_partners as rp
-        from admin.image_service import store_partner_cover_webp, store_partner_gallery_webp
+        from admin.image_service import (
+            MAX_PARTNER_COVER_BYTES,
+            store_partner_cover_webp,
+            store_partner_gallery_webp,
+            validate_image_bytes,
+            _partner_cover_slug,
+        )
         from admin.genlog import log
+
+        cover_url_path = f"/static/images/partners/{_partner_cover_slug(base)}.webp"
+        thumb_published = False
+
+        def _publish_cover_thumb() -> None:
+            nonlocal thumb_published
+            if thumb_published:
+                return
+            thumb_published = True
+            rp.update_page(
+                partner_id,
+                page_id,
+                {"image": cover_url_path},
+                schedule_i18n=False,
+            )
 
         try:
             patch: dict = {}
             if cover_bytes:
-                patch["image"] = store_partner_cover_webp(base, file_bytes=cover_bytes)
+                raw = validate_image_bytes(cover_bytes, max_bytes=MAX_PARTNER_COVER_BYTES)
+                patch["image"] = store_partner_cover_webp(
+                    base,
+                    file_bytes=raw,
+                    prevalidated=True,
+                    on_thumb_ready=_publish_cover_thumb,
+                )
             elif cover_url:
                 patch["image"] = store_partner_cover_webp(base, image_url=cover_url)
             images = [u for u in (page.get("images") or []) if u not in removed]
             for i, gf in enumerate(gallery_bytes):
-                images.append(store_partner_gallery_webp(base, f"{len(images)}-{i}", gf))
+                raw = validate_image_bytes(gf, max_bytes=MAX_PARTNER_COVER_BYTES)
+                images.append(
+                    store_partner_gallery_webp(base, f"{len(images)}-{i}", raw, prevalidated=True)
+                )
             if removed or gallery_bytes:
                 patch["images"] = images
             if patch:
