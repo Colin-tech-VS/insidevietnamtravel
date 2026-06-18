@@ -2078,18 +2078,24 @@ def _apply_reco_partner_image(
     alt = (image_alt or partner.get("name") or "").strip()
     patch: dict = {"image_alt": alt}
 
-    if file_bytes:
-        raw = validate_image_bytes(file_bytes, max_bytes=MAX_PARTNER_COVER_BYTES)
-        patch["image"] = store_partner_cover_webp(slug, file_bytes=raw, prevalidated=True)
-        patch["image_source_url"] = ""
-    elif (image_url or "").strip():
-        url = normalize_image_url(image_url)
-        patch["image"] = store_partner_cover_webp(slug, image_url=url)
-        patch["image_source_url"] = url
-    else:
-        raise ValueError("Photo manquante — uploadez un fichier ou indiquez une URL.")
+    from admin.genlog import log
 
-    return rp.update_partner(partner_id, patch, schedule_i18n=False)
+    try:
+        if file_bytes:
+            raw = validate_image_bytes(file_bytes, max_bytes=MAX_PARTNER_COVER_BYTES)
+            patch["image"] = store_partner_cover_webp(slug, file_bytes=raw, prevalidated=True)
+            patch["image_source_url"] = ""
+        elif (image_url or "").strip():
+            url = normalize_image_url(image_url)
+            patch["image"] = store_partner_cover_webp(slug, image_url=url)
+            patch["image_source_url"] = url
+        else:
+            raise ValueError("Photo manquante — uploadez un fichier ou indiquez une URL.")
+        log(f"reco partner image sync OK slug={slug} path={patch.get('image', '')}")
+        return rp.update_partner(partner_id, patch, schedule_i18n=False)
+    except Exception as exc:
+        log(f"reco partner image sync KO slug={slug} -- {type(exc).__name__}: {exc}")
+        raise
 
 
 def _apply_reco_activity_images(
@@ -2372,14 +2378,19 @@ def api_generate_recommended_partner_page():
                     image_prompt=page_snapshot.get("image_prompt", ""),
                     ai_generated=True,
                 )
-                patch = {
-                    k: meta[k]
-                    for k in ("image", "image_alt", "image_placeholder")
-                    if meta.get(k) is not None
-                }
+                patch = {}
+                for key in ("image", "image_alt", "image_placeholder", "image_source_url"):
+                    if key not in meta:
+                        continue
+                    val = meta[key]
+                    if key == "image_placeholder" or val:
+                        patch[key] = val
                 if tok and patch:
                     draft_store.patch_draft(tok, patch)
-                log(f"reco activity cover async OK slug={img_slug}")
+                if meta.get("image") or meta.get("image_source_url"):
+                    log(f"reco activity cover async OK slug={img_slug} image={meta.get('image', '')[:60]}")
+                else:
+                    log(f"reco activity cover async empty slug={img_slug}")
             except Exception as exc:  # noqa: BLE001
                 log(f"reco activity cover async KO slug={img_slug} -- {type(exc).__name__}: {exc}")
 

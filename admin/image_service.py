@@ -70,7 +70,8 @@ IMAGE_STEP_HARD_DEADLINE = 15      # secondes max, tout compris, pour l'étape i
 # `method=6` ×3 pouvait pendre longtemps SANS aucun log entre « IMAGE start » et
 # « IMAGE done » — d'où le « ça bloque et rien n'indique pourquoi ». On le borne donc
 # comme le reste ; au-delà, on dépose une version rapide (method=0) et on continue.
-IMAGE_ENCODE_DEADLINE = 10         # secondes max pour l'encodage WebP + variantes
+IMAGE_ENCODE_DEADLINE = 10         # secondes max pour l'encodage WebP + variantes (articles)
+PARTNER_ENCODE_DEADLINE = 60       # partenaires : CPU Scalingo + verrou PIL partagé
 
 # Effort de compression WebP (0 rapide … 6 exhaustif). `method=6` est très lent pour un
 # gain de taille marginal vs `method=4` (défaut libwebp) ; sur l'hébergeur bridé il était
@@ -1017,12 +1018,14 @@ def pixabay_photo_url(query: str, seed: int = 0, *, prefer_small: bool = False) 
 
 
 def _fetch_pixabay_photo(query: str, seed: int) -> bytes:
-    """Repli réseau : cherche une photo Vietnam sur Pixabay et renvoie ses octets.
+    """Repli réseau : photo Vietnam sur Pixabay → octets."""
+    raw, _url = _fetch_pixabay_photo_and_url(query, seed)
+    return raw
 
-    Nécessite PIXABAY_API_KEY (clé gratuite). Sans clé, lève une erreur → logo de marque.
-    """
+
+def _fetch_pixabay_photo_and_url(query: str, seed: int) -> tuple[bytes, str]:
+    """Pixabay : octets + URL source (repli si encodage local trop lent / FS éphémère)."""
     img_url = pixabay_photo_url(query, seed)
-
     img = requests.get(
         img_url,
         timeout=(PIXABAY_CONNECT_TIMEOUT, PIXABAY_READ_TIMEOUT),
@@ -1031,7 +1034,7 @@ def _fetch_pixabay_photo(query: str, seed: int) -> bytes:
     img.raise_for_status()
     if len(img.content) < 8000:
         raise ValueError("Image Pixabay trop petite")
-    return img.content
+    return img.content, img_url
 
 
 def _cover_1200x675(img: Image.Image) -> Image.Image:
@@ -1086,10 +1089,9 @@ def _write_partner_cover_master(
     prevalidated: bool = False,
     on_thumb_ready: Callable[[], None] | None = None,
 ) -> None:
-    """Master 1920×1080 + variante -640 (aperçu admin) — encodage rapide."""
+    """Master 1920×1080 + variante -640 — un seul décodage PIL."""
     if not prevalidated:
         raw = validate_image_bytes(raw, max_bytes=MAX_PARTNER_COVER_BYTES)
-    img = None
     with _pil_lock:
         img = _cover_partner(_decode_upload_image_unlocked(raw))
         out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1099,10 +1101,38 @@ def _write_partner_cover_master(
         img.resize((640, nh), Image.Resampling.LANCZOS).save(
             thumb_path, "WEBP", quality=84, method=PARTNER_FAST_WEBP_METHOD,
         )
+        img.save(out_path, "WEBP", quality=PARTNER_WEBP_QUALITY, method=PARTNER_FAST_WEBP_METHOD)
     if on_thumb_ready:
         on_thumb_ready()
+
+
+def _write_partner_cover_ultrafast(raw: bytes, out_path: Path, *, prevalidated: bool = False) -> None:
+    """Repli encodage partenaire — 1280×720, method=0 (Scalingo CPU limité)."""
+    if not prevalidated:
+        raw = validate_image_bytes(raw, max_bytes=MAX_PARTNER_COVER_BYTES)
     with _pil_lock:
-        img.save(out_path, "WEBP", quality=PARTNER_WEBP_QUALITY, method=PARTNER_FAST_WEBP_METHOD)
+        img = ImageOps.fit(
+            _decode_upload_image_unlocked(raw),
+            (1280, 720),
+            Image.Resampling.BILINEAR,
+            centering=(0.5, 0.42),
+        )
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        img.save(out_path, "WEBP", quality=80, method=0)
+        w, h = img.size
+        nh = max(1, int(h * 640 / w))
+        img.resize((640, nh), Image.Resampling.BILINEAR).save(
+            out_path.parent / f"{out_path.stem}-640.webp", "WEBP", quality=78, method=0,
+        )
+
+
+def _encode_partner_cover(raw: bytes, out_path: Path, *, prevalidated: bool = False) -> None:
+    """Encode couverture partenaire — qualité normale puis repli ultra-rapide."""
+    try:
+        _write_partner_cover_master(raw, out_path, prevalidated=prevalidated)
+    except Exception as exc:
+        log(f"reco cover master KO {out_path.name} -- {type(exc).__name__}: {exc}")
+        _write_partner_cover_ultrafast(raw, out_path, prevalidated=prevalidated)
 
 
 def _partner_variants_worker(out_path: Path) -> None:
@@ -1720,9 +1750,9 @@ def _write_remote_webp(image_url: str, out_path: Path) -> None:
 
 
 def _write_remote_partner_webp(image_url: str, out_path: Path) -> None:
-    """Télécharge une URL puis encode en WebP partenaire 1920×1080 (+ variantes async)."""
+    """Télécharge une URL puis encode en WebP partenaire (+ variantes async)."""
     raw = _run_with_deadline(_download_image_bytes, IMAGE_STEP_HARD_DEADLINE, image_url)
-    _write_partner_cover_master(raw, out_path)
+    _encode_partner_cover(raw, out_path, prevalidated=True)
     _schedule_partner_variants(out_path)
 
 
@@ -1821,17 +1851,16 @@ def store_partner_cover_webp(
         raise ValueError("Impossible d'enregistrer la photo sur le serveur — réessayez.") from exc
     out_path = PARTNER_IMAGES_DIR / f"{safe}.webp"
     if file_bytes:
-        _write_partner_cover_master(
-            file_bytes,
-            out_path,
-            prevalidated=prevalidated,
-            on_thumb_ready=on_thumb_ready,
-        )
+        _encode_partner_cover(file_bytes, out_path, prevalidated=prevalidated)
+        if on_thumb_ready:
+            on_thumb_ready()
         _schedule_partner_variants(out_path)
     elif (image_url or "").strip():
         url = normalize_image_url(image_url)
         try:
-            _write_remote_partner_webp(url, out_path)
+            raw = _run_with_deadline(_download_image_bytes, IMAGE_STEP_HARD_DEADLINE, url)
+            _encode_partner_cover(raw, out_path, prevalidated=True)
+            _schedule_partner_variants(out_path)
         except (ValueError, TimeoutError) as exc:
             raise ValueError(str(exc)) from exc
         except Exception as exc:
@@ -1870,14 +1899,15 @@ def _gather_partner_activity_raw(
     title: str,
     image_prompt: str | None,
     ai_generated: bool,
-) -> tuple[bytes, bool]:
-    """Télécharge une couverture activité (IA → Pixabay → logo). Retourne (octets, placeholder)."""
+) -> tuple[bytes, bool, str]:
+    """Télécharge une couverture activité (IA → Pixabay → logo). Retourne (octets, placeholder, source_url)."""
     prompt = (image_prompt or "").strip()
     if prompt and "vietnam" not in prompt.lower():
         prompt += ", Vietnam travel scene"
     if prompt:
         prompt += ", photorealistic, 16:9, no text, no watermark"
     seed = abs(hash(f"{slug}-{prompt}-{title}")) % 999_999
+    source_url = ""
 
     raw: bytes | None = None
     if ai_generated and prompt and _ai_images_enabled():
@@ -1893,10 +1923,11 @@ def _gather_partner_activity_raw(
 
     if raw is None:
         try:
-            return _fetch_pixabay_photo(_pixabay_query({"title": title}), seed), False
+            raw, source_url = _fetch_pixabay_photo_and_url(_pixabay_query({"title": title}), seed)
+            return raw, False, source_url
         except Exception:
-            return _logo_placeholder_webp(slug), True
-    return raw, False
+            return _logo_placeholder_webp(slug), True, ""
+    return raw, False, source_url
 
 
 def attach_partner_activity_cover(
@@ -1906,13 +1937,15 @@ def attach_partner_activity_cover(
     image_prompt: str | None = None,
     ai_generated: bool = False,
 ) -> dict:
-    """Image de couverture activité partenaire recommandé — 1920×1080 WebP + variantes."""
+    """Image de couverture activité partenaire recommandé — WebP local + repli URL source."""
     safe = _partner_cover_slug(slug)
     out_path = PARTNER_IMAGES_DIR / f"{safe}.webp"
+    local_path = f"/static/images/partners/{safe}.webp"
     alt = (title or "Activité Vietnam")[:140]
     placeholder = False
+    source_url = ""
     try:
-        raw, placeholder = _run_with_deadline(
+        raw, placeholder, source_url = _run_with_deadline(
             _gather_partner_activity_raw,
             IMAGE_STEP_HARD_DEADLINE,
             slug=slug,
@@ -1924,22 +1957,30 @@ def attach_partner_activity_cover(
         log(f"reco cover gather KO slug={slug} -- {type(exc).__name__}: {exc}")
         raw = _logo_placeholder_webp(slug)
         placeholder = True
+        source_url = ""
 
+    encoded = False
     try:
         _run_with_deadline(
-            lambda: _write_partner_cover_master(raw, out_path, prevalidated=True),
-            IMAGE_ENCODE_DEADLINE,
+            lambda: _encode_partner_cover(raw, out_path, prevalidated=True),
+            PARTNER_ENCODE_DEADLINE,
         )
-        _schedule_partner_variants(out_path)
+        encoded = out_path.is_file() and out_path.stat().st_size >= 100
+        if encoded:
+            _schedule_partner_variants(out_path)
     except Exception as exc:
         log(f"reco cover encode KO slug={slug} -- {type(exc).__name__}: {exc}")
-        return {"image": "", "image_alt": alt, "image_placeholder": True}
 
-    return {
-        "image": f"/static/images/partners/{safe}.webp",
+    meta: dict = {
         "image_alt": alt,
         "image_placeholder": placeholder,
+        "image_source_url": source_url,
     }
+    if encoded or source_url:
+        meta["image"] = local_path
+    else:
+        meta["image"] = ""
+    return meta
 
 
 def _write_uploaded_webp(raw: bytes, out_path: Path) -> None:
