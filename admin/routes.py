@@ -2085,14 +2085,15 @@ def _apply_reco_partner_image(
     image_url: str,
     image_alt: str,
 ) -> dict:
-    """Image partenaire — encodage fichier synchrone, URL avec repli source immédiat."""
+    """Image partenaire — fichier brut immédiat, WebP en arrière-plan (pas de timeout)."""
     from admin import recommended_partners as rp
     from admin.image_service import (
         MAX_PARTNER_COVER_BYTES,
         normalize_image_url,
         partner_cover_paths,
         quick_check_upload_bytes,
-        sync_partner_cover_file,
+        stage_partner_cover_file,
+        _encode_partner_cover_file,
         _encode_partner_cover_url,
     )
 
@@ -2101,9 +2102,18 @@ def _apply_reco_partner_image(
 
     if file_bytes:
         raw = quick_check_upload_bytes(file_bytes, max_bytes=MAX_PARTNER_COVER_BYTES)
-        path = sync_partner_cover_file(slug, raw)
+        path = stage_partner_cover_file(slug, raw)
         patch = {"image": path, "image_alt": alt, "image_source_url": ""}
         rp.update_partner(partner_id, patch, schedule_i18n=False)
+        pid, alt_copy, slug_copy, raw_copy = partner_id, alt, slug, raw
+
+        def _job() -> None:
+            try:
+                _encode_partner_cover_file(slug_copy, raw_copy)
+            except Exception:
+                pass
+
+        _run_reco_image_bg(_job)
         return patch
 
     if (image_url or "").strip():
@@ -2142,26 +2152,30 @@ def _apply_reco_activity_images(
     gallery_bytes: list[bytes],
     removed: list[str],
 ) -> dict:
-    """Couverture + galerie — encodage synchrone (fichiers visibles tout de suite)."""
+    """Couverture + galerie — fichiers bruts immédiats, WebP en arrière-plan."""
     from admin import recommended_partners as rp
     from admin.image_service import (
         MAX_PARTNER_COVER_BYTES,
         normalize_image_url,
         partner_cover_paths,
         quick_check_upload_bytes,
-        store_partner_gallery_webp_fast,
-        sync_partner_cover_file,
+        stage_partner_cover_file,
+        stage_partner_gallery_file,
+        _encode_partner_cover_file,
         _encode_partner_cover_url,
+        _encode_partner_gallery_file,
     )
 
     base = f"reco-{partner['slug']}-{page['slug']}"
     patch: dict = {}
     images = [u for u in (page.get("images") or []) if u not in removed]
+    bg_jobs: list = []
 
     if cover_bytes:
         raw = quick_check_upload_bytes(cover_bytes, max_bytes=MAX_PARTNER_COVER_BYTES)
-        patch["image"] = sync_partner_cover_file(base, raw)
+        patch["image"] = stage_partner_cover_file(base, raw)
         patch["image_source_url"] = ""
+        bg_jobs.append(("cover", lambda r=raw, s=base: _encode_partner_cover_file(s, r)))
     elif (cover_url or "").strip():
         url = normalize_image_url(cover_url)
         local_path, _, _ = partner_cover_paths(base)
@@ -2189,7 +2203,12 @@ def _apply_reco_activity_images(
     if gallery_raw:
         start_len = len(images)
         for i, gf in enumerate(gallery_raw):
-            images.append(store_partner_gallery_webp_fast(base, f"{start_len + i}", gf))
+            item_id = f"{start_len + i}"
+            images.append(stage_partner_gallery_file(base, item_id, gf))
+            bg_jobs.append((
+                f"gallery-{item_id}",
+                lambda item=item_id, r=gf, s=base: _encode_partner_gallery_file(s, item, r),
+            ))
         patch["images"] = images
     elif removed:
         patch["images"] = images
@@ -2197,7 +2216,20 @@ def _apply_reco_activity_images(
     if not patch:
         return page
 
-    return rp.update_page(partner_id, page_id, patch, schedule_i18n=False)
+    pg = rp.update_page(partner_id, page_id, patch, schedule_i18n=False)
+
+    if bg_jobs:
+
+        def _job() -> None:
+            for _label, fn in bg_jobs:
+                try:
+                    fn()
+                except Exception:
+                    pass
+
+        _run_reco_image_bg(_job)
+
+    return pg
 
 
 def _read_reco_activity_image_upload() -> tuple[bytes | None, str, list[bytes], list[str]]:

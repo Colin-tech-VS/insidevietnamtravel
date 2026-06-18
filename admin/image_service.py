@@ -1857,6 +1857,48 @@ def quick_check_upload_bytes(raw: bytes, *, max_bytes: int = MAX_PARTNER_COVER_B
     return raw
 
 
+def stage_partner_cover_file(slug: str, raw: bytes) -> str:
+    """Écrit le fichier brut (.upload) — réponse HTTP immédiate, sans PIL."""
+    local_path, _out, pending = partner_cover_paths(slug)
+    pending.parent.mkdir(parents=True, exist_ok=True)
+    pending.write_bytes(raw)
+    return local_path
+
+
+def partner_gallery_paths(partner_slug: str, item_id: str) -> tuple[str, Path, Path]:
+    """Chemin public WebP, fichier cible, fichier brut en attente."""
+    safe = _partner_cover_slug(partner_slug)
+    item_safe = re.sub(r"[^a-z0-9\-]+", "-", (item_id or "img").lower()).strip("-")[:24] or "img"
+    gal_dir = PARTNER_IMAGES_DIR / safe
+    out_path = gal_dir / f"gallery-{item_safe}.webp"
+    pending = gal_dir / f"gallery-{item_safe}.upload"
+    return f"/static/images/partners/{safe}/gallery-{item_safe}.webp", out_path, pending
+
+
+def stage_partner_gallery_file(partner_slug: str, item_id: str, raw: bytes) -> str:
+    """Galerie — écrit .upload sans PIL (affichage immédiat via repli persistent_image_url)."""
+    local_path, _out, pending = partner_gallery_paths(partner_slug, item_id)
+    pending.parent.mkdir(parents=True, exist_ok=True)
+    pending.write_bytes(raw)
+    return local_path
+
+
+def _encode_partner_gallery_file(partner_slug: str, item_id: str, raw: bytes) -> str:
+    """Encode une image galerie (hors requête HTTP)."""
+    local_path, out_path, pending = partner_gallery_paths(partner_slug, item_id)
+    raw = validate_image_bytes(raw, max_bytes=MAX_PARTNER_COVER_BYTES)
+    with _pil_lock:
+        img = ImageOps.fit(
+            _decode_upload_image_unlocked(raw),
+            (960, 540),
+            Image.Resampling.BILINEAR,
+            centering=(0.5, 0.42),
+        )
+        img.save(out_path, "WEBP", quality=78, method=0)
+    pending.unlink(missing_ok=True)
+    return local_path
+
+
 def sync_partner_cover_file(slug: str, raw: bytes) -> str:
     """Encode couverture partenaire en synchrone (ultra-rapide, dans la requête HTTP)."""
     local_path, out_path, pending = partner_cover_paths(slug)

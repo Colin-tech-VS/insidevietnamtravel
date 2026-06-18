@@ -584,13 +584,18 @@ def admin_thumb_filter(path: str) -> str:
         return path
     if path.endswith(".upload") and "/images/partners/" in path:
         return static_v_filter(path)
-    if not path.endswith(".webp") or "/images/partners/" not in path:
+    if path.endswith(".webp") and "/images/partners/" in path:
+        thumb = f"{path[:-5]}-640.webp"
+        if _variant_exists(thumb.removeprefix("/static/")):
+            return _static_versioned(thumb)
+        rel = path.removeprefix("/static/")
+        if _variant_exists(rel):
+            return _static_versioned(path)
+        upload = f"{path[:-5]}.upload"
+        if _variant_exists(upload.removeprefix("/static/")):
+            return _static_versioned(upload)
         return static_v_filter(path)
-    thumb = f"{path[:-5]}-640.webp"
-    rel = thumb.removeprefix("/static/")
-    if _variant_exists(rel):
-        return _static_versioned(thumb)
-    return _static_versioned(path)
+    return static_v_filter(path)
 
 
 @app.template_global()
