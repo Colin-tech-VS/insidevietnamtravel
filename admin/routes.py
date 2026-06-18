@@ -2057,6 +2057,26 @@ def _read_reco_partner_image_upload() -> tuple[bytes | None, str]:
     return None, url
 
 
+def _flask_app():
+    from flask import current_app
+    return current_app._get_current_object()
+
+
+def _run_reco_image_bg(fn) -> None:
+    """Tâche image hors requête HTTP (contexte Flask pour le KV)."""
+    app = _flask_app()
+
+    def _wrapper() -> None:
+        with app.app_context():
+            try:
+                fn()
+            except Exception as exc:  # noqa: BLE001
+                from admin.genlog import log
+                log(f"reco image bg KO -- {type(exc).__name__}: {exc}")
+
+    threading.Thread(target=_wrapper, daemon=True).start()
+
+
 def _apply_reco_partner_image(
     partner_id: str,
     partner: dict,
@@ -2065,37 +2085,60 @@ def _apply_reco_partner_image(
     image_url: str,
     image_alt: str,
 ) -> dict:
-    """Encode et enregistre l'image partenaire (synchrone — fiabilité KV + fichier)."""
+    """Image partenaire — KV immédiat, encodage PIL en arrière-plan (pas de timeout HTTP)."""
     from admin import recommended_partners as rp
     from admin.image_service import (
         MAX_PARTNER_COVER_BYTES,
         normalize_image_url,
-        store_partner_cover_webp,
-        validate_image_bytes,
+        partner_cover_paths,
+        quick_check_upload_bytes,
+        _encode_partner_cover_file,
+        _encode_partner_cover_url,
     )
 
     slug = f"reco-{partner['slug']}"
     alt = (image_alt or partner.get("name") or "").strip()
-    patch: dict = {"image_alt": alt}
+    local_path, _out, pending = partner_cover_paths(slug)
 
-    from admin.genlog import log
+    if file_bytes:
+        raw = quick_check_upload_bytes(file_bytes, max_bytes=MAX_PARTNER_COVER_BYTES)
+        pending.parent.mkdir(parents=True, exist_ok=True)
+        pending.write_bytes(raw)
+        patch = {"image": local_path, "image_alt": alt, "image_source_url": ""}
+        rp.update_partner(partner_id, patch, schedule_i18n=False)
+        pid, alt_copy = partner_id, alt
 
-    try:
-        if file_bytes:
-            raw = validate_image_bytes(file_bytes, max_bytes=MAX_PARTNER_COVER_BYTES)
-            patch["image"] = store_partner_cover_webp(slug, file_bytes=raw, prevalidated=True)
-            patch["image_source_url"] = ""
-        elif (image_url or "").strip():
-            url = normalize_image_url(image_url)
-            patch["image"] = store_partner_cover_webp(slug, image_url=url)
-            patch["image_source_url"] = url
-        else:
-            raise ValueError("Photo manquante — uploadez un fichier ou indiquez une URL.")
-        log(f"reco partner image sync OK slug={slug} path={patch.get('image', '')}")
-        return rp.update_partner(partner_id, patch, schedule_i18n=False)
-    except Exception as exc:
-        log(f"reco partner image sync KO slug={slug} -- {type(exc).__name__}: {exc}")
-        raise
+        def _job() -> None:
+            from admin import recommended_partners as _rp
+
+            path = _encode_partner_cover_file(slug, pending.read_bytes())
+            _rp.update_partner(pid, {"image": path, "image_alt": alt_copy}, schedule_i18n=False)
+
+        _run_reco_image_bg(_job)
+        return patch
+
+    if (image_url or "").strip():
+        url = normalize_image_url(image_url)
+        patch = {"image": local_path, "image_alt": alt, "image_source_url": url}
+        rp.update_partner(partner_id, patch, schedule_i18n=False)
+        pid, alt_copy, url_copy = partner_id, alt, url
+
+        def _job() -> None:
+            from admin import recommended_partners as _rp
+
+            try:
+                path = _encode_partner_cover_url(slug, url_copy)
+                _rp.update_partner(
+                    pid, {"image": path, "image_alt": alt_copy, "image_source_url": url_copy},
+                    schedule_i18n=False,
+                )
+            except Exception:
+                pass
+
+        _run_reco_image_bg(_job)
+        return patch
+
+    raise ValueError("Photo manquante — uploadez un fichier ou indiquez une URL.")
 
 
 def _apply_reco_activity_images(
@@ -2109,38 +2152,89 @@ def _apply_reco_activity_images(
     gallery_bytes: list[bytes],
     removed: list[str],
 ) -> dict:
-    """Couverture + galerie activité (synchrone)."""
+    """Couverture + galerie — KV immédiat, PIL en arrière-plan."""
     from admin import recommended_partners as rp
     from admin.image_service import (
         MAX_PARTNER_COVER_BYTES,
         normalize_image_url,
-        store_partner_cover_webp,
-        store_partner_gallery_webp,
-        validate_image_bytes,
+        partner_cover_paths,
+        quick_check_upload_bytes,
+        store_partner_gallery_webp_fast,
+        _encode_partner_cover_file,
+        _encode_partner_cover_url,
     )
 
     base = f"reco-{partner['slug']}-{page['slug']}"
     patch: dict = {}
-
-    if cover_bytes:
-        raw = validate_image_bytes(cover_bytes, max_bytes=MAX_PARTNER_COVER_BYTES)
-        patch["image"] = store_partner_cover_webp(base, file_bytes=raw, prevalidated=True)
-        patch["image_source_url"] = ""
-    elif (cover_url or "").strip():
-        url = normalize_image_url(cover_url)
-        patch["image"] = store_partner_cover_webp(base, image_url=url)
-        patch["image_source_url"] = url
-
     images = [u for u in (page.get("images") or []) if u not in removed]
-    for i, gf in enumerate(gallery_bytes):
-        raw = validate_image_bytes(gf, max_bytes=MAX_PARTNER_COVER_BYTES)
-        images.append(store_partner_gallery_webp(base, f"{len(images)}-{i}", raw, prevalidated=True))
-    if removed or gallery_bytes:
+    if removed:
         patch["images"] = images
 
-    if not patch:
-        return page
-    return rp.update_page(partner_id, page_id, patch, schedule_i18n=False)
+    local_path, _out, pending = partner_cover_paths(base)
+    cover_job: dict = {}
+
+    if cover_bytes:
+        raw = quick_check_upload_bytes(cover_bytes, max_bytes=MAX_PARTNER_COVER_BYTES)
+        pending.parent.mkdir(parents=True, exist_ok=True)
+        pending.write_bytes(raw)
+        patch["image"] = local_path
+        patch["image_source_url"] = ""
+        cover_job = {"type": "file", "slug": base, "pending": str(pending)}
+    elif (cover_url or "").strip():
+        url = normalize_image_url(cover_url)
+        patch["image"] = local_path
+        patch["image_source_url"] = url
+        cover_job = {"type": "url", "slug": base, "url": url}
+
+    gallery_raw = [
+        quick_check_upload_bytes(gf, max_bytes=MAX_PARTNER_COVER_BYTES) for gf in gallery_bytes
+    ]
+    if gallery_raw:
+        patch["images"] = images
+
+    if patch:
+        pg = rp.update_page(partner_id, page_id, patch, schedule_i18n=False)
+    else:
+        pg = page
+
+    if not cover_job and not gallery_raw:
+        return pg
+
+    pid, pgid = partner_id, page_id
+    base_slug = base
+    start_len = len(images)
+
+    def _job() -> None:
+        from admin import recommended_partners as _rp
+        from pathlib import Path
+
+        img_patch: dict = {}
+        if cover_job.get("type") == "file":
+            path = _encode_partner_cover_file(
+                cover_job["slug"], Path(cover_job["pending"]).read_bytes()
+            )
+            img_patch["image"] = path
+            img_patch["image_source_url"] = ""
+        elif cover_job.get("type") == "url":
+            try:
+                path = _encode_partner_cover_url(cover_job["slug"], cover_job["url"])
+                img_patch["image"] = path
+            except Exception:
+                pass
+
+        if gallery_raw:
+            urls = list(images)
+            for i, gf in enumerate(gallery_raw):
+                urls.append(
+                    store_partner_gallery_webp_fast(base_slug, f"{start_len + i}", gf)
+                )
+            img_patch["images"] = urls
+
+        if img_patch:
+            _rp.update_page(pid, pgid, img_patch, schedule_i18n=False)
+
+    _run_reco_image_bg(_job)
+    return pg
 
 
 def _read_reco_activity_image_upload() -> tuple[bytes | None, str, list[bytes], list[str]]:
@@ -2208,7 +2302,8 @@ def recommended_partners_admin():
                             image_alt=(request.form.get("image_alt") or p.get("name") or "").strip(),
                         )
                         flash(
-                            f"Partenaire « {p['name']} » {'mis à jour' if action == 'update_partner' else 'créé'} — image enregistrée.",
+                            f"Partenaire « {p['name']} » {'mis à jour' if action == 'update_partner' else 'créé'}"
+                            " — image en cours (rafraîchissez dans ~15 s).",
                             "success",
                         )
                     except ValueError as e:
@@ -2260,7 +2355,8 @@ def recommended_partners_admin():
                             removed=removed,
                         )
                         flash(
-                            f"Activité {'mise à jour' if page_id else 'créée'} — images enregistrées.",
+                            f"Activité {'mise à jour' if page_id else 'créée'}"
+                            " — images en cours (rafraîchissez dans ~15 s).",
                             "success",
                         )
                     except ValueError as e:
@@ -2291,16 +2387,6 @@ def recommended_partners_admin():
                     flash("Aucune page générée à publier.", "error")
                 else:
                     pid = draft.pop("partner_id", "") or partner_id
-                    partner = rp.find_partner(pid)
-                    source_url = (draft.get("image_source_url") or "").strip()
-                    if partner and source_url:
-                        img_slug = f"reco-{partner.get('slug', '')}-{draft.get('slug', '')}"[:80]
-                        try:
-                            from admin.image_service import store_partner_cover_webp
-
-                            draft["image"] = store_partner_cover_webp(img_slug, image_url=source_url)
-                        except Exception:  # noqa: BLE001 — repli sur image_source_url au rendu
-                            pass
                     draft["enabled"] = True
                     rp.add_page(pid, draft)
                     _clear_draft("rec_partner_page")

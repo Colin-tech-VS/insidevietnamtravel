@@ -1835,6 +1835,69 @@ def _partner_cover_slug(slug: str) -> str:
     return safe or "partenaire"
 
 
+def partner_cover_paths(slug: str) -> tuple[str, Path, Path]:
+    """Chemin public, fichier WebP cible, fichier .upload en attente."""
+    safe = _partner_cover_slug(slug)
+    out_path = PARTNER_IMAGES_DIR / f"{safe}.webp"
+    return f"/static/images/partners/{safe}.webp", out_path, out_path.with_suffix(".upload")
+
+
+def quick_check_upload_bytes(raw: bytes, *, max_bytes: int = MAX_PARTNER_COVER_BYTES) -> bytes:
+    """Contrôle taille sans PIL — réponse HTTP immédiate."""
+    if not raw or len(raw) < 200:
+        raise ValueError("Fichier image vide ou invalide.")
+    if len(raw) > max_bytes:
+        max_mb = max(1, max_bytes // (1024 * 1024))
+        raise ValueError(f"Photo trop volumineuse (max {max_mb} Mo).")
+    return raw
+
+
+def _encode_partner_cover_file(slug: str, raw: bytes) -> str:
+    """Encode octets → WebP partenaire (appelé hors requête HTTP)."""
+    local_path, out_path, pending_path = partner_cover_paths(slug)
+    PARTNER_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+    raw = validate_image_bytes(raw, max_bytes=MAX_PARTNER_COVER_BYTES)
+    try:
+        _encode_partner_cover(raw, out_path, prevalidated=True)
+        _schedule_partner_variants(out_path)
+    except Exception as exc:
+        log(f"reco cover bg encode KO {slug} -- {type(exc).__name__}: {exc}")
+        _write_partner_cover_ultrafast(raw, out_path, prevalidated=True)
+    pending_path.unlink(missing_ok=True)
+    if not out_path.is_file() or out_path.stat().st_size < 100:
+        raise ValueError("La conversion WebP a échoué.")
+    return local_path
+
+
+def _encode_partner_cover_url(slug: str, image_url: str) -> str:
+    """Télécharge + encode une URL (hors requête HTTP)."""
+    local_path, out_path, _ = partner_cover_paths(slug)
+    url = normalize_image_url(image_url)
+    raw = _run_with_deadline(_download_image_bytes, IMAGE_STEP_HARD_DEADLINE, url)
+    _encode_partner_cover(raw, out_path, prevalidated=True)
+    _schedule_partner_variants(out_path)
+    return local_path
+
+
+def store_partner_gallery_webp_fast(partner_slug: str, item_id: str, raw: bytes) -> str:
+    """Galerie — encodage rapide 960px (hors requête HTTP)."""
+    safe = _partner_cover_slug(partner_slug)
+    item_safe = re.sub(r"[^a-z0-9\-]+", "-", (item_id or "img").lower()).strip("-")[:24] or "img"
+    gal_dir = PARTNER_IMAGES_DIR / safe
+    gal_dir.mkdir(parents=True, exist_ok=True)
+    out_path = gal_dir / f"gallery-{item_safe}.webp"
+    raw = validate_image_bytes(raw, max_bytes=MAX_PARTNER_COVER_BYTES)
+    with _pil_lock:
+        img = ImageOps.fit(
+            _decode_upload_image_unlocked(raw),
+            (960, 540),
+            Image.Resampling.BILINEAR,
+            centering=(0.5, 0.42),
+        )
+        img.save(out_path, "WEBP", quality=78, method=0)
+    return f"/static/images/partners/{safe}/gallery-{item_safe}.webp"
+
+
 def store_partner_cover_webp(
     slug: str,
     *,
