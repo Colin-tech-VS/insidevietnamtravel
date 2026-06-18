@@ -50,9 +50,29 @@ _INTERNAL_FIELDS = ("commission", "commission_rate", "objective", "notes", "part
 
 # ── Store ───────────────────────────────────────────────────────────────────
 
+def _pages_list(partner: dict) -> list[dict]:
+    pages = partner.get("pages")
+    return pages if isinstance(pages, list) else []
+
+
+def _sanitize_partner(raw: dict) -> dict:
+    """Normalize legacy/corrupt KV records (e.g. pages=null → [])."""
+    partner = dict(raw)
+    partner["pages"] = [
+        {**pg, "images": _clean_url_list(pg.get("images"))}
+        for pg in _pages_list(partner)
+        if isinstance(pg, dict)
+    ]
+    return partner
+
+
 def get_partners() -> list[dict]:
     stored = get_json("recommended_partners", [], file_name="recommended_partners.json")
-    return list(stored) if stored else []
+    if not stored:
+        return []
+    if not isinstance(stored, list):
+        return []
+    return [_sanitize_partner(p) for p in stored if isinstance(p, dict)]
 
 
 def save_partners(items: list[dict]) -> None:
@@ -77,7 +97,7 @@ def find_page_by_slug(partner_slug: str, page_slug: str) -> tuple[dict, dict] | 
     if not partner:
         return None, None
     page_slug = (page_slug or "").strip().lower()
-    page = next((pg for pg in partner.get("pages", []) if pg.get("slug") == page_slug), None)
+    page = next((pg for pg in _pages_list(partner) if pg.get("slug") == page_slug), None)
     if not page:
         return None, None
     return partner, page
@@ -104,7 +124,7 @@ def _unique_page_slug(partner: dict, base: str, *, exclude_id: str = "") -> str:
     base = slugify(base) or f"page-{secrets.token_hex(3)}"
     existing = {
         pg.get("slug")
-        for pg in partner.get("pages", [])
+        for pg in _pages_list(partner)
         if pg.get("id") != exclude_id
     }
     slug = base
@@ -195,7 +215,7 @@ def _normalize_partner(data: dict, *, existing: dict | None = None) -> dict:
         "image_prompt": str(data.get("image_prompt") or existing.get("image_prompt") or "").strip()[:300],
         # Traductions EN (best-effort) : {tagline, intro_html}.
         "i18n": data.get("i18n") if data.get("i18n") is not None else existing.get("i18n", {}),
-        "pages": existing.get("pages", []),
+        "pages": _pages_list(existing),
         "created_at": existing.get("created_at") or today,
         "updated_at": today,
     }
@@ -266,7 +286,7 @@ def _translate_and_store(partner_id: str, page_id: str | None, fields: tuple[str
         return
     record = target
     if page_id:
-        record = next((pg for pg in target.get("pages", []) if pg.get("id") == page_id), None)
+        record = next((pg for pg in _pages_list(target) if pg.get("id") == page_id), None)
         if not record:
             return
     if not _needs_translation(record, fields):
@@ -284,7 +304,7 @@ def _translate_and_store(partner_id: str, page_id: str | None, fields: tuple[str
         if p.get("id") != partner_id:
             continue
         if page_id:
-            for pg in p.get("pages", []):
+            for pg in _pages_list(p):
                 if pg.get("id") == page_id:
                     pg["i18n"] = {"fr": fr, "en": en}
         else:
@@ -360,7 +380,9 @@ def add_page(partner_id: str, page: dict) -> dict:
         if p.get("id") != partner_id:
             continue
         normalized = _normalize_page(p, page)
-        p.setdefault("pages", []).insert(0, normalized)
+        pages = _pages_list(p)
+        pages.insert(0, normalized)
+        p["pages"] = pages
         p["updated_at"] = date.today().isoformat()
         items[i] = p
         save_partners(items)
@@ -374,12 +396,13 @@ def update_page(partner_id: str, page_id: str, fields: dict) -> dict:
     for i, p in enumerate(items):
         if p.get("id") != partner_id:
             continue
-        pages = p.get("pages", [])
+        pages = _pages_list(p)
         for j, pg in enumerate(pages):
             if pg.get("id") != page_id:
                 continue
             merged = {**pg, **{k: v for k, v in fields.items() if v is not None}, "id": page_id}
             pages[j] = _normalize_page(p, merged, existing=pg)
+            p["pages"] = pages
             p["updated_at"] = date.today().isoformat()
             items[i] = p
             save_partners(items)
@@ -394,7 +417,7 @@ def delete_page(partner_id: str, page_id: str) -> None:
     for i, p in enumerate(items):
         if p.get("id") != partner_id:
             continue
-        p["pages"] = [pg for pg in p.get("pages", []) if pg.get("id") != page_id]
+        p["pages"] = [pg for pg in _pages_list(p) if pg.get("id") != page_id]
         p["updated_at"] = date.today().isoformat()
         items[i] = p
         save_partners(items)
@@ -414,7 +437,7 @@ _PUBLIC_STRIP = set(_INTERNAL_FIELDS) | {"i18n"}
 def _public_pages(partner: dict, lang: str | None = None) -> list[dict]:
     return [
         {k: v for k, v in localize_page(pg, lang).items() if k != "i18n"}
-        for pg in partner.get("pages", [])
+        for pg in _pages_list(partner)
         if pg.get("enabled")
     ]
 

@@ -225,10 +225,10 @@
   </div>
   {% endif %}
 
-  <h3 class="rp-section-title">Activités ({{ p.pages | length }})</h3>
-  {% if not p.pages %}<p class="rp-empty">Aucune activité. Ajoutez-en une (par IA) ci-dessous.</p>{% endif %}
+  <h3 class="rp-section-title">Activités ({{ (p.pages or []) | length }})</h3>
+  {% if not (p.pages or []) %}<p class="rp-empty">Aucune activité. Ajoutez-en une (par IA) ci-dessous.</p>{% endif %}
   <ul class="rp-pages">
-    {% for pg in p.pages %}
+    {% for pg in (p.pages or []) %}
     {% set com = activity_commission(p, pg) %}
     <li class="rp-activity">
       <div class="rp-activity__row">

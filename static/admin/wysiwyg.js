@@ -64,7 +64,8 @@
   ];
 
   function bindFormSave() {
-    document.querySelectorAll('#guide-form-manual, #dest-form-manual, #newsletter-form-manual').forEach((form) => {
+    const selector = '#guide-form-manual, #dest-form-manual, #newsletter-form-manual, form:has(.wysiwyg-editor)';
+    document.querySelectorAll(selector).forEach((form) => {
       form.addEventListener('submit', (e) => {
         if (window.tinymce) {
           tinymce.triggerSave();
@@ -169,6 +170,7 @@
     // Pages sans onglets : init paresseux par <details> (perf).
     if (!hasTabs) {
       lazyWatch();
+      bindFormSave();
     }
   }
 
