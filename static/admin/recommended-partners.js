@@ -127,6 +127,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btn) btn.disabled = false;
       }
     });
+  });
+
   document.querySelectorAll('form[enctype="multipart/form-data"]').forEach((form) => {
     form.addEventListener('submit', () => {
       const hasFile = Array.from(form.querySelectorAll('input[type="file"]')).some(
