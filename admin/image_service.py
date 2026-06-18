@@ -1053,6 +1053,9 @@ PARTNER_VARIANTS = (
     (960, "-960", 86),
     (1280, "-1280", 88),
 )
+# method=2 : encodage WebP rapide (Scalingo CPU limité). Les variantes srcset
+# sont générées en tâche de fond pour ne pas faire timeout le POST admin (~60 s).
+PARTNER_FAST_WEBP_METHOD = 2
 
 
 def _cover_partner(img: Image.Image) -> Image.Image:
@@ -1060,8 +1063,11 @@ def _cover_partner(img: Image.Image) -> Image.Image:
     return ImageOps.fit(img, PARTNER_COVER_SIZE, Image.Resampling.LANCZOS, centering=(0.5, 0.42))
 
 
-def _create_partner_responsive_variants(img: Image.Image, full_path: Path, *, force: bool = False) -> None:
-    """Variantes srcset partenaires (-640 / -960 / -1280) — qualité plus élevée."""
+def _create_partner_responsive_variants(
+    img: Image.Image, full_path: Path, *, force: bool = False, webp_method: int | None = None,
+) -> None:
+    """Variantes srcset partenaires (-640 / -960 / -1280)."""
+    method = PARTNER_FAST_WEBP_METHOD if webp_method is None else webp_method
     w, h = img.size
     for target_w, suffix, quality in PARTNER_VARIANTS:
         out = full_path.parent / f"{full_path.stem}{suffix}.webp"
@@ -1069,7 +1075,39 @@ def _create_partner_responsive_variants(img: Image.Image, full_path: Path, *, fo
             continue
         nh = max(1, int(h * target_w / w))
         resized = img.resize((target_w, nh), Image.Resampling.LANCZOS)
-        resized.save(out, "WEBP", quality=quality, method=WEBP_METHOD)
+        resized.save(out, "WEBP", quality=quality, method=method)
+
+
+def _write_partner_cover_master(raw: bytes, out_path: Path) -> None:
+    """Master 1920×1080 — encodage rapide, sans variantes (réponse HTTP immédiate)."""
+    with _pil_lock:
+        img = _cover_partner(_decode_upload_image(raw))
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        img.save(out_path, "WEBP", quality=PARTNER_WEBP_QUALITY, method=PARTNER_FAST_WEBP_METHOD)
+
+
+def _partner_variants_worker(out_path: Path) -> None:
+    """Génère les variantes srcset hors requête HTTP (thread daemon)."""
+    try:
+        with _pil_lock:
+            if not out_path.is_file():
+                return
+            img = Image.open(out_path).convert("RGB")
+            _create_partner_responsive_variants(img, out_path, force=True)
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _schedule_partner_variants(out_path: Path) -> None:
+    threading.Thread(target=_partner_variants_worker, args=(out_path,), daemon=True).start()
+
+
+def _write_partner_gallery_master(raw: bytes, out_path: Path) -> None:
+    """Galerie activité — 1200×675, une seule taille (affichée en petit)."""
+    with _pil_lock:
+        img = _cover_1200x675(_decode_upload_image(raw))
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        img.save(out_path, "WEBP", quality=84, method=PARTNER_FAST_WEBP_METHOD)
 
 
 def _to_partner_webp(raw: bytes, out_path: Path) -> None:
@@ -1647,12 +1685,10 @@ def _write_remote_webp(image_url: str, out_path: Path) -> None:
 
 
 def _write_remote_partner_webp(image_url: str, out_path: Path) -> None:
-    """Télécharge une URL puis encode en WebP partenaire 1920×1080 + variantes."""
+    """Télécharge une URL puis encode en WebP partenaire 1920×1080 (+ variantes async)."""
     raw = _run_with_deadline(_download_image_bytes, IMAGE_STEP_HARD_DEADLINE, image_url)
-    try:
-        _run_with_deadline(_to_partner_webp, IMAGE_ENCODE_DEADLINE, raw, out_path)
-    except Exception:  # noqa: BLE001
-        _write_partner_webp_fast(raw, out_path)
+    _write_partner_cover_master(raw, out_path)
+    _schedule_partner_variants(out_path)
 
 
 def set_remote_image_for_article(article: dict, image_url: str, alt: str | None = None) -> dict:
@@ -1750,10 +1786,8 @@ def store_partner_cover_webp(
     out_path = PARTNER_IMAGES_DIR / f"{safe}.webp"
     if file_bytes:
         raw = validate_image_bytes(file_bytes, max_bytes=MAX_PARTNER_COVER_BYTES)
-        try:
-            _run_with_deadline(_to_partner_webp, IMAGE_ENCODE_DEADLINE, raw, out_path)
-        except Exception:
-            _write_partner_webp_fast(raw, out_path)
+        _write_partner_cover_master(raw, out_path)
+        _schedule_partner_variants(out_path)
     elif (image_url or "").strip():
         url = normalize_image_url(image_url)
         try:
@@ -1782,10 +1816,7 @@ def store_partner_gallery_webp(partner_slug: str, item_id: str, file_bytes: byte
         raise ValueError("Impossible d'enregistrer la photo sur le serveur — réessayez.") from exc
     out_path = gal_dir / f"gallery-{item_safe}.webp"
     raw = validate_image_bytes(file_bytes, max_bytes=MAX_PARTNER_COVER_BYTES)
-    try:
-        _run_with_deadline(_to_partner_webp, IMAGE_ENCODE_DEADLINE, raw, out_path)
-    except Exception:
-        _write_partner_webp_fast(raw, out_path)
+    _write_partner_gallery_master(raw, out_path)
     if not out_path.is_file() or out_path.stat().st_size < 100:
         raise ValueError("La conversion WebP a échoué — réessayez avec une autre image.")
     return f"/static/images/partners/{safe}/gallery-{item_safe}.webp"
@@ -1831,10 +1862,8 @@ def attach_partner_activity_cover(
             raw = _logo_placeholder_webp(slug)
             placeholder = True
 
-    try:
-        _run_with_deadline(_to_partner_webp, IMAGE_ENCODE_DEADLINE, raw, out_path)
-    except Exception:
-        _write_partner_webp_fast(raw, out_path)
+    _write_partner_cover_master(raw, out_path)
+    _schedule_partner_variants(out_path)
 
     return {
         "image": f"/static/images/partners/{safe}.webp",
