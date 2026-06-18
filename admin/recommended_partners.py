@@ -601,10 +601,11 @@ def resolve_public_images(entity: dict) -> dict:
     from admin.image_service import persistent_image_url
 
     out = dict(entity)
-    if out.get("image"):
-        resolved = persistent_image_url(out.get("image"), None, out.get("image_source_url"))
-        if resolved:
-            out["image"] = resolved
+    resolved = persistent_image_url(out.get("image"), None, out.get("image_source_url"))
+    if resolved:
+        out["image"] = resolved
+    else:
+        out["image"] = ""
     out.pop("image_source_url", None)
     return out
 
