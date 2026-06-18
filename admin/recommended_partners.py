@@ -243,22 +243,63 @@ PARTNER_I18N_FIELDS = ("tagline", "intro_html")
 PAGE_I18N_FIELDS = ("title", "meta_title", "meta_description", "content_html")
 
 
-def _auto_translate(record: dict, fields: tuple[str, ...]) -> dict:
-    """Remplit record['i18n'].en (FR→EN) si le FR a changé. Best-effort."""
-    fr = {k: (record.get(k) or "") for k in fields}
-    i18n = record.get("i18n") or {}
-    if i18n.get("en") and i18n.get("fr") == fr:
-        return record  # EN déjà à jour pour ce FR
+def _record_fr(record: dict, fields: tuple[str, ...]) -> dict:
+    return {k: (record.get(k) or "") for k in fields}
+
+
+def _needs_translation(record: dict, fields: tuple[str, ...]) -> bool:
+    fr = _record_fr(record, fields)
     if not any(fr.values()):
-        return record
-    en = {}
+        return False
+    i18n = record.get("i18n") or {}
+    return not (i18n.get("en") and i18n.get("fr") == fr)
+
+
+def _translate_and_store(partner_id: str, page_id: str | None, fields: tuple[str, ...]) -> None:
+    """Traduit FR→EN puis écrit i18n DIRECTEMENT dans le store (sans re-déclencher).
+
+    Exécuté en tâche de fond : le formulaire admin répond immédiatement (le FR est
+    déjà enregistré), l'EN apparaît quelques secondes plus tard.
+    """
+    target = find_partner(partner_id)
+    if not target:
+        return
+    record = target
+    if page_id:
+        record = next((pg for pg in target.get("pages", []) if pg.get("id") == page_id), None)
+        if not record:
+            return
+    if not _needs_translation(record, fields):
+        return
+    fr = _record_fr(record, fields)
     try:
         from admin.groq_recommended_partner import translate_to_en
         en = translate_to_en(fr)
     except Exception:  # noqa: BLE001
         en = {}
-    record["i18n"] = {"fr": fr, "en": en or (i18n.get("en") or {})}
-    return record
+    if not en:
+        return
+    items = get_partners()
+    for p in items:
+        if p.get("id") != partner_id:
+            continue
+        if page_id:
+            for pg in p.get("pages", []):
+                if pg.get("id") == page_id:
+                    pg["i18n"] = {"fr": fr, "en": en}
+        else:
+            p["i18n"] = {"fr": fr, "en": en}
+        save_partners(items)
+        return
+
+
+def _schedule_translation(record: dict, partner_id: str, page_id: str | None, fields: tuple[str, ...]) -> None:
+    if not _needs_translation(record, fields):
+        return
+    import threading
+    threading.Thread(
+        target=_translate_and_store, args=(partner_id, page_id, fields), daemon=True
+    ).start()
 
 
 def localize_page(page: dict, lang: str | None = None) -> dict:
@@ -281,10 +322,11 @@ def localize_partner(partner: dict, lang: str | None = None) -> dict:
 # ── CRUD partenaire ──────────────────────────────────────────────────────────
 
 def add_partner(data: dict) -> dict:
-    partner = _auto_translate(_normalize_partner(data), PARTNER_I18N_FIELDS)
+    partner = _normalize_partner(data)
     items = get_partners()
     items.insert(0, partner)
     save_partners(items)
+    _schedule_translation(partner, partner["id"], None, PARTNER_I18N_FIELDS)
     return partner
 
 
@@ -294,8 +336,9 @@ def update_partner(pid: str, fields: dict) -> dict:
         if p.get("id") != pid:
             continue
         merged = {**p, **{k: v for k, v in fields.items() if v is not None}, "id": pid}
-        items[i] = _auto_translate(_normalize_partner(merged, existing=p), PARTNER_I18N_FIELDS)
+        items[i] = _normalize_partner(merged, existing=p)
         save_partners(items)
+        _schedule_translation(items[i], pid, None, PARTNER_I18N_FIELDS)
         return items[i]
     raise ValueError(f"Partenaire introuvable : {pid}")
 
@@ -316,11 +359,12 @@ def add_page(partner_id: str, page: dict) -> dict:
     for i, p in enumerate(items):
         if p.get("id") != partner_id:
             continue
-        normalized = _auto_translate(_normalize_page(p, page), PAGE_I18N_FIELDS)
+        normalized = _normalize_page(p, page)
         p.setdefault("pages", []).insert(0, normalized)
         p["updated_at"] = date.today().isoformat()
         items[i] = p
         save_partners(items)
+        _schedule_translation(normalized, partner_id, normalized["id"], PAGE_I18N_FIELDS)
         return normalized
     raise ValueError(f"Partenaire introuvable : {partner_id}")
 
@@ -335,10 +379,11 @@ def update_page(partner_id: str, page_id: str, fields: dict) -> dict:
             if pg.get("id") != page_id:
                 continue
             merged = {**pg, **{k: v for k, v in fields.items() if v is not None}, "id": page_id}
-            pages[j] = _auto_translate(_normalize_page(p, merged, existing=pg), PAGE_I18N_FIELDS)
+            pages[j] = _normalize_page(p, merged, existing=pg)
             p["updated_at"] = date.today().isoformat()
             items[i] = p
             save_partners(items)
+            _schedule_translation(pages[j], partner_id, page_id, PAGE_I18N_FIELDS)
             return pages[j]
         raise ValueError(f"Page introuvable : {page_id}")
     raise ValueError(f"Partenaire introuvable : {partner_id}")
