@@ -5,37 +5,66 @@
 
 {% block content %}
 
-{# ── Macro champs partenaire (ajout + édition) ────────────────────────────── #}
-{% macro partner_fields(p=None) %}
-  <label class="field"><span>Nom du partenaire *</span>
-    <input type="text" name="name" required value="{{ p.name if p else '' }}"></label>
-  <label class="field"><span>Lien du site</span>
-    <input type="url" name="website" placeholder="https://…" value="{{ p.website if p else '' }}"></label>
-  <label class="field"><span>Type de partenariat</span>
-    <select name="partnership_type">
-      {% for key, label in partnership_types %}
-      <option value="{{ key }}" {% if p and p.partnership_type == key %}selected{% endif %}>{{ label }}</option>
-      {% endfor %}
-    </select></label>
-  <label class="field"><span>Commission (interne)</span>
-    <input type="text" name="commission" placeholder="ex. 8% / 25€ par vente" value="{{ p.commission if p else '' }}"></label>
-  <label class="field"><span>Objectif (interne)</span>
-    <input type="text" name="objective" placeholder="ex. générer 20 leads/mois" value="{{ p.objective if p else '' }}"></label>
-  <label class="field"><span>Notes (interne)</span>
-    <textarea name="notes" rows="2">{{ p.notes if p else '' }}</textarea></label>
-  <label class="field"><span>Accroche publique (tagline)</span>
-    <input type="text" name="tagline" maxlength="200" value="{{ p.tagline if p else '' }}"></label>
-  <label class="field"><span>Présentation publique (HTML)</span>
-    <textarea name="intro_html" rows="3">{{ p.intro_html if p else '' }}</textarea></label>
-  <label class="field-inline">
-    <input type="checkbox" name="enabled" {% if not p or p.enabled %}checked{% endif %}> Publié (visible sur le site)
+{# ── Macro : switch réutilisable (case stylée en interrupteur) ───────────── #}
+{% macro switch(name, on, label_on, label_off, auto_submit=False) %}
+  <label class="nps-switch">
+    <input type="checkbox" name="{{ name }}" {% if on %}checked{% endif %}{% if auto_submit %} onchange="this.form.submit()"{% endif %}>
+    <span class="nps-switch__track" aria-hidden="true"><span class="nps-switch__thumb"></span></span>
+    <span class="nps-switch__label">{{ label_on if on else label_off }}</span>
   </label>
 {% endmacro %}
 
+{# ── Macro : champs partenaire (ajout + édition) ─────────────────────────── #}
+{% macro partner_fields(p=None) %}
+  <div class="form-row">
+    <div class="form-field">
+      <label>Nom du partenaire <span class="required">*</span></label>
+      <input type="text" name="name" required value="{{ p.name if p else '' }}">
+    </div>
+    <div class="form-field">
+      <label>Lien du site</label>
+      <input type="url" name="website" placeholder="https://…" value="{{ p.website if p else '' }}">
+    </div>
+  </div>
+  <div class="form-field">
+    <label>Type de partenariat</label>
+    <select name="partnership_type" class="social-select">
+      {% for key, label in partnership_types %}
+      <option value="{{ key }}" {% if p and p.partnership_type == key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="form-row">
+    <div class="form-field">
+      <label>Commission <span class="field-hint" style="display:inline">(interne)</span></label>
+      <input type="text" name="commission" placeholder="ex. 8% / 25€ par vente" value="{{ p.commission if p else '' }}">
+    </div>
+    <div class="form-field">
+      <label>Objectif <span class="field-hint" style="display:inline">(interne)</span></label>
+      <input type="text" name="objective" placeholder="ex. 20 leads/mois" value="{{ p.objective if p else '' }}">
+    </div>
+  </div>
+  <div class="form-field">
+    <label>Notes <span class="field-hint" style="display:inline">(interne)</span></label>
+    <textarea name="notes" rows="2">{{ p.notes if p else '' }}</textarea>
+  </div>
+  <div class="form-field">
+    <label>Accroche publique (tagline)</label>
+    <input type="text" name="tagline" maxlength="200" value="{{ p.tagline if p else '' }}">
+  </div>
+  <div class="form-field">
+    <label>Présentation publique (HTML)</label>
+    <textarea name="intro_html" rows="3">{{ p.intro_html if p else '' }}</textarea>
+  </div>
+  <div class="form-field">
+    {{ switch('enabled', (not p or p.enabled), 'Publié — visible sur le site', 'Masqué') }}
+  </div>
+{% endmacro %}
+
 <p class="page-sub">
-  Créez des partenaires que vous recommandez et, pour chacun, plusieurs pages dédiées
-  (générées par IA selon votre consigne). Le switch <strong>Publié</strong> contrôle leur
-  affichage public dans <a href="{{ url_for('partners_index') }}" target="_blank" rel="noopener">l'annuaire partenaires</a>.
+  Créez les partenaires que vous recommandez, puis générez pour chacun plusieurs pages
+  par IA selon votre consigne. Le switch <strong>Publié</strong> pilote l'affichage public
+  dans <a href="{{ url_for('partners_index') }}" target="_blank" rel="noopener">l'annuaire partenaires</a>.
   Commission, objectif et notes restent <strong>internes</strong>.
 </p>
 
@@ -56,24 +85,20 @@
   </div>
 </div>
 
-{# ── Aperçu d'une page générée par IA (en attente de publication) ─────────── #}
+{# ── Aperçu d'une page générée par IA (avant publication) ────────────────── #}
 <div id="draft-slot">
 {% if draft %}
-<section class="panel draft-panel" style="margin-bottom:1.5rem;border:2px solid var(--gold, #c8a24a)">
-  <h2 style="margin-top:0">🪄 Page générée — aperçu avant publication</h2>
-  <p class="muted">
-    Partenaire : <strong>{{ draft_partner.name if draft_partner else '—' }}</strong>
-  </p>
+<section class="rp-card rp-draft">
+  <h2 style="margin-top:0">🪄 Page générée — aperçu</h2>
+  <p class="muted">Partenaire : <strong>{{ draft_partner.name if draft_partner else '—' }}</strong></p>
   <h3>{{ draft.title }}</h3>
   {% if draft.image %}
   <img src="{{ draft.image | static_v }}" alt="{{ draft.image_alt or draft.title }}"
-       width="1200" height="675" loading="lazy" style="max-width:100%;height:auto;border-radius:8px">
+       width="1200" height="675" loading="lazy" style="max-width:100%;height:auto;border-radius:10px">
   {% endif %}
-  <p class="muted"><em>{{ draft.meta_description }}</em></p>
-  <div class="draft-content" style="max-height:340px;overflow:auto;border:1px solid var(--border,#e3e3e3);padding:1rem;border-radius:8px">
-    {{ draft.content_html | safe }}
-  </div>
-  <div style="display:flex;gap:0.75rem;margin-top:1rem;flex-wrap:wrap">
+  {% if draft.meta_description %}<p class="muted"><em>{{ draft.meta_description }}</em></p>{% endif %}
+  <div class="rp-draft__preview">{{ draft.content_html | safe }}</div>
+  <div class="rp-actions">
     <form method="post">
       <input type="hidden" name="action" value="publish_generated_page">
       <input type="hidden" name="partner_id" value="{{ draft.partner_id }}">
@@ -81,103 +106,74 @@
     </form>
     <form method="post">
       <input type="hidden" name="action" value="discard_generated_page">
-      <button type="submit" class="btn">🗑 Abandonner</button>
+      <button type="submit" class="btn btn-ghost">Abandonner</button>
     </form>
   </div>
 </section>
 {% endif %}
 </div>
 
-{# ── Ajouter un partenaire ────────────────────────────────────────────────── #}
-<section class="panel" style="margin-bottom:1.5rem">
-  <details class="partners-add">
-    <summary><span aria-hidden="true">＋</span> Ajouter un partenaire recommandé</summary>
-    <form method="post" style="margin-top:1rem">
-      <input type="hidden" name="action" value="add_partner">
-      {{ partner_fields() }}
-      <button type="submit" class="btn btn-primary" style="margin-top:1rem">Créer le partenaire</button>
-    </form>
-  </details>
-</section>
+{# ── Ajouter un partenaire ───────────────────────────────────────────────── #}
+<details class="panel rp-add">
+  <summary><span aria-hidden="true">＋</span> Ajouter un partenaire recommandé</summary>
+  <form method="post" style="margin-top:1rem">
+    <input type="hidden" name="action" value="add_partner">
+    {{ partner_fields() }}
+    <button type="submit" class="btn btn-primary">Créer le partenaire</button>
+  </form>
+</details>
 
-{# ── Liste des partenaires ────────────────────────────────────────────────── #}
+{# ── Liste des partenaires ───────────────────────────────────────────────── #}
 {% if not partners %}
-<p class="muted">Aucun partenaire recommandé pour l'instant.</p>
+<p class="rp-empty">Aucun partenaire recommandé pour l'instant — ajoutez-en un ci-dessus.</p>
 {% endif %}
 
 {% for p in partners %}
-<section class="panel" style="margin-bottom:1.25rem">
-  <header style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap">
-    <div>
-      <h2 style="margin:0">{{ p.name }}
-        <span class="muted" style="font-weight:normal;font-size:0.8em">
-          · {{ partnership_type_labels.get(p.partnership_type, p.partnership_type) }}
-        </span>
-      </h2>
-      {% if p.website %}<a href="{{ p.website }}" target="_blank" rel="noopener" class="muted">{{ p.website }}</a>{% endif %}
+<section class="rp-card {% if not p.enabled %}is-off{% endif %}">
+  <header class="rp-card__head">
+    <div class="rp-card__title">
+      <h2>{{ p.name }} <span class="rp-type">{{ partnership_type_labels.get(p.partnership_type, p.partnership_type) }}</span></h2>
+      {% if p.website %}<div><a href="{{ p.website }}" target="_blank" rel="noopener" class="rp-card__link">{{ p.website }}</a></div>{% endif %}
       {% if p.enabled %}
-      <p style="margin:.25rem 0 0"><a href="{{ url_for('recommended_partner_fiche', slug=p.slug) }}" target="_blank" rel="noopener">↗ Voir la fiche publique</a></p>
+      <div class="rp-card__public"><a href="{{ url_for('recommended_partner_fiche', slug=p.slug) }}" target="_blank" rel="noopener">↗ Voir la fiche publique</a></div>
       {% endif %}
     </div>
     <form method="post" class="nps-switch-form">
       <input type="hidden" name="action" value="toggle_partner">
       <input type="hidden" name="partner_id" value="{{ p.id }}">
       <input type="hidden" name="enabled" value="{{ '0' if p.enabled else '1' }}">
-      <label class="nps-switch">
-        <input type="checkbox" {% if p.enabled %}checked{% endif %} onchange="this.form.submit()">
-        <span class="nps-switch__track" aria-hidden="true"><span class="nps-switch__thumb"></span></span>
-        <span class="nps-switch__label">{{ 'Publié' if p.enabled else 'Masqué' }}</span>
-      </label>
+      {{ switch('_ui', p.enabled, 'Publié', 'Masqué', auto_submit=True) }}
       <noscript><button type="submit" class="btn btn-sm">OK</button></noscript>
     </form>
   </header>
 
-  {# Infos internes #}
-  <div class="muted" style="margin:.75rem 0;font-size:.9em">
-    {% if p.commission %}<div>💶 Commission (interne) : {{ p.commission }}</div>{% endif %}
-    {% if p.objective %}<div>🎯 Objectif (interne) : {{ p.objective }}</div>{% endif %}
-    {% if p.notes %}<div>📝 Notes (interne) : {{ p.notes }}</div>{% endif %}
+  {% if p.commission or p.objective or p.notes %}
+  <div class="rp-internal">
+    <span class="rp-internal__title">Infos internes</span>
+    {% if p.commission %}<div>💶 Commission : {{ p.commission }}</div>{% endif %}
+    {% if p.objective %}<div>🎯 Objectif : {{ p.objective }}</div>{% endif %}
+    {% if p.notes %}<div>📝 Notes : {{ p.notes }}</div>{% endif %}
   </div>
+  {% endif %}
 
-  {# Éditer le partenaire #}
-  <details>
-    <summary class="muted">✏️ Modifier les infos du partenaire</summary>
-    <form method="post" style="margin-top:1rem">
-      <input type="hidden" name="action" value="update_partner">
-      <input type="hidden" name="partner_id" value="{{ p.id }}">
-      {{ partner_fields(p) }}
-      <button type="submit" class="btn btn-primary" style="margin-top:1rem">Enregistrer</button>
-    </form>
-    <form method="post" onsubmit="return confirm('Supprimer ce partenaire et toutes ses pages ?')" style="margin-top:.5rem">
-      <input type="hidden" name="action" value="delete_partner">
-      <input type="hidden" name="partner_id" value="{{ p.id }}">
-      <button type="submit" class="btn btn-danger">🗑 Supprimer le partenaire</button>
-    </form>
-  </details>
-
-  {# Pages du partenaire #}
-  <h3 style="margin-top:1.25rem">Pages ({{ p.pages | length }})</h3>
-  {% if not p.pages %}<p class="muted">Aucune page. Générez-en une par IA ci-dessous.</p>{% endif %}
-  <ul style="list-style:none;padding:0;margin:0">
+  <h3 class="rp-section-title">Pages ({{ p.pages | length }})</h3>
+  {% if not p.pages %}<p class="rp-empty">Aucune page. Générez-en une par IA ci-dessous.</p>{% endif %}
+  <ul class="rp-pages">
     {% for pg in p.pages %}
-    <li style="display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.6rem 0;border-bottom:1px solid var(--border,#eee);flex-wrap:wrap">
-      <span>
-        <strong>{{ pg.title }}</strong>
+    <li class="rp-page">
+      <span class="rp-page__title">
+        {{ pg.title }}
         {% if p.enabled and pg.enabled %}
-        <a href="{{ url_for('recommended_partner_page', slug=p.slug, page_slug=pg.slug) }}" target="_blank" rel="noopener" class="muted">↗</a>
+        <a href="{{ url_for('recommended_partner_page', slug=p.slug, page_slug=pg.slug) }}" target="_blank" rel="noopener" title="Voir la page">↗</a>
         {% endif %}
       </span>
-      <span style="display:flex;gap:.75rem;align-items:center">
+      <span class="rp-page__actions">
         <form method="post" class="nps-switch-form">
           <input type="hidden" name="action" value="toggle_page">
           <input type="hidden" name="partner_id" value="{{ p.id }}">
           <input type="hidden" name="page_id" value="{{ pg.id }}">
           <input type="hidden" name="enabled" value="{{ '0' if pg.enabled else '1' }}">
-          <label class="nps-switch">
-            <input type="checkbox" {% if pg.enabled %}checked{% endif %} onchange="this.form.submit()">
-            <span class="nps-switch__track" aria-hidden="true"><span class="nps-switch__thumb"></span></span>
-            <span class="nps-switch__label">{{ 'Publiée' if pg.enabled else 'Masquée' }}</span>
-          </label>
+          {{ switch('_ui', pg.enabled, 'Publiée', 'Masquée', auto_submit=True) }}
         </form>
         <form method="post" onsubmit="return confirm('Supprimer cette page ?')">
           <input type="hidden" name="action" value="delete_page">
@@ -191,29 +187,47 @@
   </ul>
 
   {# Générer une page par IA #}
-  <form class="rp-generate-form" data-partner-id="{{ p.id }}" style="margin-top:1rem">
-    <label class="field">
-      <span>🪄 Générer une page par IA — votre consigne</span>
-      <textarea name="prompt" rows="3" class="rp-prompt"
-                placeholder="Ex. Présente {{ p.name }} : ce qu'ils proposent, pour qui, pourquoi je les recommande pour un voyage au Vietnam…"></textarea>
-    </label>
-    <button type="submit" class="btn btn-generate" {% if not groq_ok %}disabled title="Aucune clé IA configurée"{% endif %}>
-      Générer la page {% if groq_ok %}({{ ai_provider_label }}){% endif %}
+  <form class="rp-generate-form rp-gen" data-partner-id="{{ p.id }}">
+    <label class="rp-gen__label">🪄 Générer une page par IA — votre consigne</label>
+    <textarea name="prompt" class="rp-prompt" rows="3"
+              placeholder="Ex. Présente {{ p.name }} : ce qu'ils proposent, pour qui, pourquoi je les recommande pour un voyage au Vietnam…"></textarea>
+    <button type="submit" class="btn btn-primary btn-generate" {% if not groq_ok %}disabled title="Aucune clé IA configurée"{% endif %}>
+      Générer la page{% if groq_ok %} ({{ ai_provider_label }}){% endif %}
     </button>
   </form>
 
   {# Ajouter une page manuelle #}
-  <details style="margin-top:.75rem">
-    <summary class="muted">✍️ Ajouter une page manuellement</summary>
+  <details class="rp-sub">
+    <summary>✍️ Ajouter une page manuellement</summary>
     <form method="post" style="margin-top:1rem">
       <input type="hidden" name="action" value="save_page">
       <input type="hidden" name="partner_id" value="{{ p.id }}">
-      <label class="field"><span>Titre</span><input type="text" name="title" required></label>
-      <label class="field"><span>Meta title (SEO)</span><input type="text" name="meta_title" maxlength="70"></label>
-      <label class="field"><span>Meta description (SEO)</span><input type="text" name="meta_description" maxlength="200"></label>
-      <label class="field"><span>Contenu (HTML)</span><textarea name="content_html" rows="6"></textarea></label>
-      <label class="field-inline"><input type="checkbox" name="enabled" checked> Publier immédiatement</label>
-      <button type="submit" class="btn btn-primary" style="margin-top:.5rem">Enregistrer la page</button>
+      <div class="form-field"><label>Titre <span class="required">*</span></label><input type="text" name="title" required></div>
+      <div class="form-row">
+        <div class="form-field"><label>Meta title (SEO)</label><input type="text" name="meta_title" maxlength="70"></div>
+        <div class="form-field"><label>Meta description (SEO)</label><input type="text" name="meta_description" maxlength="200"></div>
+      </div>
+      <div class="form-field"><label>Contenu (HTML)</label><textarea name="content_html" rows="6"></textarea></div>
+      <div class="form-field">{{ switch('enabled', True, 'Publiée à l\'enregistrement', 'Brouillon') }}</div>
+      <button type="submit" class="btn btn-primary">Enregistrer la page</button>
+    </form>
+  </details>
+
+  {# Éditer / supprimer le partenaire #}
+  <details class="rp-sub">
+    <summary>✏️ Modifier ou supprimer le partenaire</summary>
+    <form method="post" style="margin-top:1rem">
+      <input type="hidden" name="action" value="update_partner">
+      <input type="hidden" name="partner_id" value="{{ p.id }}">
+      {{ partner_fields(p) }}
+      <div class="rp-actions">
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+      </div>
+    </form>
+    <form method="post" onsubmit="return confirm('Supprimer ce partenaire et toutes ses pages ?')" style="margin-top:0.6rem">
+      <input type="hidden" name="action" value="delete_partner">
+      <input type="hidden" name="partner_id" value="{{ p.id }}">
+      <button type="submit" class="btn btn-sm btn-danger">🗑 Supprimer le partenaire</button>
     </form>
   </details>
 </section>
