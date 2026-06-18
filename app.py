@@ -216,7 +216,12 @@ def _localized_block(block: dict, lang: str) -> dict:
 def _log_page_view_async(path: str, referrer: str, user_agent: str, ip_hash: str,
                          client_ip: str, utm_source: str = "", utm_campaign: str = ""):
     try:
-        from admin.geoip import resolve_location
+        from admin.geoip import resolve_location, is_bot_network
+
+        # Trafic depuis un datacenter/proxy = bot usurpant un user-agent navigateur
+        # (le « trafic Iraq/Syrie » non ciblé). On ne l'enregistre pas en analytics.
+        if is_bot_network(client_ip):
+            return
 
         country_code, country_name, city = resolve_location(client_ip)
         analytics_db.log_page_view(
