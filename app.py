@@ -1494,9 +1494,9 @@ def recommended_partner_page(slug, page_slug):
         abort(404)
     if not partner.get("enabled") or not page.get("enabled"):
         abort(404)
-    from admin.recommended_partners import localize_page
+    from admin.recommended_partners import localize_page, resolve_public_images
     pub = public_partner(partner, lang)
-    page = localize_page(page, lang)
+    page = resolve_public_images(localize_page(page, lang))
     # Lien de réservation tracké via /go/ (clics loggés en analytics affiliation).
     raw_booking = (page.get("booking_url") or partner.get("website") or "").strip()
     booking_url = tracked_affiliate_url(f"reco-{partner['slug']}", raw_booking) if raw_booking else ""

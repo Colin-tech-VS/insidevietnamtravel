@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "macros/images.html" import responsive_img with context %}
+{% from "macros/reviews.html" import entity_reviews with context %}
 
 {% block content %}
 {% set is_en = (lang == 'en') %}
@@ -63,5 +64,11 @@
       </ul>
     </div>
   </section>
+
+  {{ entity_reviews(
+    partner.reviews,
+    ('Traveller reviews' if is_en else 'Avis voyageurs'),
+    ('What travellers say about this partner.' if is_en else 'Ce que disent les voyageurs sur ce partenaire.')
+  ) }}
 </article>
 {% endblock %}

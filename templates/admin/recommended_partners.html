@@ -96,6 +96,79 @@
   </div>
 {% endmacro %}
 
+{# ── Macro : avis admin (partenaire ou activité) ─────────────────────────── #}
+{% macro reviews_admin(action_save, action_delete, partner_id, page_id=None, reviews=None) %}
+<details class="rp-sub">
+  <summary>⭐ Avis voyageurs (affichés sur la page publique)</summary>
+  <div style="margin-top:1rem">
+    {% if reviews %}
+    <ul class="rp-pages" style="margin-bottom:1rem">
+      {% for r in reviews %}
+      <li class="rp-activity" style="flex-direction:column;align-items:flex-start;gap:.35rem">
+        <div>
+          <strong style="color:var(--gold)">{{ '★' * (r.rating or 5) }}</strong>
+          {{ r.author }}{% if r.location %} · <span class="muted">{{ r.location }}</span>{% endif %}
+          {% if not r.enabled %}<span class="muted"> (masqué)</span>{% endif %}
+          <form method="post" style="display:inline;margin-left:.5rem" onsubmit="return confirm('Supprimer cet avis ?')">
+            <input type="hidden" name="action" value="{{ action_delete }}">
+            <input type="hidden" name="partner_id" value="{{ partner_id }}">
+            {% if page_id %}<input type="hidden" name="page_id" value="{{ page_id }}">{% endif %}
+            <input type="hidden" name="review_id" value="{{ r.id }}">
+            <button type="submit" class="btn btn-sm btn-danger">🗑</button>
+          </form>
+        </div>
+        <div class="muted" style="font-size:.9rem">{{ (r.text.fr if r.text is mapping else r.text)[:160] }}{% if (r.text.fr if r.text is mapping else r.text)|length > 160 %}…{% endif %}</div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted" style="margin-bottom:1rem">Aucun avis pour l'instant.</p>
+    {% endif %}
+    <form method="post">
+      <input type="hidden" name="action" value="{{ action_save }}">
+      <input type="hidden" name="partner_id" value="{{ partner_id }}">
+      {% if page_id %}<input type="hidden" name="page_id" value="{{ page_id }}">{% endif %}
+      <div class="form-row">
+        <div class="form-field">
+          <label>Nom affiché <span class="required">*</span></label>
+          <input type="text" name="review_author" required maxlength="80" placeholder="Ex. Claire & Thomas">
+        </div>
+        <div class="form-field">
+          <label>Ville / pays</label>
+          <input type="text" name="review_location" maxlength="80" placeholder="Ex. Lyon, France">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Note</label>
+          <select name="review_rating">
+            {% for n in [5, 4, 3, 2, 1] %}
+            <option value="{{ n }}" {% if n == 5 %}selected{% endif %}>{{ '★' * n }} ({{ n }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Date</label>
+          <input type="date" name="review_date">
+        </div>
+      </div>
+      <div class="form-field">
+        <label>Témoignage (FR) <span class="required">*</span></label>
+        <textarea name="review_text_fr" required rows="3" placeholder="Le témoignage en français…"></textarea>
+      </div>
+      <div class="form-field">
+        <label>Témoignage (EN) <span class="field-hint" style="display:inline">— optionnel</span></label>
+        <textarea name="review_text_en" rows="2" placeholder="English version…"></textarea>
+      </div>
+      <div class="form-field">
+        {{ switch('review_enabled', True, 'Publié sur le site', 'Masqué') }}
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm">Ajouter l'avis</button>
+    </form>
+  </div>
+</details>
+{% endmacro %}
+
 {# ── Macro : champs d'une activité (prix, durée, réservation) ────────────── #}
 {% macro activity_inputs(pg=None) %}
   <div class="form-row">
@@ -279,6 +352,7 @@
           <div class="form-field">{{ switch('enabled', pg.enabled, 'Publiée', 'Masquée') }}</div>
           <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
         </form>
+        {{ reviews_admin('save_page_review', 'delete_page_review', p.id, pg.id, reviews=pg.reviews or []) }}
       </details>
     </li>
     {% endfor %}
@@ -332,6 +406,7 @@
       <input type="hidden" name="partner_id" value="{{ p.id }}">
       <button type="submit" class="btn btn-sm btn-danger">🗑 Supprimer le partenaire</button>
     </form>
+    {{ reviews_admin('save_partner_review', 'delete_partner_review', p.id, reviews=p.reviews or []) }}
   </details>
 </section>
 {% endfor %}

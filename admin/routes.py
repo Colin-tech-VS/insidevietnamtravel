@@ -2057,60 +2057,84 @@ def _read_reco_partner_image_upload() -> tuple[bytes | None, str]:
     return None, url
 
 
-def _defer_reco_partner_image(
+def _apply_reco_partner_image(
     partner_id: str,
     partner: dict,
     *,
     file_bytes: bytes | None,
     image_url: str,
     image_alt: str,
-) -> None:
-    """Encode l'image partenaire en arrière-plan — la requête HTTP répond sans attendre PIL."""
+) -> dict:
+    """Encode et enregistre l'image partenaire (synchrone — fiabilité KV + fichier)."""
+    from admin import recommended_partners as rp
+    from admin.image_service import (
+        MAX_PARTNER_COVER_BYTES,
+        normalize_image_url,
+        store_partner_cover_webp,
+        validate_image_bytes,
+    )
+
     slug = f"reco-{partner['slug']}"
     alt = (image_alt or partner.get("name") or "").strip()
+    patch: dict = {"image_alt": alt}
 
-    def _job() -> None:
-        from admin import recommended_partners as rp
-        from admin.image_service import (
-            MAX_PARTNER_COVER_BYTES,
-            store_partner_cover_webp,
-            validate_image_bytes,
-            _partner_cover_slug,
-        )
-        from admin.genlog import log
+    if file_bytes:
+        raw = validate_image_bytes(file_bytes, max_bytes=MAX_PARTNER_COVER_BYTES)
+        patch["image"] = store_partner_cover_webp(slug, file_bytes=raw, prevalidated=True)
+        patch["image_source_url"] = ""
+    elif (image_url or "").strip():
+        url = normalize_image_url(image_url)
+        patch["image"] = store_partner_cover_webp(slug, image_url=url)
+        patch["image_source_url"] = url
+    else:
+        raise ValueError("Photo manquante — uploadez un fichier ou indiquez une URL.")
 
-        master_url = f"/static/images/partners/{_partner_cover_slug(slug)}.webp"
+    return rp.update_partner(partner_id, patch, schedule_i18n=False)
 
-        def _publish_thumb() -> None:
-            rp.update_partner(
-                partner_id,
-                {"image": master_url, "image_alt": alt},
-                schedule_i18n=False,
-            )
 
-        try:
-            if file_bytes:
-                raw = validate_image_bytes(file_bytes, max_bytes=MAX_PARTNER_COVER_BYTES)
-                saved = store_partner_cover_webp(
-                    slug,
-                    file_bytes=raw,
-                    prevalidated=True,
-                    on_thumb_ready=_publish_thumb,
-                )
-            elif image_url:
-                saved = store_partner_cover_webp(slug, image_url=image_url)
-            else:
-                return
-            rp.update_partner(
-                partner_id,
-                {"image": saved, "image_alt": alt},
-                schedule_i18n=False,
-            )
-            log(f"reco partner image OK slug={slug}")
-        except Exception as exc:  # noqa: BLE001
-            log(f"reco partner image KO slug={slug} -- {type(exc).__name__}: {exc}")
+def _apply_reco_activity_images(
+    partner_id: str,
+    page_id: str,
+    *,
+    partner: dict,
+    page: dict,
+    cover_bytes: bytes | None,
+    cover_url: str,
+    gallery_bytes: list[bytes],
+    removed: list[str],
+) -> dict:
+    """Couverture + galerie activité (synchrone)."""
+    from admin import recommended_partners as rp
+    from admin.image_service import (
+        MAX_PARTNER_COVER_BYTES,
+        normalize_image_url,
+        store_partner_cover_webp,
+        store_partner_gallery_webp,
+        validate_image_bytes,
+    )
 
-    threading.Thread(target=_job, daemon=True).start()
+    base = f"reco-{partner['slug']}-{page['slug']}"
+    patch: dict = {}
+
+    if cover_bytes:
+        raw = validate_image_bytes(cover_bytes, max_bytes=MAX_PARTNER_COVER_BYTES)
+        patch["image"] = store_partner_cover_webp(base, file_bytes=raw, prevalidated=True)
+        patch["image_source_url"] = ""
+    elif (cover_url or "").strip():
+        url = normalize_image_url(cover_url)
+        patch["image"] = store_partner_cover_webp(base, image_url=url)
+        patch["image_source_url"] = url
+
+    images = [u for u in (page.get("images") or []) if u not in removed]
+    for i, gf in enumerate(gallery_bytes):
+        raw = validate_image_bytes(gf, max_bytes=MAX_PARTNER_COVER_BYTES)
+        images.append(store_partner_gallery_webp(base, f"{len(images)}-{i}", raw, prevalidated=True))
+    if removed or gallery_bytes:
+        patch["images"] = images
+
+    if not patch:
+        return page
+    return rp.update_page(partner_id, page_id, patch, schedule_i18n=False)
 
 
 def _read_reco_activity_image_upload() -> tuple[bytes | None, str, list[bytes], list[str]]:
@@ -2134,75 +2158,6 @@ def _read_reco_activity_image_upload() -> tuple[bytes | None, str, list[bytes], 
             gallery.append(raw)
     removed = list(request.form.getlist("remove_image"))
     return cover_bytes, cover_url, gallery, removed
-
-
-def _defer_reco_activity_images(
-    partner_id: str,
-    page_id: str,
-    *,
-    partner: dict,
-    page: dict,
-    cover_bytes: bytes | None,
-    cover_url: str,
-    gallery_bytes: list[bytes],
-    removed: list[str],
-) -> None:
-    """Images activité (couverture + galerie) en tâche de fond."""
-    base = f"reco-{partner['slug']}-{page['slug']}"
-
-    def _job() -> None:
-        from admin import recommended_partners as rp
-        from admin.image_service import (
-            MAX_PARTNER_COVER_BYTES,
-            store_partner_cover_webp,
-            store_partner_gallery_webp,
-            validate_image_bytes,
-            _partner_cover_slug,
-        )
-        from admin.genlog import log
-
-        cover_url_path = f"/static/images/partners/{_partner_cover_slug(base)}.webp"
-        thumb_published = False
-
-        def _publish_cover_thumb() -> None:
-            nonlocal thumb_published
-            if thumb_published:
-                return
-            thumb_published = True
-            rp.update_page(
-                partner_id,
-                page_id,
-                {"image": cover_url_path},
-                schedule_i18n=False,
-            )
-
-        try:
-            patch: dict = {}
-            if cover_bytes:
-                raw = validate_image_bytes(cover_bytes, max_bytes=MAX_PARTNER_COVER_BYTES)
-                patch["image"] = store_partner_cover_webp(
-                    base,
-                    file_bytes=raw,
-                    prevalidated=True,
-                    on_thumb_ready=_publish_cover_thumb,
-                )
-            elif cover_url:
-                patch["image"] = store_partner_cover_webp(base, image_url=cover_url)
-            images = [u for u in (page.get("images") or []) if u not in removed]
-            for i, gf in enumerate(gallery_bytes):
-                raw = validate_image_bytes(gf, max_bytes=MAX_PARTNER_COVER_BYTES)
-                images.append(
-                    store_partner_gallery_webp(base, f"{len(images)}-{i}", raw, prevalidated=True)
-                )
-            if removed or gallery_bytes:
-                patch["images"] = images
-            if patch:
-                rp.update_page(partner_id, page_id, patch, schedule_i18n=False)
-                log(f"reco activity images OK base={base}")
-        except Exception as exc:  # noqa: BLE001
-            log(f"reco activity images KO base={base} -- {type(exc).__name__}: {exc}")
-
-    threading.Thread(target=_job, daemon=True).start()
 
 
 @admin_bp.route("/recommended-partners", methods=["GET", "POST"])
@@ -2238,18 +2193,22 @@ def recommended_partners_admin():
                     flash(str(e), "error")
                     img_bytes, img_url = None, ""
                 if img_bytes or img_url:
-                    _defer_reco_partner_image(
-                        p["id"],
-                        p,
-                        file_bytes=img_bytes,
-                        image_url=img_url,
-                        image_alt=(request.form.get("image_alt") or p.get("name") or "").strip(),
-                    )
-                    flash(
-                        f"Partenaire « {p['name']} » {'mis à jour' if action == 'update_partner' else 'créé'}"
-                        " — image en cours de traitement (rafraîchissez dans quelques secondes).",
-                        "success",
-                    )
+                    try:
+                        _apply_reco_partner_image(
+                            p["id"],
+                            p,
+                            file_bytes=img_bytes,
+                            image_url=img_url,
+                            image_alt=(request.form.get("image_alt") or p.get("name") or "").strip(),
+                        )
+                        flash(
+                            f"Partenaire « {p['name']} » {'mis à jour' if action == 'update_partner' else 'créé'} — image enregistrée.",
+                            "success",
+                        )
+                    except ValueError as e:
+                        flash(f"Partenaire enregistré, mais image : {e}", "warn")
+                    except Exception as e:  # noqa: BLE001
+                        flash(f"Partenaire enregistré, mais image : {e}", "error")
                 else:
                     flash(f"Partenaire « {p['name']} » {'mis à jour' if action == 'update_partner' else 'créé'}.", "success")
             elif action == "delete_partner":
@@ -2283,23 +2242,43 @@ def recommended_partners_admin():
                     flash(str(e), "error")
                     cover_bytes, cover_url, gallery_bytes, removed = None, "", [], []
                 if cover_bytes or cover_url or gallery_bytes or removed:
-                    _defer_reco_activity_images(
-                        partner_id,
-                        pg["id"],
-                        partner=partner or {},
-                        page=pg,
-                        cover_bytes=cover_bytes,
-                        cover_url=cover_url,
-                        gallery_bytes=gallery_bytes,
-                        removed=removed,
-                    )
-                    flash(
-                        f"Activité {'mise à jour' if page_id else 'créée'}"
-                        " — images en cours de traitement (rafraîchissez dans quelques secondes).",
-                        "success",
-                    )
+                    try:
+                        _apply_reco_activity_images(
+                            partner_id,
+                            pg["id"],
+                            partner=partner or {},
+                            page=pg,
+                            cover_bytes=cover_bytes,
+                            cover_url=cover_url,
+                            gallery_bytes=gallery_bytes,
+                            removed=removed,
+                        )
+                        flash(
+                            f"Activité {'mise à jour' if page_id else 'créée'} — images enregistrées.",
+                            "success",
+                        )
+                    except ValueError as e:
+                        flash(f"Activité enregistrée, mais images : {e}", "warn")
+                    except Exception as e:  # noqa: BLE001
+                        flash(f"Activité enregistrée, mais images : {e}", "error")
                 else:
                     flash(f"Activité {'mise à jour' if page_id else 'créée'}.", "success")
+            elif action == "save_partner_review":
+                from admin.recommended_partners import _build_review_from_form
+                review = _build_review_from_form(request.form)
+                rp.save_partner_review(partner_id, review)
+                flash("Avis partenaire enregistré.", "success")
+            elif action == "delete_partner_review":
+                rp.delete_partner_review(partner_id, (request.form.get("review_id") or "").strip())
+                flash("Avis supprimé.", "success")
+            elif action == "save_page_review":
+                from admin.recommended_partners import _build_review_from_form
+                review = _build_review_from_form(request.form)
+                rp.save_page_review(partner_id, page_id, review)
+                flash("Avis activité enregistré.", "success")
+            elif action == "delete_page_review":
+                rp.delete_page_review(partner_id, page_id, (request.form.get("review_id") or "").strip())
+                flash("Avis supprimé.", "success")
             elif action == "publish_generated_page":
                 draft = _get_draft("rec_partner_page")
                 if not draft:

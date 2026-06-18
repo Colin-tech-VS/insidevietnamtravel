@@ -28,6 +28,7 @@ Structure stockée (liste) :
 from __future__ import annotations
 
 import secrets
+import threading
 from datetime import date
 
 from admin.kv_store import get_json, set_json
@@ -46,6 +47,8 @@ PARTNERSHIP_TYPE_LABELS = dict(PARTNERSHIP_TYPES)
 
 # Champs internes (pilotage) à ne JAMAIS sérialiser vers le public.
 _INTERNAL_FIELDS = ("commission", "commission_rate", "objective", "notes", "partnership_type")
+
+_save_lock = threading.Lock()
 
 
 # ── Store ───────────────────────────────────────────────────────────────────
@@ -76,7 +79,8 @@ def get_partners() -> list[dict]:
 
 
 def save_partners(items: list[dict]) -> None:
-    set_json("recommended_partners", items, file_name="recommended_partners.json")
+    with _save_lock:
+        set_json("recommended_partners", items, file_name="recommended_partners.json")
 
 
 def find_partner(pid: str) -> dict | None:
@@ -163,6 +167,63 @@ def _clean_url_list(value) -> list[str]:
     return out[:12]
 
 
+def _coerce_rating(value, default: int = 5) -> int:
+    try:
+        return max(1, min(5, int(value)))
+    except (TypeError, ValueError):
+        return default
+
+
+def _clean_reviews_list(value) -> list[dict]:
+    """Avis curés admin (max 20) — {id, author, location, rating, date, text{fr,en}, enabled}."""
+    if not isinstance(value, list):
+        return []
+    out: list[dict] = []
+    for raw in value:
+        if not isinstance(raw, dict):
+            continue
+        text = raw.get("text") or {}
+        if not isinstance(text, dict):
+            text = {"fr": str(text or ""), "en": ""}
+        author = str(raw.get("author") or "").strip()[:80]
+        body_fr = str(text.get("fr") or "").strip()
+        if not author or not body_fr:
+            continue
+        out.append({
+            "id": str(raw.get("id") or secrets.token_urlsafe(8)),
+            "author": author,
+            "location": str(raw.get("location") or "").strip()[:80],
+            "rating": _coerce_rating(raw.get("rating")),
+            "date": str(raw.get("date") or date.today().isoformat())[:10],
+            "text": {
+                "fr": body_fr[:2000],
+                "en": str(text.get("en") or "").strip()[:2000] or body_fr[:2000],
+            },
+            "enabled": _coerce_bool(raw.get("enabled"), default=True),
+        })
+    return out[:20]
+
+
+def _localize_reviews_list(reviews: list | None, lang: str | None) -> list[dict]:
+    out: list[dict] = []
+    for r in _clean_reviews_list(reviews or []):
+        if not r.get("enabled", True):
+            continue
+        text = r.get("text") or {}
+        body = (text.get("en") if lang == "en" else None) or text.get("fr") or ""
+        if not body:
+            continue
+        out.append({
+            "id": r.get("id", ""),
+            "author": r.get("author", ""),
+            "location": r.get("location", ""),
+            "rating": r.get("rating", 5),
+            "date": r.get("date", ""),
+            "body": body,
+        })
+    return out
+
+
 def _coerce_float(value, default: float = 0.0) -> float:
     """Parse un nombre tolérant : « 45 €  », « 45,90 », « 1 200 » → float."""
     if value is None or value == "":
@@ -212,7 +273,11 @@ def _normalize_partner(data: dict, *, existing: dict | None = None) -> dict:
         "intro_html": str(data.get("intro_html") or "").strip(),
         "image": str(data.get("image") or existing.get("image") or "").strip(),
         "image_alt": str(data.get("image_alt") or existing.get("image_alt") or "").strip()[:200],
+        "image_source_url": str(data.get("image_source_url") or existing.get("image_source_url") or "").strip()[:500],
         "image_prompt": str(data.get("image_prompt") or existing.get("image_prompt") or "").strip()[:300],
+        "reviews": _clean_reviews_list(
+            data.get("reviews") if data.get("reviews") is not None else existing.get("reviews", [])
+        ),
         # Traductions EN (best-effort) : {tagline, intro_html}.
         "i18n": data.get("i18n") if data.get("i18n") is not None else existing.get("i18n", {}),
         "pages": _pages_list(existing),
@@ -245,9 +310,13 @@ def _normalize_page(partner: dict, data: dict, *, existing: dict | None = None) 
         "meta_description": str(data.get("meta_description") or "").strip()[:200],
         "image": str(data.get("image") or existing.get("image") or "").strip(),
         "image_alt": str(data.get("image_alt") or existing.get("image_alt") or "").strip()[:200],
+        "image_source_url": str(data.get("image_source_url") or existing.get("image_source_url") or "").strip()[:500],
         "image_prompt": str(data.get("image_prompt") or existing.get("image_prompt") or "").strip()[:300],
         # Galerie d'images supplémentaires (URLs /static ou http), optionnelle.
         "images": _clean_url_list(data.get("images") if data.get("images") is not None else existing.get("images", [])),
+        "reviews": _clean_reviews_list(
+            data.get("reviews") if data.get("reviews") is not None else existing.get("reviews", [])
+        ),
         "prompt": str(data.get("prompt") or existing.get("prompt") or "").strip()[:2000],
         "enabled": _coerce_bool(data.get("enabled"), default=existing.get("enabled", False)),
         # Traductions EN (best-effort) : {title, meta_title, meta_description, content_html}.
@@ -323,11 +392,13 @@ def _schedule_translation(record: dict, partner_id: str, page_id: str | None, fi
 
 
 def localize_page(page: dict, lang: str | None = None) -> dict:
+    out = dict(page)
     if lang == "en":
         en = (page.get("i18n") or {}).get("en") or {}
         if en:
-            return {**page, **{k: en[k] for k in PAGE_I18N_FIELDS if en.get(k)}}
-    return page
+            out.update({k: en[k] for k in PAGE_I18N_FIELDS if en.get(k)})
+    out["reviews"] = _localize_reviews_list(page.get("reviews"), lang)
+    return out
 
 
 def localize_partner(partner: dict, lang: str | None = None) -> dict:
@@ -336,6 +407,7 @@ def localize_partner(partner: dict, lang: str | None = None) -> dict:
         en = (partner.get("i18n") or {}).get("en") or {}
         if en:
             out.update({k: en[k] for k in PARTNER_I18N_FIELDS if en.get(k)})
+    out["reviews"] = _localize_reviews_list(partner.get("reviews"), lang)
     return out
 
 
@@ -431,6 +503,112 @@ def set_page_enabled(partner_id: str, page_id: str, enabled: bool) -> dict:
     return update_page(partner_id, page_id, {"enabled": bool(enabled)})
 
 
+def _build_review_from_form(form) -> dict:
+    """Construit un avis depuis les champs formulaire admin."""
+    author = str(form.get("review_author") or "").strip()
+    text_fr = str(form.get("review_text_fr") or "").strip()
+    if not author or not text_fr:
+        raise ValueError("Nom et témoignage (FR) obligatoires pour l'avis.")
+    rid = (form.get("review_id") or "").strip() or secrets.token_urlsafe(8)
+    return {
+        "id": rid,
+        "author": author[:80],
+        "location": str(form.get("review_location") or "").strip()[:80],
+        "rating": _coerce_rating(form.get("review_rating")),
+        "date": str(form.get("review_date") or date.today().isoformat())[:10],
+        "text": {
+            "fr": text_fr[:2000],
+            "en": str(form.get("review_text_en") or "").strip()[:2000] or text_fr[:2000],
+        },
+        "enabled": bool(form.get("review_enabled")),
+    }
+
+
+def save_partner_review(partner_id: str, review: dict) -> dict:
+    items = get_partners()
+    for i, p in enumerate(items):
+        if p.get("id") != partner_id:
+            continue
+        reviews = [r for r in _clean_reviews_list(p.get("reviews") or []) if r.get("id") != review["id"]]
+        reviews.insert(0, review)
+        p["reviews"] = reviews[:20]
+        p["updated_at"] = date.today().isoformat()
+        items[i] = p
+        save_partners(items)
+        return review
+    raise ValueError(f"Partenaire introuvable : {partner_id}")
+
+
+def delete_partner_review(partner_id: str, review_id: str) -> None:
+    items = get_partners()
+    for i, p in enumerate(items):
+        if p.get("id") != partner_id:
+            continue
+        p["reviews"] = [r for r in _clean_reviews_list(p.get("reviews") or []) if r.get("id") != review_id]
+        p["updated_at"] = date.today().isoformat()
+        items[i] = p
+        save_partners(items)
+        return
+    raise ValueError(f"Partenaire introuvable : {partner_id}")
+
+
+def save_page_review(partner_id: str, page_id: str, review: dict) -> dict:
+    items = get_partners()
+    for i, p in enumerate(items):
+        if p.get("id") != partner_id:
+            continue
+        pages = _pages_list(p)
+        for j, pg in enumerate(pages):
+            if pg.get("id") != page_id:
+                continue
+            reviews = [r for r in _clean_reviews_list(pg.get("reviews") or []) if r.get("id") != review["id"]]
+            reviews.insert(0, review)
+            pg["reviews"] = reviews[:20]
+            pg["updated_at"] = date.today().isoformat()
+            pages[j] = pg
+            p["pages"] = pages
+            p["updated_at"] = date.today().isoformat()
+            items[i] = p
+            save_partners(items)
+            return review
+        raise ValueError(f"Page introuvable : {page_id}")
+    raise ValueError(f"Partenaire introuvable : {partner_id}")
+
+
+def delete_page_review(partner_id: str, page_id: str, review_id: str) -> None:
+    items = get_partners()
+    for i, p in enumerate(items):
+        if p.get("id") != partner_id:
+            continue
+        pages = _pages_list(p)
+        for j, pg in enumerate(pages):
+            if pg.get("id") != page_id:
+                continue
+            pg["reviews"] = [r for r in _clean_reviews_list(pg.get("reviews") or []) if r.get("id") != review_id]
+            pg["updated_at"] = date.today().isoformat()
+            pages[j] = pg
+            p["pages"] = pages
+            p["updated_at"] = date.today().isoformat()
+            items[i] = p
+            save_partners(items)
+            return
+        raise ValueError(f"Page introuvable : {page_id}")
+    raise ValueError(f"Partenaire introuvable : {partner_id}")
+
+
+def resolve_public_images(entity: dict) -> dict:
+    """Résout l'URL d'image (repli source_url si fichier local absent sur Scalingo)."""
+    from admin.image_service import persistent_image_url
+
+    out = dict(entity)
+    if out.get("image"):
+        resolved = persistent_image_url(out.get("image"), None, out.get("image_source_url"))
+        if resolved:
+            out["image"] = resolved
+    out.pop("image_source_url", None)
+    return out
+
+
 # ── Vue publique (sans champs internes) ──────────────────────────────────────
 
 _PUBLIC_STRIP = set(_INTERNAL_FIELDS) | {"i18n"}
@@ -438,7 +616,7 @@ _PUBLIC_STRIP = set(_INTERNAL_FIELDS) | {"i18n"}
 
 def _public_pages(partner: dict, lang: str | None = None) -> list[dict]:
     return [
-        {k: v for k, v in localize_page(pg, lang).items() if k != "i18n"}
+        resolve_public_images({k: v for k, v in localize_page(pg, lang).items() if k != "i18n"})
         for pg in _pages_list(partner)
         if pg.get("enabled")
     ]
@@ -447,7 +625,8 @@ def _public_pages(partner: dict, lang: str | None = None) -> list[dict]:
 def public_partner(partner: dict, lang: str | None = None) -> dict:
     """Copie localisée sans champs internes, avec uniquement les pages publiées."""
     loc = localize_partner(partner, lang)
-    out = {k: v for k, v in loc.items() if k not in _PUBLIC_STRIP}
+    out = resolve_public_images({k: v for k, v in loc.items() if k not in _PUBLIC_STRIP})
+    out["reviews"] = loc.get("reviews") or []
     out["pages"] = _public_pages(partner, lang)
     return out
 
