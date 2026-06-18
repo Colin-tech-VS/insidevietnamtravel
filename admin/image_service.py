@@ -15,6 +15,21 @@ from PIL import Image, ImageDraw, ImageOps
 
 from admin.genlog import log
 
+# Gunicorn (--preload + --threads 4) : les plugins Pillow (BmpImagePlugin, etc.)
+# se chargent paresseusement au premier Image.open(). Deux threads concurrents
+# provoquent « partially initialized module PIL.BmpImagePlugin ». On pré-charge
+# tout au import du module principal, puis on sérialise les opérations PIL.
+_pil_lock = threading.RLock()
+
+
+def _init_pil_plugins() -> None:
+    with _pil_lock:
+        Image.preinit()
+        Image.init()
+
+
+_init_pil_plugins()
+
 BLOG_IMAGES_DIR = Path(__file__).parent.parent / "static" / "images" / "blog"
 DEST_IMAGES_DIR = Path(__file__).parent.parent / "static" / "images" / "destinations"
 PARTNER_IMAGES_DIR = Path(__file__).parent.parent / "static" / "images" / "partners"
@@ -1058,56 +1073,56 @@ def _create_partner_responsive_variants(img: Image.Image, full_path: Path, *, fo
 
 
 def _to_partner_webp(raw: bytes, out_path: Path) -> None:
-    img = _cover_partner(_decode_upload_image(raw))
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    img.save(out_path, "WEBP", quality=PARTNER_WEBP_QUALITY, method=WEBP_METHOD)
-    _create_partner_responsive_variants(img, out_path, force=True)
+    with _pil_lock:
+        img = _cover_partner(_decode_upload_image(raw))
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        img.save(out_path, "WEBP", quality=PARTNER_WEBP_QUALITY, method=WEBP_METHOD)
+        _create_partner_responsive_variants(img, out_path, force=True)
 
 
 def _write_partner_webp_fast(raw: bytes, out_path: Path) -> None:
     """Repli encodage partenaire — garde les variantes srcset (qualité préservée)."""
-    img = _cover_partner(_decode_upload_image(raw))
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    img.save(out_path, "WEBP", quality=86, method=2)
-    _create_partner_responsive_variants(img, out_path, force=True)
+    with _pil_lock:
+        img = _cover_partner(_decode_upload_image(raw))
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        img.save(out_path, "WEBP", quality=86, method=2)
+        _create_partner_responsive_variants(img, out_path, force=True)
 
 
 def _decode_upload_image(raw: bytes) -> Image.Image:
     """Décode une image importée : EXIF (rotation iPhone), transparence → fond blanc."""
-    with Image.open(io.BytesIO(raw)) as src:
-        img = ImageOps.exif_transpose(src)
-        if img.mode in ("RGBA", "LA"):
-            bg = Image.new("RGB", img.size, (255, 255, 255))
-            bg.paste(img, mask=img.split()[-1])
-            return bg
-        if img.mode == "P":
-            img = img.convert("RGBA")
-            bg = Image.new("RGB", img.size, (255, 255, 255))
-            bg.paste(img, mask=img.split()[-1])
-            return bg
-        return img.convert("RGB")
+    with _pil_lock:
+        with Image.open(io.BytesIO(raw)) as src:
+            img = ImageOps.exif_transpose(src)
+            if img.mode in ("RGBA", "LA"):
+                bg = Image.new("RGB", img.size, (255, 255, 255))
+                bg.paste(img, mask=img.split()[-1])
+                return bg
+            if img.mode == "P":
+                img = img.convert("RGBA")
+                bg = Image.new("RGB", img.size, (255, 255, 255))
+                bg.paste(img, mask=img.split()[-1])
+                return bg
+            return img.convert("RGB")
 
 
 def _to_webp(raw: bytes, out_path: Path) -> None:
-    img = _cover_1200x675(_decode_upload_image(raw))
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    img.save(out_path, "WEBP", quality=82, method=WEBP_METHOD)
-    # force=True : on vient d'écrire une NOUVELLE image principale — les variantes
-    # -640/-960 de l'ancienne image doivent être remplacées, sinon le srcset
-    # (mobile, cartes) continue de servir l'ancienne photo après un changement.
-    _create_responsive_variants(img, out_path, force=True)
+    with _pil_lock:
+        img = _cover_1200x675(_decode_upload_image(raw))
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        img.save(out_path, "WEBP", quality=82, method=WEBP_METHOD)
+        _create_responsive_variants(img, out_path, force=True)
 
 
 def _write_webp_fast(raw: bytes, out_path: Path) -> None:
     """Écriture WebP minimale (method=0, sans variantes) — repli si l'encodage soigné
     dépasse son échéance. Garantit qu'un fichier image valide existe toujours."""
-    img = _cover_1200x675(_decode_upload_image(raw))
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    img.save(out_path, "WEBP", quality=80, method=0)
-    # Pas de variantes ici (chemin rapide) : on supprime celles de l'ancienne image
-    # pour que le srcset ne serve pas une photo périmée.
-    for suffix in ("-640", "-960"):
-        (out_path.parent / f"{out_path.stem}{suffix}.webp").unlink(missing_ok=True)
+    with _pil_lock:
+        img = _cover_1200x675(_decode_upload_image(raw))
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        img.save(out_path, "WEBP", quality=80, method=0)
+        for suffix in ("-640", "-960"):
+            (out_path.parent / f"{out_path.stem}{suffix}.webp").unlink(missing_ok=True)
 
 
 def _create_responsive_variants(img: Image.Image, full_path: Path, *, force: bool = False) -> None:
@@ -1132,12 +1147,13 @@ def ensure_responsive_variants() -> int:
             if path.stem.endswith(("-640", "-960", "-1280")):
                 continue
             try:
-                img = Image.open(path).convert("RGB")
-                before = {p.name for p in directory.glob(f"{path.stem}*.webp")}
-                if directory == PARTNER_IMAGES_DIR:
-                    _create_partner_responsive_variants(img, path)
-                else:
-                    _create_responsive_variants(img, path)
+                with _pil_lock:
+                    img = Image.open(path).convert("RGB")
+                    before = {p.name for p in directory.glob(f"{path.stem}*.webp")}
+                    if directory == PARTNER_IMAGES_DIR:
+                        _create_partner_responsive_variants(img, path)
+                    else:
+                        _create_responsive_variants(img, path)
                 after = {p.name for p in directory.glob(f"{path.stem}*.webp")}
                 if after - before:
                     created += 1
@@ -1691,11 +1707,12 @@ def validate_image_bytes(raw: bytes, *, max_bytes: int = MAX_UPLOAD_BYTES) -> by
         max_mb = max(1, max_bytes // (1024 * 1024))
         raise ValueError(f"Photo trop volumineuse (max {max_mb} Mo).")
     try:
-        with Image.open(io.BytesIO(raw)) as img:
-            img.verify()
-        with Image.open(io.BytesIO(raw)) as img:
-            if img.format not in ("JPEG", "PNG", "WEBP", "GIF", "MPO"):
-                raise ValueError("Format non supporté — utilisez JPG, PNG ou WebP.")
+        with _pil_lock:
+            with Image.open(io.BytesIO(raw)) as img:
+                img.verify()
+            with Image.open(io.BytesIO(raw)) as img:
+                if img.format not in ("JPEG", "PNG", "WEBP", "GIF", "MPO"):
+                    raise ValueError("Format non supporté — utilisez JPG, PNG ou WebP.")
     except ValueError:
         raise
     except Exception as exc:
