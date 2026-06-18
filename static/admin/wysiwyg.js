@@ -118,7 +118,41 @@
     }
   }
 
+  // ── Init paresseux par élément (pages sans onglets, ex. Partenaires recommandés) ──
+  // Évite d'initialiser des DIZAINES d'éditeurs TinyMCE d'un coup au chargement
+  // (ce qui fige l'onglet) : on n'initialise un éditeur QUE lorsque son <details>
+  // est ouvert.
+  function _configFor(el) {
+    if (el.classList.contains('wysiwyg-editor--compact')) return CONFIGS[1];
+    if (el.classList.contains('wysiwyg-editor--list')) return CONFIGS[2];
+    return CONFIGS[0];
+  }
+
+  function initEl(el) {
+    if (!window.tinymce || el.dataset.wysiwygInit) return;
+    el.dataset.wysiwygInit = '1';
+    const cfg = { ..._configFor(el), target: el };
+    delete cfg.selector;
+    tinymce.init(cfg);
+  }
+
+  function lazyWatch() {
+    // Éditeurs visibles (hors <details> fermé) : init immédiat.
+    document.querySelectorAll('.wysiwyg-editor').forEach((el) => {
+      const d = el.closest('details');
+      if (!d || d.open) initEl(el);
+    });
+    // Sinon, init à l'ouverture du <details>.
+    document.querySelectorAll('details').forEach((d) => {
+      d.addEventListener('toggle', () => {
+        if (d.open) d.querySelectorAll('.wysiwyg-editor').forEach(initEl);
+      });
+    });
+  }
+
   function watchTabs() {
+    const hasTabs = !!document.querySelector('.content-tab');
+
     document.querySelectorAll('.content-tab').forEach((tab) => {
       tab.addEventListener('click', () => {
         if (tab.dataset.tab === 'manual') {
@@ -132,19 +166,10 @@
       onManualTabOpen();
     }
 
-    // Pages sans onglets (ex. Partenaires recommandés) : initialise directement
-    // les éditeurs présents, même à l'intérieur de <details> fermés.
-    if (!document.querySelector('.content-tab')) {
-      initEditors();
+    // Pages sans onglets : init paresseux par <details> (perf).
+    if (!hasTabs) {
+      lazyWatch();
     }
-    // Quand un <details> contenant un éditeur s'ouvre, (ré)initialise / redimensionne.
-    document.querySelectorAll('details').forEach((d) => {
-      d.addEventListener('toggle', () => {
-        if (!d.open) return;
-        if (!initialized) initEditors();
-        else setTimeout(refreshEditors, 80);
-      });
-    });
   }
 
   function loadTinyMCE() {
