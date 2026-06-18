@@ -1,10 +1,12 @@
-"""Dispatcher multi-fournisseur IA — Mistral par défaut, Groq en repli.
+"""Dispatcher multi-fournisseur IA — Mistral en priorité, Groq en repli.
 
-Admin (guides, newsletters, destinations) : moteur choisi dans le dashboard
-(`ai_provider`), sinon `AI_PROVIDER`, sinon Mistral.
+Tous les appels (admin, vitrine, traduction, génération rapide) passent d'abord
+par Mistral si MISTRAL_API_KEY est configurée ; Groq n'est tenté qu'en cas
+d'échec (rate limit, timeout, 413 contexte trop grand sur le 8B, etc.).
 
-Vitrine publique (Mai, pages partenaires) : Mistral en priorité, puis Groq si
-Mistral indisponible — même logique de repli que l'admin.
+Le réglage dashboard `ai_provider` sert à l'affichage UI ; l'ordre d'appel réel
+reste Mistral → Groq pour éviter les 413 du llama-3.1-8b-instant sur les
+contenus longs (activités partenaires, traductions HTML).
 """
 
 from __future__ import annotations
@@ -169,26 +171,13 @@ def friendly_error(error: Exception) -> str:
 
 
 def _provider_order(*, vitrine: bool = False, fast: bool = False) -> list[str]:
-    """Ordre des fournisseurs : vitrine = Mistral d'abord ; admin = réglage actif."""
-    # Rédaction rapide : Groq 8B (30k TPM, ~3× plus véloce) en priorité si disponible.
-    if fast and _has_key("groq"):
-        order: list[str] = ["groq"]
-        active = provider()
-        if _has_key("mistral") and active == "mistral" and "mistral" not in order:
-            order.append("mistral")
-        return order
-    if vitrine:
-        order: list[str] = []
-        if _has_key("mistral"):
-            order.append("mistral")
-        if _has_key("groq"):
-            order.append("groq")
-        return order
-
-    active = provider()
-    order = [active]
-    if FALLBACK_PROVIDER != active and _has_key(FALLBACK_PROVIDER):
-        order.append(FALLBACK_PROVIDER)
+    """Ordre des fournisseurs : Mistral d'abord, Groq en repli uniquement."""
+    del vitrine, fast  # conservés pour compatibilité API ; n'influencent plus l'ordre
+    order: list[str] = []
+    if _has_key("mistral"):
+        order.append("mistral")
+    if _has_key("groq"):
+        order.append("groq")
     return order
 
 
@@ -206,10 +195,10 @@ def chat_completion(
     deadline: float | None = DEFAULT_DEADLINE,
     vitrine: bool = False,
 ):
-    """Route l'appel vers le fournisseur actif, avec repli automatique.
+    """Route l'appel vers Mistral en priorité, repli Groq si échec.
 
-    `vitrine=True` : Mai, pages partenaires — Mistral en priorité.
-    `fast=True` : modèle rapide (traduction, suggestions).
+    `fast=True` : modèle rapide du fournisseur (nemo / 8B) — pas Groq en priorité.
+    `vitrine=True` : conservé pour compatibilité (même ordre Mistral → Groq).
     """
 
     def _dispatch():
