@@ -350,7 +350,7 @@ def add_partner(data: dict) -> dict:
     return partner
 
 
-def update_partner(pid: str, fields: dict) -> dict:
+def update_partner(pid: str, fields: dict, *, schedule_i18n: bool = True) -> dict:
     items = get_partners()
     for i, p in enumerate(items):
         if p.get("id") != pid:
@@ -358,7 +358,8 @@ def update_partner(pid: str, fields: dict) -> dict:
         merged = {**p, **{k: v for k, v in fields.items() if v is not None}, "id": pid}
         items[i] = _normalize_partner(merged, existing=p)
         save_partners(items)
-        _schedule_translation(items[i], pid, None, PARTNER_I18N_FIELDS)
+        if schedule_i18n:
+            _schedule_translation(items[i], pid, None, PARTNER_I18N_FIELDS)
         return items[i]
     raise ValueError(f"Partenaire introuvable : {pid}")
 
@@ -391,7 +392,7 @@ def add_page(partner_id: str, page: dict) -> dict:
     raise ValueError(f"Partenaire introuvable : {partner_id}")
 
 
-def update_page(partner_id: str, page_id: str, fields: dict) -> dict:
+def update_page(partner_id: str, page_id: str, fields: dict, *, schedule_i18n: bool = True) -> dict:
     items = get_partners()
     for i, p in enumerate(items):
         if p.get("id") != partner_id:
@@ -406,7 +407,8 @@ def update_page(partner_id: str, page_id: str, fields: dict) -> dict:
             p["updated_at"] = date.today().isoformat()
             items[i] = p
             save_partners(items)
-            _schedule_translation(pages[j], partner_id, page_id, PAGE_I18N_FIELDS)
+            if schedule_i18n:
+                _schedule_translation(pages[j], partner_id, page_id, PAGE_I18N_FIELDS)
             return pages[j]
         raise ValueError(f"Page introuvable : {page_id}")
     raise ValueError(f"Partenaire introuvable : {partner_id}")
