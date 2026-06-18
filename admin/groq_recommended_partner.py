@@ -38,12 +38,12 @@ Réponds en JSON valide UNIQUEMENT :
   "title": "Titre de l'activité, orienté voyageur (40-70 car.)",
   "meta_title": "Titre SEO 50-65 car. avec le mot-clé activité + Vietnam",
   "meta_description": "140-160 caractères, accrocheur, avec bénéfice + incitation",
-  "content_html": "<p>…</p> HTML structuré. Sections conseillées : accroche, <h2>Pourquoi choisir cette activité</h2>, <h2>Ce qui est inclus</h2> (<ul>), <h2>Infos pratiques</h2> (durée, niveau, ce qu'il faut prévoir), <h2>Questions fréquentes</h2>. PAS de <h1>. PAS de balise <a> ni de bouton (le CTA est ajouté automatiquement).",
+  "content_html": "<p class=\\"tour-lead\\">Accroche 2–3 phrases.</p> HTML structuré façon fiche activité / excursion (comme une page tour operator) : <h2>Description</h2> (développement), <div class=\\"tour-includes-grid\\"><div class=\\"tour-includes-col\\"><h3>Inclus</h3><ul>…</ul></div><div class=\\"tour-includes-col tour-includes-col--excluded\\"><h3>Non inclus</h3><ul>…</ul></div></div>, <h2>Déroulé de l'activité</h2> (<ol> étapes horaires si pertinent), <h2>Infos pratiques</h2>, <h2>Questions fréquentes</h2>. PAS de <h1>. PAS de balise <a> ni de bouton (le CTA est ajouté automatiquement).",
   "image_prompt": "Prompt photo anglais de la scène/activité au Vietnam, photorealistic, 16:9, no text"
 }
 
 Règles :
-- content_html : minimum """ + str(MIN_WORDS) + """ mots, en français, structuré (sous-titres + listes).
+- content_html : minimum """ + str(MIN_WORDS) + """ mots, en français, structuré (sections tour : description, inclus/non inclus côte à côte, déroulé, FAQ).
 - Mentionne le partenaire et l'activité par leur nom. Centre tout sur cette activité au Vietnam.
 - Ton honnête et engageant, sans superlatifs creux ni fausses promesses.
 """

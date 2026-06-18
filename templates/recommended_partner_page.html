@@ -3,17 +3,19 @@
 
 {% block content %}
 {% set is_en = (lang == 'en') %}
-<article class="reco-activity">
+<article class="tour-page">
+  {# ── Hero plein écran ─────────────────────────────────────────────────── #}
   {% if page.image %}
-  <div class="reco-activity-hero">
-    <div class="reco-activity-hero__media" aria-hidden="true">
+  <div class="tour-hero">
+    <div class="tour-hero__media" aria-hidden="true">
       {{ responsive_img(page.image, alt=page.image_alt or page.title, width=1920, height=1080, loading='eager', fetchpriority='high', sizes='100vw') }}
     </div>
+    <div class="tour-hero__shade" aria-hidden="true"></div>
   </div>
   {% endif %}
 
-  <div class="container">
-    <nav class="breadcrumb" aria-label="{{ t('breadcrumb.aria') }}" style="margin-top:1.2rem">
+  <div class="container tour-page__wrap">
+    <nav class="breadcrumb tour-page__crumb" aria-label="{{ t('breadcrumb.aria') }}">
       <ol>
         <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
         <li><a href="{{ lang_url('partners_index') }}">{{ 'Partners' if is_en else 'Partenaires' }}</a></li>
@@ -22,56 +24,127 @@
       </ol>
     </nav>
 
-    <p class="reco-section__eyebrow" style="margin-top:1rem">{{ 'Recommended activity' if is_en else 'Activité recommandée' }}</p>
-    <h1 style="font-family:var(--font-display);color:var(--teal-deep);font-size:clamp(1.9rem,4vw,2.8rem);margin:.2rem 0 1.5rem">{{ page.title }}</h1>
-
-    <div class="reco-layout">
-      <div class="reco-content">
-        {{ page.content_html | safe }}
-        {% if page.images %}
-        <ul class="reco-gallery-public">
-          {% for img in page.images %}
-          <li>{{ responsive_img(img, alt=page.image_alt or page.title, width=960, height=540, loading='lazy', sizes='(max-width:760px) 100vw, 760px') }}</li>
-          {% endfor %}
-        </ul>
+    {# ── En-tête activité (titre + badges) ─────────────────────────────────── #}
+    <header class="tour-header">
+      <p class="tour-header__partner">{{ partner.name }}</p>
+      <h1 class="tour-header__title">{{ page.title }}</h1>
+      {% if page.meta_description %}
+      <p class="tour-header__lede">{{ page.meta_description }}</p>
+      {% endif %}
+      <ul class="tour-header__badges" aria-label="{{ 'Activity details' if is_en else 'Détails de l\'activité' }}">
+        {% if page.duration %}
+        <li class="tour-badge">
+          <span class="tour-badge__icon" aria-hidden="true">⏱</span>
+          <span class="tour-badge__label">{{ 'Duration' if is_en else 'Durée' }}</span>
+          <span class="tour-badge__value">{{ page.duration }}</span>
+        </li>
         {% endif %}
-      </div>
+        {% if page.price %}
+        <li class="tour-badge tour-badge--price">
+          <span class="tour-badge__icon" aria-hidden="true">💶</span>
+          <span class="tour-badge__label">{{ 'From' if is_en else 'À partir de' }}</span>
+          <span class="tour-badge__value">{{ page.price | round(2) }} {{ page.currency or '€' }}<small>{{ '/ pers.' if is_en else ' / pers.' }}</small></span>
+        </li>
+        {% endif %}
+        <li class="tour-badge">
+          <span class="tour-badge__icon" aria-hidden="true">🤝</span>
+          <span class="tour-badge__label">{{ 'Operator' if is_en else 'Opérateur' }}</span>
+          <span class="tour-badge__value">{{ partner.name }}</span>
+        </li>
+        <li class="tour-badge">
+          <span class="tour-badge__icon" aria-hidden="true">✓</span>
+          <span class="tour-badge__label">{{ 'Verified by' if is_en else 'Vérifié par' }}</span>
+          <span class="tour-badge__value">Inside Vietnam Travel</span>
+        </li>
+      </ul>
+    </header>
 
-      <aside class="reco-booking">
-        <div class="reco-partner-card">
-          <div>
-            <div class="reco-partner-card__name">{{ partner.name }}</div>
-            <div class="reco-partner-card__type">{{ 'Recommended partner' if is_en else 'Partenaire recommandé' }}</div>
+    {# ── Galerie (miniatures sous le titre) ────────────────────────────────── #}
+    {% if page.images %}
+    <section class="tour-gallery" aria-label="{{ 'Photo gallery' if is_en else 'Galerie photos' }}">
+      <h2 class="visually-hidden">{{ 'Gallery' if is_en else 'Galerie' }}</h2>
+      <ul class="tour-gallery__list">
+        {% for img in page.images %}
+        <li class="tour-gallery__item">
+          {{ responsive_img(img, alt=page.image_alt or page.title, width=480, height=320, loading='lazy', sizes='(max-width:600px) 45vw, 220px') }}
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    {# ── Corps : contenu + encart réservation ──────────────────────────────── #}
+    <div class="tour-layout">
+      <main class="tour-main reco-content">
+        {{ page.content_html | safe }}
+      </main>
+
+      <aside class="tour-sidebar" aria-label="{{ 'Booking' if is_en else 'Réservation' }}">
+        <div class="tour-book-card">
+          <p class="tour-book-card__kicker">{{ 'Recommended activity' if is_en else 'Activité recommandée' }}</p>
+
+          {% if page.price %}
+          <div class="tour-book-card__price-block">
+            <span class="tour-book-card__from">{{ 'From' if is_en else 'À partir de' }}</span>
+            <span class="tour-book-card__price">{{ page.price | round(2) }} <span class="tour-book-card__currency">{{ page.currency or '€' }}</span></span>
+            <span class="tour-book-card__unit">{{ 'per person' if is_en else 'par personne' }}</span>
+          </div>
+          {% endif %}
+
+          <ul class="tour-book-card__facts">
+            {% if page.duration %}
+            <li><strong>{{ 'Duration' if is_en else 'Durée' }}</strong> {{ page.duration }}</li>
+            {% endif %}
+            <li><strong>{{ 'Booking' if is_en else 'Réservation' }}</strong> {{ 'Direct with partner' if is_en else 'Directe chez le partenaire' }}</li>
+            <li><strong>{{ 'Language' if is_en else 'Langue' }}</strong> {{ 'French-friendly' if is_en else 'Accueil francophone' }}</li>
+          </ul>
+
+          {% if booking_url %}
+          <a href="{{ booking_url }}" target="_blank" rel="noopener nofollow sponsored" class="tour-book-card__cta reco-btn reco-btn--block">
+            {{ 'Book this activity' if is_en else 'Réserver cette activité' }}
+          </a>
+          <p class="tour-book-card__note">{{ 'You will be redirected to the partner\'s secure booking page.' if is_en else 'Vous serez redirigé vers la page de réservation sécurisée du partenaire.' }}</p>
+          {% elif partner.website %}
+          <a href="{{ partner.website }}" target="_blank" rel="noopener nofollow" class="tour-book-card__cta reco-btn reco-btn--block">
+            {{ 'Visit partner website' if is_en else 'Voir le site du partenaire' }}
+          </a>
+          {% endif %}
+
+          <div class="tour-book-card__partner">
+            {% if partner.image %}
+            <img class="tour-book-card__logo" src="{{ partner.image | static_v }}" alt="" width="48" height="48" loading="lazy">
+            {% endif %}
+            <div>
+              <div class="tour-book-card__partner-name">{{ partner.name }}</div>
+              <div class="tour-book-card__partner-type">{{ 'Recommended partner' if is_en else 'Partenaire recommandé' }}</div>
+            </div>
           </div>
         </div>
-
-        {% if page.price %}
-        <div class="reco-booking__price">
-          {{ page.price | round(2) }} {{ page.currency or '€' }}
-          <small>{{ 'per person' if is_en else 'par personne' }}</small>
-        </div>
-        {% endif %}
-
-        <ul class="reco-booking__list">
-          {% if page.duration %}<li>{{ 'Duration:' if is_en else 'Durée :' }} {{ page.duration }}</li>{% endif %}
-          <li>{{ 'Booked directly with the partner' if is_en else 'Réservation directe auprès du partenaire' }}</li>
-          <li>{{ 'Partner vetted by Inside Vietnam Travel' if is_en else 'Partenaire vérifié par Inside Vietnam Travel' }}</li>
-        </ul>
-
-        {% if booking_url %}
-        <a href="{{ booking_url }}" target="_blank" rel="noopener nofollow sponsored" class="reco-btn reco-btn--block">
-          {{ 'Book this activity' if is_en else 'Réserver cette activité' }} →
-        </a>
-        <p class="reco-booking__trust">{{ 'Secure booking on the partner site' if is_en else 'Réservation sécurisée sur le site du partenaire' }}</p>
-        {% endif %}
       </aside>
     </div>
 
-    <p style="margin:0 0 2.5rem">
+    <footer class="tour-page__footer">
       <a href="{{ lang_url('recommended_partner_fiche', slug=partner.slug) }}" class="reco-btn reco-btn--ghost">
         ← {{ 'All activities by' if is_en else 'Toutes les activités de' }} {{ partner.name }}
       </a>
-    </p>
+    </footer>
   </div>
+
+  {# CTA mobile fixe (sans panier — simple lien partenaire) #}
+  {% if booking_url %}
+  <div class="tour-mobile-bar" aria-hidden="false">
+    <div class="tour-mobile-bar__inner container">
+      {% if page.price %}
+      <div class="tour-mobile-bar__price">
+        <span class="tour-mobile-bar__from">{{ 'From' if is_en else 'Dès' }}</span>
+        {{ page.price | round(2) }} {{ page.currency or '€' }}
+      </div>
+      {% endif %}
+      <a href="{{ booking_url }}" target="_blank" rel="noopener nofollow sponsored" class="tour-mobile-bar__cta">
+        {{ 'Book' if is_en else 'Réserver' }}
+      </a>
+    </div>
+  </div>
+  {% endif %}
 </article>
 {% endblock %}
