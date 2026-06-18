@@ -595,21 +595,27 @@ def _responsive_image_cached(image_url: str, card: bool) -> dict:
 
     rel = image_url.removeprefix("/static/")
     stem_rel = rel[:-5]
+    is_partner = "/images/partners/" in image_url
+    full_w = 1920 if is_partner else 1200
+    variant_specs = (
+        (("-640", 640), ("-960", 960), ("-1280", 1280))
+        if is_partner
+        else (("-640", 640), ("-960", 960))
+    )
     parts = []
-    for suffix, width in (("-640", 640), ("-960", 960)):
+    for suffix, width in variant_specs:
         variant_rel = f"{stem_rel}{suffix}.webp"
         if _variant_exists(variant_rel):
             parts.append(f"{_static_versioned(f'/static/{variant_rel}')} {width}w")
-    parts.append(f"{_static_versioned(image_url)} 1200w")
+    parts.append(f"{_static_versioned(image_url)} {full_w}w")
 
     sizes = (
         "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
         if card
         else "100vw"
     )
-    best_src = parts[0].split()[0] if len(parts) > 1 else _static_versioned(image_url)
     return {
-        "src": best_src,
+        "src": _static_versioned(image_url),
         "srcset": ", ".join(parts),
         "sizes": sizes,
     }

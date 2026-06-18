@@ -592,11 +592,11 @@ def _fallback_gradient_webp(slug: str) -> bytes:
     return buf.getvalue()
 
 
-def _fetch_remote_image(prompt: str, seed: int) -> bytes:
+def _fetch_remote_image(prompt: str, seed: int, *, width: int = 1200, height: int = 675) -> bytes:
     encoded = urllib.parse.quote(prompt, safe="")
     url = (
         f"https://image.pollinations.ai/prompt/{encoded}"
-        f"?width=1200&height=675&nologo=true&seed={seed}&model=flux"
+        f"?width={width}&height={height}&nologo=true&seed={seed}&model=flux"
     )
     resp = requests.get(
         url,
@@ -1030,6 +1030,48 @@ def _cover_1200x675(img: Image.Image) -> Image.Image:
     return ImageOps.fit(img, (1200, 675), Image.Resampling.LANCZOS, centering=(0.5, 0.42))
 
 
+# Partenaires recommandés / vitrine : master 1920×1080 (net sur grands écrans Retina).
+PARTNER_COVER_SIZE = (1920, 1080)
+PARTNER_WEBP_QUALITY = 88
+PARTNER_VARIANTS = (
+    (640, "-640", 84),
+    (960, "-960", 86),
+    (1280, "-1280", 88),
+)
+
+
+def _cover_partner(img: Image.Image) -> Image.Image:
+    """Recadre 16:9 haute définition pour couvertures partenaires."""
+    return ImageOps.fit(img, PARTNER_COVER_SIZE, Image.Resampling.LANCZOS, centering=(0.5, 0.42))
+
+
+def _create_partner_responsive_variants(img: Image.Image, full_path: Path, *, force: bool = False) -> None:
+    """Variantes srcset partenaires (-640 / -960 / -1280) — qualité plus élevée."""
+    w, h = img.size
+    for target_w, suffix, quality in PARTNER_VARIANTS:
+        out = full_path.parent / f"{full_path.stem}{suffix}.webp"
+        if out.exists() and not force:
+            continue
+        nh = max(1, int(h * target_w / w))
+        resized = img.resize((target_w, nh), Image.Resampling.LANCZOS)
+        resized.save(out, "WEBP", quality=quality, method=WEBP_METHOD)
+
+
+def _to_partner_webp(raw: bytes, out_path: Path) -> None:
+    img = _cover_partner(_decode_upload_image(raw))
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    img.save(out_path, "WEBP", quality=PARTNER_WEBP_QUALITY, method=WEBP_METHOD)
+    _create_partner_responsive_variants(img, out_path, force=True)
+
+
+def _write_partner_webp_fast(raw: bytes, out_path: Path) -> None:
+    """Repli encodage partenaire — garde les variantes srcset (qualité préservée)."""
+    img = _cover_partner(_decode_upload_image(raw))
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    img.save(out_path, "WEBP", quality=86, method=2)
+    _create_partner_responsive_variants(img, out_path, force=True)
+
+
 def _decode_upload_image(raw: bytes) -> Image.Image:
     """Décode une image importée : EXIF (rotation iPhone), transparence → fond blanc."""
     with Image.open(io.BytesIO(raw)) as src:
@@ -1083,16 +1125,19 @@ def _create_responsive_variants(img: Image.Image, full_path: Path, *, force: boo
 def ensure_responsive_variants() -> int:
     """Crée les variantes manquantes à partir des WebP existants."""
     created = 0
-    for directory in (BLOG_IMAGES_DIR, DEST_IMAGES_DIR):
+    for directory in (BLOG_IMAGES_DIR, DEST_IMAGES_DIR, PARTNER_IMAGES_DIR):
         if not directory.exists():
             continue
         for path in sorted(directory.glob("*.webp")):
-            if path.stem.endswith(("-640", "-960")):
+            if path.stem.endswith(("-640", "-960", "-1280")):
                 continue
             try:
                 img = Image.open(path).convert("RGB")
                 before = {p.name for p in directory.glob(f"{path.stem}*.webp")}
-                _create_responsive_variants(img, path)
+                if directory == PARTNER_IMAGES_DIR:
+                    _create_partner_responsive_variants(img, path)
+                else:
+                    _create_responsive_variants(img, path)
                 after = {p.name for p in directory.glob(f"{path.stem}*.webp")}
                 if after - before:
                     created += 1
@@ -1585,6 +1630,15 @@ def _write_remote_webp(image_url: str, out_path: Path) -> None:
         _write_webp_fast(raw, out_path)
 
 
+def _write_remote_partner_webp(image_url: str, out_path: Path) -> None:
+    """Télécharge une URL puis encode en WebP partenaire 1920×1080 + variantes."""
+    raw = _run_with_deadline(_download_image_bytes, IMAGE_STEP_HARD_DEADLINE, image_url)
+    try:
+        _run_with_deadline(_to_partner_webp, IMAGE_ENCODE_DEADLINE, raw, out_path)
+    except Exception:  # noqa: BLE001
+        _write_partner_webp_fast(raw, out_path)
+
+
 def set_remote_image_for_article(article: dict, image_url: str, alt: str | None = None) -> dict:
     """Remplace l'image d'un article par une image internet (téléchargée + WebP).
 
@@ -1670,7 +1724,7 @@ def store_partner_cover_webp(
     file_bytes: bytes | None = None,
     image_url: str = "",
 ) -> str:
-    """Enregistre la photo de couverture partenaire en WebP 1200×675 (+ variantes)."""
+    """Enregistre la photo de couverture partenaire en WebP 1920×1080 (+ variantes)."""
     safe = _partner_cover_slug(slug)
     try:
         PARTNER_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
@@ -1680,15 +1734,13 @@ def store_partner_cover_webp(
     if file_bytes:
         raw = validate_image_bytes(file_bytes, max_bytes=MAX_PARTNER_COVER_BYTES)
         try:
-            _write_uploaded_webp(raw, out_path)
-        except Exception as exc:
-            raise ValueError(
-                "Impossible de convertir l'image en WebP — essayez un autre fichier (JPG ou PNG)."
-            ) from exc
+            _run_with_deadline(_to_partner_webp, IMAGE_ENCODE_DEADLINE, raw, out_path)
+        except Exception:
+            _write_partner_webp_fast(raw, out_path)
     elif (image_url or "").strip():
         url = normalize_image_url(image_url)
         try:
-            _write_remote_webp(url, out_path)
+            _write_remote_partner_webp(url, out_path)
         except (ValueError, TimeoutError) as exc:
             raise ValueError(str(exc)) from exc
         except Exception as exc:
@@ -1714,14 +1766,64 @@ def store_partner_gallery_webp(partner_slug: str, item_id: str, file_bytes: byte
     out_path = gal_dir / f"gallery-{item_safe}.webp"
     raw = validate_image_bytes(file_bytes, max_bytes=MAX_PARTNER_COVER_BYTES)
     try:
-        _write_uploaded_webp(raw, out_path)
-    except Exception as exc:
-        raise ValueError(
-            "Impossible de convertir l'image en WebP — essayez un autre fichier (JPG ou PNG)."
-        ) from exc
+        _run_with_deadline(_to_partner_webp, IMAGE_ENCODE_DEADLINE, raw, out_path)
+    except Exception:
+        _write_partner_webp_fast(raw, out_path)
     if not out_path.is_file() or out_path.stat().st_size < 100:
         raise ValueError("La conversion WebP a échoué — réessayez avec une autre image.")
     return f"/static/images/partners/{safe}/gallery-{item_safe}.webp"
+
+
+def attach_partner_activity_cover(
+    *,
+    slug: str,
+    title: str,
+    image_prompt: str | None = None,
+    ai_generated: bool = False,
+) -> dict:
+    """Image de couverture activité partenaire recommandé — 1920×1080 WebP + variantes."""
+    safe = _partner_cover_slug(slug)
+    out_path = PARTNER_IMAGES_DIR / f"{safe}.webp"
+    alt = (title or "Activité Vietnam")[:140]
+    prompt = (image_prompt or "").strip()
+    if prompt and "vietnam" not in prompt.lower():
+        prompt += ", Vietnam travel scene"
+    if prompt:
+        prompt += ", photorealistic, 16:9, no text, no watermark"
+    seed = abs(hash(f"{slug}-{prompt}-{title}")) % 999_999
+
+    raw: bytes | None = None
+    placeholder = False
+    if ai_generated and prompt and _ai_images_enabled():
+        try:
+            raw = _run_with_deadline(
+                _fetch_remote_image,
+                IMAGE_STEP_HARD_DEADLINE,
+                prompt,
+                seed,
+                width=PARTNER_COVER_SIZE[0],
+                height=PARTNER_COVER_SIZE[1],
+            )
+        except Exception:
+            raw = None
+
+    if raw is None:
+        try:
+            raw = _fetch_pixabay_photo(_pixabay_query({"title": title}), seed)
+        except Exception:
+            raw = _logo_placeholder_webp(slug)
+            placeholder = True
+
+    try:
+        _run_with_deadline(_to_partner_webp, IMAGE_ENCODE_DEADLINE, raw, out_path)
+    except Exception:
+        _write_partner_webp_fast(raw, out_path)
+
+    return {
+        "image": f"/static/images/partners/{safe}.webp",
+        "image_alt": alt,
+        "image_placeholder": placeholder,
+    }
 
 
 def _write_uploaded_webp(raw: bytes, out_path: Path) -> None:

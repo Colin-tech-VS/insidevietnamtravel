@@ -7,7 +7,7 @@
   {% if page.image %}
   <div class="reco-activity-hero">
     <div class="reco-activity-hero__media" aria-hidden="true">
-      {{ responsive_img(page.image, alt=page.image_alt or page.title, width=1200, height=515, loading='eager', fetchpriority='high', sizes='100vw') }}
+      {{ responsive_img(page.image, alt=page.image_alt or page.title, width=1920, height=1080, loading='eager', fetchpriority='high', sizes='100vw') }}
     </div>
   </div>
   {% endif %}
@@ -31,7 +31,7 @@
         {% if page.images %}
         <ul class="reco-gallery-public">
           {% for img in page.images %}
-          <li><img src="{{ img | static_v }}" alt="{{ page.image_alt or page.title }}" loading="lazy"></li>
+          <li>{{ responsive_img(img, alt=page.image_alt or page.title, width=960, height=540, loading='lazy', sizes='(max-width:760px) 100vw, 760px') }}</li>
           {% endfor %}
         </ul>
         {% endif %}

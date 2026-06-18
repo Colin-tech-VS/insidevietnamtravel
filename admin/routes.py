@@ -2233,17 +2233,15 @@ def api_generate_recommended_partner_page():
         page["duration"] = activity["duration"]
         page["booking_url"] = activity["booking_url"]
         report("Image de couverture (aperçu)…")
-        img_slug = f"partenaire-{partner.get('slug', '')}-{page.get('slug', '')}"[:80]
+        img_slug = f"reco-{partner.get('slug', '')}-{page.get('slug', '')}"[:80]
         try:
-            meta = attach_image_to_article(
-                {
-                    "slug": img_slug,
-                    "title": page.get("title", ""),
-                    "ai_generated": True,
-                    "image_prompt": page.get("image_prompt", ""),
-                },
-                page.get("image_prompt"),
-                draft_preview=True,
+            from admin.image_service import attach_partner_activity_cover
+
+            meta = attach_partner_activity_cover(
+                slug=img_slug,
+                title=page.get("title", ""),
+                image_prompt=page.get("image_prompt", ""),
+                ai_generated=True,
             )
             for key in ("image", "image_alt", "image_placeholder"):
                 if meta.get(key) is not None:

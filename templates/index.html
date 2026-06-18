@@ -245,7 +245,7 @@
         <a href="{{ lang_url('recommended_partner_fiche', slug=rp.slug) }}" style="text-decoration:none;display:contents">
           {% if rp.image %}
           <div class="reco-card__media">
-            <img src="{{ rp.image | static_v }}" alt="{{ rp.image_alt or rp.name | e }}" width="400" height="250" loading="lazy" decoding="async">
+            {{ responsive_img(rp.image, alt=rp.image_alt or rp.name, width=400, height=250, loading='lazy', sizes='(max-width:600px) 100vw, 360px') }}
           </div>
           {% endif %}
           <div class="reco-card__body">
