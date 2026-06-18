@@ -795,6 +795,11 @@ def persistent_image_url(
         rel = image_url.removeprefix("/static/")
         if (_STATIC_ROOT / rel).is_file():
             return image_url
+        # Fichier brut en attente (upload partenaire avant / après encodage WebP).
+        if rel.endswith(".webp"):
+            upload_rel = f"{rel[:-5]}.upload"
+            if (_STATIC_ROOT / upload_rel).is_file():
+                return f"/static/{upload_rel}"
         if _is_remote(source_url):
             return source_url
     if _is_remote(image_url):
@@ -1850,6 +1855,28 @@ def quick_check_upload_bytes(raw: bytes, *, max_bytes: int = MAX_PARTNER_COVER_B
         max_mb = max(1, max_bytes // (1024 * 1024))
         raise ValueError(f"Photo trop volumineuse (max {max_mb} Mo).")
     return raw
+
+
+def sync_partner_cover_file(slug: str, raw: bytes) -> str:
+    """Encode couverture partenaire en synchrone (ultra-rapide, dans la requête HTTP)."""
+    local_path, out_path, pending = partner_cover_paths(slug)
+    PARTNER_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+    raw = validate_image_bytes(raw, max_bytes=MAX_PARTNER_COVER_BYTES)
+    try:
+        _run_with_deadline(
+            lambda: _write_partner_cover_ultrafast(raw, out_path, prevalidated=True),
+            25,
+        )
+    except Exception as exc:
+        log(f"sync cover KO {slug} -- {type(exc).__name__}: {exc}")
+        raise ValueError(
+            "La conversion de l'image a échoué — réessayez avec une image plus légère."
+        ) from exc
+    pending.unlink(missing_ok=True)
+    if not out_path.is_file() or out_path.stat().st_size < 100:
+        raise ValueError("La conversion WebP a échoué.")
+    _schedule_partner_variants(out_path)
+    return local_path
 
 
 def _encode_partner_cover_file(slug: str, raw: bytes) -> str:

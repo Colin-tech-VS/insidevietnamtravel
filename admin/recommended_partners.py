@@ -606,6 +606,15 @@ def resolve_public_images(entity: dict) -> dict:
         out["image"] = resolved
     else:
         out["image"] = ""
+    if out.get("images"):
+        out["images"] = [
+            u
+            for u in (
+                persistent_image_url(img, None, None) or ""
+                for img in (out.get("images") or [])
+            )
+            if u
+        ]
     out.pop("image_source_url", None)
     return out
 

@@ -580,7 +580,11 @@ def static_v_filter(path: str) -> str:
 @app.template_filter("admin_thumb")
 def admin_thumb_filter(path: str) -> str:
     """Miniature admin légère (-640) pour les couvertures partenaires WebP."""
-    if not path or not path.endswith(".webp") or "/images/partners/" not in path:
+    if not path:
+        return path
+    if path.endswith(".upload") and "/images/partners/" in path:
+        return static_v_filter(path)
+    if not path.endswith(".webp") or "/images/partners/" not in path:
         return static_v_filter(path)
     thumb = f"{path[:-5]}-640.webp"
     rel = thumb.removeprefix("/static/")
@@ -602,7 +606,16 @@ def _responsive_image_cached(image_url: str, card: bool) -> dict:
         return {"src": fallback, "srcset": "", "sizes": ""}
     if image_url.startswith(("http://", "https://")):
         return {"src": image_url, "srcset": "", "sizes": ""}
-    if not image_url.endswith(".webp") or "/static/images/" not in image_url:
+    if "/static/images/" not in image_url:
+        return {"src": fallback, "srcset": "", "sizes": ""}
+    sizes = (
+        "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
+        if card
+        else "100vw"
+    )
+    if image_url.endswith(".upload"):
+        return {"src": _static_versioned(image_url), "srcset": "", "sizes": sizes}
+    if not image_url.endswith(".webp"):
         return {"src": fallback, "srcset": "", "sizes": ""}
 
     rel = image_url.removeprefix("/static/")
@@ -621,11 +634,6 @@ def _responsive_image_cached(image_url: str, card: bool) -> dict:
             parts.append(f"{_static_versioned(f'/static/{variant_rel}')} {width}w")
     parts.append(f"{_static_versioned(image_url)} {full_w}w")
 
-    sizes = (
-        "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
-        if card
-        else "100vw"
-    )
     return {
         "src": _static_versioned(image_url),
         "srcset": ", ".join(parts),
