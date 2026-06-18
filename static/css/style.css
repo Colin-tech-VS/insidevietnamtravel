@@ -8762,3 +8762,85 @@ body.mai-chat-open .mai-chat__fab {
   color: var(--teal);
 }
 .ivt-for-you .tool-link-card__icon { font-size: 1.35rem; }
+
+/* ══ Partenaires recommandés (public) ═══════════════════════════════════ */
+.reco-section { padding: 3rem 0; }
+.reco-section__head { text-align: center; max-width: 640px; margin: 0 auto 2rem; }
+.reco-section__eyebrow {
+  text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.8rem;
+  font-weight: 600; color: var(--gold); margin: 0 0 0.5rem;
+}
+.reco-section__title { font-family: var(--font-display); font-size: clamp(1.8rem, 4vw, 2.6rem); color: var(--teal-deep); margin: 0 0 0.6rem; }
+.reco-section__lede { color: var(--ink-soft); font-size: 1.05rem; line-height: 1.6; }
+
+.reco-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  list-style: none; padding: 0; margin: 0;
+}
+.reco-card {
+  display: flex; flex-direction: column;
+  background: var(--white);
+  border: 1px solid var(--rice-dark);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+.reco-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+.reco-card__media { aspect-ratio: 16 / 10; overflow: hidden; background: var(--rice-dark); }
+.reco-card__media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.5s ease; }
+.reco-card:hover .reco-card__media img { transform: scale(1.05); }
+.reco-card__body { padding: 1.25rem 1.35rem 1.4rem; display: flex; flex-direction: column; gap: 0.5rem; flex: 1; }
+.reco-card__partner { font-size: 0.78rem; font-weight: 600; color: var(--gold); text-transform: uppercase; letter-spacing: 0.05em; }
+.reco-card__title { font-family: var(--font-display); font-size: 1.35rem; line-height: 1.25; color: var(--teal-deep); margin: 0; }
+.reco-card__desc { color: var(--ink-soft); font-size: 0.92rem; line-height: 1.55; margin: 0; }
+.reco-card__meta { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; align-items: center; margin-top: auto; padding-top: 0.7rem; }
+.reco-card__price { font-weight: 700; color: var(--teal); font-size: 1.05rem; }
+.reco-card__price small { font-weight: 500; color: var(--ink-muted); font-size: 0.78rem; }
+.reco-card__duration { font-size: 0.85rem; color: var(--ink-muted); }
+.reco-card__cta { margin-top: 0.9rem; }
+
+/* Boutons */
+.reco-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  padding: 0.85rem 1.6rem; border-radius: 100px; font-weight: 600; font-size: 0.98rem;
+  background: var(--gold); color: var(--teal-deep); border: none; cursor: pointer;
+  text-decoration: none; transition: all var(--transition);
+}
+.reco-btn:hover { background: var(--gold-light); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.reco-btn--block { width: 100%; }
+.reco-btn--ghost { background: transparent; border: 1.5px solid var(--teal); color: var(--teal); }
+.reco-btn--ghost:hover { background: var(--teal); color: var(--white); }
+
+/* Page activité */
+.reco-activity-hero { position: relative; }
+.reco-activity-hero__media { aspect-ratio: 21 / 9; max-height: 460px; overflow: hidden; background: var(--teal-deep); }
+.reco-activity-hero__media img { width: 100%; height: 100%; object-fit: cover; }
+.reco-layout { display: grid; grid-template-columns: 1fr; gap: 2.5rem; padding: 2.5rem 0 3.5rem; }
+@media (min-width: 920px) { .reco-layout { grid-template-columns: 1fr 340px; align-items: start; } }
+.reco-content { font-size: 1.04rem; line-height: 1.75; color: var(--ink-soft); }
+.reco-content h2 { font-family: var(--font-display); font-size: 1.7rem; color: var(--teal-deep); margin: 2rem 0 0.8rem; }
+.reco-content h3 { font-size: 1.2rem; color: var(--teal); margin: 1.4rem 0 0.5rem; }
+.reco-content ul { padding-left: 1.2rem; }
+.reco-content li { margin: 0.35rem 0; }
+
+/* Encart de réservation (sticky) */
+.reco-booking {
+  background: var(--white);
+  border: 1px solid var(--rice-dark);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 1.6rem;
+  position: sticky; top: calc(var(--header-h) + 1rem);
+}
+.reco-booking__price { font-family: var(--font-display); font-size: 2.1rem; font-weight: 600; color: var(--teal-deep); line-height: 1; }
+.reco-booking__price small { display: block; font-family: var(--font-body); font-size: 0.82rem; color: var(--ink-muted); font-weight: 500; margin-top: 0.3rem; }
+.reco-booking__list { list-style: none; padding: 0; margin: 1.2rem 0; display: grid; gap: 0.6rem; }
+.reco-booking__list li { display: flex; gap: 0.6rem; font-size: 0.9rem; color: var(--ink-soft); }
+.reco-booking__list li::before { content: "✓"; color: var(--jade); font-weight: 700; }
+.reco-booking__trust { font-size: 0.78rem; color: var(--ink-muted); text-align: center; margin: 0.8rem 0 0; }
+.reco-partner-card { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.2rem; padding-bottom: 1.2rem; border-bottom: 1px solid var(--rice-dark); }
+.reco-partner-card__name { font-weight: 600; color: var(--teal-deep); }
+.reco-partner-card__type { font-size: 0.8rem; color: var(--ink-muted); }

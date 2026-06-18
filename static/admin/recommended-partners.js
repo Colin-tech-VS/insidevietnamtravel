@@ -89,11 +89,23 @@ document.addEventListener('DOMContentLoaded', () => {
     throw new Error('Génération anormalement longue. Rafraîchissez la page dans un instant.');
   }
 
+  const val = (form, name) => (form.querySelector(`[name="${name}"]`)?.value || '').trim();
+
   document.querySelectorAll('.rp-generate-form').forEach((form) => {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const partnerId = form.dataset.partnerId;
-      const prompt = (form.querySelector('.rp-prompt')?.value || '').trim();
+      const title = val(form, 'title');
+      if (!title) { form.reportValidity(); return; }
+      const payload = {
+        partner_id: partnerId,
+        title,
+        price: val(form, 'price'),
+        currency: val(form, 'currency') || '€',
+        duration: val(form, 'duration'),
+        booking_url: val(form, 'booking_url'),
+        prompt: val(form, 'prompt'),
+      };
       const btn = form.querySelector('button[type="submit"]');
       if (btn) btn.disabled = true;
       startLoader('Connexion au moteur IA…');
@@ -102,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
           credentials: 'same-origin',
-          body: JSON.stringify({ partner_id: partnerId, prompt }),
+          body: JSON.stringify(payload),
         });
         const data = await res.json();
         if (!res.ok || !data.ok) throw new Error(data.error || 'Erreur génération');

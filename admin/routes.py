@@ -2057,6 +2057,7 @@ def recommended_partners_admin():
                     "website": request.form.get("website"),
                     "partnership_type": request.form.get("partnership_type"),
                     "commission": request.form.get("commission"),
+                    "commission_rate": request.form.get("commission_rate"),
                     "objective": request.form.get("objective"),
                     "notes": request.form.get("notes"),
                     "tagline": request.form.get("tagline"),
@@ -2079,6 +2080,10 @@ def recommended_partners_admin():
             elif action == "save_page":
                 page = {
                     "title": request.form.get("title", ""),
+                    "price": request.form.get("price", ""),
+                    "currency": request.form.get("currency", ""),
+                    "duration": request.form.get("duration", ""),
+                    "booking_url": request.form.get("booking_url", ""),
                     "content_html": request.form.get("content_html", ""),
                     "meta_title": request.form.get("meta_title", ""),
                     "meta_description": request.form.get("meta_description", ""),
@@ -2087,10 +2092,10 @@ def recommended_partners_admin():
                 }
                 if page_id:
                     rp.update_page(partner_id, page_id, page)
-                    flash("Page mise à jour.", "success")
+                    flash("Activité mise à jour.", "success")
                 else:
                     rp.add_page(partner_id, page)
-                    flash("Page créée.", "success")
+                    flash("Activité créée.", "success")
             elif action == "publish_generated_page":
                 draft = _get_draft("rec_partner_page")
                 if not draft:
@@ -2126,6 +2131,7 @@ def recommended_partners_admin():
         partnership_type_labels=rp.PARTNERSHIP_TYPE_LABELS,
         draft=draft,
         draft_partner=draft_partner,
+        activity_commission=rp.activity_commission,
         groq_ok=ai_client.is_configured(),
         ai_provider_label=ai_client.provider_label(),
     )
@@ -2135,21 +2141,35 @@ def recommended_partners_admin():
 @login_required
 def api_generate_recommended_partner_page():
     from admin import recommended_partners as rp
-    from admin.groq_recommended_partner import generate_partner_page
+    from admin.groq_recommended_partner import generate_activity_page
 
     data = request.get_json(silent=True) or {}
     partner_id = (data.get("partner_id") or "").strip()
     prompt = (data.get("prompt") or "").strip()
+    activity = {
+        "title": (data.get("title") or "").strip(),
+        "price": (data.get("price") or "").strip(),
+        "currency": (data.get("currency") or "€").strip(),
+        "duration": (data.get("duration") or "").strip(),
+        "booking_url": (data.get("booking_url") or "").strip(),
+    }
     partner = rp.find_partner(partner_id)
     if not partner:
         return jsonify({"ok": False, "error": "Partenaire introuvable"}), 404
+    if not activity["title"]:
+        return jsonify({"ok": False, "error": "Le nom de l'activité est obligatoire"}), 400
     if not ai_client.is_configured():
         return jsonify({"ok": False, "error": "Aucune clé IA configurée (GROQ_API_KEY ou MISTRAL_API_KEY)"}), 400
 
     def _job(report):
-        page = generate_partner_page(partner, prompt, progress=report)
+        page = generate_activity_page(partner, activity, prompt, progress=report)
         page["partner_id"] = partner_id
         page["prompt"] = prompt
+        # Conserve les champs activité saisis (l'IA ne les régénère pas).
+        page["price"] = activity["price"]
+        page["currency"] = activity["currency"]
+        page["duration"] = activity["duration"]
+        page["booking_url"] = activity["booking_url"]
         report("Image de couverture (aperçu)…")
         img_slug = f"partenaire-{partner.get('slug', '')}-{page.get('slug', '')}"[:80]
         try:
@@ -2170,7 +2190,7 @@ def api_generate_recommended_partner_page():
             pass
         return page
 
-    _start_draft_job("rec_partner_page", _job, initial_phase="Génération IA de la page partenaire…")
+    _start_draft_job("rec_partner_page", _job, initial_phase="Génération IA de la page activité…")
     return jsonify({"ok": True})
 
 

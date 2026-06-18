@@ -4303,3 +4303,10 @@ a.partners-stat:hover { border-color: var(--teal-light); color: var(--teal); }
   padding: 1rem;
   margin: 0.8rem 0;
 }
+
+.rp-page__meta { color: var(--ink-muted); font-size: 0.82rem; font-weight: 400; margin-left: 0.3rem; }
+.rp-com { color: var(--jade, #2a6b5e); font-weight: 600; }
+
+.rp-activity { padding: 0.65rem 0.2rem; border-bottom: 1px solid var(--rice-dark); }
+.rp-activity:last-child { border-bottom: none; }
+.rp-activity__row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }

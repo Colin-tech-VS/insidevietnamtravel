@@ -45,7 +45,7 @@ PARTNERSHIP_TYPE_KEYS = {k for k, _ in PARTNERSHIP_TYPES}
 PARTNERSHIP_TYPE_LABELS = dict(PARTNERSHIP_TYPES)
 
 # Champs internes (pilotage) à ne JAMAIS sérialiser vers le public.
-_INTERNAL_FIELDS = ("commission", "objective", "notes", "partnership_type")
+_INTERNAL_FIELDS = ("commission", "commission_rate", "objective", "notes", "partnership_type")
 
 
 # ── Store ───────────────────────────────────────────────────────────────────
@@ -123,6 +123,33 @@ def _coerce_bool(value, default: bool = True) -> bool:
     return str(value).strip().lower() in ("1", "true", "on", "yes", "oui")
 
 
+def _normalize_url(value: str) -> str:
+    url = str(value or "").strip()[:300]
+    if url and not url.startswith(("http://", "https://")):
+        url = "https://" + url
+    return url
+
+
+def _coerce_float(value, default: float = 0.0) -> float:
+    """Parse un nombre tolérant : « 45 €  », « 45,90 », « 1 200 » → float."""
+    if value is None or value == "":
+        return default
+    if isinstance(value, (int, float)):
+        return float(value)
+    cleaned = (
+        str(value)
+        .replace(" ", "")
+        .replace("\xa0", "")
+        .replace(" ", "")
+        .replace(",", ".")
+    )
+    cleaned = "".join(c for c in cleaned if c.isdigit() or c == ".")
+    try:
+        return float(cleaned) if cleaned else default
+    except ValueError:
+        return default
+
+
 def _normalize_partner(data: dict, *, existing: dict | None = None) -> dict:
     existing = existing or {}
     name = str(data.get("name") or "").strip()[:120]
@@ -131,9 +158,7 @@ def _normalize_partner(data: dict, *, existing: dict | None = None) -> dict:
     ptype = str(data.get("partnership_type") or "affiliation").strip().lower()
     if ptype not in PARTNERSHIP_TYPE_KEYS:
         ptype = "autre"
-    website = str(data.get("website") or "").strip()[:300]
-    if website and not website.startswith(("http://", "https://")):
-        website = "https://" + website
+    website = _normalize_url(data.get("website") or "")
     pid = data.get("id") or existing.get("id") or secrets.token_urlsafe(8)
     slug_source = data.get("slug") or existing.get("slug") or name
     slug = _unique_partner_slug(slug_source, exclude_id=pid)
@@ -145,6 +170,8 @@ def _normalize_partner(data: dict, *, existing: dict | None = None) -> dict:
         "website": website,
         "partnership_type": ptype,
         "commission": str(data.get("commission") or "").strip()[:200],
+        # Taux de commission (%) appliqué au prix de chaque activité (interne).
+        "commission_rate": _coerce_float(data.get("commission_rate"), default=existing.get("commission_rate", 0.0)),
         "objective": str(data.get("objective") or "").strip()[:500],
         "notes": str(data.get("notes") or "").strip()[:2000],
         "enabled": _coerce_bool(data.get("enabled"), default=existing.get("enabled", False)),
@@ -168,10 +195,16 @@ def _normalize_page(partner: dict, data: dict, *, existing: dict | None = None) 
     slug_source = data.get("slug") or existing.get("slug") or title
     slug = _unique_page_slug(partner, slug_source, exclude_id=page_id)
     today = date.today().isoformat()
+    # Une page = une ACTIVITÉ proposée par le partenaire (avec son prix). La
+    # commission de l'admin s'applique sur ce prix (cf. activity_commission()).
     return {
         "id": page_id,
         "slug": slug,
         "title": title,
+        "price": _coerce_float(data.get("price"), default=existing.get("price", 0.0)),
+        "currency": str(data.get("currency") or existing.get("currency") or "€").strip()[:6],
+        "duration": str(data.get("duration") or existing.get("duration") or "").strip()[:80],
+        "booking_url": _normalize_url(data.get("booking_url") or existing.get("booking_url") or ""),
         "content_html": str(data.get("content_html") or existing.get("content_html") or "").strip(),
         "meta_title": str(data.get("meta_title") or "").strip()[:70],
         "meta_description": str(data.get("meta_description") or "").strip()[:200],
@@ -291,3 +324,23 @@ def list_public_partners() -> list[dict]:
             continue
         out.append(public_partner(p))
     return out
+
+
+# ── Commission interne (sur le prix de l'activité) ───────────────────────────
+
+def activity_commission(partner: dict, page: dict) -> dict:
+    """Estimation interne de la commission pour une activité = prix × taux partenaire.
+
+    Retourne {price, currency, rate, amount, has_estimate} pour affichage admin.
+    """
+    price = _coerce_float(page.get("price"))
+    rate = _coerce_float(partner.get("commission_rate"))
+    currency = page.get("currency") or "€"
+    amount = round(price * rate / 100.0, 2) if price and rate else 0.0
+    return {
+        "price": price,
+        "currency": currency,
+        "rate": rate,
+        "amount": amount,
+        "has_estimate": bool(price and rate),
+    }

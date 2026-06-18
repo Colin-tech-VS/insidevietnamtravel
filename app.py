@@ -752,6 +752,8 @@ def api_map_points(slug):
 @app.route("/en/")
 @app.route("/en")
 def index():
+    from admin.recommended_partners import list_public_partners as list_recommended_partners
+
     lang = get_lang()
     articles = _articles(lang)
     featured_articles = [a for a in articles if a.get("featured")]
@@ -762,6 +764,7 @@ def index():
         featured_articles=featured_articles,
         home_destinations=_home_featured_destinations(dests, 6),
         home_itineraries=list(itins.items())[:3],
+        home_recommended=list_recommended_partners()[:3],
         meta_title=t("meta.home.title", lang),
         meta_description=t("meta.home.desc", lang),
         meta_keywords=t("meta.home.kw", lang),
@@ -1474,10 +1477,14 @@ def recommended_partner_page(slug, page_slug):
     if not partner.get("enabled") or not page.get("enabled"):
         abort(404)
     pub = public_partner(partner)
+    # Lien de réservation tracké via /go/ (clics loggés en analytics affiliation).
+    raw_booking = (page.get("booking_url") or partner.get("website") or "").strip()
+    booking_url = tracked_affiliate_url(f"reco-{partner['slug']}", raw_booking) if raw_booking else ""
     return render_template(
         "recommended_partner_page.html",
         partner=pub,
         page=page,
+        booking_url=booking_url,
         meta_title=page.get("meta_title") or page.get("title"),
         meta_description=page.get("meta_description") or pub.get("tagline") or "",
         canonical_url=canonical_for_request(lang),

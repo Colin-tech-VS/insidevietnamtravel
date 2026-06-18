@@ -36,13 +36,17 @@
   </div>
   <div class="form-row">
     <div class="form-field">
-      <label>Commission <span class="field-hint" style="display:inline">(interne)</span></label>
-      <input type="text" name="commission" placeholder="ex. 8% / 25€ par vente" value="{{ p.commission if p else '' }}">
+      <label>Taux de commission % <span class="field-hint" style="display:inline">(interne — appliqué au prix de chaque activité)</span></label>
+      <input type="number" name="commission_rate" step="0.1" min="0" placeholder="ex. 10" value="{{ p.commission_rate if p and p.commission_rate else '' }}">
     </div>
     <div class="form-field">
-      <label>Objectif <span class="field-hint" style="display:inline">(interne)</span></label>
-      <input type="text" name="objective" placeholder="ex. 20 leads/mois" value="{{ p.objective if p else '' }}">
+      <label>Commission — note libre <span class="field-hint" style="display:inline">(interne)</span></label>
+      <input type="text" name="commission" placeholder="ex. 10% + bonus volume" value="{{ p.commission if p else '' }}">
     </div>
+  </div>
+  <div class="form-field">
+    <label>Objectif <span class="field-hint" style="display:inline">(interne)</span></label>
+    <input type="text" name="objective" placeholder="ex. 20 réservations/mois" value="{{ p.objective if p else '' }}">
   </div>
   <div class="form-field">
     <label>Notes <span class="field-hint" style="display:inline">(interne)</span></label>
@@ -61,6 +65,36 @@
   </div>
 {% endmacro %}
 
+{# ── Macro : champs d'une activité (prix, durée, réservation) ────────────── #}
+{% macro activity_inputs(pg=None) %}
+  <div class="form-row">
+    <div class="form-field">
+      <label>Nom de l'activité <span class="required">*</span></label>
+      <input type="text" name="title" required value="{{ pg.title if pg else '' }}"
+             placeholder="ex. Croisière privée baie d'Halong 2 jours">
+    </div>
+    <div class="form-field">
+      <label>Durée</label>
+      <input type="text" name="duration" value="{{ pg.duration if pg else '' }}" placeholder="ex. 2 jours / 1 nuit">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-field">
+      <label>Prix par personne</label>
+      <input type="number" name="price" step="0.01" min="0" value="{{ pg.price if pg and pg.price else '' }}" placeholder="ex. 120">
+    </div>
+    <div class="form-field">
+      <label>Devise</label>
+      <input type="text" name="currency" maxlength="6" value="{{ pg.currency if pg else '€' }}">
+    </div>
+  </div>
+  <div class="form-field">
+    <label>Lien de réservation</label>
+    <input type="url" name="booking_url" value="{{ pg.booking_url if pg else '' }}"
+           placeholder="https://… (où le voyageur réserve cette activité)">
+  </div>
+{% endmacro %}
+
 <p class="page-sub">
   Créez les partenaires que vous recommandez, puis générez pour chacun plusieurs pages
   par IA selon votre consigne. Le switch <strong>Publié</strong> pilote l'affichage public
@@ -71,7 +105,7 @@
 <div id="ai-loader" class="ai-loader" hidden aria-live="polite" aria-label="Génération en cours">
   <div class="ai-loader__panel">
     <div class="ai-loader__spinner" aria-hidden="true"></div>
-    <p class="ai-loader__title">Génération page partenaire</p>
+    <p class="ai-loader__title">Génération de l'activité</p>
     <p class="ai-loader__text" id="ai-loader-text">Rédaction…</p>
     <div class="ai-loader__bar" role="progressbar" aria-label="Progression de la génération">
       <span class="ai-loader__bar-fill" id="ai-loader-bar"></span>
@@ -89,8 +123,12 @@
 <div id="draft-slot">
 {% if draft %}
 <section class="rp-card rp-draft">
-  <h2 style="margin-top:0">🪄 Page générée — aperçu</h2>
-  <p class="muted">Partenaire : <strong>{{ draft_partner.name if draft_partner else '—' }}</strong></p>
+  <h2 style="margin-top:0">🪄 Activité générée — aperçu</h2>
+  <p class="muted">
+    Partenaire : <strong>{{ draft_partner.name if draft_partner else '—' }}</strong>
+    {% if draft.price %} · {{ draft.price }} {{ draft.currency or '€' }}{% endif %}
+    {% if draft.duration %} · {{ draft.duration }}{% endif %}
+  </p>
   <h3>{{ draft.title }}</h3>
   {% if draft.image %}
   <img src="{{ draft.image | static_v }}" alt="{{ draft.image_alt or draft.title }}"
@@ -102,7 +140,7 @@
     <form method="post">
       <input type="hidden" name="action" value="publish_generated_page">
       <input type="hidden" name="partner_id" value="{{ draft.partner_id }}">
-      <button type="submit" class="btn btn-primary">✅ Publier cette page</button>
+      <button type="submit" class="btn btn-primary">✅ Publier l'activité</button>
     </form>
     <form method="post">
       <input type="hidden" name="action" value="discard_generated_page">
@@ -156,60 +194,89 @@
   </div>
   {% endif %}
 
-  <h3 class="rp-section-title">Pages ({{ p.pages | length }})</h3>
-  {% if not p.pages %}<p class="rp-empty">Aucune page. Générez-en une par IA ci-dessous.</p>{% endif %}
+  <h3 class="rp-section-title">Activités ({{ p.pages | length }})</h3>
+  {% if not p.pages %}<p class="rp-empty">Aucune activité. Ajoutez-en une (par IA) ci-dessous.</p>{% endif %}
   <ul class="rp-pages">
     {% for pg in p.pages %}
-    <li class="rp-page">
-      <span class="rp-page__title">
-        {{ pg.title }}
-        {% if p.enabled and pg.enabled %}
-        <a href="{{ url_for('recommended_partner_page', slug=p.slug, page_slug=pg.slug) }}" target="_blank" rel="noopener" title="Voir la page">↗</a>
-        {% endif %}
-      </span>
-      <span class="rp-page__actions">
-        <form method="post" class="nps-switch-form">
-          <input type="hidden" name="action" value="toggle_page">
+    {% set com = activity_commission(p, pg) %}
+    <li class="rp-activity">
+      <div class="rp-activity__row">
+        <span class="rp-page__title">
+          {{ pg.title }}
+          {% if p.enabled and pg.enabled %}
+          <a href="{{ url_for('recommended_partner_page', slug=p.slug, page_slug=pg.slug) }}" target="_blank" rel="noopener" title="Voir la page">↗</a>
+          {% endif %}
+          <span class="rp-page__meta">
+            {% if pg.price %}· {{ pg.price | round(2) }} {{ pg.currency }}{% endif %}
+            {% if pg.duration %}· {{ pg.duration }}{% endif %}
+            {% if pg.booking_url %}· 🔗 lien de réservation{% endif %}
+            {% if com.has_estimate %}· <span class="rp-com">commission ≈ {{ com.amount | round(2) }} {{ com.currency }}</span>{% endif %}
+          </span>
+        </span>
+        <span class="rp-page__actions">
+          <form method="post" class="nps-switch-form">
+            <input type="hidden" name="action" value="toggle_page">
+            <input type="hidden" name="partner_id" value="{{ p.id }}">
+            <input type="hidden" name="page_id" value="{{ pg.id }}">
+            <input type="hidden" name="enabled" value="{{ '0' if pg.enabled else '1' }}">
+            {{ switch('_ui', pg.enabled, 'Publiée', 'Masquée', auto_submit=True) }}
+          </form>
+          <form method="post" onsubmit="return confirm('Supprimer cette activité ?')">
+            <input type="hidden" name="action" value="delete_page">
+            <input type="hidden" name="partner_id" value="{{ p.id }}">
+            <input type="hidden" name="page_id" value="{{ pg.id }}">
+            <button type="submit" class="btn btn-sm btn-danger">🗑</button>
+          </form>
+        </span>
+      </div>
+      <details class="rp-sub">
+        <summary>✏️ Modifier cette activité</summary>
+        <form method="post" style="margin-top:1rem">
+          <input type="hidden" name="action" value="save_page">
           <input type="hidden" name="partner_id" value="{{ p.id }}">
           <input type="hidden" name="page_id" value="{{ pg.id }}">
-          <input type="hidden" name="enabled" value="{{ '0' if pg.enabled else '1' }}">
-          {{ switch('_ui', pg.enabled, 'Publiée', 'Masquée', auto_submit=True) }}
+          {{ activity_inputs(pg) }}
+          <div class="form-row">
+            <div class="form-field"><label>Meta title (SEO)</label><input type="text" name="meta_title" maxlength="70" value="{{ pg.meta_title or '' }}"></div>
+            <div class="form-field"><label>Meta description (SEO)</label><input type="text" name="meta_description" maxlength="200" value="{{ pg.meta_description or '' }}"></div>
+          </div>
+          <div class="form-field"><label>Contenu (HTML)</label><textarea name="content_html" rows="10">{{ pg.content_html or '' }}</textarea></div>
+          <div class="form-field">{{ switch('enabled', pg.enabled, 'Publiée', 'Masquée') }}</div>
+          <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
         </form>
-        <form method="post" onsubmit="return confirm('Supprimer cette page ?')">
-          <input type="hidden" name="action" value="delete_page">
-          <input type="hidden" name="partner_id" value="{{ p.id }}">
-          <input type="hidden" name="page_id" value="{{ pg.id }}">
-          <button type="submit" class="btn btn-sm btn-danger">🗑</button>
-        </form>
-      </span>
+      </details>
     </li>
     {% endfor %}
   </ul>
 
-  {# Générer une page par IA #}
+  {# Ajouter une activité générée par IA (SEO + CRO francophone) #}
   <form class="rp-generate-form rp-gen" data-partner-id="{{ p.id }}">
-    <label class="rp-gen__label">🪄 Générer une page par IA — votre consigne</label>
-    <textarea name="prompt" class="rp-prompt" rows="3"
-              placeholder="Ex. Présente {{ p.name }} : ce qu'ils proposent, pour qui, pourquoi je les recommande pour un voyage au Vietnam…"></textarea>
+    <label class="rp-gen__label">🪄 Ajouter une activité — générée par IA (SEO + CRO)</label>
+    {{ activity_inputs() }}
+    <div class="form-field">
+      <label>Consigne pour l'IA</label>
+      <textarea name="prompt" class="rp-prompt" rows="3"
+                placeholder="Ex. Met en avant cette activité pour des voyageurs francophones : points forts, déroulé, ce qui est inclus, pourquoi réserver avec {{ p.name }}…"></textarea>
+    </div>
     <button type="submit" class="btn btn-primary btn-generate" {% if not groq_ok %}disabled title="Aucune clé IA configurée"{% endif %}>
-      Générer la page{% if groq_ok %} ({{ ai_provider_label }}){% endif %}
+      Générer l'activité{% if groq_ok %} ({{ ai_provider_label }}){% endif %}
     </button>
   </form>
 
-  {# Ajouter une page manuelle #}
+  {# Ajouter une activité manuellement #}
   <details class="rp-sub">
-    <summary>✍️ Ajouter une page manuellement</summary>
+    <summary>✍️ Ajouter une activité manuellement</summary>
     <form method="post" style="margin-top:1rem">
       <input type="hidden" name="action" value="save_page">
       <input type="hidden" name="partner_id" value="{{ p.id }}">
-      <div class="form-field"><label>Titre <span class="required">*</span></label><input type="text" name="title" required></div>
+      {{ activity_inputs() }}
       <div class="form-row">
         <div class="form-field"><label>Meta title (SEO)</label><input type="text" name="meta_title" maxlength="70"></div>
         <div class="form-field"><label>Meta description (SEO)</label><input type="text" name="meta_description" maxlength="200"></div>
       </div>
       <div class="form-field"><label>Contenu (HTML)</label><textarea name="content_html" rows="6"></textarea></div>
       <div class="form-field">{{ switch('enabled', True, 'Publiée à l\'enregistrement', 'Brouillon') }}</div>
-      <button type="submit" class="btn btn-primary">Enregistrer la page</button>
+      <button type="submit" class="btn btn-primary">Enregistrer l'activité</button>
     </form>
   </details>
 

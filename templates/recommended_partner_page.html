@@ -3,40 +3,66 @@
 
 {% block content %}
 {% set is_en = (lang == 'en') %}
-<article class="article-page">
-  <header class="article-hero{% if page.image %} article-hero--with-image{% endif %}">
-    {% if page.image %}
-    <div class="article-hero__media" aria-hidden="true">
-      {{ responsive_img(page.image, alt=page.image_alt or page.title, width=1200, height=675, loading='eager', fetchpriority='high', sizes='100vw') }}
+<article class="reco-activity">
+  {% if page.image %}
+  <div class="reco-activity-hero">
+    <div class="reco-activity-hero__media" aria-hidden="true">
+      {{ responsive_img(page.image, alt=page.image_alt or page.title, width=1200, height=515, loading='eager', fetchpriority='high', sizes='100vw') }}
     </div>
-    {% endif %}
-    <div class="container article-hero-inner">
-      <nav class="breadcrumb" aria-label="{{ t('breadcrumb.aria') }}">
-        <ol>
-          <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
-          <li><a href="{{ lang_url('partners_index') }}">{{ 'Partners' if is_en else 'Partenaires' }}</a></li>
-          <li><a href="{{ lang_url('recommended_partner_fiche', slug=partner.slug) }}">{{ partner.name }}</a></li>
-          <li aria-current="page">{{ page.title[:50] }}{% if page.title|length > 50 %}…{% endif %}</li>
-        </ol>
-      </nav>
-      <p class="seo-page__focus">{{ partner.name }}</p>
-      <h1>{{ page.title }}</h1>
+  </div>
+  {% endif %}
+
+  <div class="container">
+    <nav class="breadcrumb" aria-label="{{ t('breadcrumb.aria') }}" style="margin-top:1.2rem">
+      <ol>
+        <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+        <li><a href="{{ lang_url('partners_index') }}">{{ 'Partners' if is_en else 'Partenaires' }}</a></li>
+        <li><a href="{{ lang_url('recommended_partner_fiche', slug=partner.slug) }}">{{ partner.name }}</a></li>
+        <li aria-current="page">{{ page.title[:45] }}{% if page.title|length > 45 %}…{% endif %}</li>
+      </ol>
+    </nav>
+
+    <p class="reco-section__eyebrow" style="margin-top:1rem">{{ 'Recommended activity' if is_en else 'Activité recommandée' }}</p>
+    <h1 style="font-family:var(--font-display);color:var(--teal-deep);font-size:clamp(1.9rem,4vw,2.8rem);margin:.2rem 0 1.5rem">{{ page.title }}</h1>
+
+    <div class="reco-layout">
+      <div class="reco-content">{{ page.content_html | safe }}</div>
+
+      <aside class="reco-booking">
+        <div class="reco-partner-card">
+          <div>
+            <div class="reco-partner-card__name">{{ partner.name }}</div>
+            <div class="reco-partner-card__type">{{ 'Recommended partner' if is_en else 'Partenaire recommandé' }}</div>
+          </div>
+        </div>
+
+        {% if page.price %}
+        <div class="reco-booking__price">
+          {{ page.price | round(2) }} {{ page.currency or '€' }}
+          <small>{{ 'per person' if is_en else 'par personne' }}</small>
+        </div>
+        {% endif %}
+
+        <ul class="reco-booking__list">
+          {% if page.duration %}<li>{{ 'Duration:' if is_en else 'Durée :' }} {{ page.duration }}</li>{% endif %}
+          <li>{{ 'Booked directly with the partner' if is_en else 'Réservation directe auprès du partenaire' }}</li>
+          <li>{{ 'Partner vetted by Inside Vietnam Travel' if is_en else 'Partenaire vérifié par Inside Vietnam Travel' }}</li>
+        </ul>
+
+        {% if booking_url %}
+        <a href="{{ booking_url }}" target="_blank" rel="noopener nofollow sponsored" class="reco-btn reco-btn--block">
+          {{ 'Book this activity' if is_en else 'Réserver cette activité' }} →
+        </a>
+        <p class="reco-booking__trust">{{ 'Secure booking on the partner site' if is_en else 'Réservation sécurisée sur le site du partenaire' }}</p>
+        {% endif %}
+      </aside>
     </div>
-  </header>
 
-  <div class="container article-body">
-    <div class="article-content">{{ page.content_html | safe }}</div>
-
-    <p style="margin-top:2rem">
-      <a href="{{ lang_url('recommended_partner_fiche', slug=partner.slug) }}">← {{ 'Back to' if is_en else 'Retour à' }} {{ partner.name }}</a>
-    </p>
-    {% if partner.website %}
-    <p>
-      <a href="{{ partner.website }}" target="_blank" rel="noopener nofollow" class="btn btn-primary">
-        {{ 'Visit ' if is_en else 'Visiter ' }}{{ partner.name }} ↗
+    <p style="margin:0 0 2.5rem">
+      <a href="{{ lang_url('recommended_partner_fiche', slug=partner.slug) }}" class="reco-btn reco-btn--ghost">
+        ← {{ 'All activities by' if is_en else 'Toutes les activités de' }} {{ partner.name }}
       </a>
     </p>
-    {% endif %}
   </div>
 </article>
 {% endblock %}
