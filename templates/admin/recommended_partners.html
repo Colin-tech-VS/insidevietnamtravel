@@ -162,8 +162,10 @@
   </p>
   <h3>{{ draft.title }}</h3>
   {% if draft.image %}
-  <img src="{{ draft.image | static_v }}" alt="{{ draft.image_alt or draft.title }}"
+  <img src="{{ draft.image | admin_thumb }}" alt="{{ draft.image_alt or draft.title }}"
        width="1200" height="675" loading="lazy" style="max-width:100%;height:auto;border-radius:10px">
+  {% else %}
+  <p class="muted">Image de couverture en cours de génération — rafraîchissez dans quelques secondes.</p>
   {% endif %}
   {% if draft.meta_description %}<p class="muted"><em>{{ draft.meta_description }}</em></p>{% endif %}
   <div class="rp-draft__preview">{{ draft.content_html | safe }}</div>

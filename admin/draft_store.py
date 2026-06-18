@@ -75,6 +75,17 @@ def get_draft(token: str | None) -> dict | None:
     return None
 
 
+def patch_draft(token: str | None, patch: dict) -> None:
+    """Fusionne des champs dans un brouillon terminé (ex. image IA en arrière-plan)."""
+    if not token or not patch:
+        return
+    with _LOCK:
+        entry = _STORE.get(token)
+        if entry and entry.get("status") == "done" and isinstance(entry.get("draft"), dict):
+            entry["draft"].update(patch)
+            entry["ts"] = time.time()
+
+
 def clear(token: str | None) -> None:
     if not token:
         return

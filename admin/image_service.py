@@ -1864,6 +1864,41 @@ def store_partner_gallery_webp(
     return f"/static/images/partners/{safe}/gallery-{item_safe}.webp"
 
 
+def _gather_partner_activity_raw(
+    *,
+    slug: str,
+    title: str,
+    image_prompt: str | None,
+    ai_generated: bool,
+) -> tuple[bytes, bool]:
+    """Télécharge une couverture activité (IA → Pixabay → logo). Retourne (octets, placeholder)."""
+    prompt = (image_prompt or "").strip()
+    if prompt and "vietnam" not in prompt.lower():
+        prompt += ", Vietnam travel scene"
+    if prompt:
+        prompt += ", photorealistic, 16:9, no text, no watermark"
+    seed = abs(hash(f"{slug}-{prompt}-{title}")) % 999_999
+
+    raw: bytes | None = None
+    if ai_generated and prompt and _ai_images_enabled():
+        try:
+            raw = _fetch_remote_image(
+                prompt,
+                seed,
+                width=PARTNER_COVER_SIZE[0],
+                height=PARTNER_COVER_SIZE[1],
+            )
+        except Exception:
+            raw = None
+
+    if raw is None:
+        try:
+            return _fetch_pixabay_photo(_pixabay_query({"title": title}), seed), False
+        except Exception:
+            return _logo_placeholder_webp(slug), True
+    return raw, False
+
+
 def attach_partner_activity_cover(
     *,
     slug: str,
@@ -1875,37 +1910,30 @@ def attach_partner_activity_cover(
     safe = _partner_cover_slug(slug)
     out_path = PARTNER_IMAGES_DIR / f"{safe}.webp"
     alt = (title or "Activité Vietnam")[:140]
-    prompt = (image_prompt or "").strip()
-    if prompt and "vietnam" not in prompt.lower():
-        prompt += ", Vietnam travel scene"
-    if prompt:
-        prompt += ", photorealistic, 16:9, no text, no watermark"
-    seed = abs(hash(f"{slug}-{prompt}-{title}")) % 999_999
-
-    raw: bytes | None = None
     placeholder = False
-    if ai_generated and prompt and _ai_images_enabled():
-        try:
-            raw = _run_with_deadline(
-                _fetch_remote_image,
-                IMAGE_STEP_HARD_DEADLINE,
-                prompt,
-                seed,
-                width=PARTNER_COVER_SIZE[0],
-                height=PARTNER_COVER_SIZE[1],
-            )
-        except Exception:
-            raw = None
+    try:
+        raw, placeholder = _run_with_deadline(
+            _gather_partner_activity_raw,
+            IMAGE_STEP_HARD_DEADLINE,
+            slug=slug,
+            title=title,
+            image_prompt=image_prompt,
+            ai_generated=ai_generated,
+        )
+    except Exception as exc:
+        log(f"reco cover gather KO slug={slug} -- {type(exc).__name__}: {exc}")
+        raw = _logo_placeholder_webp(slug)
+        placeholder = True
 
-    if raw is None:
-        try:
-            raw = _fetch_pixabay_photo(_pixabay_query({"title": title}), seed)
-        except Exception:
-            raw = _logo_placeholder_webp(slug)
-            placeholder = True
-
-    _write_partner_cover_master(raw, out_path)
-    _schedule_partner_variants(out_path)
+    try:
+        _run_with_deadline(
+            lambda: _write_partner_cover_master(raw, out_path, prevalidated=True),
+            IMAGE_ENCODE_DEADLINE,
+        )
+        _schedule_partner_variants(out_path)
+    except Exception as exc:
+        log(f"reco cover encode KO slug={slug} -- {type(exc).__name__}: {exc}")
+        return {"image": "", "image_alt": alt, "image_placeholder": True}
 
     return {
         "image": f"/static/images/partners/{safe}.webp",
