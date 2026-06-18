@@ -234,7 +234,10 @@
     {% if draft.duration %} · {{ draft.duration }}{% endif %}
   </p>
   <h3>{{ draft.title }}</h3>
-  {% if draft.image %}
+  {% if draft.image_source_url %}
+  <img src="{{ draft.image_source_url }}" alt="{{ draft.image_alt or draft.title }}"
+       width="1200" height="675" loading="lazy" style="max-width:100%;height:auto;border-radius:10px">
+  {% elif draft.image %}
   <img src="{{ draft.image | admin_thumb }}" alt="{{ draft.image_alt or draft.title }}"
        width="1200" height="675" loading="lazy" style="max-width:100%;height:auto;border-radius:10px">
   {% else %}

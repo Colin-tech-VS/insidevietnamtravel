@@ -2291,6 +2291,16 @@ def recommended_partners_admin():
                     flash("Aucune page générée à publier.", "error")
                 else:
                     pid = draft.pop("partner_id", "") or partner_id
+                    partner = rp.find_partner(pid)
+                    source_url = (draft.get("image_source_url") or "").strip()
+                    if partner and source_url:
+                        img_slug = f"reco-{partner.get('slug', '')}-{draft.get('slug', '')}"[:80]
+                        try:
+                            from admin.image_service import store_partner_cover_webp
+
+                            draft["image"] = store_partner_cover_webp(img_slug, image_url=source_url)
+                        except Exception:  # noqa: BLE001 — repli sur image_source_url au rendu
+                            pass
                     draft["enabled"] = True
                     rp.add_page(pid, draft)
                     _clear_draft("rec_partner_page")
@@ -2350,8 +2360,6 @@ def api_generate_recommended_partner_page():
     if not ai_client.is_configured():
         return jsonify({"ok": False, "error": "Aucune clé IA configurée (GROQ_API_KEY ou MISTRAL_API_KEY)"}), 400
 
-    draft_token: list[str | None] = [None]
-
     def _job(report):
         page = generate_activity_page(partner, activity, prompt, progress=report)
         page["partner_id"] = partner_id
@@ -2361,44 +2369,22 @@ def api_generate_recommended_partner_page():
         page["currency"] = activity["currency"]
         page["duration"] = activity["duration"]
         page["booking_url"] = activity["booking_url"]
-        report("Finalisation de la page…")
-
+        report("Image de couverture (aperçu)…")
         img_slug = f"reco-{partner.get('slug', '')}-{page.get('slug', '')}"[:80]
-        tok = draft_token[0]
-        page_snapshot = dict(page)
+        try:
+            from admin.image_service import partner_activity_cover_preview_meta
 
-        def _bg_cover() -> None:
+            meta = partner_activity_cover_preview_meta(slug=img_slug, title=page.get("title", ""))
+            for key in ("image", "image_alt", "image_placeholder", "image_source_url"):
+                if key in meta:
+                    page[key] = meta[key]
+        except Exception as exc:  # noqa: BLE001
             from admin.genlog import log
-            from admin.image_service import attach_partner_activity_cover
-
-            try:
-                meta = attach_partner_activity_cover(
-                    slug=img_slug,
-                    title=page_snapshot.get("title", ""),
-                    image_prompt=page_snapshot.get("image_prompt", ""),
-                    ai_generated=True,
-                )
-                patch = {}
-                for key in ("image", "image_alt", "image_placeholder", "image_source_url"):
-                    if key not in meta:
-                        continue
-                    val = meta[key]
-                    if key == "image_placeholder" or val:
-                        patch[key] = val
-                if tok and patch:
-                    draft_store.patch_draft(tok, patch)
-                if meta.get("image") or meta.get("image_source_url"):
-                    log(f"reco activity cover async OK slug={img_slug} image={meta.get('image', '')[:60]}")
-                else:
-                    log(f"reco activity cover async empty slug={img_slug}")
-            except Exception as exc:  # noqa: BLE001
-                log(f"reco activity cover async KO slug={img_slug} -- {type(exc).__name__}: {exc}")
-
-        threading.Thread(target=_bg_cover, daemon=True).start()
+            log(f"reco cover preview skip slug={img_slug} -- {type(exc).__name__}: {exc}")
+        report("Finalisation de la page…")
         return page
 
     token = draft_store.new_token()
-    draft_token[0] = token
     session[_draft_token_key("rec_partner_page")] = token
     draft_store.start_job(
         token,

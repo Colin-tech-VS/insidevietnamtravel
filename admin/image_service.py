@@ -1930,6 +1930,34 @@ def _gather_partner_activity_raw(
     return raw, False, source_url
 
 
+def partner_activity_cover_preview_meta(
+    *,
+    slug: str,
+    title: str,
+) -> dict:
+    """Couverture brouillon IA — URL Pixabay seulement, sans téléchargement ni PIL (OOM-safe)."""
+    safe = _partner_cover_slug(slug)
+    local_path = f"/static/images/partners/{safe}.webp"
+    alt = (title or "Activité Vietnam")[:140]
+    try:
+        seed = abs(hash(f"{slug}-{title}")) % 999_999
+        source_url = pixabay_photo_url(_pixabay_query({"title": title}), seed)
+        return {
+            "image": local_path,
+            "image_source_url": source_url,
+            "image_alt": alt,
+            "image_placeholder": False,
+        }
+    except Exception as exc:
+        log(f"reco cover preview KO slug={slug} -- {type(exc).__name__}: {exc}")
+        return {
+            "image": "",
+            "image_alt": alt,
+            "image_placeholder": True,
+            "image_source_url": "",
+        }
+
+
 def attach_partner_activity_cover(
     *,
     slug: str,

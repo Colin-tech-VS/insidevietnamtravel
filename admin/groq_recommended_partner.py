@@ -17,7 +17,7 @@ from admin.store import slugify
 
 MIN_WORDS = 550
 GEN_MAX_TOKENS = 4096
-EXPAND_TOLERANCE = 0.85
+EXPAND_TOLERANCE = 0.70
 
 SYSTEM_PROMPT = """Tu es rédacteur SEO + CRO spécialisé voyage Vietnam pour "Inside Vietnam Travel".
 
