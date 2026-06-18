@@ -127,6 +127,9 @@
           <a href="{{ url_for('admin.partner_portal_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.partner_portal_admin' %}is-active{% endif %}">
             <span class="admin-nav__icon" aria-hidden="true">🌐</span> Espace partenaires
           </a>
+          <a href="{{ url_for('admin.recommended_partners_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.recommended_partners_admin' %}is-active{% endif %}">
+            <span class="admin-nav__icon" aria-hidden="true">⭐</span> Partenaires recommandés
+          </a>
         </div>
 
         <div class="admin-nav__group">

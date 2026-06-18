@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "macros/seo.html" import json_ld_graph with context %}
+{% from "macros/images.html" import responsive_img with context %}
 
 {% block structured_data %}
 {{ json_ld_graph(json_ld_schemas + [
@@ -37,7 +38,7 @@
     <p class="pillar-hero__eyebrow">{{ 'Verified network' if is_en else 'Réseau vérifié' }}</p>
     <h1 class="pillar-hero__title">{{ 'Our Vietnam travel partners' if is_en else 'Nos partenaires voyage Vietnam' }}</h1>
     <p class="pillar-hero__lede">{{ 'Local guides, travel influencers, bloggers and agencies we collaborate with — find the right expert for your Vietnam trip.' if is_en else 'Guides locaux, influenceurs voyage, blogueurs et agences avec lesquels nous collaborons — trouvez l\'expert idéal pour votre séjour au Vietnam.' }}</p>
-    <p class="partner-directory-hero__count"><strong>{{ partners|length }}</strong> {{ 'published partners' if is_en else 'partenaires publiés' }}</p>
+    <p class="partner-directory-hero__count"><strong>{{ partners|length + (recommended|length if recommended else 0) }}</strong> {{ 'published partners' if is_en else 'partenaires publiés' }}</p>
   </div>
 </header>
 
@@ -47,6 +48,40 @@
     <p class="partner-directory-seo__text">{{ 'Planning a trip to Vietnam? Browse verified local guides, travel agencies, bloggers and creators by city and profile type. Each partner page is editorially reviewed to help you choose the right on-the-ground expert — Hanoi, Ho Chi Minh City, Hoi An, Halong Bay and more.' if is_en else 'Vous préparez un voyage au Vietnam ? Parcourez des guides locaux, agences de voyage, blogueurs et créateurs vérifiés, par ville et type de profil. Chaque fiche est validée éditorialement pour vous aider à choisir le bon expert terrain — Hanoï, Ho Chi Minh-Ville, Hội An, baie d\'Halong et plus.' }}</p>
   </div>
 </section>
+
+{% if recommended %}
+<section class="reco-section" aria-label="{{ 'Recommended partners' if is_en else 'Partenaires recommandés' }}" style="background:var(--rice)">
+  <div class="container">
+    <div class="reco-section__head">
+      <p class="reco-section__eyebrow">⭐ {{ 'Our selection' if is_en else 'Notre sélection' }}</p>
+      <h2 class="reco-section__title">{{ 'Recommended partners' if is_en else 'Partenaires recommandés' }}</h2>
+      <p class="reco-section__lede">{{ 'Hand-picked partners and bookable activities for your Vietnam trip.' if is_en else 'Des partenaires triés sur le volet et des activités réservables pour votre voyage au Vietnam.' }}</p>
+    </div>
+    <ul class="reco-grid">
+      {% for rp in recommended %}
+      <li class="reco-card">
+        <a href="{{ lang_url('recommended_partner_fiche', slug=rp.slug) }}" style="text-decoration:none;display:contents">
+          {% if rp.image %}
+          <div class="reco-card__media">
+            {{ responsive_img(rp.image, alt=rp.image_alt or rp.name, width=400, height=250, loading='lazy', sizes='(max-width:600px) 100vw, 360px') }}
+          </div>
+          {% endif %}
+          <div class="reco-card__body">
+            <span class="reco-card__partner">{{ 'Recommended' if is_en else 'Recommandé' }}</span>
+            <h3 class="reco-card__title">{{ rp.name }}</h3>
+            {% if rp.tagline %}<p class="reco-card__desc">{{ rp.tagline }}</p>{% endif %}
+            <div class="reco-card__meta">
+              <span class="reco-card__duration">{{ rp.pages | length }} {{ 'activities' if is_en else 'activités' }}</span>
+            </div>
+            <span class="reco-btn reco-btn--block reco-card__cta">{{ 'Discover' if is_en else 'Découvrir' }} →</span>
+          </div>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endif %}
 
 <section class="section partner-directory" aria-label="{{ 'Partner directory' if is_en else 'Annuaire partenaires' }}">
   <div class="container">

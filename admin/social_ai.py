@@ -180,6 +180,36 @@ def page_inventory(lang: str = "fr") -> list[dict]:
     except Exception:
         pass
 
+    # Partenaires recommandés + leurs activités (réservables) — publiables aussi
+    # sur les réseaux sociaux et connus de Mai.
+    try:
+        from admin.recommended_partners import list_public_partners as list_recommended
+        reco_group = "Partenaires recommandés" if lang == "fr" else "Recommended partners"
+        for rp in list_recommended(lang):
+            items.append({
+                "id": f"reco-partner:{rp['slug']}",
+                "group": reco_group,
+                "label": rp["name"],
+                "url": _abs(lang_url("recommended_partner_fiche", lang, slug=rp["slug"])),
+                "title": rp["name"],
+                "summary": rp.get("tagline", ""),
+                "image": _img(rp.get("image") or DEFAULT_OG),
+            })
+            for pg in rp.get("pages", []):
+                price = f"{pg['price']:g} {pg.get('currency', '€')}" if pg.get("price") else ""
+                summary = " · ".join(filter(None, [rp["name"], price, pg.get("meta_description", "")]))
+                items.append({
+                    "id": f"reco-activity:{rp['slug']}:{pg['slug']}",
+                    "group": reco_group,
+                    "label": f"{pg['title']} — {rp['name']}",
+                    "url": _abs(lang_url("recommended_partner_page", lang, slug=rp["slug"], page_slug=pg["slug"])),
+                    "title": pg["title"],
+                    "summary": summary,
+                    "image": _img(pg.get("image") or rp.get("image") or DEFAULT_OG),
+                })
+    except Exception:
+        pass
+
     return items
 
 

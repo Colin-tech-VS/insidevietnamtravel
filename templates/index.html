@@ -231,6 +231,43 @@
   </div>
 </section>
 
+{% if home_recommended %}
+<section class="reco-section" aria-labelledby="home-reco-title">
+  <div class="container">
+    <div class="reco-section__head">
+      <p class="reco-section__eyebrow">⭐ {{ 'Our selection' if lang == 'en' else 'Notre sélection' }}</p>
+      <h2 id="home-reco-title" class="reco-section__title">{{ 'Recommended partners' if lang == 'en' else 'Partenaires recommandés' }}</h2>
+      <p class="reco-section__lede">{{ 'Trusted partners and bookable activities for your Vietnam trip.' if lang == 'en' else 'Des partenaires de confiance et des activités réservables pour votre voyage au Vietnam.' }}</p>
+    </div>
+    <ul class="reco-grid">
+      {% for rp in home_recommended %}
+      <li class="reco-card">
+        <a href="{{ lang_url('recommended_partner_fiche', slug=rp.slug) }}" style="text-decoration:none;display:contents">
+          {% if rp.image %}
+          <div class="reco-card__media">
+            {{ responsive_img(rp.image, alt=rp.image_alt or rp.name, width=400, height=250, loading='lazy', sizes='(max-width:600px) 100vw, 360px') }}
+          </div>
+          {% endif %}
+          <div class="reco-card__body">
+            <span class="reco-card__partner">{{ 'Recommended' if lang == 'en' else 'Recommandé' }}</span>
+            <h3 class="reco-card__title">{{ rp.name }}</h3>
+            {% if rp.tagline %}<p class="reco-card__desc">{{ rp.tagline }}</p>{% endif %}
+            <div class="reco-card__meta">
+              <span class="reco-card__duration">{{ rp.pages | length }} {{ 'activities' if lang == 'en' else 'activités' }}</span>
+            </div>
+            <span class="reco-btn reco-btn--block reco-card__cta">{{ 'Discover' if lang == 'en' else 'Découvrir' }} →</span>
+          </div>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="section-cta" style="text-align:center;margin-top:1.5rem">
+      <a href="{{ lang_url('partners_index') }}" class="reco-btn reco-btn--ghost">{{ 'See all partners' if lang == 'en' else 'Voir tous les partenaires' }}</a>
+    </p>
+  </div>
+</section>
+{% endif %}
+
 <section class="section home-partner" aria-labelledby="partner-title">
   <div class="container home-partner__inner">
     <div class="home-partner__content">

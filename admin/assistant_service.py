@@ -139,6 +139,7 @@ _ADMIN_PAGE_NOTES = {
     "admin.social": ("Réseaux sociaux", "Publication multi-réseaux avec rédaction IA adaptée et suivi UTM : Facebook, Pinterest, Reddit, Telegram, X (Twitter), Threads, Instagram (TikTok : audit API requis). Configuration des connexions API de chaque réseau."),
     "admin.partnerships": ("Partenariats CRM", "Prospection partenaires (influenceurs, blogueurs, guides, agences) : recherche IA d'influenceurs voyage Vietnam avec extraction d'email, statuts de contact (à contacter → actif), envoi d'emails via la page Newsletter avec tracking ouvertures/clics."),
     "admin.partner_portal_admin": ("Espace partenaire", "Portail self-service : inscriptions via /devenir-partenaire, comptes partenaires, création de fiche par l'IA, vérification éditoriale, publication sur /partenaire/slug. Modération : suspendre, publier, refuser, dépublier."),
+    "admin.recommended_partners_admin": ("Partenaires recommandés", "Partenaires que l'admin recommande : pour chacun, plusieurs ACTIVITÉS réservables (prix, durée, lien de réservation tracké), pages générées par IA en SEO+CRO francophone, bilingues FR/EN, switch de publication. Commission appliquée au prix de l'activité (taux par partenaire). Pages publiques : /partenaires-recommandes/slug et /partenaires-recommandes/slug/activite, listées dans /partenaires-vietnam et sur l'accueil."),
     "admin.contact_admin": ("Contact", "Messages reçus via le formulaire de contact public (lu / suppression)."),
     "admin.reviews_admin": ("Avis", "Gestion des témoignages voyageurs affichés sur le site."),
     "admin.affiliates": ("Affiliation", "IDs partenaires (Booking, Agoda, GetYourGuide, eSIM…), vérification du tracking, stats de clics."),
@@ -271,6 +272,7 @@ def build_site_snapshot() -> dict:
         },
         "partnerships": _safe(_partnership_stats, {}),
         "partner_portal": _safe(_partner_portal_snapshot, {}),
+        "recommended_partners": _safe(_recommended_partners_snapshot, {}),
         "email_tracking": _safe(_email_tracking_snapshot, {}),
         "config": {
             "ai_provider": _safe(ai_client.provider, "?"),
@@ -311,6 +313,47 @@ def _connected_networks() -> list[str]:
 def _partnership_stats() -> dict:
     from admin.partners_service import partnership_stats
     return partnership_stats()
+
+
+def _recommended_partners_snapshot() -> dict:
+    """État des partenaires recommandés + leurs activités (pour analyse Linh)."""
+    from admin.recommended_partners import activity_commission, get_partners
+
+    partners = get_partners()
+    out = []
+    activities_total = 0
+    published_activities = 0
+    for p in partners:
+        acts = []
+        for pg in p.get("pages", []):
+            com = activity_commission(p, pg)
+            activities_total += 1
+            if p.get("enabled") and pg.get("enabled"):
+                published_activities += 1
+            acts.append({
+                "title": pg.get("title", ""),
+                "slug": pg.get("slug", ""),
+                "price": pg.get("price", 0),
+                "currency": pg.get("currency", "€"),
+                "enabled": bool(pg.get("enabled")),
+                "has_booking_url": bool(pg.get("booking_url")),
+                "commission_est": com.get("amount", 0),
+                "bilingual": bool((pg.get("i18n") or {}).get("en")),
+            })
+        out.append({
+            "name": p.get("name", ""),
+            "slug": p.get("slug", ""),
+            "enabled": bool(p.get("enabled")),
+            "commission_rate": p.get("commission_rate", 0),
+            "activities": acts,
+        })
+    return {
+        "partners_total": len(partners),
+        "partners_published": sum(1 for p in partners if p.get("enabled")),
+        "activities_total": activities_total,
+        "activities_published": published_activities,
+        "partners": out[:30],
+    }
 
 
 def _partner_portal_snapshot() -> dict:

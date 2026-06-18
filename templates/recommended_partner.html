@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% from "macros/images.html" import responsive_img with context %}
+{% from "macros/reviews.html" import entity_reviews with context %}
+
+{% block content %}
+{% set is_en = (lang == 'en') %}
+<article class="reco-activity">
+  {% if partner.image %}
+  <div class="reco-activity-hero">
+    <div class="reco-activity-hero__media" aria-hidden="true">
+      {{ responsive_img(partner.image, alt=partner.image_alt or partner.name, width=1920, height=1080, loading='eager', fetchpriority='high', sizes='100vw') }}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="container">
+    <nav class="breadcrumb" aria-label="{{ t('breadcrumb.aria') }}" style="margin-top:1.2rem">
+      <ol>
+        <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+        <li><a href="{{ lang_url('partners_index') }}">{{ 'Partners' if is_en else 'Partenaires' }}</a></li>
+        <li aria-current="page">{{ partner.name }}</li>
+      </ol>
+    </nav>
+
+    <header class="reco-section__head" style="margin:1.5rem auto 1rem;text-align:left;max-width:760px">
+      <p class="reco-section__eyebrow">{{ 'Recommended partner' if is_en else 'Partenaire recommandé' }}</p>
+      <h1 class="reco-section__title">{{ partner.name }}</h1>
+      {% if partner.tagline %}<p class="reco-section__lede">{{ partner.tagline }}</p>{% endif %}
+      {% if partner.website %}
+      <p style="margin-top:1rem"><a href="{{ partner.website }}" target="_blank" rel="noopener nofollow" class="reco-btn reco-btn--ghost">{{ 'Visit website' if is_en else 'Visiter le site' }} ↗</a></p>
+      {% endif %}
+    </header>
+
+    {% if partner.intro_html %}
+    <div class="reco-content" style="max-width:760px;margin:0 0 2.5rem">{{ partner.intro_html | safe }}</div>
+    {% endif %}
+  </div>
+
+  <section class="reco-section" style="background:var(--rice);padding-top:2.5rem">
+    <div class="container">
+      <div class="reco-section__head">
+        <h2 class="reco-section__title" style="font-size:clamp(1.6rem,3.5vw,2.2rem)">{{ 'Activities to book' if is_en else 'Activités à réserver' }}</h2>
+        <p class="reco-section__lede">{{ 'Hand-picked experiences you can book directly.' if is_en else 'Des expériences sélectionnées, réservables directement.' }}</p>
+      </div>
+      <ul class="reco-grid">
+        {% for pg in partner.pages %}
+        <li class="reco-card">
+          <a href="{{ lang_url('recommended_partner_page', slug=partner.slug, page_slug=pg.slug) }}" style="text-decoration:none;display:contents">
+            {% if pg.image %}
+            <div class="reco-card__media">{{ responsive_img(pg.image, alt=pg.image_alt or pg.title, width=400, height=250, loading='lazy', sizes='(max-width:600px) 100vw, 360px') }}</div>
+            {% endif %}
+            <div class="reco-card__body">
+              <h3 class="reco-card__title">{{ pg.title }}</h3>
+              {% if pg.meta_description %}<p class="reco-card__desc">{{ pg.meta_description }}</p>{% endif %}
+              <div class="reco-card__meta">
+                {% if pg.price %}<span class="reco-card__price">{{ pg.price | round(2) }} {{ pg.currency or '€' }} <small>{{ '/ pers.' if not is_en else '/ pers' }}</small></span>{% endif %}
+                {% if pg.duration %}<span class="reco-card__duration">{{ pg.duration }}</span>{% endif %}
+              </div>
+              <span class="reco-btn reco-btn--block reco-card__cta">{{ 'View & book' if is_en else 'Voir & réserver' }} →</span>
+            </div>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+
+  {{ entity_reviews(
+    partner.reviews,
+    ('Traveller reviews' if is_en else 'Avis voyageurs'),
+    ('What travellers say about this partner.' if is_en else 'Ce que disent les voyageurs sur ce partenaire.')
+  ) }}
+</article>
+{% endblock %}

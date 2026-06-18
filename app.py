@@ -364,7 +364,10 @@ def add_performance_headers(response):
         response.headers.setdefault("Cache-Control", "public, max-age=300, stale-while-revalidate=600")
     elif path.startswith("/api/map/") and response.status_code == 200:
         response.headers.setdefault("Cache-Control", "public, max-age=3600, stale-while-revalidate=86400")
-    if path.startswith("/go/"):
+    if config.SITE_NOINDEX:
+        # Staging : interdit l'indexation de tout le site (double public de la prod).
+        response.headers["X-Robots-Tag"] = "noindex, nofollow, noarchive"
+    elif path.startswith("/go/"):
         response.headers["X-Robots-Tag"] = "noindex, nofollow"
     return response
 
@@ -574,6 +577,27 @@ def static_v_filter(path: str) -> str:
     return _static_versioned(path) if path else path
 
 
+@app.template_filter("admin_thumb")
+def admin_thumb_filter(path: str) -> str:
+    """Miniature admin légère (-640) pour les couvertures partenaires WebP."""
+    if not path:
+        return path
+    if path.endswith(".upload") and "/images/partners/" in path:
+        return static_v_filter(path)
+    if path.endswith(".webp") and "/images/partners/" in path:
+        thumb = f"{path[:-5]}-640.webp"
+        if _variant_exists(thumb.removeprefix("/static/")):
+            return _static_versioned(thumb)
+        rel = path.removeprefix("/static/")
+        if _variant_exists(rel):
+            return _static_versioned(path)
+        upload = f"{path[:-5]}.upload"
+        if _variant_exists(upload.removeprefix("/static/")):
+            return _static_versioned(upload)
+        return static_v_filter(path)
+    return static_v_filter(path)
+
+
 @app.template_global()
 def responsive_image(image_url: str, *, card: bool = False) -> dict:
     """src + srcset pour images WebP locales avec variantes -640/-960."""
@@ -587,26 +611,36 @@ def _responsive_image_cached(image_url: str, card: bool) -> dict:
         return {"src": fallback, "srcset": "", "sizes": ""}
     if image_url.startswith(("http://", "https://")):
         return {"src": image_url, "srcset": "", "sizes": ""}
-    if not image_url.endswith(".webp") or "/static/images/" not in image_url:
+    if "/static/images/" not in image_url:
         return {"src": fallback, "srcset": "", "sizes": ""}
-
-    rel = image_url.removeprefix("/static/")
-    stem_rel = rel[:-5]
-    parts = []
-    for suffix, width in (("-640", 640), ("-960", 960)):
-        variant_rel = f"{stem_rel}{suffix}.webp"
-        if _variant_exists(variant_rel):
-            parts.append(f"{_static_versioned(f'/static/{variant_rel}')} {width}w")
-    parts.append(f"{_static_versioned(image_url)} 1200w")
-
     sizes = (
         "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
         if card
         else "100vw"
     )
-    best_src = parts[0].split()[0] if len(parts) > 1 else _static_versioned(image_url)
+    if image_url.endswith(".upload"):
+        return {"src": _static_versioned(image_url), "srcset": "", "sizes": sizes}
+    if not image_url.endswith(".webp"):
+        return {"src": fallback, "srcset": "", "sizes": ""}
+
+    rel = image_url.removeprefix("/static/")
+    stem_rel = rel[:-5]
+    is_partner = "/images/partners/" in image_url
+    full_w = 1920 if is_partner else 1200
+    variant_specs = (
+        (("-640", 640), ("-960", 960), ("-1280", 1280))
+        if is_partner
+        else (("-640", 640), ("-960", 960))
+    )
+    parts = []
+    for suffix, width in variant_specs:
+        variant_rel = f"{stem_rel}{suffix}.webp"
+        if _variant_exists(variant_rel):
+            parts.append(f"{_static_versioned(f'/static/{variant_rel}')} {width}w")
+    parts.append(f"{_static_versioned(image_url)} {full_w}w")
+
     return {
-        "src": best_src,
+        "src": _static_versioned(image_url),
         "srcset": ", ".join(parts),
         "sizes": sizes,
     }
@@ -749,6 +783,8 @@ def api_map_points(slug):
 @app.route("/en/")
 @app.route("/en")
 def index():
+    from admin.recommended_partners import list_public_partners as list_recommended_partners
+
     lang = get_lang()
     articles = _articles(lang)
     featured_articles = [a for a in articles if a.get("featured")]
@@ -759,6 +795,7 @@ def index():
         featured_articles=featured_articles,
         home_destinations=_home_featured_destinations(dests, 6),
         home_itineraries=list(itins.items())[:3],
+        home_recommended=list_recommended_partners(lang)[:3],
         meta_title=t("meta.home.title", lang),
         meta_description=t("meta.home.desc", lang),
         meta_keywords=t("meta.home.kw", lang),
@@ -1413,6 +1450,8 @@ def partners_index():
     from admin.partner_seo import partners_index_faq_schema, partners_index_json_ld, partners_index_meta, profile_badge, profile_type_label
     from i18n_utils import canonical_for_request
 
+    from admin.recommended_partners import list_public_partners as list_recommended_partners
+
     lang = get_lang()
     partners = list_public_partners()
     meta = partners_index_meta(lang)
@@ -1420,6 +1459,7 @@ def partners_index():
     return render_template(
         "partners_index.html",
         partners=partners,
+        recommended=list_recommended_partners(lang),
         meta_title=meta["meta_title"],
         meta_description=meta["meta_description"],
         meta_keywords=meta["meta_keywords"],
@@ -1427,6 +1467,60 @@ def partners_index():
         partners_faq=partners_index_faq_schema(lang, canonical_url=canonical).get("mainEntity", []),
         profile_badge_fn=profile_badge,
         profile_label_fn=profile_type_label,
+    )
+
+
+@app.route("/partenaires-recommandes/<slug>")
+@app.route("/en/recommended-partners/<slug>")
+def recommended_partner_fiche(slug):
+    """Fiche publique d'un partenaire recommandé (intro + ses pages publiées)."""
+    from admin.recommended_partners import find_partner_by_slug, public_partner
+    from i18n_utils import canonical_for_request
+
+    lang = get_lang()
+    partner = find_partner_by_slug(slug)
+    if not partner or not partner.get("enabled"):
+        abort(404)
+    pub = public_partner(partner, lang)
+    if not pub["pages"]:
+        abort(404)
+    title = pub.get("tagline") or pub.get("name")
+    return render_template(
+        "recommended_partner.html",
+        partner=pub,
+        meta_title=f"{pub.get('name')} — {('recommended partner' if lang == 'en' else 'partenaire recommandé')} | Inside Vietnam Travel",
+        meta_description=(pub.get("tagline") or f"{pub.get('name')} — partenaire voyage Vietnam recommandé par Inside Vietnam Travel.")[:160],
+        canonical_url=canonical_for_request(lang),
+    )
+
+
+@app.route("/partenaires-recommandes/<slug>/<page_slug>")
+@app.route("/en/recommended-partners/<slug>/<page_slug>")
+def recommended_partner_page(slug, page_slug):
+    """Page individuelle d'un partenaire recommandé."""
+    from admin.recommended_partners import find_page_by_slug, public_partner
+    from i18n_utils import canonical_for_request
+
+    lang = get_lang()
+    partner, page = find_page_by_slug(slug, page_slug)
+    if not partner or not page:
+        abort(404)
+    if not partner.get("enabled") or not page.get("enabled"):
+        abort(404)
+    from admin.recommended_partners import localize_page, resolve_public_images
+    pub = public_partner(partner, lang)
+    page = resolve_public_images(localize_page(page, lang))
+    # Lien de réservation tracké via /go/ (clics loggés en analytics affiliation).
+    raw_booking = (page.get("booking_url") or partner.get("website") or "").strip()
+    booking_url = tracked_affiliate_url(f"reco-{partner['slug']}", raw_booking) if raw_booking else ""
+    return render_template(
+        "recommended_partner_page.html",
+        partner=pub,
+        page=page,
+        booking_url=booking_url,
+        meta_title=page.get("meta_title") or page.get("title"),
+        meta_description=page.get("meta_description") or pub.get("tagline") or "",
+        canonical_url=canonical_for_request(lang),
     )
 
 
@@ -1794,6 +1888,26 @@ def _build_search_index(lang: str) -> list[dict]:
                 "u": card["url"],
                 "g": "partner",
             })
+    except Exception:
+        pass
+
+    try:
+        from admin.recommended_partners import list_public_partners as list_recommended
+        for rp in list_recommended(lang):
+            items.append({
+                "t": rp["name"],
+                "s": rp.get("tagline", ""),
+                "u": lang_url("recommended_partner_fiche", lang, slug=rp["slug"]),
+                "g": "partner",
+            })
+            for pg in rp.get("pages", []):
+                price = f"{pg['price']:g} {pg.get('currency', '€')}" if pg.get("price") else ""
+                items.append({
+                    "t": pg["title"],
+                    "s": f"{rp['name']} · {price}".strip(" ·"),
+                    "u": lang_url("recommended_partner_page", lang, slug=rp["slug"], page_slug=pg["slug"]),
+                    "g": "activity",
+                })
     except Exception:
         pass
 

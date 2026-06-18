@@ -1,0 +1,422 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Partenaires recommandés{% endblock %}
+{% block page_title %}Partenaires recommandés{% endblock %}
+
+{% block content %}
+
+{# ── Macro : switch réutilisable (case stylée en interrupteur) ───────────── #}
+{% macro switch(name, on, label_on, label_off, auto_submit=False) %}
+  <label class="nps-switch">
+    <input type="checkbox" name="{{ name }}" {% if on %}checked{% endif %}{% if auto_submit %} onchange="this.form.submit()"{% endif %}>
+    <span class="nps-switch__track" aria-hidden="true"><span class="nps-switch__thumb"></span></span>
+    <span class="nps-switch__label">{{ label_on if on else label_off }}</span>
+  </label>
+{% endmacro %}
+
+{# ── Macro : champs partenaire (ajout + édition) ─────────────────────────── #}
+{% macro partner_fields(p=None) %}
+  <div class="form-row">
+    <div class="form-field">
+      <label>Nom du partenaire <span class="required">*</span></label>
+      <input type="text" name="name" required value="{{ p.name if p else '' }}">
+    </div>
+    <div class="form-field">
+      <label>Lien du site</label>
+      <input type="url" name="website" placeholder="https://…" value="{{ p.website if p else '' }}">
+    </div>
+  </div>
+  <div class="form-field">
+    <label>Type de partenariat</label>
+    <select name="partnership_type" class="social-select">
+      {% for key, label in partnership_types %}
+      <option value="{{ key }}" {% if p and p.partnership_type == key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="form-row">
+    <div class="form-field">
+      <label>Taux de commission % <span class="field-hint" style="display:inline">(interne — appliqué au prix de chaque activité)</span></label>
+      <input type="number" name="commission_rate" step="0.1" min="0" placeholder="ex. 10" value="{{ p.commission_rate if p and p.commission_rate else '' }}">
+    </div>
+    <div class="form-field">
+      <label>Commission — note libre <span class="field-hint" style="display:inline">(interne)</span></label>
+      <input type="text" name="commission" placeholder="ex. 10% + bonus volume" value="{{ p.commission if p else '' }}">
+    </div>
+  </div>
+  <div class="form-field">
+    <label>Objectif <span class="field-hint" style="display:inline">(interne)</span></label>
+    <input type="text" name="objective" placeholder="ex. 20 réservations/mois" value="{{ p.objective if p else '' }}">
+  </div>
+  <div class="form-field">
+    <label>Notes <span class="field-hint" style="display:inline">(interne)</span></label>
+    <textarea name="notes" rows="2">{{ p.notes if p else '' }}</textarea>
+  </div>
+  <div class="form-field">
+    <label>Accroche publique (tagline)</label>
+    <input type="text" name="tagline" maxlength="200" value="{{ p.tagline if p else '' }}">
+  </div>
+  <div class="form-field">
+    <label>Présentation publique (HTML)</label>
+    <textarea name="intro_html" rows="3" class="wysiwyg-editor wysiwyg-editor--full">{{ p.intro_html if p else '' }}</textarea>
+  </div>
+  <div class="form-field">
+    <label>Logo / image du partenaire <span class="field-hint" style="display:inline">(optionnel)</span></label>
+    {% if p and p.image %}<div class="rp-thumb"><img src="{{ p.image | admin_thumb }}" alt="" width="120" height="68" loading="lazy" decoding="async"></div>{% endif %}
+    <input type="file" name="image_file" accept="image/jpeg,image/png,image/webp">
+    <input type="url" name="image_url" placeholder="… ou coller une URL d'image" style="margin-top:.4rem">
+    <input type="text" name="image_alt" placeholder="Texte alternatif (accessibilité/SEO)" value="{{ p.image_alt if p else '' }}" style="margin-top:.4rem">
+  </div>
+  <div class="form-field">
+    {{ switch('enabled', (not p or p.enabled), 'Publié — visible sur le site', 'Masqué') }}
+  </div>
+{% endmacro %}
+
+{# ── Macro : images d'une activité (couverture + galerie) ────────────────── #}
+{% macro activity_image_inputs(pg=None) %}
+  <div class="form-field">
+    <label>Image de couverture <span class="field-hint" style="display:inline">(optionnel — sinon image IA)</span></label>
+    {% if pg and pg.image %}<div class="rp-thumb"><img src="{{ pg.image | admin_thumb }}" alt="" width="120" height="68" loading="lazy" decoding="async"></div>{% endif %}
+    <input type="file" name="cover_file" accept="image/jpeg,image/png,image/webp">
+    <input type="url" name="cover_url" placeholder="… ou coller une URL d'image" style="margin-top:.4rem">
+  </div>
+  <div class="form-field">
+    <label>Galerie — plusieurs images <span class="field-hint" style="display:inline">(optionnel)</span></label>
+    {% if pg and pg.images %}
+    <div class="rp-gallery">
+      {% for img in pg.images %}
+      <label class="rp-gallery__item">
+        <img src="{{ img | admin_thumb }}" alt="" width="90" height="60" loading="lazy" decoding="async">
+        <span><input type="checkbox" name="remove_image" value="{{ img }}"> retirer</span>
+      </label>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <input type="file" name="gallery_files" accept="image/jpeg,image/png,image/webp" multiple>
+  </div>
+{% endmacro %}
+
+{# ── Macro : avis admin (partenaire ou activité) ─────────────────────────── #}
+{% macro reviews_admin(action_save, action_delete, partner_id, page_id=None, reviews=None) %}
+<details class="rp-sub">
+  <summary>⭐ Avis voyageurs (affichés sur la page publique)</summary>
+  <div style="margin-top:1rem">
+    {% if reviews %}
+    <ul class="rp-pages" style="margin-bottom:1rem">
+      {% for r in reviews %}
+      <li class="rp-activity" style="flex-direction:column;align-items:flex-start;gap:.35rem">
+        <div>
+          <strong style="color:var(--gold)">{{ '★' * (r.rating or 5) }}</strong>
+          {{ r.author }}{% if r.location %} · <span class="muted">{{ r.location }}</span>{% endif %}
+          {% if not r.enabled %}<span class="muted"> (masqué)</span>{% endif %}
+          <form method="post" style="display:inline;margin-left:.5rem" onsubmit="return confirm('Supprimer cet avis ?')">
+            <input type="hidden" name="action" value="{{ action_delete }}">
+            <input type="hidden" name="partner_id" value="{{ partner_id }}">
+            {% if page_id %}<input type="hidden" name="page_id" value="{{ page_id }}">{% endif %}
+            <input type="hidden" name="review_id" value="{{ r.id }}">
+            <button type="submit" class="btn btn-sm btn-danger">🗑</button>
+          </form>
+        </div>
+        <div class="muted" style="font-size:.9rem">{{ (r.text.fr if r.text is mapping else r.text)[:160] }}{% if (r.text.fr if r.text is mapping else r.text)|length > 160 %}…{% endif %}</div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted" style="margin-bottom:1rem">Aucun avis pour l'instant.</p>
+    {% endif %}
+    <form method="post">
+      <input type="hidden" name="action" value="{{ action_save }}">
+      <input type="hidden" name="partner_id" value="{{ partner_id }}">
+      {% if page_id %}<input type="hidden" name="page_id" value="{{ page_id }}">{% endif %}
+      <div class="form-row">
+        <div class="form-field">
+          <label>Nom affiché <span class="required">*</span></label>
+          <input type="text" name="review_author" required maxlength="80" placeholder="Ex. Claire & Thomas">
+        </div>
+        <div class="form-field">
+          <label>Ville / pays</label>
+          <input type="text" name="review_location" maxlength="80" placeholder="Ex. Lyon, France">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Note</label>
+          <select name="review_rating">
+            {% for n in [5, 4, 3, 2, 1] %}
+            <option value="{{ n }}" {% if n == 5 %}selected{% endif %}>{{ '★' * n }} ({{ n }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Date</label>
+          <input type="date" name="review_date">
+        </div>
+      </div>
+      <div class="form-field">
+        <label>Témoignage (FR) <span class="required">*</span></label>
+        <textarea name="review_text_fr" required rows="3" placeholder="Le témoignage en français…"></textarea>
+      </div>
+      <div class="form-field">
+        <label>Témoignage (EN) <span class="field-hint" style="display:inline">— optionnel</span></label>
+        <textarea name="review_text_en" rows="2" placeholder="English version…"></textarea>
+      </div>
+      <div class="form-field">
+        {{ switch('review_enabled', True, 'Publié sur le site', 'Masqué') }}
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm">Ajouter l'avis</button>
+    </form>
+  </div>
+</details>
+{% endmacro %}
+
+{# ── Macro : champs d'une activité (prix, durée, réservation) ────────────── #}
+{% macro activity_inputs(pg=None) %}
+  <div class="form-row">
+    <div class="form-field">
+      <label>Nom de l'activité <span class="required">*</span></label>
+      <input type="text" name="title" required value="{{ pg.title if pg else '' }}"
+             placeholder="ex. Croisière privée baie d'Halong 2 jours">
+    </div>
+    <div class="form-field">
+      <label>Durée</label>
+      <input type="text" name="duration" value="{{ pg.duration if pg else '' }}" placeholder="ex. 2 jours / 1 nuit">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-field">
+      <label>Prix par personne</label>
+      <input type="number" name="price" step="0.01" min="0" value="{{ pg.price if pg and pg.price else '' }}" placeholder="ex. 120">
+    </div>
+    <div class="form-field">
+      <label>Devise</label>
+      <input type="text" name="currency" maxlength="6" value="{{ pg.currency if pg else '€' }}">
+    </div>
+  </div>
+  <div class="form-field">
+    <label>Lien de réservation</label>
+    <input type="url" name="booking_url" value="{{ pg.booking_url if pg else '' }}"
+           placeholder="https://… (où le voyageur réserve cette activité)">
+  </div>
+{% endmacro %}
+
+<p class="page-sub">
+  Créez les partenaires que vous recommandez, puis générez pour chacun plusieurs pages
+  par IA selon votre consigne. Le switch <strong>Publié</strong> pilote l'affichage public
+  dans <a href="{{ url_for('partners_index') }}" target="_blank" rel="noopener">l'annuaire partenaires</a>.
+  Commission, objectif et notes restent <strong>internes</strong>.
+</p>
+
+<div id="ai-loader" class="ai-loader" hidden aria-live="polite" aria-label="Génération en cours">
+  <div class="ai-loader__panel">
+    <div class="ai-loader__spinner" aria-hidden="true"></div>
+    <p class="ai-loader__title">Génération de l'activité</p>
+    <p class="ai-loader__text" id="ai-loader-text">Rédaction…</p>
+    <div class="ai-loader__bar" role="progressbar" aria-label="Progression de la génération">
+      <span class="ai-loader__bar-fill" id="ai-loader-bar"></span>
+    </div>
+    <p class="ai-loader__timing">
+      <span id="ai-loader-elapsed">0:00</span>
+      <span class="ai-loader__timing-sep">·</span>
+      <span class="ai-loader__eta">durée estimée 25–60 s (jusqu'à 90 s)</span>
+    </p>
+    <p class="ai-loader__hint">La génération continue côté serveur : ne fermez pas cette page.</p>
+  </div>
+</div>
+
+{# ── Aperçu d'une page générée par IA (avant publication) ────────────────── #}
+<div id="draft-slot">
+{% if draft %}
+<section class="rp-card rp-draft">
+  <h2 style="margin-top:0">🪄 Activité générée — aperçu</h2>
+  <p class="muted">
+    Partenaire : <strong>{{ draft_partner.name if draft_partner else '—' }}</strong>
+    {% if draft.price %} · {{ draft.price }} {{ draft.currency or '€' }}{% endif %}
+    {% if draft.duration %} · {{ draft.duration }}{% endif %}
+  </p>
+  <h3>{{ draft.title }}</h3>
+  {% if draft.image_source_url %}
+  <img src="{{ draft.image_source_url }}" alt="{{ draft.image_alt or draft.title }}"
+       width="1200" height="675" loading="lazy" style="max-width:100%;height:auto;border-radius:10px">
+  {% elif draft.image %}
+  <img src="{{ draft.image | admin_thumb }}" alt="{{ draft.image_alt or draft.title }}"
+       width="1200" height="675" loading="lazy" style="max-width:100%;height:auto;border-radius:10px">
+  {% else %}
+  <p class="muted">Image de couverture en cours de génération — rafraîchissez dans quelques secondes.</p>
+  {% endif %}
+  {% if draft.meta_description %}<p class="muted"><em>{{ draft.meta_description }}</em></p>{% endif %}
+  <div class="rp-draft__preview">{{ draft.content_html | safe }}</div>
+  <div class="rp-actions">
+    <form method="post">
+      <input type="hidden" name="action" value="publish_generated_page">
+      <input type="hidden" name="partner_id" value="{{ draft.partner_id }}">
+      <button type="submit" class="btn btn-primary">✅ Publier l'activité</button>
+    </form>
+    <form method="post">
+      <input type="hidden" name="action" value="discard_generated_page">
+      <button type="submit" class="btn btn-ghost">Abandonner</button>
+    </form>
+  </div>
+</section>
+{% endif %}
+</div>
+
+{# ── Ajouter un partenaire ───────────────────────────────────────────────── #}
+<details class="panel rp-add">
+  <summary><span aria-hidden="true">＋</span> Ajouter un partenaire recommandé</summary>
+  <form method="post" enctype="multipart/form-data" style="margin-top:1rem">
+    <input type="hidden" name="action" value="add_partner">
+    {{ partner_fields() }}
+    <button type="submit" class="btn btn-primary">Créer le partenaire</button>
+  </form>
+</details>
+
+{# ── Liste des partenaires ───────────────────────────────────────────────── #}
+{% if not partners %}
+<p class="rp-empty">Aucun partenaire recommandé pour l'instant — ajoutez-en un ci-dessus.</p>
+{% endif %}
+
+{% for p in partners %}
+<section class="rp-card {% if not p.enabled %}is-off{% endif %}">
+  <header class="rp-card__head">
+    <div class="rp-card__title">
+      <h2>{{ p.name }} <span class="rp-type">{{ partnership_type_labels.get(p.partnership_type, p.partnership_type) }}</span></h2>
+      {% if p.website %}<div><a href="{{ p.website }}" target="_blank" rel="noopener" class="rp-card__link">{{ p.website }}</a></div>{% endif %}
+      {% if p.enabled %}
+      <div class="rp-card__public"><a href="{{ url_for('recommended_partner_fiche', slug=p.slug) }}" target="_blank" rel="noopener">↗ Voir la fiche publique</a></div>
+      {% endif %}
+    </div>
+    <form method="post" class="nps-switch-form">
+      <input type="hidden" name="action" value="toggle_partner">
+      <input type="hidden" name="partner_id" value="{{ p.id }}">
+      <input type="hidden" name="enabled" value="{{ '0' if p.enabled else '1' }}">
+      {{ switch('_ui', p.enabled, 'Publié', 'Masqué', auto_submit=True) }}
+      <noscript><button type="submit" class="btn btn-sm">OK</button></noscript>
+    </form>
+  </header>
+
+  {% if p.commission or p.objective or p.notes %}
+  <div class="rp-internal">
+    <span class="rp-internal__title">Infos internes</span>
+    {% if p.commission %}<div>💶 Commission : {{ p.commission }}</div>{% endif %}
+    {% if p.objective %}<div>🎯 Objectif : {{ p.objective }}</div>{% endif %}
+    {% if p.notes %}<div>📝 Notes : {{ p.notes }}</div>{% endif %}
+  </div>
+  {% endif %}
+
+  <h3 class="rp-section-title">Activités ({{ (p.pages or []) | length }})</h3>
+  {% if not (p.pages or []) %}<p class="rp-empty">Aucune activité. Ajoutez-en une (par IA) ci-dessous.</p>{% endif %}
+  <ul class="rp-pages">
+    {% for pg in (p.pages or []) %}
+    {% set com = activity_commission(p, pg) %}
+    <li class="rp-activity">
+      <div class="rp-activity__row">
+        {% if pg.image %}<img class="rp-activity__thumb" src="{{ pg.image | admin_thumb }}" alt="" width="64" height="40" loading="lazy" decoding="async">{% endif %}
+        <span class="rp-page__title">
+          {{ pg.title }}
+          {% if p.enabled and pg.enabled %}
+          <a href="{{ url_for('recommended_partner_page', slug=p.slug, page_slug=pg.slug) }}" target="_blank" rel="noopener" title="Voir la page">↗</a>
+          {% endif %}
+          <span class="rp-page__meta">
+            {% if pg.price %}· {{ pg.price | round(2) }} {{ pg.currency }}{% endif %}
+            {% if pg.duration %}· {{ pg.duration }}{% endif %}
+            {% if pg.booking_url %}· 🔗 lien de réservation{% endif %}
+            {% if com.has_estimate %}· <span class="rp-com">commission ≈ {{ com.amount | round(2) }} {{ com.currency }}</span>{% endif %}
+          </span>
+        </span>
+        <span class="rp-page__actions">
+          <form method="post" class="nps-switch-form">
+            <input type="hidden" name="action" value="toggle_page">
+            <input type="hidden" name="partner_id" value="{{ p.id }}">
+            <input type="hidden" name="page_id" value="{{ pg.id }}">
+            <input type="hidden" name="enabled" value="{{ '0' if pg.enabled else '1' }}">
+            {{ switch('_ui', pg.enabled, 'Publiée', 'Masquée', auto_submit=True) }}
+          </form>
+          <form method="post" onsubmit="return confirm('Supprimer cette activité ?')">
+            <input type="hidden" name="action" value="delete_page">
+            <input type="hidden" name="partner_id" value="{{ p.id }}">
+            <input type="hidden" name="page_id" value="{{ pg.id }}">
+            <button type="submit" class="btn btn-sm btn-danger">🗑</button>
+          </form>
+        </span>
+      </div>
+      <details class="rp-sub">
+        <summary>✏️ Modifier cette activité</summary>
+        <form method="post" enctype="multipart/form-data" style="margin-top:1rem">
+          <input type="hidden" name="action" value="save_page">
+          <input type="hidden" name="partner_id" value="{{ p.id }}">
+          <input type="hidden" name="page_id" value="{{ pg.id }}">
+          {{ activity_inputs(pg) }}
+          {{ activity_image_inputs(pg) }}
+          <div class="form-row">
+            <div class="form-field"><label>Meta title (SEO)</label><input type="text" name="meta_title" maxlength="70" value="{{ pg.meta_title or '' }}"></div>
+            <div class="form-field"><label>Meta description (SEO)</label><input type="text" name="meta_description" maxlength="200" value="{{ pg.meta_description or '' }}"></div>
+          </div>
+          <div class="form-field"><label>Contenu</label><textarea name="content_html" rows="10" class="wysiwyg-editor wysiwyg-editor--full">{{ pg.content_html or '' }}</textarea></div>
+          <div class="form-field">{{ switch('enabled', pg.enabled, 'Publiée', 'Masquée') }}</div>
+          <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+        </form>
+        {{ reviews_admin('save_page_review', 'delete_page_review', p.id, pg.id, reviews=pg.reviews or []) }}
+      </details>
+    </li>
+    {% endfor %}
+  </ul>
+
+  {# Ajouter une activité générée par IA (SEO + CRO francophone) #}
+  <form class="rp-generate-form rp-gen" data-partner-id="{{ p.id }}">
+    <label class="rp-gen__label">🪄 Ajouter une activité — générée par IA (SEO + CRO)</label>
+    {{ activity_inputs() }}
+    <div class="form-field">
+      <label>Consigne pour l'IA</label>
+      <textarea name="prompt" class="rp-prompt" rows="3"
+                placeholder="Ex. Met en avant cette activité pour des voyageurs francophones : points forts, déroulé, ce qui est inclus, pourquoi réserver avec {{ p.name }}…"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary btn-generate" {% if not groq_ok %}disabled title="Aucune clé IA configurée"{% endif %}>
+      Générer l'activité{% if groq_ok %} ({{ ai_provider_label }}){% endif %}
+    </button>
+  </form>
+
+  {# Ajouter une activité manuellement #}
+  <details class="rp-sub">
+    <summary>✍️ Ajouter une activité manuellement</summary>
+    <form method="post" enctype="multipart/form-data" style="margin-top:1rem">
+      <input type="hidden" name="action" value="save_page">
+      <input type="hidden" name="partner_id" value="{{ p.id }}">
+      {{ activity_inputs() }}
+      {{ activity_image_inputs() }}
+      <div class="form-row">
+        <div class="form-field"><label>Meta title (SEO)</label><input type="text" name="meta_title" maxlength="70"></div>
+        <div class="form-field"><label>Meta description (SEO)</label><input type="text" name="meta_description" maxlength="200"></div>
+      </div>
+      <div class="form-field"><label>Contenu</label><textarea name="content_html" rows="6" class="wysiwyg-editor wysiwyg-editor--full"></textarea></div>
+      <div class="form-field">{{ switch('enabled', True, 'Publiée à l\'enregistrement', 'Brouillon') }}</div>
+      <button type="submit" class="btn btn-primary">Enregistrer l'activité</button>
+    </form>
+  </details>
+
+  {# Éditer / supprimer le partenaire #}
+  <details class="rp-sub">
+    <summary>✏️ Modifier ou supprimer le partenaire</summary>
+    <form method="post" enctype="multipart/form-data" style="margin-top:1rem">
+      <input type="hidden" name="action" value="update_partner">
+      <input type="hidden" name="partner_id" value="{{ p.id }}">
+      {{ partner_fields(p) }}
+      <div class="rp-actions">
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+      </div>
+    </form>
+    <form method="post" onsubmit="return confirm('Supprimer ce partenaire et toutes ses pages ?')" style="margin-top:0.6rem">
+      <input type="hidden" name="action" value="delete_partner">
+      <input type="hidden" name="partner_id" value="{{ p.id }}">
+      <button type="submit" class="btn btn-sm btn-danger">🗑 Supprimer le partenaire</button>
+    </form>
+    {{ reviews_admin('save_partner_review', 'delete_partner_review', p.id, reviews=p.reviews or []) }}
+  </details>
+</section>
+{% endfor %}
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='admin/wysiwyg.js') }}"></script>
+<script src="{{ url_for('static', filename='admin/recommended-partners.js') }}"></script>
+{% endblock %}

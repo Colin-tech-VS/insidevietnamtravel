@@ -2,6 +2,31 @@
 <span class="review-stars" aria-hidden="true">{% for i in range(5) %}{{ '★' if i < n else '☆' }}{% endfor %}</span>
 {% endmacro %}
 
+{% macro entity_reviews(items, title=None, subtitle=None) %}
+{% if items %}
+<section class="section section--alt reviews-section" aria-labelledby="entity-reviews-title">
+  <div class="container">
+    <div class="section-header">
+      <h2 id="entity-reviews-title">{{ title or t('reviews.title') }}</h2>
+      {% if subtitle %}<p>{{ subtitle }}</p>{% endif %}
+    </div>
+    <div class="reviews-grid">
+      {% for r in items %}
+      <figure class="review-card">
+        {{ stars(r.rating) }}
+        <blockquote class="review-card__text">{{ r.body }}</blockquote>
+        <figcaption class="review-card__meta">
+          <span class="review-card__author">{{ r.author }}</span>
+          {% if r.location %}<span class="review-card__loc">{{ r.location }}</span>{% endif %}
+        </figcaption>
+      </figure>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endmacro %}
+
 {% macro reviews_section() %}
 {% set items = traveller_reviews() %}
 {% if items %}
