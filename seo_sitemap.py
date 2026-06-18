@@ -99,6 +99,18 @@ def _partner_page_entries() -> list[tuple[str, str | None, str | None]]:
     return entries
 
 
+def _recommended_partner_entries() -> list[tuple[str, str | None, str | None]]:
+    from admin.recommended_partners import list_public_partners
+
+    entries: list[tuple[str, str | None, str | None]] = []
+    for partner in list_public_partners():
+        slug = (partner.get("slug") or "").strip()
+        if not slug:
+            continue
+        entries.append((slug, partner.get("updated_at"), _abs_image(partner.get("image"))))
+    return entries
+
+
 def _seo_page_entries() -> list[tuple[str, str | None, str | None]]:
     from admin.seo_pages_service import get_published_seo_pages
 
@@ -154,6 +166,12 @@ SITEMAP_DYNAMIC: dict[str, dict] = {
         "changefreq": "weekly",
         "param": "slug",
         "items": _seo_page_entries,
+    },
+    "recommended_partner_fiche": {
+        "priority": "0.7",
+        "changefreq": "weekly",
+        "param": "slug",
+        "items": _recommended_partner_entries,
     },
 }
 

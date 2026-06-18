@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% from "macros/images.html" import responsive_img with context %}
+
+{% block content %}
+{% set is_en = (lang == 'en') %}
+<article class="article-page">
+  <header class="article-hero{% if page.image %} article-hero--with-image{% endif %}">
+    {% if page.image %}
+    <div class="article-hero__media" aria-hidden="true">
+      {{ responsive_img(page.image, alt=page.image_alt or page.title, width=1200, height=675, loading='eager', fetchpriority='high', sizes='100vw') }}
+    </div>
+    {% endif %}
+    <div class="container article-hero-inner">
+      <nav class="breadcrumb" aria-label="{{ t('breadcrumb.aria') }}">
+        <ol>
+          <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+          <li><a href="{{ lang_url('partners_index') }}">{{ 'Partners' if is_en else 'Partenaires' }}</a></li>
+          <li><a href="{{ lang_url('recommended_partner_fiche', slug=partner.slug) }}">{{ partner.name }}</a></li>
+          <li aria-current="page">{{ page.title[:50] }}{% if page.title|length > 50 %}…{% endif %}</li>
+        </ol>
+      </nav>
+      <p class="seo-page__focus">{{ partner.name }}</p>
+      <h1>{{ page.title }}</h1>
+    </div>
+  </header>
+
+  <div class="container article-body">
+    <div class="article-content">{{ page.content_html | safe }}</div>
+
+    <p style="margin-top:2rem">
+      <a href="{{ lang_url('recommended_partner_fiche', slug=partner.slug) }}">← {{ 'Back to' if is_en else 'Retour à' }} {{ partner.name }}</a>
+    </p>
+    {% if partner.website %}
+    <p>
+      <a href="{{ partner.website }}" target="_blank" rel="noopener nofollow" class="btn btn-primary">
+        {{ 'Visit ' if is_en else 'Visiter ' }}{{ partner.name }} ↗
+      </a>
+    </p>
+    {% endif %}
+  </div>
+</article>
+{% endblock %}

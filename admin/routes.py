@@ -2040,6 +2040,146 @@ def partner_portal_admin():
     )
 
 
+# ── Partenaires recommandés (curation éditoriale, pages IA) ───────────────
+@admin_bp.route("/recommended-partners", methods=["GET", "POST"])
+@login_required
+def recommended_partners_admin():
+    from admin import recommended_partners as rp
+
+    if request.method == "POST":
+        action = request.form.get("action")
+        partner_id = (request.form.get("partner_id") or "").strip()
+        page_id = (request.form.get("page_id") or "").strip()
+        try:
+            if action in ("add_partner", "update_partner"):
+                fields = {
+                    "name": request.form.get("name"),
+                    "website": request.form.get("website"),
+                    "partnership_type": request.form.get("partnership_type"),
+                    "commission": request.form.get("commission"),
+                    "objective": request.form.get("objective"),
+                    "notes": request.form.get("notes"),
+                    "tagline": request.form.get("tagline"),
+                    "intro_html": request.form.get("intro_html"),
+                    "enabled": "1" if request.form.get("enabled") else "0",
+                }
+                if action == "update_partner":
+                    p = rp.update_partner(partner_id, fields)
+                    flash(f"Partenaire « {p['name']} » mis à jour.", "success")
+                else:
+                    p = rp.add_partner(fields)
+                    flash(f"Partenaire « {p['name']} » créé.", "success")
+            elif action == "delete_partner":
+                rp.delete_partner(partner_id)
+                flash("Partenaire supprimé.", "success")
+            elif action == "toggle_partner":
+                enabled = request.form.get("enabled") == "1"
+                p = rp.set_partner_enabled(partner_id, enabled)
+                flash(f"Partenaire « {p['name']} » {'publié' if enabled else 'masqué'}.", "success")
+            elif action == "save_page":
+                page = {
+                    "title": request.form.get("title", ""),
+                    "content_html": request.form.get("content_html", ""),
+                    "meta_title": request.form.get("meta_title", ""),
+                    "meta_description": request.form.get("meta_description", ""),
+                    "prompt": request.form.get("prompt", ""),
+                    "enabled": "1" if request.form.get("enabled") else "0",
+                }
+                if page_id:
+                    rp.update_page(partner_id, page_id, page)
+                    flash("Page mise à jour.", "success")
+                else:
+                    rp.add_page(partner_id, page)
+                    flash("Page créée.", "success")
+            elif action == "publish_generated_page":
+                draft = _get_draft("rec_partner_page")
+                if not draft:
+                    flash("Aucune page générée à publier.", "error")
+                else:
+                    pid = draft.pop("partner_id", "") or partner_id
+                    draft["enabled"] = True
+                    rp.add_page(pid, draft)
+                    _clear_draft("rec_partner_page")
+                    flash("Page générée publiée.", "success")
+            elif action == "discard_generated_page":
+                _clear_draft("rec_partner_page")
+                flash("Brouillon de page abandonné.", "success")
+            elif action == "toggle_page":
+                enabled = request.form.get("enabled") == "1"
+                rp.set_page_enabled(partner_id, page_id, enabled)
+                flash(f"Page {'publiée' if enabled else 'masquée'}.", "success")
+            elif action == "delete_page":
+                rp.delete_page(partner_id, page_id)
+                flash("Page supprimée.", "success")
+        except ValueError as e:
+            flash(str(e), "error")
+        except Exception as e:  # noqa: BLE001
+            flash(f"Erreur : {e}", "error")
+        return redirect(url_for("admin.recommended_partners_admin"))
+
+    draft = _get_draft("rec_partner_page")
+    draft_partner = rp.find_partner(draft.get("partner_id")) if draft else None
+    return render_template(
+        "admin/recommended_partners.html",
+        partners=rp.get_partners(),
+        partnership_types=rp.PARTNERSHIP_TYPES,
+        partnership_type_labels=rp.PARTNERSHIP_TYPE_LABELS,
+        draft=draft,
+        draft_partner=draft_partner,
+        groq_ok=ai_client.is_configured(),
+        ai_provider_label=ai_client.provider_label(),
+    )
+
+
+@admin_bp.route("/api/recommended-partners/generate", methods=["POST"])
+@login_required
+def api_generate_recommended_partner_page():
+    from admin import recommended_partners as rp
+    from admin.groq_recommended_partner import generate_partner_page
+
+    data = request.get_json(silent=True) or {}
+    partner_id = (data.get("partner_id") or "").strip()
+    prompt = (data.get("prompt") or "").strip()
+    partner = rp.find_partner(partner_id)
+    if not partner:
+        return jsonify({"ok": False, "error": "Partenaire introuvable"}), 404
+    if not ai_client.is_configured():
+        return jsonify({"ok": False, "error": "Aucune clé IA configurée (GROQ_API_KEY ou MISTRAL_API_KEY)"}), 400
+
+    def _job(report):
+        page = generate_partner_page(partner, prompt, progress=report)
+        page["partner_id"] = partner_id
+        page["prompt"] = prompt
+        report("Image de couverture (aperçu)…")
+        img_slug = f"partenaire-{partner.get('slug', '')}-{page.get('slug', '')}"[:80]
+        try:
+            meta = attach_image_to_article(
+                {
+                    "slug": img_slug,
+                    "title": page.get("title", ""),
+                    "ai_generated": True,
+                    "image_prompt": page.get("image_prompt", ""),
+                },
+                page.get("image_prompt"),
+                draft_preview=True,
+            )
+            for key in ("image", "image_alt", "image_placeholder"):
+                if meta.get(key) is not None:
+                    page[key] = meta[key]
+        except Exception:  # noqa: BLE001
+            pass
+        return page
+
+    _start_draft_job("rec_partner_page", _job, initial_phase="Génération IA de la page partenaire…")
+    return jsonify({"ok": True})
+
+
+@admin_bp.route("/api/recommended-partners/draft-status")
+@login_required
+def api_recommended_partner_draft_status():
+    return jsonify(_draft_status("rec_partner_page"))
+
+
 @admin_bp.route("/map", methods=["GET", "POST"])
 @login_required
 def map_admin():

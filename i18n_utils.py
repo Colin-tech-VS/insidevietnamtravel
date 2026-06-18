@@ -271,6 +271,14 @@ ROUTE_PATHS: dict[str, dict[str, str]] = {
     },
     "partner_public": {"fr": "/partenaire/{slug}", "en": "/en/partner/{slug}"},
     "partners_index": {"fr": "/partenaires-vietnam", "en": "/en/vietnam-travel-partners"},
+    "recommended_partner_fiche": {
+        "fr": "/partenaires-recommandes/{slug}",
+        "en": "/en/recommended-partners/{slug}",
+    },
+    "recommended_partner_page": {
+        "fr": "/partenaires-recommandes/{slug}/{page_slug}",
+        "en": "/en/recommended-partners/{slug}/{page_slug}",
+    },
     "privacy": {"fr": "/politique-confidentialite", "en": "/en/privacy"},
     "legal_notices": {"fr": "/mentions-legales", "en": "/en/legal"},
     "newsletter_unsubscribe": {
@@ -366,6 +374,15 @@ def switch_lang_url() -> str:
         return lang_url("partner_public", alt, slug=view_args.get("slug", ""))
     if base_endpoint == "partners_index":
         return lang_url("partners_index", alt)
+    if base_endpoint == "recommended_partner_fiche":
+        return lang_url("recommended_partner_fiche", alt, slug=view_args.get("slug", ""))
+    if base_endpoint == "recommended_partner_page":
+        return lang_url(
+            "recommended_partner_page",
+            alt,
+            slug=view_args.get("slug", ""),
+            page_slug=view_args.get("page_slug", ""),
+        )
 
     if base_endpoint in ROUTE_PATHS:
         return lang_url(base_endpoint, alt)

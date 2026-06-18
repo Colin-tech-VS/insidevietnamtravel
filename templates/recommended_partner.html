@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% from "macros/images.html" import responsive_img with context %}
+
+{% block content %}
+{% set is_en = (lang == 'en') %}
+<article class="article-page">
+  <header class="article-hero{% if partner.image %} article-hero--with-image{% endif %}">
+    {% if partner.image %}
+    <div class="article-hero__media" aria-hidden="true">
+      {{ responsive_img(partner.image, alt=partner.image_alt or partner.name, width=1200, height=675, loading='eager', fetchpriority='high', sizes='100vw') }}
+    </div>
+    {% endif %}
+    <div class="container article-hero-inner">
+      <nav class="breadcrumb" aria-label="{{ t('breadcrumb.aria') }}">
+        <ol>
+          <li><a href="{{ lang_url('index') }}">{{ t('nav.home') }}</a></li>
+          <li><a href="{{ lang_url('partners_index') }}">{{ 'Partners' if is_en else 'Partenaires' }}</a></li>
+          <li aria-current="page">{{ partner.name }}</li>
+        </ol>
+      </nav>
+      <p class="seo-page__focus">{{ 'Recommended partner' if is_en else 'Partenaire recommandé' }}</p>
+      <h1>{{ partner.name }}</h1>
+      {% if partner.tagline %}<p class="article-excerpt">{{ partner.tagline }}</p>{% endif %}
+      {% if partner.website %}
+      <p><a href="{{ partner.website }}" target="_blank" rel="noopener nofollow">{{ 'Visit website' if is_en else 'Visiter le site' }} ↗</a></p>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="container article-body">
+    {% if partner.intro_html %}
+    <div class="article-content">{{ partner.intro_html | safe }}</div>
+    {% endif %}
+
+    <h2>{{ 'What they offer' if is_en else 'Ce qu\'ils proposent' }}</h2>
+    <ul class="partner-directory__grid">
+      {% for pg in partner.pages %}
+      <li class="partner-directory__card">
+        <a href="{{ lang_url('recommended_partner_page', slug=partner.slug, page_slug=pg.slug) }}" class="partner-directory__card-link">
+          {% if pg.image %}
+          <div class="partner-directory__card-media">
+            {{ responsive_img(pg.image, alt=pg.image_alt or pg.title, width=400, height=225, loading='lazy', sizes='(max-width: 600px) 100vw, 400px') }}
+          </div>
+          {% endif %}
+          <div class="partner-directory__card-body">
+            <h3>{{ pg.title }}</h3>
+            {% if pg.meta_description %}<p>{{ pg.meta_description }}</p>{% endif %}
+          </div>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</article>
+{% endblock %}

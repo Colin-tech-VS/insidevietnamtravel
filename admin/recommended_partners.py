@@ -1,0 +1,293 @@
+"""Partenaires recommandés — module admin-piloté (curation éditoriale).
+
+À NE PAS confondre avec :
+- `admin/partners_service.py` : CRM de prospection (qui contacter par email).
+- `admin/partner_portal_service.py` : portail self-service SQL (comptes + 1 page vitrine).
+
+Ici l'admin crée lui-même des partenaires qu'il recommande et, pour chacun, PLUSIEURS
+pages dédiées (générées par IA ou saisies). Stockage KV (`recommended_partners.json` en
+local, table `app_kv` en prod) — pas de migration de schéma.
+
+Structure stockée (liste) :
+[{
+  id, slug, name, website,
+  partnership_type,            # clé dans PARTNERSHIP_TYPES
+  commission, objective, notes,# INTERNES — jamais exposés au public
+  enabled: bool,               # switch publication (cascade fiche + pages)
+  tagline, intro_html,         # public
+  image, image_alt, image_prompt,
+  created_at, updated_at,
+  pages: [{
+    id, slug, title, content_html, meta_title, meta_description,
+    image, image_alt, image_prompt, prompt,
+    enabled: bool, created_at, updated_at,
+  }],
+}]
+"""
+
+from __future__ import annotations
+
+import secrets
+from datetime import date
+
+from admin.kv_store import get_json, set_json
+from admin.store import slugify
+
+# Types de partenariat (clé interne, libellé admin).
+PARTNERSHIP_TYPES = [
+    ("affiliation", "💶 Affiliation (commission)"),
+    ("sponsorise", "📢 Sponsorisé (montant fixe)"),
+    ("echange", "🔁 Échange de visibilité"),
+    ("apporteur", "🤝 Apporteur d'affaires"),
+    ("autre", "✨ Autre"),
+]
+PARTNERSHIP_TYPE_KEYS = {k for k, _ in PARTNERSHIP_TYPES}
+PARTNERSHIP_TYPE_LABELS = dict(PARTNERSHIP_TYPES)
+
+# Champs internes (pilotage) à ne JAMAIS sérialiser vers le public.
+_INTERNAL_FIELDS = ("commission", "objective", "notes", "partnership_type")
+
+
+# ── Store ───────────────────────────────────────────────────────────────────
+
+def get_partners() -> list[dict]:
+    stored = get_json("recommended_partners", [], file_name="recommended_partners.json")
+    return list(stored) if stored else []
+
+
+def save_partners(items: list[dict]) -> None:
+    set_json("recommended_partners", items, file_name="recommended_partners.json")
+
+
+def find_partner(pid: str) -> dict | None:
+    pid = (pid or "").strip()
+    return next((p for p in get_partners() if p.get("id") == pid), None)
+
+
+def find_partner_by_slug(slug: str) -> dict | None:
+    slug = (slug or "").strip().lower()
+    if not slug:
+        return None
+    return next((p for p in get_partners() if p.get("slug") == slug), None)
+
+
+def find_page_by_slug(partner_slug: str, page_slug: str) -> tuple[dict, dict] | tuple[None, None]:
+    """Retourne (partner, page) ou (None, None) — sans filtrage publication."""
+    partner = find_partner_by_slug(partner_slug)
+    if not partner:
+        return None, None
+    page_slug = (page_slug or "").strip().lower()
+    page = next((pg for pg in partner.get("pages", []) if pg.get("slug") == page_slug), None)
+    if not page:
+        return None, None
+    return partner, page
+
+
+# ── Normalisation ────────────────────────────────────────────────────────────
+
+def _unique_partner_slug(base: str, *, exclude_id: str = "") -> str:
+    base = slugify(base) or f"partenaire-{secrets.token_hex(3)}"
+    existing = {
+        p.get("slug")
+        for p in get_partners()
+        if p.get("id") != exclude_id
+    }
+    slug = base
+    i = 2
+    while slug in existing:
+        slug = f"{base}-{i}"
+        i += 1
+    return slug
+
+
+def _unique_page_slug(partner: dict, base: str, *, exclude_id: str = "") -> str:
+    base = slugify(base) or f"page-{secrets.token_hex(3)}"
+    existing = {
+        pg.get("slug")
+        for pg in partner.get("pages", [])
+        if pg.get("id") != exclude_id
+    }
+    slug = base
+    i = 2
+    while slug in existing:
+        slug = f"{base}-{i}"
+        i += 1
+    return slug
+
+
+def _coerce_bool(value, default: bool = True) -> bool:
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in ("1", "true", "on", "yes", "oui")
+
+
+def _normalize_partner(data: dict, *, existing: dict | None = None) -> dict:
+    existing = existing or {}
+    name = str(data.get("name") or "").strip()[:120]
+    if not name:
+        raise ValueError("Le nom du partenaire est obligatoire.")
+    ptype = str(data.get("partnership_type") or "affiliation").strip().lower()
+    if ptype not in PARTNERSHIP_TYPE_KEYS:
+        ptype = "autre"
+    website = str(data.get("website") or "").strip()[:300]
+    if website and not website.startswith(("http://", "https://")):
+        website = "https://" + website
+    pid = data.get("id") or existing.get("id") or secrets.token_urlsafe(8)
+    slug_source = data.get("slug") or existing.get("slug") or name
+    slug = _unique_partner_slug(slug_source, exclude_id=pid)
+    today = date.today().isoformat()
+    return {
+        "id": pid,
+        "slug": slug,
+        "name": name,
+        "website": website,
+        "partnership_type": ptype,
+        "commission": str(data.get("commission") or "").strip()[:200],
+        "objective": str(data.get("objective") or "").strip()[:500],
+        "notes": str(data.get("notes") or "").strip()[:2000],
+        "enabled": _coerce_bool(data.get("enabled"), default=existing.get("enabled", False)),
+        "tagline": str(data.get("tagline") or "").strip()[:200],
+        "intro_html": str(data.get("intro_html") or "").strip(),
+        "image": str(data.get("image") or existing.get("image") or "").strip(),
+        "image_alt": str(data.get("image_alt") or existing.get("image_alt") or "").strip()[:200],
+        "image_prompt": str(data.get("image_prompt") or existing.get("image_prompt") or "").strip()[:300],
+        "pages": existing.get("pages", []),
+        "created_at": existing.get("created_at") or today,
+        "updated_at": today,
+    }
+
+
+def _normalize_page(partner: dict, data: dict, *, existing: dict | None = None) -> dict:
+    existing = existing or {}
+    title = str(data.get("title") or "").strip()[:160]
+    if not title:
+        raise ValueError("Le titre de la page est obligatoire.")
+    page_id = data.get("id") or existing.get("id") or secrets.token_urlsafe(8)
+    slug_source = data.get("slug") or existing.get("slug") or title
+    slug = _unique_page_slug(partner, slug_source, exclude_id=page_id)
+    today = date.today().isoformat()
+    return {
+        "id": page_id,
+        "slug": slug,
+        "title": title,
+        "content_html": str(data.get("content_html") or existing.get("content_html") or "").strip(),
+        "meta_title": str(data.get("meta_title") or "").strip()[:70],
+        "meta_description": str(data.get("meta_description") or "").strip()[:200],
+        "image": str(data.get("image") or existing.get("image") or "").strip(),
+        "image_alt": str(data.get("image_alt") or existing.get("image_alt") or "").strip()[:200],
+        "image_prompt": str(data.get("image_prompt") or existing.get("image_prompt") or "").strip()[:300],
+        "prompt": str(data.get("prompt") or existing.get("prompt") or "").strip()[:2000],
+        "enabled": _coerce_bool(data.get("enabled"), default=existing.get("enabled", False)),
+        "created_at": existing.get("created_at") or today,
+        "updated_at": today,
+    }
+
+
+# ── CRUD partenaire ──────────────────────────────────────────────────────────
+
+def add_partner(data: dict) -> dict:
+    partner = _normalize_partner(data)
+    items = get_partners()
+    items.insert(0, partner)
+    save_partners(items)
+    return partner
+
+
+def update_partner(pid: str, fields: dict) -> dict:
+    items = get_partners()
+    for i, p in enumerate(items):
+        if p.get("id") != pid:
+            continue
+        merged = {**p, **{k: v for k, v in fields.items() if v is not None}, "id": pid}
+        items[i] = _normalize_partner(merged, existing=p)
+        save_partners(items)
+        return items[i]
+    raise ValueError(f"Partenaire introuvable : {pid}")
+
+
+def delete_partner(pid: str) -> None:
+    items = [p for p in get_partners() if p.get("id") != pid]
+    save_partners(items)
+
+
+def set_partner_enabled(pid: str, enabled: bool) -> dict:
+    return update_partner(pid, {"enabled": bool(enabled)})
+
+
+# ── CRUD page ────────────────────────────────────────────────────────────────
+
+def add_page(partner_id: str, page: dict) -> dict:
+    items = get_partners()
+    for i, p in enumerate(items):
+        if p.get("id") != partner_id:
+            continue
+        normalized = _normalize_page(p, page)
+        p.setdefault("pages", []).insert(0, normalized)
+        p["updated_at"] = date.today().isoformat()
+        items[i] = p
+        save_partners(items)
+        return normalized
+    raise ValueError(f"Partenaire introuvable : {partner_id}")
+
+
+def update_page(partner_id: str, page_id: str, fields: dict) -> dict:
+    items = get_partners()
+    for i, p in enumerate(items):
+        if p.get("id") != partner_id:
+            continue
+        pages = p.get("pages", [])
+        for j, pg in enumerate(pages):
+            if pg.get("id") != page_id:
+                continue
+            merged = {**pg, **{k: v for k, v in fields.items() if v is not None}, "id": page_id}
+            pages[j] = _normalize_page(p, merged, existing=pg)
+            p["updated_at"] = date.today().isoformat()
+            items[i] = p
+            save_partners(items)
+            return pages[j]
+        raise ValueError(f"Page introuvable : {page_id}")
+    raise ValueError(f"Partenaire introuvable : {partner_id}")
+
+
+def delete_page(partner_id: str, page_id: str) -> None:
+    items = get_partners()
+    for i, p in enumerate(items):
+        if p.get("id") != partner_id:
+            continue
+        p["pages"] = [pg for pg in p.get("pages", []) if pg.get("id") != page_id]
+        p["updated_at"] = date.today().isoformat()
+        items[i] = p
+        save_partners(items)
+        return
+    raise ValueError(f"Partenaire introuvable : {partner_id}")
+
+
+def set_page_enabled(partner_id: str, page_id: str, enabled: bool) -> dict:
+    return update_page(partner_id, page_id, {"enabled": bool(enabled)})
+
+
+# ── Vue publique (sans champs internes) ──────────────────────────────────────
+
+def _public_pages(partner: dict) -> list[dict]:
+    return [pg for pg in partner.get("pages", []) if pg.get("enabled")]
+
+
+def public_partner(partner: dict) -> dict:
+    """Copie sans les champs internes, avec uniquement les pages publiées."""
+    out = {k: v for k, v in partner.items() if k not in _INTERNAL_FIELDS}
+    out["pages"] = _public_pages(partner)
+    return out
+
+
+def list_public_partners() -> list[dict]:
+    """Partenaires activés ayant au moins une page activée (pour l'index public)."""
+    out = []
+    for p in get_partners():
+        if not p.get("enabled"):
+            continue
+        if not _public_pages(p):
+            continue
+        out.append(public_partner(p))
+    return out

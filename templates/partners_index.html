@@ -48,6 +48,32 @@
   </div>
 </section>
 
+{% if recommended %}
+<section class="section partner-recommended" aria-label="{{ 'Recommended partners' if is_en else 'Partenaires recommandés' }}">
+  <div class="container">
+    <h2 class="partner-directory-seo__title">⭐ {{ 'Recommended partners' if is_en else 'Partenaires recommandés' }}</h2>
+    <p class="partner-directory-seo__text">{{ 'Selected services and brands we recommend for your Vietnam trip.' if is_en else 'Des services et marques que nous recommandons pour votre voyage au Vietnam.' }}</p>
+    <ul class="partner-directory__grid">
+      {% for rp in recommended %}
+      <li class="partner-directory__card">
+        <a href="{{ lang_url('recommended_partner_fiche', slug=rp.slug) }}" class="partner-directory__card-link">
+          {% if rp.image %}
+          <div class="partner-directory__card-media">
+            <img src="{{ rp.image | static_v }}" alt="{{ rp.image_alt or rp.name | e }}" width="400" height="225" loading="lazy" decoding="async">
+          </div>
+          {% endif %}
+          <div class="partner-directory__card-body">
+            <h3>{{ rp.name }}</h3>
+            {% if rp.tagline %}<p>{{ rp.tagline }}</p>{% endif %}
+          </div>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endif %}
+
 <section class="section partner-directory" aria-label="{{ 'Partner directory' if is_en else 'Annuaire partenaires' }}">
   <div class="container">
     {% if partners %}

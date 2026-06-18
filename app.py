@@ -1416,6 +1416,8 @@ def partners_index():
     from admin.partner_seo import partners_index_faq_schema, partners_index_json_ld, partners_index_meta, profile_badge, profile_type_label
     from i18n_utils import canonical_for_request
 
+    from admin.recommended_partners import list_public_partners as list_recommended_partners
+
     lang = get_lang()
     partners = list_public_partners()
     meta = partners_index_meta(lang)
@@ -1423,6 +1425,7 @@ def partners_index():
     return render_template(
         "partners_index.html",
         partners=partners,
+        recommended=list_recommended_partners(),
         meta_title=meta["meta_title"],
         meta_description=meta["meta_description"],
         meta_keywords=meta["meta_keywords"],
@@ -1430,6 +1433,54 @@ def partners_index():
         partners_faq=partners_index_faq_schema(lang, canonical_url=canonical).get("mainEntity", []),
         profile_badge_fn=profile_badge,
         profile_label_fn=profile_type_label,
+    )
+
+
+@app.route("/partenaires-recommandes/<slug>")
+@app.route("/en/recommended-partners/<slug>")
+def recommended_partner_fiche(slug):
+    """Fiche publique d'un partenaire recommandé (intro + ses pages publiées)."""
+    from admin.recommended_partners import find_partner_by_slug, public_partner
+    from i18n_utils import canonical_for_request
+
+    lang = get_lang()
+    partner = find_partner_by_slug(slug)
+    if not partner or not partner.get("enabled"):
+        abort(404)
+    pub = public_partner(partner)
+    if not pub["pages"]:
+        abort(404)
+    title = pub.get("tagline") or pub.get("name")
+    return render_template(
+        "recommended_partner.html",
+        partner=pub,
+        meta_title=f"{pub.get('name')} — {('recommended partner' if lang == 'en' else 'partenaire recommandé')} | Inside Vietnam Travel",
+        meta_description=(pub.get("tagline") or f"{pub.get('name')} — partenaire voyage Vietnam recommandé par Inside Vietnam Travel.")[:160],
+        canonical_url=canonical_for_request(lang),
+    )
+
+
+@app.route("/partenaires-recommandes/<slug>/<page_slug>")
+@app.route("/en/recommended-partners/<slug>/<page_slug>")
+def recommended_partner_page(slug, page_slug):
+    """Page individuelle d'un partenaire recommandé."""
+    from admin.recommended_partners import find_page_by_slug, public_partner
+    from i18n_utils import canonical_for_request
+
+    lang = get_lang()
+    partner, page = find_page_by_slug(slug, page_slug)
+    if not partner or not page:
+        abort(404)
+    if not partner.get("enabled") or not page.get("enabled"):
+        abort(404)
+    pub = public_partner(partner)
+    return render_template(
+        "recommended_partner_page.html",
+        partner=pub,
+        page=page,
+        meta_title=page.get("meta_title") or page.get("title"),
+        meta_description=page.get("meta_description") or pub.get("tagline") or "",
+        canonical_url=canonical_for_request(lang),
     )
 
 
