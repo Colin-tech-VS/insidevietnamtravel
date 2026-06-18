@@ -62,7 +62,7 @@
     {# ── Galerie (miniatures sous le titre) ────────────────────────────────── #}
     {% if page.images %}
     <section class="tour-gallery" aria-label="{{ 'Photo gallery' if is_en else 'Galerie photos' }}">
-      <h2 class="visually-hidden">{{ 'Gallery' if is_en else 'Galerie' }}</h2>
+      <h2 class="sr-only">{{ 'Gallery' if is_en else 'Galerie' }}</h2>
       <ul class="tour-gallery__list">
         {% for img in page.images %}
         <li class="tour-gallery__item">
