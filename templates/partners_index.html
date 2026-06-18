@@ -37,7 +37,7 @@
     <p class="pillar-hero__eyebrow">{{ 'Verified network' if is_en else 'Réseau vérifié' }}</p>
     <h1 class="pillar-hero__title">{{ 'Our Vietnam travel partners' if is_en else 'Nos partenaires voyage Vietnam' }}</h1>
     <p class="pillar-hero__lede">{{ 'Local guides, travel influencers, bloggers and agencies we collaborate with — find the right expert for your Vietnam trip.' if is_en else 'Guides locaux, influenceurs voyage, blogueurs et agences avec lesquels nous collaborons — trouvez l\'expert idéal pour votre séjour au Vietnam.' }}</p>
-    <p class="partner-directory-hero__count"><strong>{{ partners|length }}</strong> {{ 'published partners' if is_en else 'partenaires publiés' }}</p>
+    <p class="partner-directory-hero__count"><strong>{{ partners|length + (recommended|length if recommended else 0) }}</strong> {{ 'published partners' if is_en else 'partenaires publiés' }}</p>
   </div>
 </header>
 

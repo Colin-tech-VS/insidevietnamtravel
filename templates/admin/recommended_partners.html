@@ -58,10 +58,41 @@
   </div>
   <div class="form-field">
     <label>Présentation publique (HTML)</label>
-    <textarea name="intro_html" rows="3">{{ p.intro_html if p else '' }}</textarea>
+    <textarea name="intro_html" rows="3" class="wysiwyg-editor wysiwyg-editor--full">{{ p.intro_html if p else '' }}</textarea>
+  </div>
+  <div class="form-field">
+    <label>Logo / image du partenaire <span class="field-hint" style="display:inline">(optionnel)</span></label>
+    {% if p and p.image %}<div class="rp-thumb"><img src="{{ p.image | static_v }}" alt="" width="120" height="68"></div>{% endif %}
+    <input type="file" name="image_file" accept="image/jpeg,image/png,image/webp">
+    <input type="url" name="image_url" placeholder="… ou coller une URL d'image" style="margin-top:.4rem">
+    <input type="text" name="image_alt" placeholder="Texte alternatif (accessibilité/SEO)" value="{{ p.image_alt if p else '' }}" style="margin-top:.4rem">
   </div>
   <div class="form-field">
     {{ switch('enabled', (not p or p.enabled), 'Publié — visible sur le site', 'Masqué') }}
+  </div>
+{% endmacro %}
+
+{# ── Macro : images d'une activité (couverture + galerie) ────────────────── #}
+{% macro activity_image_inputs(pg=None) %}
+  <div class="form-field">
+    <label>Image de couverture <span class="field-hint" style="display:inline">(optionnel — sinon image IA)</span></label>
+    {% if pg and pg.image %}<div class="rp-thumb"><img src="{{ pg.image | static_v }}" alt="" width="120" height="68"></div>{% endif %}
+    <input type="file" name="cover_file" accept="image/jpeg,image/png,image/webp">
+    <input type="url" name="cover_url" placeholder="… ou coller une URL d'image" style="margin-top:.4rem">
+  </div>
+  <div class="form-field">
+    <label>Galerie — plusieurs images <span class="field-hint" style="display:inline">(optionnel)</span></label>
+    {% if pg and pg.images %}
+    <div class="rp-gallery">
+      {% for img in pg.images %}
+      <label class="rp-gallery__item">
+        <img src="{{ img | static_v }}" alt="" width="90" height="60">
+        <span><input type="checkbox" name="remove_image" value="{{ img }}"> retirer</span>
+      </label>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <input type="file" name="gallery_files" accept="image/jpeg,image/png,image/webp" multiple>
   </div>
 {% endmacro %}
 
@@ -154,7 +185,7 @@
 {# ── Ajouter un partenaire ───────────────────────────────────────────────── #}
 <details class="panel rp-add">
   <summary><span aria-hidden="true">＋</span> Ajouter un partenaire recommandé</summary>
-  <form method="post" style="margin-top:1rem">
+  <form method="post" enctype="multipart/form-data" style="margin-top:1rem">
     <input type="hidden" name="action" value="add_partner">
     {{ partner_fields() }}
     <button type="submit" class="btn btn-primary">Créer le partenaire</button>
@@ -201,6 +232,7 @@
     {% set com = activity_commission(p, pg) %}
     <li class="rp-activity">
       <div class="rp-activity__row">
+        {% if pg.image %}<img class="rp-activity__thumb" src="{{ pg.image | static_v }}" alt="" width="64" height="40" loading="lazy">{% endif %}
         <span class="rp-page__title">
           {{ pg.title }}
           {% if p.enabled and pg.enabled %}
@@ -231,16 +263,17 @@
       </div>
       <details class="rp-sub">
         <summary>✏️ Modifier cette activité</summary>
-        <form method="post" style="margin-top:1rem">
+        <form method="post" enctype="multipart/form-data" style="margin-top:1rem">
           <input type="hidden" name="action" value="save_page">
           <input type="hidden" name="partner_id" value="{{ p.id }}">
           <input type="hidden" name="page_id" value="{{ pg.id }}">
           {{ activity_inputs(pg) }}
+          {{ activity_image_inputs(pg) }}
           <div class="form-row">
             <div class="form-field"><label>Meta title (SEO)</label><input type="text" name="meta_title" maxlength="70" value="{{ pg.meta_title or '' }}"></div>
             <div class="form-field"><label>Meta description (SEO)</label><input type="text" name="meta_description" maxlength="200" value="{{ pg.meta_description or '' }}"></div>
           </div>
-          <div class="form-field"><label>Contenu (HTML)</label><textarea name="content_html" rows="10">{{ pg.content_html or '' }}</textarea></div>
+          <div class="form-field"><label>Contenu</label><textarea name="content_html" rows="10" class="wysiwyg-editor wysiwyg-editor--full">{{ pg.content_html or '' }}</textarea></div>
           <div class="form-field">{{ switch('enabled', pg.enabled, 'Publiée', 'Masquée') }}</div>
           <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
         </form>
@@ -266,15 +299,16 @@
   {# Ajouter une activité manuellement #}
   <details class="rp-sub">
     <summary>✍️ Ajouter une activité manuellement</summary>
-    <form method="post" style="margin-top:1rem">
+    <form method="post" enctype="multipart/form-data" style="margin-top:1rem">
       <input type="hidden" name="action" value="save_page">
       <input type="hidden" name="partner_id" value="{{ p.id }}">
       {{ activity_inputs() }}
+      {{ activity_image_inputs() }}
       <div class="form-row">
         <div class="form-field"><label>Meta title (SEO)</label><input type="text" name="meta_title" maxlength="70"></div>
         <div class="form-field"><label>Meta description (SEO)</label><input type="text" name="meta_description" maxlength="200"></div>
       </div>
-      <div class="form-field"><label>Contenu (HTML)</label><textarea name="content_html" rows="6"></textarea></div>
+      <div class="form-field"><label>Contenu</label><textarea name="content_html" rows="6" class="wysiwyg-editor wysiwyg-editor--full"></textarea></div>
       <div class="form-field">{{ switch('enabled', True, 'Publiée à l\'enregistrement', 'Brouillon') }}</div>
       <button type="submit" class="btn btn-primary">Enregistrer l'activité</button>
     </form>
@@ -283,7 +317,7 @@
   {# Éditer / supprimer le partenaire #}
   <details class="rp-sub">
     <summary>✏️ Modifier ou supprimer le partenaire</summary>
-    <form method="post" style="margin-top:1rem">
+    <form method="post" enctype="multipart/form-data" style="margin-top:1rem">
       <input type="hidden" name="action" value="update_partner">
       <input type="hidden" name="partner_id" value="{{ p.id }}">
       {{ partner_fields(p) }}
@@ -303,5 +337,6 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='admin/wysiwyg.js') }}"></script>
 <script src="{{ url_for('static', filename='admin/recommended-partners.js') }}"></script>
 {% endblock %}

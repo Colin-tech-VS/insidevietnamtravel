@@ -26,7 +26,16 @@
     <h1 style="font-family:var(--font-display);color:var(--teal-deep);font-size:clamp(1.9rem,4vw,2.8rem);margin:.2rem 0 1.5rem">{{ page.title }}</h1>
 
     <div class="reco-layout">
-      <div class="reco-content">{{ page.content_html | safe }}</div>
+      <div class="reco-content">
+        {{ page.content_html | safe }}
+        {% if page.images %}
+        <ul class="reco-gallery-public">
+          {% for img in page.images %}
+          <li><img src="{{ img | static_v }}" alt="{{ page.image_alt or page.title }}" loading="lazy"></li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
 
       <aside class="reco-booking">
         <div class="reco-partner-card">

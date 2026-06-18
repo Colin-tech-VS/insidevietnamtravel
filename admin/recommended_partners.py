@@ -130,6 +130,19 @@ def _normalize_url(value: str) -> str:
     return url
 
 
+def _clean_url_list(value) -> list[str]:
+    """Liste d'URLs d'images (chemins /static ou http), dédupliquée, max 12."""
+    if isinstance(value, str):
+        import re as _re
+        value = _re.split(r"[\n,]+", value)
+    out: list[str] = []
+    for raw in value or []:
+        u = str(raw).strip()
+        if u and u not in out:
+            out.append(u[:300])
+    return out[:12]
+
+
 def _coerce_float(value, default: float = 0.0) -> float:
     """Parse un nombre tolérant : « 45 €  », « 45,90 », « 1 200 » → float."""
     if value is None or value == "":
@@ -180,6 +193,8 @@ def _normalize_partner(data: dict, *, existing: dict | None = None) -> dict:
         "image": str(data.get("image") or existing.get("image") or "").strip(),
         "image_alt": str(data.get("image_alt") or existing.get("image_alt") or "").strip()[:200],
         "image_prompt": str(data.get("image_prompt") or existing.get("image_prompt") or "").strip()[:300],
+        # Traductions EN (best-effort) : {tagline, intro_html}.
+        "i18n": data.get("i18n") if data.get("i18n") is not None else existing.get("i18n", {}),
         "pages": existing.get("pages", []),
         "created_at": existing.get("created_at") or today,
         "updated_at": today,
@@ -211,17 +226,62 @@ def _normalize_page(partner: dict, data: dict, *, existing: dict | None = None) 
         "image": str(data.get("image") or existing.get("image") or "").strip(),
         "image_alt": str(data.get("image_alt") or existing.get("image_alt") or "").strip()[:200],
         "image_prompt": str(data.get("image_prompt") or existing.get("image_prompt") or "").strip()[:300],
+        # Galerie d'images supplémentaires (URLs /static ou http), optionnelle.
+        "images": _clean_url_list(data.get("images") if data.get("images") is not None else existing.get("images", [])),
         "prompt": str(data.get("prompt") or existing.get("prompt") or "").strip()[:2000],
         "enabled": _coerce_bool(data.get("enabled"), default=existing.get("enabled", False)),
+        # Traductions EN (best-effort) : {title, meta_title, meta_description, content_html}.
+        "i18n": data.get("i18n") if data.get("i18n") is not None else existing.get("i18n", {}),
         "created_at": existing.get("created_at") or today,
         "updated_at": today,
     }
 
 
+# ── i18n FR/EN (traduction best-effort + localisation au rendu) ──────────────
+
+PARTNER_I18N_FIELDS = ("tagline", "intro_html")
+PAGE_I18N_FIELDS = ("title", "meta_title", "meta_description", "content_html")
+
+
+def _auto_translate(record: dict, fields: tuple[str, ...]) -> dict:
+    """Remplit record['i18n'].en (FR→EN) si le FR a changé. Best-effort."""
+    fr = {k: (record.get(k) or "") for k in fields}
+    i18n = record.get("i18n") or {}
+    if i18n.get("en") and i18n.get("fr") == fr:
+        return record  # EN déjà à jour pour ce FR
+    if not any(fr.values()):
+        return record
+    en = {}
+    try:
+        from admin.groq_recommended_partner import translate_to_en
+        en = translate_to_en(fr)
+    except Exception:  # noqa: BLE001
+        en = {}
+    record["i18n"] = {"fr": fr, "en": en or (i18n.get("en") or {})}
+    return record
+
+
+def localize_page(page: dict, lang: str | None = None) -> dict:
+    if lang == "en":
+        en = (page.get("i18n") or {}).get("en") or {}
+        if en:
+            return {**page, **{k: en[k] for k in PAGE_I18N_FIELDS if en.get(k)}}
+    return page
+
+
+def localize_partner(partner: dict, lang: str | None = None) -> dict:
+    out = dict(partner)
+    if lang == "en":
+        en = (partner.get("i18n") or {}).get("en") or {}
+        if en:
+            out.update({k: en[k] for k in PARTNER_I18N_FIELDS if en.get(k)})
+    return out
+
+
 # ── CRUD partenaire ──────────────────────────────────────────────────────────
 
 def add_partner(data: dict) -> dict:
-    partner = _normalize_partner(data)
+    partner = _auto_translate(_normalize_partner(data), PARTNER_I18N_FIELDS)
     items = get_partners()
     items.insert(0, partner)
     save_partners(items)
@@ -234,7 +294,7 @@ def update_partner(pid: str, fields: dict) -> dict:
         if p.get("id") != pid:
             continue
         merged = {**p, **{k: v for k, v in fields.items() if v is not None}, "id": pid}
-        items[i] = _normalize_partner(merged, existing=p)
+        items[i] = _auto_translate(_normalize_partner(merged, existing=p), PARTNER_I18N_FIELDS)
         save_partners(items)
         return items[i]
     raise ValueError(f"Partenaire introuvable : {pid}")
@@ -256,7 +316,7 @@ def add_page(partner_id: str, page: dict) -> dict:
     for i, p in enumerate(items):
         if p.get("id") != partner_id:
             continue
-        normalized = _normalize_page(p, page)
+        normalized = _auto_translate(_normalize_page(p, page), PAGE_I18N_FIELDS)
         p.setdefault("pages", []).insert(0, normalized)
         p["updated_at"] = date.today().isoformat()
         items[i] = p
@@ -275,7 +335,7 @@ def update_page(partner_id: str, page_id: str, fields: dict) -> dict:
             if pg.get("id") != page_id:
                 continue
             merged = {**pg, **{k: v for k, v in fields.items() if v is not None}, "id": page_id}
-            pages[j] = _normalize_page(p, merged, existing=pg)
+            pages[j] = _auto_translate(_normalize_page(p, merged, existing=pg), PAGE_I18N_FIELDS)
             p["updated_at"] = date.today().isoformat()
             items[i] = p
             save_partners(items)
@@ -303,18 +363,26 @@ def set_page_enabled(partner_id: str, page_id: str, enabled: bool) -> dict:
 
 # ── Vue publique (sans champs internes) ──────────────────────────────────────
 
-def _public_pages(partner: dict) -> list[dict]:
-    return [pg for pg in partner.get("pages", []) if pg.get("enabled")]
+_PUBLIC_STRIP = set(_INTERNAL_FIELDS) | {"i18n"}
 
 
-def public_partner(partner: dict) -> dict:
-    """Copie sans les champs internes, avec uniquement les pages publiées."""
-    out = {k: v for k, v in partner.items() if k not in _INTERNAL_FIELDS}
-    out["pages"] = _public_pages(partner)
+def _public_pages(partner: dict, lang: str | None = None) -> list[dict]:
+    return [
+        {k: v for k, v in localize_page(pg, lang).items() if k != "i18n"}
+        for pg in partner.get("pages", [])
+        if pg.get("enabled")
+    ]
+
+
+def public_partner(partner: dict, lang: str | None = None) -> dict:
+    """Copie localisée sans champs internes, avec uniquement les pages publiées."""
+    loc = localize_partner(partner, lang)
+    out = {k: v for k, v in loc.items() if k not in _PUBLIC_STRIP}
+    out["pages"] = _public_pages(partner, lang)
     return out
 
 
-def list_public_partners() -> list[dict]:
+def list_public_partners(lang: str | None = None) -> list[dict]:
     """Partenaires activés ayant au moins une page activée (pour l'index public)."""
     out = []
     for p in get_partners():
@@ -322,7 +390,7 @@ def list_public_partners() -> list[dict]:
             continue
         if not _public_pages(p):
             continue
-        out.append(public_partner(p))
+        out.append(public_partner(p, lang))
     return out
 
 

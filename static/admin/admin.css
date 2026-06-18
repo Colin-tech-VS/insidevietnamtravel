@@ -4310,3 +4310,12 @@ a.partners-stat:hover { border-color: var(--teal-light); color: var(--teal); }
 .rp-activity { padding: 0.65rem 0.2rem; border-bottom: 1px solid var(--rice-dark); }
 .rp-activity:last-child { border-bottom: none; }
 .rp-activity__row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+
+/* Partenaires recommandés — vignettes & galerie (admin) */
+.rp-activity__thumb { width: 64px; height: 40px; object-fit: cover; border-radius: 6px; flex: none; }
+.rp-thumb img { border-radius: 8px; object-fit: cover; margin-bottom: 0.4rem; }
+.rp-gallery { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 0.6rem; }
+.rp-gallery__item { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; font-size: 0.72rem; color: var(--ink-muted); }
+.rp-gallery__item img { width: 90px; height: 60px; object-fit: cover; border-radius: 6px; }
+.rp-gen .btn-generate { background: var(--gold, #c79a3a); color: #1a1a18; border: none; }
+.rp-gen .btn-generate:hover { filter: brightness(1.05); }

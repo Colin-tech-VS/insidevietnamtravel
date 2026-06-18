@@ -8815,9 +8815,12 @@ body.mai-chat-open .mai-chat__fab {
 .reco-btn--ghost:hover { background: var(--teal); color: var(--white); }
 
 /* Page activité */
-.reco-activity-hero { position: relative; }
-.reco-activity-hero__media { aspect-ratio: 21 / 9; max-height: 460px; overflow: hidden; background: var(--teal-deep); }
-.reco-activity-hero__media img { width: 100%; height: 100%; object-fit: cover; }
+.reco-activity-hero { position: relative; width: 100%; }
+.reco-activity-hero__media { width: 100%; height: clamp(240px, 40vw, 520px); overflow: hidden; background: var(--teal-deep); }
+.reco-activity-hero__media img,
+.reco-activity-hero__media picture { width: 100%; height: 100%; object-fit: cover; display: block; }
+.reco-gallery-public { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; margin: 2rem 0; list-style: none; padding: 0; }
+.reco-gallery-public img { width: 100%; height: 140px; object-fit: cover; border-radius: var(--radius-md); display: block; }
 .reco-layout { display: grid; grid-template-columns: 1fr; gap: 2.5rem; padding: 2.5rem 0 3.5rem; }
 @media (min-width: 920px) { .reco-layout { grid-template-columns: 1fr 340px; align-items: start; } }
 .reco-content { font-size: 1.04rem; line-height: 1.75; color: var(--ink-soft); }

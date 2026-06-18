@@ -146,3 +146,35 @@ def generate_activity_page(partner: dict, activity: dict, prompt: str = "", prog
 # Alias rétro-compatible (ancien nom).
 def generate_partner_page(partner: dict, prompt: str, progress=None) -> dict:
     return generate_activity_page(partner, {"title": partner.get("name", "")}, prompt, progress=progress)
+
+
+_TRANSLATE_SYSTEM = (
+    "You are a professional FR→EN translator for a Vietnam travel website. "
+    "Translate every provided French field to natural, fluent English. "
+    "Keep HTML tags intact. Reply with a JSON object using the SAME keys."
+)
+
+
+def translate_to_en(fields: dict, *, deadline: float | None = 60) -> dict:
+    """Traduit en anglais un dict de champs FR (titre, contenu HTML, meta…).
+
+    Best-effort : renvoie {} si l'IA n'est pas configurée ou échoue (l'appelant
+    retombe alors sur le FR).
+    """
+    fields = {k: v for k, v in (fields or {}).items() if v}
+    if not fields or not ai_client.is_configured():
+        return {}
+    try:
+        resp = ai_client.chat_completion(
+            fast=True,
+            messages=[
+                {"role": "system", "content": _TRANSLATE_SYSTEM},
+                {"role": "user", "content": "Translate these French fields to English:\n" + json.dumps(fields, ensure_ascii=False)},
+            ],
+            temperature=0.3,
+            max_tokens=5120,
+            deadline=deadline,
+        )
+        return ai_client.parse_json(resp.choices[0].message.content) or {}
+    except Exception:  # noqa: BLE001
+        return {}

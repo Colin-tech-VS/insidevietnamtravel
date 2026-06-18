@@ -2041,6 +2041,64 @@ def partner_portal_admin():
 
 
 # ── Partenaires recommandés (curation éditoriale, pages IA) ───────────────
+def _reco_partner_image_patch(partner: dict) -> dict:
+    """Logo/image partenaire (optionnel) : fichier importé OU URL → WebP. {} si rien."""
+    from admin.image_service import read_uploaded_image_bytes, store_partner_cover_webp
+
+    f = request.files.get("image_file")
+    url = (request.form.get("image_url") or "").strip()
+    slug = f"reco-{partner['slug']}"
+    try:
+        if f and f.filename:
+            saved = store_partner_cover_webp(slug, file_bytes=read_uploaded_image_bytes(f))
+        elif url:
+            saved = store_partner_cover_webp(slug, image_url=url)
+        else:
+            return {}
+    except ValueError as e:
+        flash(f"Image partenaire : {e}", "warn")
+        return {}
+    return {"image": saved, "image_alt": (request.form.get("image_alt") or partner.get("name") or "").strip()}
+
+
+def _reco_activity_image_patch(partner: dict, page: dict) -> dict:
+    """Couverture (fichier/URL) + galerie multi-fichiers + suppressions. {} si rien."""
+    if not partner or not page:
+        return {}
+    from admin.image_service import (
+        read_uploaded_image_bytes,
+        store_partner_cover_webp,
+        store_partner_gallery_webp,
+    )
+
+    base = f"reco-{partner['slug']}-{page['slug']}"
+    patch: dict = {}
+
+    # Couverture : fichier importé OU URL.
+    cover = request.files.get("cover_file")
+    cover_url = (request.form.get("cover_url") or "").strip()
+    try:
+        if cover and cover.filename:
+            patch["image"] = store_partner_cover_webp(base, file_bytes=read_uploaded_image_bytes(cover))
+        elif cover_url:
+            patch["image"] = store_partner_cover_webp(base, image_url=cover_url)
+    except ValueError as e:
+        flash(f"Image de couverture : {e}", "warn")
+
+    # Galerie : images existantes (moins celles supprimées) + nouveaux fichiers.
+    removed = set(request.form.getlist("remove_image"))
+    images = [u for u in (page.get("images") or []) if u not in removed]
+    files = [f for f in request.files.getlist("gallery_files") if f and f.filename]
+    for i, gf in enumerate(files):
+        try:
+            images.append(store_partner_gallery_webp(base, f"{len(images)}-{i}", read_uploaded_image_bytes(gf)))
+        except ValueError as e:
+            flash(f"Image galerie ignorée : {e}", "warn")
+    if removed or files:
+        patch["images"] = images
+    return patch
+
+
 @admin_bp.route("/recommended-partners", methods=["GET", "POST"])
 @login_required
 def recommended_partners_admin():
@@ -2066,10 +2124,12 @@ def recommended_partners_admin():
                 }
                 if action == "update_partner":
                     p = rp.update_partner(partner_id, fields)
-                    flash(f"Partenaire « {p['name']} » mis à jour.", "success")
                 else:
                     p = rp.add_partner(fields)
-                    flash(f"Partenaire « {p['name']} » créé.", "success")
+                img_patch = _reco_partner_image_patch(p)
+                if img_patch:
+                    p = rp.update_partner(p["id"], img_patch)
+                flash(f"Partenaire « {p['name']} » {'mis à jour' if action == 'update_partner' else 'créé'}.", "success")
             elif action == "delete_partner":
                 rp.delete_partner(partner_id)
                 flash("Partenaire supprimé.", "success")
@@ -2091,11 +2151,13 @@ def recommended_partners_admin():
                     "enabled": "1" if request.form.get("enabled") else "0",
                 }
                 if page_id:
-                    rp.update_page(partner_id, page_id, page)
-                    flash("Activité mise à jour.", "success")
+                    pg = rp.update_page(partner_id, page_id, page)
                 else:
-                    rp.add_page(partner_id, page)
-                    flash("Activité créée.", "success")
+                    pg = rp.add_page(partner_id, page)
+                img_patch = _reco_activity_image_patch(rp.find_partner(partner_id), pg)
+                if img_patch:
+                    pg = rp.update_page(partner_id, pg["id"], img_patch)
+                flash(f"Activité {'mise à jour' if page_id else 'créée'}.", "success")
             elif action == "publish_generated_page":
                 draft = _get_draft("rec_partner_page")
                 if not draft:

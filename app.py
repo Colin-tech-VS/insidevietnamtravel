@@ -764,7 +764,7 @@ def index():
         featured_articles=featured_articles,
         home_destinations=_home_featured_destinations(dests, 6),
         home_itineraries=list(itins.items())[:3],
-        home_recommended=list_recommended_partners()[:3],
+        home_recommended=list_recommended_partners(lang)[:3],
         meta_title=t("meta.home.title", lang),
         meta_description=t("meta.home.desc", lang),
         meta_keywords=t("meta.home.kw", lang),
@@ -1428,7 +1428,7 @@ def partners_index():
     return render_template(
         "partners_index.html",
         partners=partners,
-        recommended=list_recommended_partners(),
+        recommended=list_recommended_partners(lang),
         meta_title=meta["meta_title"],
         meta_description=meta["meta_description"],
         meta_keywords=meta["meta_keywords"],
@@ -1450,7 +1450,7 @@ def recommended_partner_fiche(slug):
     partner = find_partner_by_slug(slug)
     if not partner or not partner.get("enabled"):
         abort(404)
-    pub = public_partner(partner)
+    pub = public_partner(partner, lang)
     if not pub["pages"]:
         abort(404)
     title = pub.get("tagline") or pub.get("name")
@@ -1476,7 +1476,9 @@ def recommended_partner_page(slug, page_slug):
         abort(404)
     if not partner.get("enabled") or not page.get("enabled"):
         abort(404)
-    pub = public_partner(partner)
+    from admin.recommended_partners import localize_page
+    pub = public_partner(partner, lang)
+    page = localize_page(page, lang)
     # Lien de réservation tracké via /go/ (clics loggés en analytics affiliation).
     raw_booking = (page.get("booking_url") or partner.get("website") or "").strip()
     booking_url = tracked_affiliate_url(f"reco-{partner['slug']}", raw_booking) if raw_booking else ""
@@ -1855,6 +1857,26 @@ def _build_search_index(lang: str) -> list[dict]:
                 "u": card["url"],
                 "g": "partner",
             })
+    except Exception:
+        pass
+
+    try:
+        from admin.recommended_partners import list_public_partners as list_recommended
+        for rp in list_recommended(lang):
+            items.append({
+                "t": rp["name"],
+                "s": rp.get("tagline", ""),
+                "u": lang_url("recommended_partner_fiche", lang, slug=rp["slug"]),
+                "g": "partner",
+            })
+            for pg in rp.get("pages", []):
+                price = f"{pg['price']:g} {pg.get('currency', '€')}" if pg.get("price") else ""
+                items.append({
+                    "t": pg["title"],
+                    "s": f"{rp['name']} · {price}".strip(" ·"),
+                    "u": lang_url("recommended_partner_page", lang, slug=rp["slug"], page_slug=pg["slug"]),
+                    "g": "activity",
+                })
     except Exception:
         pass
 

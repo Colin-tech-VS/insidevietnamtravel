@@ -131,6 +131,20 @@
     if (manualPanel && !manualPanel.hidden) {
       onManualTabOpen();
     }
+
+    // Pages sans onglets (ex. Partenaires recommandés) : initialise directement
+    // les éditeurs présents, même à l'intérieur de <details> fermés.
+    if (!document.querySelector('.content-tab')) {
+      initEditors();
+    }
+    // Quand un <details> contenant un éditeur s'ouvre, (ré)initialise / redimensionne.
+    document.querySelectorAll('details').forEach((d) => {
+      d.addEventListener('toggle', () => {
+        if (!d.open) return;
+        if (!initialized) initEditors();
+        else setTimeout(refreshEditors, 80);
+      });
+    });
   }
 
   function loadTinyMCE() {
