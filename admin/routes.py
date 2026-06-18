@@ -896,14 +896,26 @@ def destinations_admin():
             flash(f"Erreur : {e}", "error")
         return redirect(url_for("admin.destinations_admin"))
 
-    sync_destination_images(allow_network=True)
+    # La synchro d'images fait des appels réseau (téléchargement WebP) et peut déclencher
+    # une traduction IA via save_destinations : en prod, un timeout ou une erreur réseau ne
+    # doit jamais faire planter (500) toute la page d'admin. On dégrade proprement.
+    from flask import current_app
     from admin.image_service import enrich_destination_for_display
+
+    try:
+        sync_destination_images(allow_network=True)
+    except Exception:
+        current_app.logger.exception("sync_destination_images a échoué — affichage des destinations sans resynchro")
 
     dest_list = []
     for slug, d in get_destinations_dict().items():
-        d = enrich_destination_for_display(d)
-        d["region_key"] = resolve_region(slug, d)
-        d["region_label"] = REGION_LABELS_FR.get(d["region_key"], d["region_key"])
+        try:
+            d = enrich_destination_for_display(d)
+            d["region_key"] = resolve_region(slug, d)
+            d["region_label"] = REGION_LABELS_FR.get(d["region_key"], d["region_key"])
+        except Exception:
+            current_app.logger.exception("Destination « %s » illisible — ignorée dans l'admin", slug)
+            continue
         dest_list.append(d)
     region_rank = {key: i for i, key in enumerate(REGION_ORDER)}
     dest_list.sort(key=lambda d: (region_rank.get(d["region_key"], 9), (d.get("name") or "").lower()))

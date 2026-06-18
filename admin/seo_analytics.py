@@ -7,15 +7,49 @@ from collections import defaultdict
 from geo_utils import classify_geo_source
 
 SEARCH_ENGINES: list[tuple[str, str, str]] = [
-    ("google", "Google", "google.com|google.fr|google.co.uk|google.de|google.it|www.google."),
-    ("bing", "Bing", "bing.com"),
+    # Google est traité à part (voir _is_google_search) pour couvrir tous les
+    # ccTLD (google.es, google.pt…) et l'app Android, sans matcher Gmail/Drive…
+    ("google", "Google", ""),
+    ("bing", "Bing", "bing.com|cn.bing.com"),
     ("duckduckgo", "DuckDuckGo", "duckduckgo.com"),
-    ("yahoo", "Yahoo", "yahoo.com|search.yahoo"),
+    ("yahoo", "Yahoo", "search.yahoo|yahoo.com|yahoo.co"),
     ("yandex", "Yandex", "yandex."),
     ("ecosia", "Ecosia", "ecosia.org"),
     ("qwant", "Qwant", "qwant.com"),
     ("brave", "Brave Search", "search.brave.com"),
+    ("baidu", "Baidu", "baidu.com"),
+    ("naver", "Naver", "naver.com"),
+    ("startpage", "Startpage", "startpage.com"),
+    ("seznam", "Seznam", "seznam.cz"),
+    ("ask", "Ask", "ask.com"),
+    ("aol", "AOL", "search.aol|aol.com"),
+    ("sogou", "Sogou", "sogou.com"),
+    ("mojeek", "Mojeek", "mojeek.com"),
+    ("petal", "Petal Search", "petalsearch.com"),
 ]
+
+# Sous-domaines/services Google qui NE SONT PAS de la recherche organique :
+# on les exclut pour éviter de compter Gmail, Drive, Maps… comme du SEO.
+_GOOGLE_NON_SEARCH = (
+    "mail.google", "drive.google", "docs.google", "play.google",
+    "translate.google", "photos.google", "calendar.google", "meet.google",
+    "accounts.google", "myaccount.google", "sites.google", "groups.google",
+    "chat.google", "classroom.google", "keep.google", "contacts.google",
+    "ads.google", "adwords.google", "business.google", "domains.google",
+    "gemini.google", "bard.google",  # IA générative, pas de la recherche
+    "googleusercontent", "googleadservices", "googlesyndication",
+)
+
+
+def _is_google_search(ref: str) -> bool:
+    """`ref` doit déjà être en minuscules. Vrai si c'est de la recherche Google."""
+    # App Google Android (recherche organique sur mobile)
+    if "googlequicksearchbox" in ref:
+        return True
+    # Tout domaine google.<tld> (google.com, google.fr, google.es, m.google…)
+    if "google." not in ref:
+        return False
+    return not any(bad in ref for bad in _GOOGLE_NON_SEARCH)
 
 SOCIAL_PATTERNS = (
     "facebook.com", "fb.com", "instagram.com", "twitter.com", "x.com",
@@ -36,7 +70,11 @@ def classify_search_engine(referrer: str = "") -> str | None:
     ref = (referrer or "").lower()
     if not ref.strip():
         return None
+    if _is_google_search(ref):
+        return "google"
     for engine_id, _, patterns in SEARCH_ENGINES:
+        if not patterns:
+            continue
         for part in patterns.split("|"):
             if part.lower() in ref:
                 return engine_id
