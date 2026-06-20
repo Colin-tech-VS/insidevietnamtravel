@@ -43,14 +43,26 @@ PDF_GUIDE = {
 }
 
 NEWSLETTER = {
-    "title": "Conseils voyage Vietnam",
-    "subtitle": "1 email par semaine : itinéraires, bons plans et nouveautés. Sans spam.",
+    "badge": "Avantages réservés aux abonnés",
+    "title": "Voyagez moins cher au Vietnam",
+    "subtitle": "Inscrivez-vous gratuitement et profitez de tarifs réduits sur les activités, excursions et expériences — plus nos meilleurs conseils chaque semaine.",
+    "benefits": [
+        "Prix réduits sur les activités et excursions",
+        "Offres et bons plans exclusifs abonnés",
+        "Itinéraires et conseils voyage chaque semaine",
+    ],
     "placeholder": "votre@email.com",
     "cta": "S'inscrire gratuitement",
     "i18n": {
         "en": {
-            "title": "Vietnam travel tips",
-            "subtitle": "1 email per week: itineraries, deals and updates. No spam.",
+            "badge": "Subscriber-only perks",
+            "title": "Travel Vietnam for less",
+            "subtitle": "Sign up for free and enjoy reduced prices on activities, tours and experiences — plus our best travel tips every week.",
+            "benefits": [
+                "Reduced prices on activities and tours",
+                "Exclusive subscriber-only deals",
+                "Itineraries and travel tips every week",
+            ],
             "placeholder": "your@email.com",
             "cta": "Subscribe for free",
         },
