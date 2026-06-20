@@ -2432,6 +2432,8 @@ body.is-nav-open { overflow: hidden; }
   .newsletter { padding: 2.5rem 1rem; }
 
   .newsletter__title { font-size: 1.45rem; }
+
+  .newsletter__benefits { flex-direction: column; align-items: flex-start; gap: 0.5rem; max-width: 320px; }
 }
 
 /* ── Affiliate components ───────────────────────────── */
@@ -2494,13 +2496,59 @@ body.is-nav-open { overflow: hidden; }
 
 /* ── Newsletter ───────────────────────────────────── */
 .newsletter {
-  background: var(--teal-deep);
+  background:
+    radial-gradient(circle at 50% -20%, rgba(196, 160, 83, 0.22) 0%, transparent 55%),
+    linear-gradient(160deg, var(--teal) 0%, var(--teal-deep) 100%);
   color: var(--white);
-  padding: 3.5rem 1.5rem;
+  padding: 3.75rem 1.5rem;
+  border-top: 3px solid var(--gold);
 }
-.newsletter__inner { max-width: 560px; margin: 0 auto; text-align: center; }
-.newsletter__title { font-family: var(--font-display); font-size: 1.75rem; font-weight: 600; margin-bottom: 0.5rem; }
-.newsletter__subtitle { opacity: 0.85; margin-bottom: 1.5rem; font-size: 0.95rem; }
+.newsletter__inner { max-width: 620px; margin: 0 auto; text-align: center; }
+.newsletter__badge {
+  display: inline-block;
+  margin-bottom: 0.85rem;
+  padding: 0.35rem 0.85rem;
+  background: var(--gold);
+  color: var(--teal-deep);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.newsletter__title { font-family: var(--font-display); font-size: 1.9rem; font-weight: 600; margin-bottom: 0.5rem; }
+.newsletter__subtitle { opacity: 0.88; margin-bottom: 1.25rem; font-size: 0.98rem; }
+.newsletter__benefits {
+  list-style: none;
+  margin: 0 auto 1.6rem;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.4rem;
+  justify-content: center;
+}
+.newsletter__benefit {
+  position: relative;
+  padding-left: 1.6rem;
+  font-size: 0.92rem;
+  font-weight: 500;
+  text-align: left;
+}
+.newsletter__benefit::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  top: -0.05rem;
+  width: 1.15rem;
+  height: 1.15rem;
+  line-height: 1.15rem;
+  text-align: center;
+  background: var(--gold);
+  color: var(--teal-deep);
+  border-radius: 50%;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
 .newsletter__form { display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; }
 .newsletter__input {
   flex: 1;
