@@ -1,0 +1,46 @@
+{% macro newsletter_popup() %}
+{% if newsletter_popup_enabled %}
+<div class="nl-popup" id="nl-popup" role="dialog" aria-modal="true"
+     aria-labelledby="nl-popup-title" aria-describedby="nl-popup-subtitle"
+     data-action="{{ lang_url('newsletter_subscribe') }}" hidden>
+  <div class="nl-popup__backdrop" id="nl-popup-backdrop"></div>
+  <div class="nl-popup__dialog">
+    <button type="button" class="nl-popup__close" id="nl-popup-close"
+            aria-label="{{ t('newsletter.popup.close') }}">&#10005;</button>
+
+    <div class="nl-popup__body" id="nl-popup-body">
+      <span class="nl-popup__eyebrow">{{ t('newsletter.popup.eyebrow') }}</span>
+      <h2 id="nl-popup-title" class="nl-popup__title">{{ newsletter.NEWSLETTER.title }}</h2>
+      <p id="nl-popup-subtitle" class="nl-popup__subtitle">{{ newsletter.NEWSLETTER.subtitle }}</p>
+
+      {% if newsletter.NEWSLETTER.benefits %}
+      <ul class="nl-popup__benefits">
+        {% for benefit in newsletter.NEWSLETTER.benefits %}
+        <li class="nl-popup__benefit">{{ benefit }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      <form class="nl-popup__form" id="nl-popup-form"
+            action="{{ lang_url('newsletter_subscribe') }}" method="post" novalidate>
+        <label for="nl-popup-email" class="sr-only">Email</label>
+        <input type="email" id="nl-popup-email" name="email" required
+               placeholder="{{ newsletter.NEWSLETTER.placeholder }}"
+               autocomplete="email" class="nl-popup__input">
+        <button type="submit" class="btn btn-primary nl-popup__cta">{{ newsletter.NEWSLETTER.cta }}</button>
+        <label class="nl-popup__consent">
+          <input type="checkbox" name="consent_rgpd" value="1" required>
+          <span>{{ t('newsletter.consent') }}
+            <a href="{{ lang_url('privacy') }}" target="_blank" rel="noopener">{{ t('newsletter.privacy_link') }}</a>.</span>
+        </label>
+      </form>
+
+      <p class="nl-popup__error" id="nl-popup-error" hidden>{{ t('newsletter.popup.error') }}</p>
+      <button type="button" class="nl-popup__dismiss" id="nl-popup-dismiss">{{ t('newsletter.popup.dismiss') }}</button>
+    </div>
+
+    <p class="nl-popup__thanks" id="nl-popup-thanks" hidden>{{ t('newsletter.popup.success') }}</p>
+  </div>
+</div>
+{% endif %}
+{% endmacro %}

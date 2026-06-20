@@ -1060,6 +1060,14 @@ def newsletter_admin():
                 if result["failed"]:
                     msg += f" Échecs : {', '.join(result['failed'])}."
                 flash(msg, "success" if result["sent"] else "error")
+            elif action == "toggle_popup":
+                enabled = request.form.get("newsletter_popup_enabled") == "on"
+                save_settings({"newsletter_popup_enabled": enabled})
+                flash(
+                    "Pop-up d'inscription activé sur le site." if enabled
+                    else "Pop-up d'inscription désactivé.",
+                    "success",
+                )
             elif action == "delete_subscriber":
                 email = (request.form.get("email") or "").strip().lower()
                 if remove_newsletter_subscriber(email):
@@ -1096,6 +1104,7 @@ def newsletter_admin():
         subscribers=subscribers,
         draft=draft,
         preview_html=preview_html,
+        popup_enabled=bool(get_settings().get("newsletter_popup_enabled", True)),
         groq_ok=ai_client.is_configured(),
         ai_provider_label=ai_client.provider_label(),
         smtp_ok=is_smtp_configured(),
