@@ -439,6 +439,9 @@
   {% from "macros/nps_widget.html" import nps_widget with context %}
   {{ nps_widget() }}
 
+  {% from "macros/newsletter_popup.html" import newsletter_popup with context %}
+  {{ newsletter_popup() }}
+
   <footer class="site-footer" role="contentinfo">
 
   {% from "macros/affiliates.html" import affiliate_disclosure with context %}
@@ -514,6 +517,10 @@
   {% if nps_enabled %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/nps.css') }}">
   <script src="{{ url_for('static', filename='js/nps.js') }}" defer></script>
+  {% endif %}
+  {% if newsletter_popup_enabled %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/newsletter_popup.css') }}">
+  <script src="{{ url_for('static', filename='js/newsletter_popup.js') }}" defer></script>
   {% endif %}
   {% block scripts %}{% endblock %}
 

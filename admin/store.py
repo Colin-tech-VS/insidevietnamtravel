@@ -40,6 +40,10 @@ def get_settings() -> dict:
         # Désactivé par défaut : on l'active depuis l'admin (onglet NPS) quand on
         # veut collecter du feedback en production.
         "nps_enabled": False,
+        # Pop-up d'inscription newsletter (exit-intent + scroll). Activé par
+        # défaut : c'est un levier de croissance des abonnés. Désactivable depuis
+        # l'admin si besoin.
+        "newsletter_popup_enabled": True,
         "commission_estimates": {
             "booking": 8.0,
             "agoda": 6.0,

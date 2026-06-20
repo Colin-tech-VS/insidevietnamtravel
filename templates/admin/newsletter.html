@@ -391,6 +391,16 @@
 
       <p class="guides-stats-count"><strong>{{ subscribers|length }}</strong> inscrit(s)</p>
 
+      <form method="post" class="popup-toggle-form" style="margin:0 0 1rem;display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;">
+        <input type="hidden" name="action" value="toggle_popup">
+        <input type="checkbox" id="newsletter_popup_enabled" name="newsletter_popup_enabled"
+               {% if popup_enabled %}checked{% endif %} onchange="this.form.submit()">
+        <label for="newsletter_popup_enabled" style="cursor:pointer;">
+          Pop-up d'inscription (exit-intent + scroll) sur le site public
+          {% if popup_enabled %}<strong style="color:#1f7a5f;">— actif</strong>{% else %}<strong style="color:#9aa8a3;">— désactivé</strong>{% endif %}
+        </label>
+      </form>
+
       {% if subscribers %}
 
       <ul class="subscriber-list">

@@ -440,6 +440,7 @@ def inject_globals():
         "llms_txt_url": config.SITE_URL.rstrip("/") + "/llms.txt",
         "chat_enabled": _chat_enabled(),
         "nps_enabled": bool(settings.get("nps_enabled", False)),
+        "newsletter_popup_enabled": bool(settings.get("newsletter_popup_enabled", True)),
         "partner_account": partner_account,
     }
 
@@ -1643,19 +1644,34 @@ def newsletter_subscribe():
     from admin.newsletter_service import add_newsletter_subscriber
 
     lang = get_lang()
-    if not request.form.get("consent_rgpd"):
-        flash(t("flash.consent", lang), "error")
+    # Requêtes fetch (pop-up + formulaire pied de page) → réponse JSON, pas de
+    # rechargement de page. Le HTML classique (sans JS) garde le flash + redirect.
+    wants_json = (
+        request.headers.get("X-Requested-With") == "fetch"
+        or request.accept_mimetypes.best == "application/json"
+    )
+
+    def _respond(message_key: str, category: str, *, status: int = 200, subscribed: bool = False):
+        message = t(message_key, lang)
+        if wants_json:
+            ok = category != "error"
+            return (
+                jsonify({"ok": ok, "subscribed": subscribed, "message": message}),
+                status,
+            )
+        flash(message, category)
         return redirect(request.referrer or lang_url("index", lang))
 
+    if not request.form.get("consent_rgpd"):
+        return _respond("flash.consent", "error", status=400)
+
     email = (request.form.get("email") or "").strip().lower()
-    if email and "@" in email:
-        if add_newsletter_subscriber(email):
-            flash(t("flash.subscribed", lang), "success")
-        else:
-            flash(t("flash.already", lang), "success")
-    else:
-        flash(t("flash.invalid_email", lang), "error")
-    return redirect(request.referrer or lang_url("index", lang))
+    if not email or "@" not in email:
+        return _respond("flash.invalid_email", "error", status=400)
+
+    if add_newsletter_subscriber(email):
+        return _respond("flash.subscribed", "success", subscribed=True)
+    return _respond("flash.already", "success", subscribed=True)
 
 
 # ── Guide PDF (achat + téléchargement) ───────────────────────────────────

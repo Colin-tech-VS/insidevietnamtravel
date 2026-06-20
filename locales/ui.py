@@ -423,6 +423,25 @@ UI: dict[str, dict[str, str]] = {
     },
     "newsletter.privacy_link": {"fr": "politique de confidentialité", "en": "privacy policy"},
 
+    # Pop-up newsletter (exit-intent / scroll)
+    "newsletter.popup.eyebrow": {
+        "fr": "Avant de partir…",
+        "en": "Before you go…",
+    },
+    "newsletter.popup.close": {"fr": "Fermer", "en": "Close"},
+    "newsletter.popup.dismiss": {
+        "fr": "Non merci, je paie le plein tarif",
+        "en": "No thanks, I'll pay full price",
+    },
+    "newsletter.popup.success": {
+        "fr": "C'est fait ! Surveillez votre boîte mail, vos avantages arrivent.",
+        "en": "All set! Watch your inbox — your perks are on the way.",
+    },
+    "newsletter.popup.error": {
+        "fr": "Oups, une erreur est survenue. Réessayez dans un instant.",
+        "en": "Oops, something went wrong. Please try again in a moment.",
+    },
+
     # Newsletter flash
     "flash.consent": {
         "fr": "Veuillez accepter la politique de confidentialité pour vous inscrire.",
