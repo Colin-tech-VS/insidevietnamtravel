@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block meta_robots %}noindex, nofollow{% endblock %}
+
+{% block content %}
+<header class="page-hero page-hero--about">
+  <div class="container">
+    <h1>{% if ok %}Paiement reçu, merci !{% else %}Paiement en attente{% endif %}</h1>
+    <p class="page-hero__lead">
+      {% if ok %}
+      Votre lead voyage qualifié vous a été envoyé par email.
+      {% else %}
+      Nous n'avons pas pu confirmer ce paiement.
+      {% endif %}
+    </p>
+  </div>
+</header>
+
+<section class="section">
+  <div class="container lead-success-layout">
+    <div class="card lead-success-card">
+      {% if ok %}
+      <div class="lead-success-card__icon" aria-hidden="true">✓</div>
+      <p class="lead-success-card__intro">
+        Merci pour votre confiance. Les coordonnées complètes du voyageur ainsi que
+        son profil de voyage{% if email_sent %} viennent de vous être envoyés
+        {% if recipient %}à <strong>{{ recipient }}</strong>{% endif %}{% else %}
+        sont disponibles dans votre espace ; si vous ne recevez pas l'email,
+        contactez-nous{% endif %}.
+      </p>
+      <p class="lead-success-card__hint">
+        Pensez à vérifier vos spams si l'email tarde à arriver.
+      </p>
+      {% else %}
+      <p class="lead-success-card__intro text-muted">
+        Si vous venez de payer, patientez quelques instants puis rechargez cette page.
+        Le paiement n'a peut-être pas encore été confirmé par Stripe.
+      </p>
+      {% endif %}
+      <p class="lead-success-card__back">
+        <a href="{{ lang_url('index') }}">← Retour à l'accueil</a>
+      </p>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block head_preload %}
+<style>
+  .lead-success-layout { max-width: 560px; }
+  .lead-success-card { padding: 2rem; text-align: center; }
+  .lead-success-card__icon {
+    width: 64px; height: 64px; margin: 0 auto 1.25rem;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; background: var(--teal, #1B4D4A); color: #fff;
+    font-size: 1.8rem; font-weight: 700;
+  }
+  .lead-success-card__intro { margin-bottom: 1rem; }
+  .lead-success-card__hint {
+    font-size: 0.9rem; color: var(--ink-muted, #7A7772); margin-top: 0.75rem;
+  }
+  .lead-success-card__back { margin-top: 1.5rem; }
+</style>
+{% endblock %}
+
+{% block structured_data %}{% endblock %}
+{% block og_image %}{% endblock %}
+{% block meta_keywords %}{% endblock %}

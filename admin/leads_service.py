@@ -272,14 +272,41 @@ def get_leads(status: str | None = None) -> list[dict]:
         if status and status in STATUS_KEYS:
             rows = [r for r in rows if r.get("status") == status]
 
-    for r in rows:
-        r["status"] = r.get("status") or "nouveau"
-        r["status_label"] = STATUS_LABELS.get(r["status"], r["status"])
-        r["group_label"] = GROUP_LABELS.get(r.get("group_type"), r.get("group_type") or "—")
-        r["style_label"] = STYLE_LABELS.get(r.get("style"), r.get("style") or "—")
-        r["duration_label"] = DURATION_LABELS.get(r.get("duration"), r.get("duration") or "—")
-        r["created_at"] = str(r.get("created_at") or "")[:16].replace("T", " ")
-    return rows
+    return [_enrich(r) for r in rows]
+
+
+def _enrich(r: dict) -> dict:
+    """Ajoute les libellés lisibles (statut, groupe, style, durée) à une ligne lead."""
+    r["status"] = r.get("status") or "nouveau"
+    r["status_label"] = STATUS_LABELS.get(r["status"], r["status"])
+    r["group_label"] = GROUP_LABELS.get(r.get("group_type"), r.get("group_type") or "—")
+    r["style_label"] = STYLE_LABELS.get(r.get("style"), r.get("style") or "—")
+    r["duration_label"] = DURATION_LABELS.get(r.get("duration"), r.get("duration") or "—")
+    r["created_at"] = str(r.get("created_at") or "")[:16].replace("T", " ")
+    return r
+
+
+def get_lead(lead_id) -> dict | None:
+    """Récupère un lead unique (enrichi), ou None s'il n'existe pas."""
+    try:
+        lead_id = int(lead_id)
+    except (TypeError, ValueError):
+        return None
+    if is_postgres():
+        with get_connection() as conn:
+            cur = conn.cursor()
+            cols = ", ".join(_FIELDS)
+            cur.execute(f"SELECT {cols} FROM agency_leads WHERE id = %s", (lead_id,))
+            raw = cur.fetchone()
+        if not raw:
+            return None
+        row = dict(raw) if isinstance(raw, dict) else dict(zip(_FIELDS, raw))
+    else:
+        row = next((r for r in _read_file() if int(r.get("id", 0)) == lead_id), None)
+        if not row:
+            return None
+        row = dict(row)
+    return _enrich(row)
 
 
 def get_stats() -> dict:

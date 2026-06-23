@@ -158,6 +158,12 @@ UI: dict[str, dict[str, str]] = {
 
     # Préparer mon voyage
     "nav.prepare": {"fr": "Préparer mon voyage", "en": "Plan my trip"},
+    "promobar.text": {
+        "fr": "Recevez votre itinéraire Vietnam sur mesure — gratuit, en 2 minutes.",
+        "en": "Get your tailor-made Vietnam itinerary — free, in 2 minutes.",
+    },
+    "promobar.cta": {"fr": "Créer mon voyage", "en": "Build my trip"},
+    "promobar.dismiss": {"fr": "Masquer ce bandeau", "en": "Dismiss this banner"},
     "prepare.title": {"fr": "Préparer mon voyage au Vietnam", "en": "Plan my Vietnam trip"},
     "prepare.sub": {
         "fr": "Répondez à 5 questions — nous vous proposons itinéraires, guides et articles adaptés à votre profil.",

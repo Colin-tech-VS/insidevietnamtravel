@@ -1774,6 +1774,24 @@ def pdf_success():
     )
 
 
+@app.route("/lead/livraison")
+def lead_delivered():
+    """Retour Stripe après paiement d'un lead par un partenaire : livraison + confirmation."""
+    from admin.lead_payment_service import fulfill_lead_checkout
+
+    session_id = (request.args.get("session_id") or "").strip()
+    result = fulfill_lead_checkout(session_id) if session_id else {"ok": False}
+    return render_template(
+        "lead_delivered.html",
+        ok=bool(result.get("ok")),
+        recipient=result.get("recipient", ""),
+        email_sent=result.get("email_sent", True),
+        meta_title="Paiement reçu — Inside Vietnam Travel",
+        meta_description="Votre lead voyage qualifié vous a été envoyé par email.",
+        meta_robots="noindex, nofollow",
+    )
+
+
 @app.route("/guide-pdf/telecharger/<token>")
 @app.route("/en/guide-pdf/download/<token>")
 def pdf_download(token):

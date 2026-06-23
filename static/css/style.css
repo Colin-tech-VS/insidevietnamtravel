@@ -98,6 +98,97 @@ a:hover { color: var(--terracotta); }
   height: 100%;
 }
 
+/* Bandeau promo "Préparer mon voyage" — sticky juste sous la navbar */
+.trip-promo-bar {
+  position: sticky;
+  top: var(--header-h);
+  z-index: 99;
+  background: linear-gradient(100deg, var(--teal-deep), var(--teal) 55%, var(--jade));
+  color: var(--white);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-sm);
+}
+.trip-promo-bar.is-hidden { display: none; }
+
+.trip-promo-bar__inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.55rem 1.5rem;
+  position: relative;
+}
+
+.trip-promo-bar__text {
+  margin: 0;
+  font-size: 0.94rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.trip-promo-bar__icon {
+  margin-right: 0.35rem;
+}
+
+.trip-promo-bar__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  padding: 0.42rem 1.05rem;
+  border-radius: var(--radius-xl);
+  background: var(--gold);
+  color: var(--teal-deep);
+  font-weight: 700;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  transition: background var(--transition), transform var(--transition);
+}
+.trip-promo-bar__cta:hover {
+  background: var(--gold-light);
+  color: var(--teal-deep);
+  transform: translateY(-1px);
+}
+.trip-promo-bar__cta svg { transition: transform var(--transition); }
+.trip-promo-bar__cta:hover svg { transform: translateX(3px); }
+
+.trip-promo-bar__close {
+  position: absolute;
+  right: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: 50%;
+  transition: color var(--transition), background var(--transition);
+}
+.trip-promo-bar__close:hover {
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+@media (max-width: 720px) {
+  .trip-promo-bar__inner {
+    gap: 0.6rem;
+    padding: 0.5rem 2.6rem 0.5rem 1rem;
+  }
+  .trip-promo-bar__text {
+    font-size: 0.82rem;
+    line-height: 1.35;
+  }
+  .trip-promo-bar__cta {
+    font-size: 0.82rem;
+    padding: 0.38rem 0.85rem;
+  }
+  .trip-promo-bar__cta svg { display: none; }
+  .trip-promo-bar__close { right: 0.6rem; }
+}
+
 .main-nav {
   flex: 1 1 auto;
   min-width: 0;

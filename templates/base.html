@@ -383,6 +383,42 @@
 
   </header>
 
+  {% if request.endpoint != 'prepare_trip' %}
+  <aside class="trip-promo-bar" id="trip-promo-bar" aria-label="{{ t('nav.prepare') }}">
+    <div class="container trip-promo-bar__inner">
+      <p class="trip-promo-bar__text">
+        <span class="trip-promo-bar__icon" aria-hidden="true">✨</span>
+        {{ t('promobar.text') }}
+      </p>
+      <a class="trip-promo-bar__cta" href="{{ lang_url('prepare_trip') }}">
+        {{ t('promobar.cta') }}
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+          <path d="M5 12h14M13 6l6 6-6 6"/>
+        </svg>
+      </a>
+      <button type="button" class="trip-promo-bar__close" data-promo-dismiss aria-label="{{ t('promobar.dismiss') }}">✕</button>
+    </div>
+  </aside>
+  <script>
+    (function () {
+      var bar = document.getElementById('trip-promo-bar');
+      if (!bar) return;
+      try {
+        if (localStorage.getItem('ivt_promobar_dismissed') === '1') {
+          bar.classList.add('is-hidden');
+        }
+      } catch (e) {}
+      var close = bar.querySelector('[data-promo-dismiss]');
+      if (close) {
+        close.addEventListener('click', function () {
+          bar.classList.add('is-hidden');
+          try { localStorage.setItem('ivt_promobar_dismissed', '1'); } catch (e) {}
+        });
+      }
+    })();
+  </script>
+  {% endif %}
+
   <div class="nav-backdrop" id="nav-backdrop" aria-hidden="true"></div>
 
   <div class="search-overlay" id="search-overlay" role="dialog" aria-modal="true" aria-label="{{ t('search.label') }}" hidden

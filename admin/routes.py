@@ -1365,13 +1365,93 @@ def leads_admin():
     status_filter = (request.args.get("status") or "").strip() or None
     leads = leads_service.get_leads(status_filter)
     stats = leads_service.get_stats()
+
+    from admin import lead_payment_service
+
+    # Partenaires (CRM) disposant d'un email → liste déroulante du modal d'envoi.
+    try:
+        from admin import partners_service
+        partner_options = [
+            {"name": p.get("name") or p.get("email"), "email": (p.get("email") or "").strip()}
+            for p in partners_service.get_partnerships()
+            if (p.get("email") or "").strip()
+        ]
+        partner_options.sort(key=lambda p: (p["name"] or "").lower())
+    except Exception:
+        partner_options = []
+
     return render_template(
         "admin/leads.html",
         leads=leads,
         stats=stats,
         statuses=leads_service.STATUSES,
         status_filter=status_filter or "",
+        partner_options=partner_options,
+        lead_price=lead_payment_service.LEAD_PRICE_CENTS / 100,
+        payment_ready=lead_payment_service.is_payment_configured(),
     )
+
+
+@admin_bp.route("/leads/send", methods=["POST"])
+@login_required
+def lead_send():
+    import config
+    from admin import leads_service, lead_payment_service
+
+    filter_status = request.form.get("filter_status") or ""
+    redirect_to = (
+        url_for("admin.leads_admin", status=filter_status)
+        if filter_status else url_for("admin.leads_admin")
+    )
+
+    lead = leads_service.get_lead(request.form.get("lead_id"))
+    if not lead:
+        flash("Lead introuvable.", "error")
+        return redirect(redirect_to)
+
+    recipient = (request.form.get("recipient_email") or "").strip().lower()
+    if "@" not in recipient:
+        flash("Email du destinataire invalide.", "error")
+        return redirect(redirect_to)
+
+    if not lead_payment_service.is_payment_configured():
+        flash("Stripe n'est pas configuré (STRIPE_SECRET_KEY manquant).", "error")
+        return redirect(redirect_to)
+
+    price_raw = (request.form.get("price") or "").replace(",", ".").strip()
+    try:
+        price_cents = int(round(float(price_raw) * 100)) if price_raw else lead_payment_service.LEAD_PRICE_CENTS
+    except ValueError:
+        price_cents = lead_payment_service.LEAD_PRICE_CENTS
+
+    base = config.pdf_flow_base_url()
+    result = lead_payment_service.create_lead_checkout(
+        lead=lead,
+        recipient_email=recipient,
+        price_cents=price_cents,
+        base_url=base,
+        success_path=url_for("lead_delivered"),
+        cancel_path=url_for("admin.leads_admin"),
+    )
+    if not result.get("ok"):
+        flash("Échec de la création du paiement Stripe : " + str(result.get("error", "")), "error")
+        return redirect(redirect_to)
+
+    price_eur = result["price_cents"] / 100
+    sent = lead_payment_service.send_payment_link(lead, recipient, result["url"], price_eur)
+    if sent:
+        flash(
+            f"Lien de paiement ({price_eur:.0f} €) envoyé à {recipient}. "
+            f"Le lead sera livré automatiquement après paiement.",
+            "success",
+        )
+    else:
+        flash(
+            f"Lien de paiement créé, mais l'email n'a pas pu partir (SMTP). "
+            f"Transmets ce lien manuellement : {result['url']}",
+            "error",
+        )
+    return redirect(redirect_to)
 
 
 @admin_bp.route("/leads/export.csv")

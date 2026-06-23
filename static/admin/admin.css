@@ -4319,3 +4319,26 @@ a.partners-stat:hover { border-color: var(--teal-light); color: var(--teal); }
 .rp-gallery__item img { width: 90px; height: 60px; object-fit: cover; border-radius: 6px; }
 .rp-gen .btn-generate { background: var(--gold, #c79a3a); color: #1a1a18; border: none; }
 .rp-gen .btn-generate:hover { filter: brightness(1.05); }
+
+/* ── Modal d'envoi d'un lead ──────────────────────────────── */
+.lead-modal { position: fixed; inset: 0; z-index: 1200; display: flex; align-items: center; justify-content: center; }
+.lead-modal[hidden] { display: none; }
+.lead-modal__backdrop { position: absolute; inset: 0; background: rgba(15, 51, 48, 0.45); backdrop-filter: blur(2px); }
+.lead-modal__dialog {
+  position: relative; z-index: 1; width: 100%; max-width: 440px; margin: 1rem;
+  background: #fff; border-radius: 14px; padding: 1.75rem 1.6rem;
+  box-shadow: 0 24px 70px rgba(15, 51, 48, 0.28); max-height: 90vh; overflow-y: auto;
+}
+.lead-modal__close {
+  position: absolute; top: 0.85rem; right: 0.9rem; border: none; background: transparent;
+  font-size: 1.05rem; color: var(--ink-muted, #7a7772); cursor: pointer; line-height: 1;
+  padding: 0.3rem; border-radius: 6px;
+}
+.lead-modal__close:hover { background: #f0ebe3; color: #1a1a18; }
+.lead-modal__title { margin: 0 0 0.5rem; font-size: 1.2rem; }
+.lead-modal__summary { margin: 0 0 1.1rem; font-size: 0.85rem; color: var(--ink-muted, #7a7772); }
+.lead-modal__form { display: flex; flex-direction: column; }
+.lead-modal__label { font-size: 0.82rem; font-weight: 600; margin: 0.75rem 0 0.3rem; color: var(--ink-soft, #4a4845); }
+.lead-modal__form .input { width: 100%; }
+.lead-modal__note { margin: 1rem 0 0; font-size: 0.8rem; color: var(--ink-muted, #7a7772); line-height: 1.5; }
+.lead-modal__actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.25rem; }
