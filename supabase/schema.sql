@@ -80,3 +80,24 @@ CREATE TABLE IF NOT EXISTS mai_chat_events (
 CREATE INDEX IF NOT EXISTS idx_mai_created ON mai_chat_events(created_at);
 CREATE INDEX IF NOT EXISTS idx_mai_event ON mai_chat_events(event_type);
 CREATE INDEX IF NOT EXISTS idx_mai_visitor ON mai_chat_events(visitor_hash);
+
+CREATE TABLE IF NOT EXISTS agency_leads (
+    id SERIAL PRIMARY KEY,
+    email TEXT NOT NULL,
+    group_type TEXT,
+    persons INTEGER,
+    style TEXT,
+    duration TEXT,
+    cities TEXT,
+    lang TEXT,
+    source_path TEXT,
+    status TEXT NOT NULL DEFAULT 'nouveau',
+    sold_price DOUBLE PRECISION NOT NULL DEFAULT 0,
+    agency TEXT,
+    note TEXT,
+    ip_hash TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_leads_created ON agency_leads(created_at);
+CREATE INDEX IF NOT EXISTS idx_leads_status ON agency_leads(status);

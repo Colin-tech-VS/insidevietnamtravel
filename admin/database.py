@@ -104,6 +104,26 @@ CREATE TABLE IF NOT EXISTS nps_responses (
 );
 CREATE INDEX IF NOT EXISTS idx_nps_created ON nps_responses(created_at);
 CREATE INDEX IF NOT EXISTS idx_nps_path ON nps_responses(path);
+CREATE TABLE IF NOT EXISTS agency_leads (
+    id SERIAL PRIMARY KEY,
+    email TEXT NOT NULL,
+    group_type TEXT,
+    persons INTEGER,
+    style TEXT,
+    duration TEXT,
+    cities TEXT,
+    lang TEXT,
+    source_path TEXT,
+    status TEXT NOT NULL DEFAULT 'nouveau',
+    sold_price DOUBLE PRECISION NOT NULL DEFAULT 0,
+    agency TEXT,
+    note TEXT,
+    ip_hash TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_leads_created ON agency_leads(created_at);
+CREATE INDEX IF NOT EXISTS idx_leads_status ON agency_leads(status);
 """
 
 
@@ -364,6 +384,62 @@ def _migrate_nps_table(conn, *, postgres: bool) -> None:
         )
 
 
+def _migrate_agency_leads_table(conn, *, postgres: bool) -> None:
+    if postgres:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS agency_leads (
+                    id SERIAL PRIMARY KEY,
+                    email TEXT NOT NULL,
+                    group_type TEXT,
+                    persons INTEGER,
+                    style TEXT,
+                    duration TEXT,
+                    cities TEXT,
+                    lang TEXT,
+                    source_path TEXT,
+                    status TEXT NOT NULL DEFAULT 'nouveau',
+                    sold_price DOUBLE PRECISION NOT NULL DEFAULT 0,
+                    agency TEXT,
+                    note TEXT,
+                    ip_hash TEXT,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )""")
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_leads_created ON agency_leads(created_at)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_leads_status ON agency_leads(status)"
+            )
+    else:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS agency_leads (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT NOT NULL,
+                group_type TEXT,
+                persons INTEGER,
+                style TEXT,
+                duration TEXT,
+                cities TEXT,
+                lang TEXT,
+                source_path TEXT,
+                status TEXT NOT NULL DEFAULT 'nouveau',
+                sold_price REAL NOT NULL DEFAULT 0,
+                agency TEXT,
+                note TEXT,
+                ip_hash TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )""")
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_leads_created ON agency_leads(created_at)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_leads_status ON agency_leads(status)"
+        )
+
+
 def _init_postgres():
     import psycopg2
 
@@ -381,6 +457,7 @@ def _init_postgres():
         _migrate_email_tracking_table(conn, postgres=True)
         _migrate_partner_portal_tables(conn, postgres=True)
         _migrate_nps_table(conn, postgres=True)
+        _migrate_agency_leads_table(conn, postgres=True)
         conn.commit()
     finally:
         conn.close()
@@ -427,6 +504,7 @@ def _init_sqlite():
         _migrate_email_tracking_table(conn, postgres=False)
         _migrate_partner_portal_tables(conn, postgres=False)
         _migrate_nps_table(conn, postgres=False)
+        _migrate_agency_leads_table(conn, postgres=False)
 
 
 def _migrate_email_tracking_table(conn, *, postgres: bool) -> None:

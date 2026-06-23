@@ -137,6 +137,9 @@
           <a href="{{ url_for('admin.affiliates') }}" class="admin-nav__link {% if request.endpoint == 'admin.affiliates' %}is-active{% endif %}">
             <span class="admin-nav__icon" aria-hidden="true">◇</span> Affiliation
           </a>
+          <a href="{{ url_for('admin.leads_admin') }}" class="admin-nav__link {% if request.endpoint == 'admin.leads_admin' %}is-active{% endif %}">
+            <span class="admin-nav__icon" aria-hidden="true">🎯</span> Leads agences{% if leads_open %} <span class="admin-nav__badge">{{ leads_open }}</span>{% endif %}
+          </a>
           <a href="{{ url_for('admin.revenue') }}" class="admin-nav__link {% if request.endpoint == 'admin.revenue' %}is-active{% endif %}">
             <span class="admin-nav__icon" aria-hidden="true">€</span> Revenus
           </a>

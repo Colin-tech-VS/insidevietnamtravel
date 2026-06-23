@@ -1,0 +1,148 @@
+{% extends "admin/layout.html" %}
+{% block title %}Leads agences{% endblock %}
+{% block page_title %}Leads agences — demandes qualifiées à revendre{% endblock %}
+
+{% block content %}
+<p class="page-sub">
+  Chaque visiteur qui débloque son itinéraire via le planificateur laisse son email
+  <strong>+ son profil de voyage</strong>. Ces demandes qualifiées se revendent à une
+  agence francophone locale (DMC) au lead, payé à la livraison — pas à la réservation.
+</p>
+
+<div class="admin-page-layout admin-page-layout--wide">
+  <div class="admin-page-main">
+
+    <div class="kpi-grid">
+      <div class="kpi-card kpi-card--gold">
+        <span class="kpi-card__label">Leads totaux</span>
+        <span class="kpi-card__value">{{ stats.total }}</span>
+        <span class="kpi-card__hint">depuis le début</span>
+      </div>
+      <div class="kpi-card kpi-card--teal">
+        <span class="kpi-card__label">À traiter</span>
+        <span class="kpi-card__value">{{ stats.open }}</span>
+        <span class="kpi-card__hint">nouveaux + contactés</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-card__label">Vendus</span>
+        <span class="kpi-card__value">{{ stats.by_status.vendu }}</span>
+        <span class="kpi-card__hint">leads facturés</span>
+      </div>
+      <div class="kpi-card kpi-card--gold">
+        <span class="kpi-card__label">CA leads</span>
+        <span class="kpi-card__value">{{ stats.revenue }} €</span>
+        <span class="kpi-card__hint">encaissé</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-card__label">Potentiel</span>
+        <span class="kpi-card__value">{{ stats.potential }} €</span>
+        <span class="kpi-card__hint">{{ stats.open }} × {{ stats.lead_value }} €/lead</span>
+      </div>
+    </div>
+
+    <div class="analytics-toolbar">
+      <div class="analytics-toolbar__period">
+        <span class="analytics-toolbar__label">Filtrer</span>
+        <div class="period-pills">
+          <a href="{{ url_for('admin.leads_admin') }}" class="period-pill {% if not status_filter %}is-active{% endif %}">Tous</a>
+          {% for key, label in statuses %}
+          <a href="{{ url_for('admin.leads_admin', status=key) }}" class="period-pill {% if status_filter == key %}is-active{% endif %}">{{ label }} ({{ stats.by_status[key] }})</a>
+          {% endfor %}
+        </div>
+      </div>
+      <a href="{{ url_for('admin.leads_export') }}" class="btn btn-ghost btn-sm">⬇ Export CSV</a>
+    </div>
+
+    <section class="panel">
+      <h2>Demandes {% if status_filter %}— {{ status_filter }}{% endif %}</h2>
+      {% if leads %}
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Email</th>
+              <th>Profil</th>
+              <th>Villes</th>
+              <th>Statut / Suivi</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for l in leads %}
+            <tr>
+              <td style="white-space:nowrap;">{{ l.created_at }}</td>
+              <td style="white-space:nowrap;"><a href="mailto:{{ l.email }}">{{ l.email }}</a></td>
+              <td style="white-space:normal;max-width:220px;">
+                <span class="badge">{{ l.group_label }}</span>
+                {% if l.persons %}<span class="badge">{{ l.persons }} pers.</span>{% endif %}
+                <span class="badge">{{ l.duration_label }}</span><br>
+                <small style="color:var(--text-muted);">{{ l.style_label }}</small>
+              </td>
+              <td style="white-space:normal;max-width:200px;"><small>{{ l.cities or '—' }}</small></td>
+              <td style="white-space:normal;min-width:260px;">
+                <form method="post" class="lead-row-form" style="display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;">
+                  <input type="hidden" name="action" value="update">
+                  <input type="hidden" name="lead_id" value="{{ l.id }}">
+                  <input type="hidden" name="filter_status" value="{{ status_filter }}">
+                  <select name="status" class="input input-sm">
+                    {% for key, label in statuses %}
+                    <option value="{{ key }}" {% if l.status == key %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                  <input type="text" name="agency" value="{{ l.agency or '' }}" placeholder="Agence" class="input input-sm" style="width:100px;">
+                  <input type="text" name="sold_price" value="{{ l.sold_price or '' }}" placeholder="€" class="input input-sm" style="width:60px;" inputmode="decimal">
+                  <input type="text" name="note" value="{{ l.note or '' }}" placeholder="Note" class="input input-sm" style="width:120px;">
+                  <button type="submit" class="btn btn-primary btn-sm">OK</button>
+                </form>
+              </td>
+              <td>
+                <form method="post" onsubmit="return confirm('Supprimer ce lead ?');">
+                  <input type="hidden" name="action" value="delete">
+                  <input type="hidden" name="lead_id" value="{{ l.id }}">
+                  <input type="hidden" name="filter_status" value="{{ status_filter }}">
+                  <button type="submit" class="btn btn-ghost btn-sm" aria-label="Supprimer">✕</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="page-sub">Aucun lead {% if status_filter %}avec ce statut{% endif %} pour le moment. Les demandes arrivent dès qu'un visiteur débloque son itinéraire sur <a href="/preparer-mon-voyage" target="_blank" rel="noopener">/preparer-mon-voyage</a>.</p>
+      {% endif %}
+    </section>
+
+  </div>
+
+  <aside class="admin-page-aside">
+    <section class="panel">
+      <h2>💰 Comment monétiser</h2>
+      <ol class="status-list" style="list-style:decimal;padding-left:1.2rem;">
+        <li>Contacte 2-3 agences réceptives francophones au Vietnam (DMC).</li>
+        <li>Propose-leur les demandes qualifiées à <strong>15-50 €/lead</strong>, payé à la livraison.</li>
+        <li>Exporte les leads en CSV et envoie-les, ou ouvre un accès dédié.</li>
+        <li>Marque le lead « Vendu » + le prix → enregistré automatiquement en Revenus.</li>
+      </ol>
+    </section>
+    <section class="panel">
+      <h2>🔁 Cycle d'un lead</h2>
+      <ul class="status-list">
+        <li>Nouveau — vient d'arriver, à proposer à une agence.</li>
+        <li>Contacté — transmis, en attente de réponse.</li>
+        <li>Vendu — facturé (le prix alimente les Revenus).</li>
+        <li>Perdu — non retenu / doublon.</li>
+      </ul>
+    </section>
+    <section class="panel">
+      <h2>⚖️ RGPD</h2>
+      <p class="page-sub" style="margin:0;">
+        Le visiteur a coché le consentement avant de transmettre son email.
+        Préviens-le dans tes mentions que ses données peuvent être partagées avec
+        un partenaire voyage, et garde le lien de désinscription actif.
+      </p>
+    </section>
+  </aside>
+</div>
+{% endblock %}

@@ -17,5 +17,6 @@ data/store/settings.json
 data/store/affiliate_ids.json
 data/store/custom_partners.json
 data/store/map_points.json
+data/store/agency_leads.json
 
 .tools/

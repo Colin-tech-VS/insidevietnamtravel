@@ -854,7 +854,7 @@ def prepare_trip():
 @app.route("/preparer-mon-voyage/unlock", methods=["POST"])
 @app.route("/en/plan-my-trip/unlock", methods=["POST"])
 def prepare_trip_unlock():
-    """Inscription newsletter pour débloquer les résultats du trip planner."""
+    """Inscription newsletter + captation lead agence (profil du trip planner)."""
     from flask import jsonify
 
     from admin.newsletter_service import add_newsletter_subscriber
@@ -870,6 +870,34 @@ def prepare_trip_unlock():
         return jsonify({"ok": False, "error": t("flash.invalid_email", lang)}), 400
 
     add_newsletter_subscriber(email)
+
+    # Lead qualifié revendable : on enregistre le profil de voyage avec l'email.
+    # Filtre léger (bots + IP exclues) : un email consenti est à haute intention,
+    # on n'exige pas de referrer same-site pour ne pas perdre de vrais leads.
+    try:
+        from admin.analytics_filters import (
+            analytics_ip_hash, is_analytics_bot, is_analytics_excluded_ip,
+        )
+        from admin import leads_service
+
+        client_ip = (request.remote_addr or "").strip()
+        user_agent = (request.user_agent.string or "")[:200]
+        if not is_analytics_excluded_ip(client_ip) and not is_analytics_bot(user_agent):
+            cities = payload.getlist("cities") if hasattr(payload, "getlist") else payload.get("cities")
+            leads_service.add_lead(
+                email=email,
+                group_type=payload.get("group"),
+                persons=payload.get("persons"),
+                style=payload.get("style"),
+                duration=payload.get("duration"),
+                cities=cities,
+                lang=lang,
+                source_path=request.referrer or "/preparer-mon-voyage",
+                ip_hash=analytics_ip_hash(client_ip),
+            )
+    except Exception:
+        app.logger.exception("lead capture (trip planner) failed")
+
     return jsonify({"ok": True})
 
 

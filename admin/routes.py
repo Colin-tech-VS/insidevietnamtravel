@@ -6,7 +6,7 @@ import threading
 
 from flask import (
     Blueprint, render_template, request, redirect, url_for,
-    flash, session, jsonify,
+    flash, session, jsonify, Response,
 )
 
 from admin.auth import check_password, do_login, do_logout, login_required
@@ -1331,6 +1331,62 @@ def nps_admin():
     )
 
 
+@admin_bp.route("/leads", methods=["GET", "POST"])
+@login_required
+def leads_admin():
+    from admin import leads_service
+
+    if request.method == "POST":
+        action = request.form.get("action")
+        lead_id = request.form.get("lead_id")
+        if action == "update":
+            leads_service.update_lead(
+                lead_id,
+                status=request.form.get("status"),
+                sold_price=request.form.get("sold_price"),
+                agency=request.form.get("agency"),
+                note=request.form.get("note"),
+            )
+            # Si le lead est marqué vendu avec un prix, on l'enregistre en revenus.
+            if request.form.get("status") == "vendu":
+                try:
+                    price = float((request.form.get("sold_price") or "0").replace(",", "."))
+                    if price > 0:
+                        db.add_revenue("lead_agence", price, note=f"Lead #{lead_id} {request.form.get('agency') or ''}".strip())
+                except (ValueError, TypeError):
+                    pass
+            flash("Lead mis à jour.", "success")
+        elif action == "delete":
+            leads_service.delete_lead(lead_id)
+            flash("Lead supprimé.", "success")
+        status = request.form.get("filter_status") or ""
+        return redirect(url_for("admin.leads_admin", status=status) if status else url_for("admin.leads_admin"))
+
+    status_filter = (request.args.get("status") or "").strip() or None
+    leads = leads_service.get_leads(status_filter)
+    stats = leads_service.get_stats()
+    return render_template(
+        "admin/leads.html",
+        leads=leads,
+        stats=stats,
+        statuses=leads_service.STATUSES,
+        status_filter=status_filter or "",
+    )
+
+
+@admin_bp.route("/leads/export.csv")
+@login_required
+def leads_export():
+    from admin import leads_service
+
+    csv_data = leads_service.export_csv()
+    return Response(
+        csv_data,
+        mimetype="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="leads_agences.csv"'},
+    )
+
+
 @admin_bp.context_processor
 def admin_globals():
     try:
@@ -1338,7 +1394,12 @@ def admin_globals():
         unread = count_unread_messages()
     except Exception:
         unread = 0
-    return {"contact_unread": unread}
+    try:
+        from admin import leads_service
+        leads_open = leads_service.count_leads("nouveau")
+    except Exception:
+        leads_open = 0
+    return {"contact_unread": unread, "leads_open": leads_open}
 
 
 @admin_bp.route("/api/newsletter/generate", methods=["POST"])

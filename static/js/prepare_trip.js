@@ -100,7 +100,15 @@
     fetch(catalog.unlock_url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ email, consent_rgpd: '1' }),
+      body: JSON.stringify({
+        email,
+        consent_rgpd: '1',
+        group: state.group || '',
+        persons: state.persons || '',
+        style: state.style || '',
+        duration: state.duration || '',
+        cities: state.cities || [],
+      }),
       keepalive: true,
     }).catch(() => { /* résultats déjà affichés ; inscription retentée au prochain passage */ });
   }
