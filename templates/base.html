@@ -338,18 +338,23 @@
             </ul>
           </li>
           <li class="nav-dropdown">
-            <button type="button" class="nav-dropdown__toggle" aria-expanded="false" aria-controls="nav-about">{{ t('nav.about') }}</button>
-            <ul id="nav-about" class="nav-dropdown__menu">
-              <li><a href="{{ lang_url('about') }}" {% if request.endpoint == 'about' %}aria-current="page"{% endif %}>{{ t('nav.about') }}</a></li>
-              <li><a href="{{ lang_url('contact') }}" {% if request.endpoint == 'contact' %}aria-current="page"{% endif %}>{{ t('nav.contact') }}</a></li>
-              <li><a href="{{ lang_url('become_partner') }}" {% if request.endpoint == 'become_partner' %}aria-current="page"{% endif %}>{{ 'Become a partner' if lang == 'en' else 'Devenir partenaire' }}</a></li>
+            <button type="button" class="nav-dropdown__toggle" aria-expanded="false" aria-controls="nav-partners">{{ 'Partners' if lang == 'en' else 'Partenaires' }}</button>
+            <ul id="nav-partners" class="nav-dropdown__menu">
               <li><a href="{{ lang_url('partners_index') }}" {% if request.endpoint == 'partners_index' %}aria-current="page"{% endif %}>{{ 'Our partners' if lang == 'en' else 'Nos partenaires' }}</a></li>
+              <li><a href="{{ lang_url('become_partner') }}" {% if request.endpoint == 'become_partner' %}aria-current="page"{% endif %}>{{ 'Become a partner' if lang == 'en' else 'Devenir partenaire' }}</a></li>
               {% if partner_account %}
               <li><a href="{{ url_for('partners.dashboard') }}" {% if request.endpoint and request.endpoint.startswith('partners.') %}aria-current="page"{% endif %}>{{ 'My partner space' if lang == 'en' else 'Mon espace partenaire' }}</a></li>
               <li><a href="{{ url_for('partners.logout') }}">{{ 'Partner log out' if lang == 'en' else 'Déconnexion partenaire' }}</a></li>
               {% else %}
-              <li><a href="{{ url_for('partners.login') }}" {% if request.endpoint == 'partners.login' %}aria-current="page"{% endif %}>{{ 'Partner login' if lang == 'en' else 'Connexion partenaire' }}</a></li>
+              <li><a href="{{ url_for('partners.login') }}" class="nav-dropdown__cta" {% if request.endpoint == 'partners.login' %}aria-current="page"{% endif %}>{{ 'Partner login' if lang == 'en' else 'Connexion partenaire' }}</a></li>
               {% endif %}
+            </ul>
+          </li>
+          <li class="nav-dropdown">
+            <button type="button" class="nav-dropdown__toggle" aria-expanded="false" aria-controls="nav-about">{{ t('nav.about') }}</button>
+            <ul id="nav-about" class="nav-dropdown__menu">
+              <li><a href="{{ lang_url('about') }}" {% if request.endpoint == 'about' %}aria-current="page"{% endif %}>{{ t('nav.about') }}</a></li>
+              <li><a href="{{ lang_url('contact') }}" {% if request.endpoint == 'contact' %}aria-current="page"{% endif %}>{{ t('nav.contact') }}</a></li>
             </ul>
           </li>
         </ul>

@@ -98,6 +98,12 @@ a:hover { color: var(--terracotta); }
   height: 100%;
 }
 
+/* Le header peut être plus large que le contenu (1200px) pour loger tous les
+   onglets de navigation sur une seule ligne sur grand écran. */
+.site-header > .container {
+  max-width: 1320px;
+}
+
 /* Bandeau promo "Préparer mon voyage" — sticky juste sous la navbar */
 .trip-promo-bar {
   position: sticky;
@@ -259,7 +265,7 @@ a:hover { color: var(--terracotta); }
 .main-nav > ul {
   display: flex;
   flex-wrap: nowrap;
-  gap: 0.1rem;
+  gap: 0.05rem;
   list-style: none;
   align-items: center;
   white-space: nowrap;
@@ -267,8 +273,8 @@ a:hover { color: var(--terracotta); }
 
 .main-nav a {
   display: block;
-  padding: 0.5rem 0.7rem;
-  font-size: 0.875rem;
+  padding: 0.5rem 0.58rem;
+  font-size: 0.85rem;
   font-weight: 500;
   color: var(--ink-soft);
   border-radius: var(--radius-sm);
@@ -381,10 +387,10 @@ a:hover { color: var(--terracotta); }
 .nav-dropdown__toggle {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.5rem 0.7rem;
+  gap: 0.26rem;
+  padding: 0.5rem 0.58rem;
   font-family: var(--font-body);
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   font-weight: 500;
   color: var(--ink-soft);
   background: none;
@@ -434,8 +440,17 @@ a:hover { color: var(--terracotta); }
   font-size: 0.875rem;
   color: var(--ink-soft);
   border-radius: var(--radius-sm);
+  white-space: nowrap;
 }
 .nav-dropdown__menu a:hover { background: var(--rice); color: var(--teal); }
+/* Connexion partenaire : mise en avant légère dans le menu */
+.nav-dropdown__menu a.nav-dropdown__cta {
+  margin-top: 0.15rem;
+  font-weight: 600;
+  color: var(--teal);
+  background: rgba(27, 77, 74, 0.06);
+}
+.nav-dropdown__menu a.nav-dropdown__cta:hover { background: rgba(27, 77, 74, 0.12); }
 
 /* Mega menu — destinations par région (Nord / Centre / Sud) */
 .nav-dropdown--mega { position: static; }
