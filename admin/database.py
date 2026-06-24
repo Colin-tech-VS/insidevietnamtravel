@@ -107,10 +107,14 @@ CREATE INDEX IF NOT EXISTS idx_nps_path ON nps_responses(path);
 CREATE TABLE IF NOT EXISTS agency_leads (
     id SERIAL PRIMARY KEY,
     email TEXT NOT NULL,
+    first_name TEXT,
+    phone TEXT,
     group_type TEXT,
     persons INTEGER,
     style TEXT,
     duration TEXT,
+    travel_period TEXT,
+    budget TEXT,
     cities TEXT,
     lang TEXT,
     source_path TEXT,
@@ -385,16 +389,22 @@ def _migrate_nps_table(conn, *, postgres: bool) -> None:
 
 
 def _migrate_agency_leads_table(conn, *, postgres: bool) -> None:
+    # Colonnes qualifiantes ajoutées après coup (formulaire enrichi).
+    _extra_cols = ("first_name", "phone", "travel_period", "budget")
     if postgres:
         with conn.cursor() as cur:
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS agency_leads (
                     id SERIAL PRIMARY KEY,
                     email TEXT NOT NULL,
+                    first_name TEXT,
+                    phone TEXT,
                     group_type TEXT,
                     persons INTEGER,
                     style TEXT,
                     duration TEXT,
+                    travel_period TEXT,
+                    budget TEXT,
                     cities TEXT,
                     lang TEXT,
                     source_path TEXT,
@@ -406,6 +416,8 @@ def _migrate_agency_leads_table(conn, *, postgres: bool) -> None:
                     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 )""")
+            for col in _extra_cols:
+                cur.execute(f"ALTER TABLE agency_leads ADD COLUMN IF NOT EXISTS {col} TEXT")
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_leads_created ON agency_leads(created_at)"
             )
@@ -417,10 +429,14 @@ def _migrate_agency_leads_table(conn, *, postgres: bool) -> None:
             CREATE TABLE IF NOT EXISTS agency_leads (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 email TEXT NOT NULL,
+                first_name TEXT,
+                phone TEXT,
                 group_type TEXT,
                 persons INTEGER,
                 style TEXT,
                 duration TEXT,
+                travel_period TEXT,
+                budget TEXT,
                 cities TEXT,
                 lang TEXT,
                 source_path TEXT,
@@ -432,6 +448,10 @@ def _migrate_agency_leads_table(conn, *, postgres: bool) -> None:
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             )""")
+        cols = {row[1] for row in conn.execute("PRAGMA table_info(agency_leads)")}
+        for col in _extra_cols:
+            if col not in cols:
+                conn.execute(f"ALTER TABLE agency_leads ADD COLUMN {col} TEXT")
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_leads_created ON agency_leads(created_at)"
         )

@@ -97,12 +97,18 @@
       btn.textContent = btnLabel;
     }
 
+    const val = (name) => (form[name] && form[name].value ? form[name].value.trim() : '');
+
     fetch(catalog.unlock_url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({
         email,
         consent_rgpd: '1',
+        first_name: val('first_name'),
+        phone: val('phone'),
+        travel_period: val('travel_period'),
+        budget: val('budget'),
         group: state.group || '',
         persons: state.persons || '',
         style: state.style || '',

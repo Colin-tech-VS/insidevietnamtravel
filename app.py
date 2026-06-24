@@ -889,10 +889,14 @@ def prepare_trip_unlock():
             cities = payload.getlist("cities") if hasattr(payload, "getlist") else payload.get("cities")
             leads_service.add_lead(
                 email=email,
+                first_name=payload.get("first_name"),
+                phone=payload.get("phone"),
                 group_type=payload.get("group"),
                 persons=payload.get("persons"),
                 style=payload.get("style"),
                 duration=payload.get("duration"),
+                travel_period=payload.get("travel_period"),
+                budget=payload.get("budget"),
                 cities=cities,
                 lang=lang,
                 source_path=request.referrer or "/preparer-mon-voyage",

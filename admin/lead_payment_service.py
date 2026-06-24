@@ -202,13 +202,21 @@ def fulfill_lead_checkout(session_id: str) -> dict:
 def _profile_table(lead: dict, *, include_contact: bool) -> str:
     rows: list[tuple[str, str]] = []
     if include_contact:
+        if lead.get("first_name"):
+            rows.append(("Prénom", lead["first_name"]))
         email = lead.get("email", "")
         rows.append(("Email du voyageur", f'<a href="mailto:{email}" style="color:#1b4d4a;">{email}</a>'))
+        if lead.get("phone"):
+            rows.append(("Téléphone / WhatsApp", lead["phone"]))
     rows.append(("Type de groupe", lead.get("group_label") or "—"))
     if lead.get("persons"):
         rows.append(("Nombre de voyageurs", str(lead["persons"])))
     rows.append(("Style de voyage", lead.get("style_label") or "—"))
     rows.append(("Durée souhaitée", lead.get("duration_label") or "—"))
+    if lead.get("period_label") and lead.get("period_label") != "—":
+        rows.append(("Période de voyage", lead["period_label"]))
+    if lead.get("budget_label") and lead.get("budget_label") != "—":
+        rows.append(("Budget par personne", lead["budget_label"]))
     if lead.get("cities"):
         rows.append(("Villes / régions", lead["cities"]))
     if lead.get("lang"):

@@ -72,11 +72,18 @@
             {% for l in leads %}
             <tr>
               <td style="white-space:nowrap;">{{ l.created_at }}</td>
-              <td style="white-space:nowrap;"><a href="mailto:{{ l.email }}">{{ l.email }}</a></td>
-              <td style="white-space:normal;max-width:220px;">
+              <td style="white-space:nowrap;">
+                {% if l.first_name %}<strong>{{ l.first_name }}</strong><br>{% endif %}
+                <a href="mailto:{{ l.email }}">{{ l.email }}</a>
+                {% if l.phone %}<br><small style="color:var(--text-muted);">📞 {{ l.phone }}</small>{% endif %}
+              </td>
+              <td style="white-space:normal;max-width:240px;">
                 <span class="badge">{{ l.group_label }}</span>
                 {% if l.persons %}<span class="badge">{{ l.persons }} pers.</span>{% endif %}
-                <span class="badge">{{ l.duration_label }}</span><br>
+                <span class="badge">{{ l.duration_label }}</span>
+                {% if l.period_label and l.period_label != '—' %}<span class="badge">📅 {{ l.period_label }}</span>{% endif %}
+                {% if l.budget_label and l.budget_label != '—' %}<span class="badge">💶 {{ l.budget_label }}</span>{% endif %}
+                <br>
                 <small style="color:var(--text-muted);">{{ l.style_label }}</small>
               </td>
               <td style="white-space:normal;max-width:200px;"><small>{{ l.cities or '—' }}</small></td>
@@ -101,7 +108,7 @@
                   <button type="button" class="btn btn-secondary btn-sm lead-send-btn"
                           data-lead-id="{{ l.id }}"
                           data-lead-email="{{ l.email }}"
-                          data-lead-summary="{{ l.group_label }}{% if l.persons %} · {{ l.persons }} pers.{% endif %} · {{ l.duration_label }} · {{ l.style_label }}{% if l.cities %} · {{ l.cities }}{% endif %}"
+                          data-lead-summary="{{ l.group_label }}{% if l.persons %} · {{ l.persons }} pers.{% endif %} · {{ l.duration_label }}{% if l.period_label and l.period_label != '—' %} · {{ l.period_label }}{% endif %}{% if l.budget_label and l.budget_label != '—' %} · {{ l.budget_label }}{% endif %} · {{ l.style_label }}{% if l.cities %} · {{ l.cities }}{% endif %}"
                           {% if l.status == 'vendu' %}title="Déjà vendu — renvoyable"{% endif %}>
                     ✉ Envoyer
                   </button>

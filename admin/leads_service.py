@@ -56,6 +56,18 @@ DURATION_LABELS = {
     "medium": "≈ 10 jours",
     "long": "14 jours et +",
 }
+PERIOD_LABELS = {
+    "flexible": "Flexible / non défini",
+    "jan": "Janvier", "feb": "Février", "mar": "Mars", "apr": "Avril",
+    "may": "Mai", "jun": "Juin", "jul": "Juillet", "aug": "Août",
+    "sep": "Septembre", "oct": "Octobre", "nov": "Novembre", "dec": "Décembre",
+}
+BUDGET_LABELS = {
+    "lt1000": "Moins de 1 000 € / pers.",
+    "1000-2000": "1 000 – 2 000 € / pers.",
+    "2000-3500": "2 000 – 3 500 € / pers.",
+    "gt3500": "Plus de 3 500 € / pers.",
+}
 
 
 def _now_iso() -> str:
@@ -101,10 +113,14 @@ def _clean(value, limit: int = 200) -> str | None:
 def add_lead(
     *,
     email: str,
+    first_name: str | None = None,
+    phone: str | None = None,
     group_type: str | None = None,
     persons=None,
     style: str | None = None,
     duration: str | None = None,
+    travel_period: str | None = None,
+    budget: str | None = None,
     cities=None,
     lang: str | None = None,
     source_path: str | None = None,
@@ -122,9 +138,13 @@ def add_lead(
     except (TypeError, ValueError):
         persons_val = None
 
+    first_name = _clean(first_name, 80)
+    phone = _clean(phone, 40)
     group_type = _clean(group_type, 40)
     style = _clean(style, 40)
     duration = _clean(duration, 40)
+    travel_period = _clean(travel_period, 40)
+    budget = _clean(budget, 40)
     cities = _clean(cities, 400)
     lang = _clean(lang, 8)
     source_path = _clean(source_path, 300)
@@ -137,13 +157,14 @@ def add_lead(
             cur.execute(
                 """
                 INSERT INTO agency_leads
-                    (email, group_type, persons, style, duration, cities, lang,
-                     source_path, status, sold_price, created_at, updated_at)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'nouveau',0,NOW(),NOW())
+                    (email, first_name, phone, group_type, persons, style, duration,
+                     travel_period, budget, cities, lang, source_path, status,
+                     sold_price, created_at, updated_at)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'nouveau',0,NOW(),NOW())
                 RETURNING id
                 """,
-                (email, group_type, persons_val, style, duration, cities, lang,
-                 source_path),
+                (email, first_name, phone, group_type, persons_val, style, duration,
+                 travel_period, budget, cities, lang, source_path),
             )
             row = cur.fetchone()
             new_id = (row["id"] if isinstance(row, dict) else row[0]) if row else None
@@ -153,10 +174,14 @@ def add_lead(
     new = {
         "id": _next_local_id(rows),
         "email": email,
+        "first_name": first_name,
+        "phone": phone,
         "group_type": group_type,
         "persons": persons_val,
         "style": style,
         "duration": duration,
+        "travel_period": travel_period,
+        "budget": budget,
         "cities": cities,
         "lang": lang,
         "source_path": source_path,
@@ -239,9 +264,9 @@ def delete_lead(lead_id: int) -> bool:
 # ── Lecture ───────────────────────────────────────────────────────────
 
 _FIELDS = (
-    "id", "email", "group_type", "persons", "style", "duration", "cities",
-    "lang", "source_path", "status", "sold_price", "agency", "note",
-    "created_at", "updated_at",
+    "id", "email", "first_name", "phone", "group_type", "persons", "style",
+    "duration", "travel_period", "budget", "cities", "lang", "source_path",
+    "status", "sold_price", "agency", "note", "created_at", "updated_at",
 )
 
 
@@ -282,6 +307,8 @@ def _enrich(r: dict) -> dict:
     r["group_label"] = GROUP_LABELS.get(r.get("group_type"), r.get("group_type") or "—")
     r["style_label"] = STYLE_LABELS.get(r.get("style"), r.get("style") or "—")
     r["duration_label"] = DURATION_LABELS.get(r.get("duration"), r.get("duration") or "—")
+    r["period_label"] = PERIOD_LABELS.get(r.get("travel_period"), r.get("travel_period") or "—")
+    r["budget_label"] = BUDGET_LABELS.get(r.get("budget"), r.get("budget") or "—")
     r["created_at"] = str(r.get("created_at") or "")[:16].replace("T", " ")
     return r
 
@@ -353,14 +380,17 @@ def export_csv() -> str:
     buf = io.StringIO()
     writer = csv.writer(buf)
     writer.writerow([
-        "id", "date", "email", "groupe", "personnes", "style", "duree",
-        "villes", "langue", "source", "statut", "prix_vendu", "agence", "note",
+        "id", "date", "email", "prenom", "telephone", "groupe", "personnes",
+        "style", "duree", "periode", "budget", "villes", "langue", "source",
+        "statut", "prix_vendu", "agence", "note",
     ])
     for r in rows:
         writer.writerow([
             r.get("id"), r.get("created_at"), r.get("email"),
+            r.get("first_name") or "", r.get("phone") or "",
             r.get("group_label"), r.get("persons") or "", r.get("style_label"),
-            r.get("duration_label"), r.get("cities") or "", r.get("lang") or "",
+            r.get("duration_label"), r.get("period_label"), r.get("budget_label"),
+            r.get("cities") or "", r.get("lang") or "",
             r.get("source_path") or "", r.get("status_label"),
             r.get("sold_price") or 0, r.get("agency") or "", r.get("note") or "",
         ])

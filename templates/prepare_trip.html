@@ -120,10 +120,52 @@
         <p class="prepare-email-gate__pdf-hint">{{ t('prepare.gate.pdf_hint', price=pdf.PDF_GUIDE.price) }}</p>
       </header>
       <form class="prepare-email-gate__form" id="prepare-email-form" data-no-loader novalidate>
-        <label for="prepare-email" class="sr-only">Email</label>
-        <input type="email" id="prepare-email" name="email" required
-               placeholder="{{ newsletter.NEWSLETTER.placeholder }}"
-               autocomplete="email" class="prepare-email-gate__input">
+        {% set months = [
+          ('jan','Janvier','January'), ('feb','Février','February'), ('mar','Mars','March'),
+          ('apr','Avril','April'), ('may','Mai','May'), ('jun','Juin','June'),
+          ('jul','Juillet','July'), ('aug','Août','August'), ('sep','Septembre','September'),
+          ('oct','Octobre','October'), ('nov','Novembre','November'), ('dec','Décembre','December')
+        ] %}
+        <div class="prepare-gate-fields">
+          <div class="prepare-gate-field">
+            <label for="prepare-firstname">{{ 'First name' if lang == 'en' else 'Prénom' }}</label>
+            <input type="text" id="prepare-firstname" name="first_name"
+                   autocomplete="given-name" class="prepare-email-gate__input"
+                   placeholder="{{ 'Your first name' if lang == 'en' else 'Votre prénom' }}">
+          </div>
+          <div class="prepare-gate-field">
+            <label for="prepare-email">Email <span aria-hidden="true">*</span></label>
+            <input type="email" id="prepare-email" name="email" required
+                   placeholder="{{ newsletter.NEWSLETTER.placeholder }}"
+                   autocomplete="email" class="prepare-email-gate__input">
+          </div>
+          <div class="prepare-gate-field">
+            <label for="prepare-phone">{{ 'Phone / WhatsApp' if lang == 'en' else 'Téléphone / WhatsApp' }}
+              <small>({{ 'optional' if lang == 'en' else 'facultatif' }})</small></label>
+            <input type="tel" id="prepare-phone" name="phone"
+                   autocomplete="tel" class="prepare-email-gate__input"
+                   placeholder="{{ '+44 …' if lang == 'en' else '+33 …' }}">
+          </div>
+          <div class="prepare-gate-field">
+            <label for="prepare-period">{{ 'When do you want to travel?' if lang == 'en' else 'Quand souhaitez-vous partir ?' }}</label>
+            <select id="prepare-period" name="travel_period" class="prepare-email-gate__input prepare-email-gate__select">
+              <option value="flexible">{{ 'Flexible / not decided yet' if lang == 'en' else 'Flexible / pas encore décidé' }}</option>
+              {% for key, fr, en in months %}
+              <option value="{{ key }}">{{ en if lang == 'en' else fr }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="prepare-gate-field">
+            <label for="prepare-budget">{{ 'Budget per person' if lang == 'en' else 'Budget par personne' }}</label>
+            <select id="prepare-budget" name="budget" class="prepare-email-gate__input prepare-email-gate__select">
+              <option value="">{{ '— No preference —' if lang == 'en' else '— Indifférent —' }}</option>
+              <option value="lt1000">{{ 'Under £900 / €1,000' if lang == 'en' else 'Moins de 1 000 €' }}</option>
+              <option value="1000-2000">{{ '€1,000 – €2,000' if lang == 'en' else '1 000 – 2 000 €' }}</option>
+              <option value="2000-3500">{{ '€2,000 – €3,500' if lang == 'en' else '2 000 – 3 500 €' }}</option>
+              <option value="gt3500">{{ 'Over €3,500' if lang == 'en' else 'Plus de 3 500 €' }}</option>
+            </select>
+          </div>
+        </div>
         <button type="submit" class="btn btn-primary prepare-email-gate__submit">{{ t('prepare.gate.cta') }}</button>
         <label class="prepare-email-gate__consent">
           <input type="checkbox" name="consent_rgpd" value="1" required>

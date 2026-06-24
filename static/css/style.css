@@ -4019,6 +4019,43 @@ a.article-category:hover { text-decoration: underline; }
   border-radius: var(--radius-md);
   font-size: 1rem;
 }
+
+/* Champs qualifiants du gate (prénom, email, tél, période, budget) */
+.prepare-gate-fields {
+  flex: 1 1 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem 0.9rem;
+}
+.prepare-gate-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+.prepare-gate-field label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.prepare-gate-field label small {
+  font-weight: 400;
+  color: var(--ink-muted);
+}
+.prepare-gate-field .prepare-email-gate__input {
+  flex: none;
+  width: 100%;
+}
+.prepare-email-gate__select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237A7772' d='M2 4l4 4 4-4z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  padding-right: 2.2rem;
+  background-color: var(--white);
+  cursor: pointer;
+}
 .prepare-email-gate__consent {
   flex: 1 1 100%;
   display: flex;
