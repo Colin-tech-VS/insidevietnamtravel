@@ -882,7 +882,10 @@ def prepare_trip_unlock():
 
         client_ip = (request.remote_addr or "").strip()
         user_agent = (request.user_agent.string or "")[:200]
-        if not is_analytics_excluded_ip(client_ip) and not is_analytics_bot(user_agent):
+        # LEADS_ALLOW_LOCAL=1 : bypass du filtre IP/bot pour tester en local
+        # (127.0.0.1 est normalement exclu). À n'activer qu'en dev.
+        allow_local = os.environ.get("LEADS_ALLOW_LOCAL", "").strip().lower() in ("1", "true", "yes", "on")
+        if allow_local or (not is_analytics_excluded_ip(client_ip) and not is_analytics_bot(user_agent)):
             cities = payload.getlist("cities") if hasattr(payload, "getlist") else payload.get("cities")
             leads_service.add_lead(
                 email=email,

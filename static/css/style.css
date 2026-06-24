@@ -124,6 +124,7 @@ a:hover { color: var(--terracotta); }
   font-size: 0.94rem;
   font-weight: 500;
   letter-spacing: 0.01em;
+  min-width: 0;
 }
 
 .trip-promo-bar__icon {
@@ -172,21 +173,42 @@ a:hover { color: var(--terracotta); }
   background: rgba(255, 255, 255, 0.12);
 }
 
-@media (max-width: 720px) {
+@media (max-width: 768px) {
+  /* Mobile : 3 colonnes (texte | CTA | fermer), bouton fermer DANS le flux
+     (plus en absolu) pour éviter tout chevauchement ; le texte peut passer
+     sur 2 lignes sans écraser le CTA. */
   .trip-promo-bar__inner {
-    gap: 0.6rem;
-    padding: 0.5rem 2.6rem 0.5rem 1rem;
+    justify-content: space-between;
+    gap: 0.55rem;
+    padding: 0.5rem 0.9rem;
   }
   .trip-promo-bar__text {
-    font-size: 0.82rem;
-    line-height: 1.35;
+    flex: 1 1 auto;
+    text-align: left;
+    font-size: 0.8rem;
+    line-height: 1.3;
   }
   .trip-promo-bar__cta {
-    font-size: 0.82rem;
-    padding: 0.38rem 0.85rem;
+    flex: 0 0 auto;
+    font-size: 0.8rem;
+    padding: 0.42rem 0.85rem;
   }
   .trip-promo-bar__cta svg { display: none; }
-  .trip-promo-bar__close { right: 0.6rem; }
+  .trip-promo-bar__close {
+    position: static;
+    transform: none;
+    flex: 0 0 auto;
+    right: auto;
+    padding: 0.3rem;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .trip-promo-bar__inner { gap: 0.4rem; padding: 0.5rem 0.7rem; }
+  .trip-promo-bar__icon { display: none; }
+  .trip-promo-bar__text { font-size: 0.74rem; line-height: 1.28; }
+  .trip-promo-bar__cta { font-size: 0.75rem; padding: 0.4rem 0.7rem; }
 }
 
 .main-nav {
