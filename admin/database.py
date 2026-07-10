@@ -6,6 +6,7 @@ import logging
 import os
 import sqlite3
 import threading
+import time
 from contextlib import contextmanager
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
@@ -184,6 +185,62 @@ def _ensure_sslmode(url: str) -> str:
 
 
 DATABASE_URL = normalize_database_url(os.environ.get("DATABASE_URL", ""))
+
+
+# ── Résilience DB : fast-fail + disjoncteur ───────────────────────────────
+# Sans cela, une panne/latence Postgres (Supabase injoignable, pooler saturé)
+# faisait pendre CHAQUE page publique pendant connect_timeout secondes : le
+# context processor `inject_globals` lit les réglages en DB, l'unique worker
+# gunicorn (--workers 1 --threads 4) se retrouvait avec tous ses threads bloqués,
+# gunicorn tuait/redémarrait le worker en boucle → aucun backend sain → 502 sur
+# TOUT le site (y compris /healthz). Le disjoncteur transforme une panne DB en
+# simple dégradation : les connexions échouent instantanément et le site sert le
+# contenu embarqué/caché.
+DB_CONNECT_TIMEOUT = max(1, int(os.environ.get("DB_CONNECT_TIMEOUT", "5")))
+DB_BREAKER_COOLDOWN = max(0, int(os.environ.get("DB_BREAKER_COOLDOWN", "15")))
+
+
+class DatabaseUnavailable(RuntimeError):
+    """Levée immédiatement quand le disjoncteur est ouvert (Postgres injoignable)."""
+
+
+_breaker_open_until = 0.0
+
+
+def _breaker_is_open() -> bool:
+    return DB_BREAKER_COOLDOWN > 0 and time.monotonic() < _breaker_open_until
+
+
+def _breaker_trip() -> None:
+    global _breaker_open_until
+    if DB_BREAKER_COOLDOWN > 0:
+        _breaker_open_until = time.monotonic() + DB_BREAKER_COOLDOWN
+        logger.warning(
+            "Disjoncteur DB ouvert %ss après échec de connexion Postgres.",
+            DB_BREAKER_COOLDOWN,
+        )
+
+
+def _breaker_reset() -> None:
+    global _breaker_open_until
+    _breaker_open_until = 0.0
+
+
+def _pg_connect(**kwargs):
+    """Connexion Postgres bornée + disjoncteur. Lève DatabaseUnavailable sans
+    attendre quand le disjoncteur est ouvert (échec récent)."""
+    import psycopg2
+
+    if _breaker_is_open():
+        raise DatabaseUnavailable("Postgres momentanément indisponible (disjoncteur ouvert)")
+    kwargs.setdefault("connect_timeout", DB_CONNECT_TIMEOUT)
+    try:
+        conn = psycopg2.connect(DATABASE_URL, **kwargs)
+    except Exception:
+        _breaker_trip()
+        raise
+    _breaker_reset()
+    return conn
 
 
 def is_postgres() -> bool:
@@ -461,9 +518,7 @@ def _migrate_agency_leads_table(conn, *, postgres: bool) -> None:
 
 
 def _init_postgres():
-    import psycopg2
-
-    conn = psycopg2.connect(DATABASE_URL, connect_timeout=10)
+    conn = _pg_connect()
     try:
         with conn.cursor() as cur:
             for stmt in SCHEMA_SQL.split(";"):
@@ -733,14 +788,9 @@ def _migrate_partner_portal_tables(conn, *, postgres: bool) -> None:
 def get_connection():
     ensure_schema()
     if is_postgres():
-        import psycopg2
         from psycopg2.extras import RealDictCursor
 
-        conn = psycopg2.connect(
-            DATABASE_URL,
-            cursor_factory=RealDictCursor,
-            connect_timeout=10,
-        )
+        conn = _pg_connect(cursor_factory=RealDictCursor)
         try:
             yield conn
             conn.commit()

@@ -1316,7 +1316,17 @@ def nps_admin():
                 else "Widget NPS désactivé.",
                 "success",
             )
+        elif action == "save_question":
+            # Question affichée aux visiteurs (par langue). Vide = repli sur la
+            # traduction par défaut du site.
+            save_settings({
+                "nps_question_fr": (request.form.get("nps_question_fr") or "").strip(),
+                "nps_question_en": (request.form.get("nps_question_en") or "").strip(),
+            })
+            flash("Question NPS enregistrée.", "success")
         return redirect(url_for("admin.nps_admin"))
+
+    from locales.ui import t
 
     days = int(request.args.get("days", 30))
     if days not in (7, 30, 90):
@@ -1328,6 +1338,10 @@ def nps_admin():
         stats=stats,
         days=days,
         nps_enabled=bool(settings.get("nps_enabled", False)),
+        nps_question_fr=settings.get("nps_question_fr", ""),
+        nps_question_en=settings.get("nps_question_en", ""),
+        nps_question_default_fr=t("nps.question", "fr"),
+        nps_question_default_en=t("nps.question", "en"),
     )
 
 

@@ -440,6 +440,9 @@ def inject_globals():
         "llms_txt_url": config.SITE_URL.rstrip("/") + "/llms.txt",
         "chat_enabled": _chat_enabled(),
         "nps_enabled": bool(settings.get("nps_enabled", False)),
+        # Question NPS personnalisable depuis l'admin (par langue), avec repli sur
+        # la traduction par défaut si aucune question n'a été saisie.
+        "nps_question": (settings.get(f"nps_question_{lang}") or "").strip() or t("nps.question", lang),
         "newsletter_popup_enabled": bool(settings.get("newsletter_popup_enabled", True)),
         "partner_account": partner_account,
     }

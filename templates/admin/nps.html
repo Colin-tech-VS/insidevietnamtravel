@@ -28,6 +28,26 @@
       </form>
     </section>
 
+    <section class="panel">
+      <h2>✏️ Question affichée aux visiteurs</h2>
+      <p class="page-sub" style="margin-top:0;">
+        Personnalise la question du widget de notation. Laisse un champ vide pour
+        utiliser la question par défaut du site.
+      </p>
+      <form method="post" class="nps-question-form">
+        <input type="hidden" name="action" value="save_question">
+        <label class="form-label" for="nps_question_fr">Question (français)</label>
+        <input type="text" id="nps_question_fr" name="nps_question_fr" class="input"
+               maxlength="120" value="{{ nps_question_fr }}"
+               placeholder="{{ nps_question_default_fr }}">
+        <label class="form-label" for="nps_question_en" style="margin-top:0.75rem;">Question (English)</label>
+        <input type="text" id="nps_question_en" name="nps_question_en" class="input"
+               maxlength="120" value="{{ nps_question_en }}"
+               placeholder="{{ nps_question_default_en }}">
+        <button type="submit" class="btn btn-primary btn-sm" style="margin-top:0.9rem;">Enregistrer la question</button>
+      </form>
+    </section>
+
     <div class="analytics-toolbar">
       <div class="analytics-toolbar__period">
         <span class="analytics-toolbar__label">Période</span>
