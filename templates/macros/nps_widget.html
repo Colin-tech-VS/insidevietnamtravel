@@ -7,7 +7,7 @@
   <button type="button" class="nps-widget__close" id="nps-close" aria-label="{{ t('nps.close') }}">✕</button>
 
   <div class="nps-widget__body" id="nps-body">
-    <p class="nps-widget__question">{{ t('nps.question') }}</p>
+    <p class="nps-widget__question">{{ nps_question or t('nps.question') }}</p>
     <p class="nps-widget__subtitle">{{ t('nps.subtitle') }}</p>
 
     <div class="nps-widget__stars" id="nps-stars" role="radiogroup" aria-label="{{ t('nps.subtitle') }}">
