@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import json
+import logging
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
 from admin.database import get_connection, is_postgres
+
+logger = logging.getLogger(__name__)
 
 STORE_DIR = Path(__file__).parent.parent / "data" / "store"
 _json_cache: dict[str, tuple[float, Any]] = {}
@@ -64,7 +67,16 @@ def get_json(key: str, default, *, file_name: str | None = None) -> Any:
         cached = _json_cache.get(key)
         if cached and cached[0] == "pg":
             return deepcopy(cached[1])
-        data = _pg_get(key)
+        try:
+            data = _pg_get(key)
+        except Exception:
+            # Panne/latence Postgres : on NE propage PAS l'erreur — sinon le rendu
+            # de chaque page casse (context processor). Repli sur le dernier cache
+            # connu, sinon sur la valeur par défaut fournie par l'appelant.
+            logger.warning("Lecture KV '%s' impossible (DB indisponible) — repli.", key)
+            if cached is not None:
+                return deepcopy(cached[1])
+            return deepcopy(default)
         if data is None:
             return None
         _json_cache[key] = ("pg", data)

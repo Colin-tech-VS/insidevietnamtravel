@@ -419,9 +419,16 @@ def add_article(article: dict):
 
 
 def _raw_destinations() -> dict:
-    stored = get_json("destinations", None, file_name="destinations.json")
+    try:
+        stored = get_json("destinations", None, file_name="destinations.json")
+    except Exception:
+        logger.exception("Lecture destinations KV impossible — repli sur contenu embarqué")
+        return deepcopy(DEFAULT_DESTINATIONS)
     if stored is None:
-        set_json("destinations", DEFAULT_DESTINATIONS, file_name="destinations.json")
+        try:
+            set_json("destinations", DEFAULT_DESTINATIONS, file_name="destinations.json")
+        except Exception:
+            logger.warning("Écriture destinations par défaut impossible (DB indisponible)")
         return deepcopy(DEFAULT_DESTINATIONS)
     return stored
 
