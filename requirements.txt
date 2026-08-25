@@ -1,5 +1,6 @@
 flask==3.1.0
 flask-compress==1.17
+brotli==1.1.0
 gunicorn==23.0.0
 psycopg2-binary==2.9.10
 python-dotenv==1.0.1
@@ -9,4 +10,5 @@ requests==2.32.3
 ddgs==9.14.4
 reportlab==4.4.3
 rcssmin==1.2.1
+rjsmin==1.2.4
 stripe==11.4.1

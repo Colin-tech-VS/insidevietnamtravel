@@ -7,6 +7,7 @@
 {% endblock %}
 
 {% block structured_data %}
+{% set season_faq = gsc_tool_faq('season') %}
 {{ json_ld_graph([
   {
     "@type": "WebPage",
@@ -19,7 +20,7 @@
     (t('nav.home'), site.SITE_URL ~ lang_url('index')),
     (t('season.title'), None),
   ]),
-]) }}
+] + ([seo_faq(season_faq)] if season_faq else [])) }}
 {% endblock %}
 
 {% block content %}
@@ -181,6 +182,21 @@
         <p>{{ t('season.tip') }}</p>
       </div>
     </aside>
+
+    {% set season_faq = gsc_tool_faq('season') %}
+    {% if season_faq %}
+    <div class="section-header" style="margin-top:2.5rem">
+      <h2>{{ t('tools.faq_title') }}</h2>
+    </div>
+    <div class="pillar-faq">
+      {% for item in season_faq %}
+      <details class="pillar-faq__item">
+        <summary>{{ item.question }}</summary>
+        <p>{{ item.answer }}</p>
+      </details>
+      {% endfor %}
+    </div>
+    {% endif %}
   </div>
 </section>
 

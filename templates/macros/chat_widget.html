@@ -67,7 +67,47 @@
     <p class="mai-chat__disclaimer">{{ t('chat.disclaimer') }}</p>
   </div>
 </div>
-<script src="{{ url_for('static', filename='js/chat-map.js') }}" defer></script>
-<script src="{{ url_for('static', filename='js/chat.js') }}" defer></script>
+<script>
+(function () {
+  var mapSrc = {{ url_for('static', filename='js/chat-map.js') | tojson }};
+  var chatSrc = {{ url_for('static', filename='js/chat.js') | tojson }};
+  var loading = null;
+  function loadChat() {
+    if (window.__maiChatReady) return Promise.resolve();
+    if (loading) return loading;
+    loading = new Promise(function (resolve) {
+      var a = document.createElement('script');
+      a.src = mapSrc;
+      a.onload = function () {
+        var b = document.createElement('script');
+        b.src = chatSrc;
+        b.onload = resolve;
+        b.onerror = resolve;
+        document.head.appendChild(b);
+      };
+      a.onerror = resolve;
+      document.head.appendChild(a);
+    });
+    return loading;
+  }
+  function onFirstOpen(e) {
+    if (window.__maiChatReady) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    var target = e.currentTarget;
+    loadChat().then(function () {
+      if (window.ivtOpenMaiChat) window.ivtOpenMaiChat();
+      else if (target) target.click();
+    });
+  }
+  var fab = document.getElementById('mai-chat-fab');
+  if (fab) fab.addEventListener('click', onFirstOpen, true);
+  document.querySelectorAll('[data-mai-open]').forEach(function (el) {
+    el.addEventListener('click', onFirstOpen, true);
+  });
+  if ('requestIdleCallback' in window) requestIdleCallback(loadChat, { timeout: 2500 });
+  else setTimeout(loadChat, 1);
+})();
+</script>
 {% endif %}
 {% endmacro %}

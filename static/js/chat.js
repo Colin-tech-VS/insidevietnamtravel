@@ -685,4 +685,5 @@
   });
 
   window.ivtOpenMaiChat = openPanel;
+  window.__maiChatReady = true;
 })();

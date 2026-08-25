@@ -460,15 +460,56 @@ def get_destination_by_slug(slug: str, lang: str | None = None) -> dict | None:
     return localize_destination(dest, lang) if lang else dest
 
 
-# Alias courants (erreurs de slug par Linh ou libellés ville ≠ slug publié).
+# Alias courants (fautes GSC + libellés ville ≠ slug publié).
 _DESTINATION_SLUG_ALIASES: dict[str, str] = {
     "hu": "hue",
     "m-tho-delta-mekong": "delta-du-mekong",
     "my-tho-delta-mekong": "delta-du-mekong",
     "my-tho": "delta-du-mekong",
+    "mi-tho": "delta-du-mekong",
     "mekong-delta": "delta-du-mekong",
     "delta-mekong": "delta-du-mekong",
+    "natrang": "nha-trang",
+    "nga-trang": "nha-trang",
+    "nyachang": "nha-trang",
+    "nah-trang": "nha-trang",
+    "na-trang": "nha-trang",
+    "nan-trang": "nha-trang",
+    "nichang": "nha-trang",
+    "ninh-bin": "ninh-binh",
+    "nim-binh": "ninh-binh",
+    "nihn-binh": "ninh-binh",
+    "nin-binh": "ninh-binh",
+    "ninh-b": "ninh-binh",
+    "nam-binh": "ninh-binh",
+    "hoi-a": "hoi-an",
+    "an-hoi": "hoi-an",
+    "hai-an": "hoi-an",
+    "hui-an": "hoi-an",
+    "hio-an": "hoi-an",
+    "hoy-an": "hoi-an",
+    "hoi-han": "hoi-an",
+    "hpi-an": "hoi-an",
+    "hoi-al": "hoi-an",
+    "haugiang": "ha-giang",
+    "hgiang": "ha-giang",
+    "cach-ba": "cat-ba",
+    "katba": "cat-ba",
+    "catba": "cat-ba",
+    "cat-bo": "cat-ba",
+    "cat-bah": "cat-ba",
+    "ku-chi": "cu-chi",
+    "cuchi": "cu-chi",
+    "cu-chi-vn": "cu-chi",
+    "van-tau": "vung-tau",
+    "dalat": "da-lat",
+    "da-lat-lam-dong": "da-lat",
 }
+
+
+def destination_alias_target(slug: str) -> str | None:
+    raw = (slug or "").strip().lower()
+    return _DESTINATION_SLUG_ALIASES.get(raw)
 
 
 def find_destination_slug(hint: str) -> str | None:

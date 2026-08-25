@@ -17,7 +17,7 @@
 {% block head_preload %}
 {% if page.image %}
 {% set hero = responsive_image(page.image, card=false) %}
-<link rel="preload" as="image" href="{{ hero.src }}"{% if hero.srcset %} imagesrcset="{{ hero.srcset }}" imagesizes="100vw"{% endif %}>
+<link rel="preload" as="image" href="{{ hero.src }}"{% if hero.srcset %} imagesrcset="{{ hero.srcset }}" imagesizes="100vw"{% endif %} fetchpriority="high">
 {% endif %}
 {% endblock %}
 

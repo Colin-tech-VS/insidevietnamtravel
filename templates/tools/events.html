@@ -5,6 +5,11 @@
 
 {% set hero_img = '/static/images/destinations/hoi-an.webp' %}
 
+{% block og_image %}
+{% from "macros/seo.html" import og_image_tags with context %}
+{{ og_image_tags(site.SITE_URL ~ hero_img, alt=t('events.title')) }}
+{% endblock %}
+
 {% block head_preload %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/tools.css') }}">
 <link rel="preload" as="image" href="{{ hero_img }}" fetchpriority="high">
@@ -19,6 +24,9 @@
     (t('events.nav'), None),
   ]),
 ] %}
+{% for ev in calendar.upcoming[:12] %}
+{% set _ = graph.append(seo_event(ev, canonical_url)) %}
+{% endfor %}
 {{ json_ld_graph(graph) }}
 {% endblock %}
 
@@ -62,7 +70,7 @@
 {% block content %}
 <header class="pillar-hero">
   <div class="pillar-hero__media" aria-hidden="true">
-    {{ responsive_img(hero_img, alt='', width=1600, height=900, loading='eager',
+    {{ responsive_img(hero_img, alt=t('events.title'), width=1600, height=900, loading='eager',
        fetchpriority='high', class='pillar-hero__img', sizes='100vw') }}
   </div>
   <div class="container pillar-hero__inner">

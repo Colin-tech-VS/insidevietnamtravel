@@ -516,8 +516,16 @@ _VISA_FAQ = _visa_faq([
     (
         "Combien coûte l'e-visa Vietnam ?",
         "How much does the Vietnam e-visa cost?",
-        "Environ 25 USD sur evisa.gov.vn. Les sites tiers facturent souvent plus.",
-        "About USD 25 on evisa.gov.vn. Third-party sites often charge more.",
+        "Environ 25 USD sur evisa.gov.vn (prix / tarif / frais officiels). Les sites tiers facturent souvent plus.",
+        "About USD 25 on evisa.gov.vn (official fee). Third-party sites often charge more.",
+    ),
+    (
+        "Quel est le délai d'obtention du visa Vietnam ?",
+        "How long does a Vietnam visa take?",
+        "E-visa : 3 à 5 jours ouvrés en général. Anticipez 7 jours avant le départ. "
+        "Au-delà de 90 jours, l'e-visa ne suffit pas.",
+        "E-visa: usually 3–5 business days. Allow 7 days before departure. "
+        "Beyond 90 days the e-visa is not enough.",
     ),
     (
         "Peut-on prolonger un e-visa sur place ?",

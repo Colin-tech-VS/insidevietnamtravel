@@ -182,8 +182,8 @@ PILLARS: dict[str, dict] = {
             "en": "Reunification train, night buses, domestic flights, Grab or scooter: "
                   "how to connect your stops simply and without overpaying.",
         },
-        "meta_title": {"fr": "Transport au Vietnam : train, bus, avion & scooter (2026)",
-                       "en": "Transport in Vietnam: train, bus, plane & scooter (2026)"},
+        "meta_title": {"fr": "Transport Vietnam 2026 : train, bus, vol & Grab",
+                       "en": "Transport Vietnam 2026: train, bus, flights & Grab"},
         "meta_description": {
             "fr": "Comment se déplacer au Vietnam : train Nord-Sud, bus de nuit, vols "
                   "intérieurs, Grab, location de scooter. Conseils, prix et pièges.",
@@ -307,8 +307,8 @@ PILLARS: dict[str, dict] = {
             "en": "From a city break to the full north–south crossing: road-tested "
                   "routes by length, plus a planner to build your own.",
         },
-        "meta_title": {"fr": "Itinéraires Vietnam : 3, 7, 10 jours et plus",
-                       "en": "Vietnam itineraries: 3, 7, 10 days and more"},
+        "meta_title": {"fr": "Itinéraires Vietnam 10 et 15 jours — circuits 2026",
+                       "en": "Vietnam itinerary 10 and 15 days — 2026 routes"},
         "meta_description": {
             "fr": "Itinéraires au Vietnam par durée (3, 7, 10, 15 jours), conseils Nord/Centre/"
                   "Sud et planificateur sur mesure pour composer votre voyage.",
@@ -349,15 +349,21 @@ PILLARS: dict[str, dict] = {
                        slug="decouvrez-hanoi-en-7-jours-itineraire-ideal-pour-les-debutants-au-vietnam"),
              ]},
         ],
-        "related_destinations": ["hanoi", "halong", "hoi-an", "sapa"],
+        "related_destinations": ["hanoi", "halong", "hoi-an", "sapa", "ninh-binh", "nha-trang"],
         "related_pillars": ["transport", "que-faire"],
         "faq": [
             {"q": {"fr": "Combien de jours faut-il pour visiter le Vietnam ?",
                    "en": "How many days do I need for Vietnam?"},
-             "a": {"fr": "7 jours suffisent pour une région, 10 à 14 pour relier le Nord "
-                         "et le Centre, 3 semaines pour toute la traversée Nord-Sud.",
-                   "en": "7 days cover one region, 10–14 link the north and centre, and "
-                         "3 weeks allow the full north–south crossing."}},
+             "a": {"fr": "7 jours suffisent pour une région, 10 jours pour le classique nord-sud "
+                         "(Hanoï–Hội An–Saigon), 15 jours pour ajouter Sapa et Ninh Binh.",
+                   "en": "7 days cover one region, 10 days the classic north–south "
+                         "(Hanoi–Hoi An–Saigon), 15 days to add Sapa and Ninh Binh."}},
+            {"q": {"fr": "Itinéraire 10 jours ou 15 jours ?",
+                   "en": "10-day or 15-day Vietnam itinerary?"},
+             "a": {"fr": "10 jours : Hanoï, Halong, Hội An, Saigon. 15 jours : on ajoute Sapa, "
+                         "Ninh Binh et Huế. Les deux circuits sont détaillés jour par jour sur le site.",
+                   "en": "10 days: Hanoi, Halong, Hoi An, Saigon. 15 days: add Sapa, Ninh Binh and Hue. "
+                         "Both routes are mapped day by day on this site."}},
         ],
     },
 
@@ -374,8 +380,8 @@ PILLARS: dict[str, dict] = {
             "en": "Phở, bánh mì, egg coffee: where, what and how to eat region by region, "
                   "from street stalls to must-try tables.",
         },
-        "meta_title": {"fr": "Cuisine vietnamienne : plats, street food & adresses",
-                       "en": "Vietnamese cuisine: dishes, street food & spots"},
+        "meta_title": {"fr": "Où manger au Vietnam 2026 — street food Hanoï",
+                       "en": "Where to eat in Vietnam 2026 — Hanoi street food"},
         "meta_description": {
             "fr": "Guide de la cuisine vietnamienne : plats incontournables, street food "
                   "sans risque et meilleures adresses ville par ville.",
@@ -446,6 +452,12 @@ PILLARS: dict[str, dict] = {
         "related_destinations": ["hanoi", "hoi-an", "ho-chi-minh-city"],
         "related_pillars": ["que-faire", "preparer-son-voyage"],
         "faq": [
+            {"q": {"fr": "Où manger à Hanoï ?",
+                   "en": "Where to eat in Hanoi?"},
+             "a": {"fr": "Street food 2–4 € dans le Vieux Quartier (phở, bún chả, bánh mì) ; "
+                         "tables assises 8–15 €. Voir notre guide des restaurants de Hanoï.",
+                   "en": "Street food €2–4 in the Old Quarter (phở, bún chả, bánh mì); "
+                         "sit-down meals €8–15. See our Hanoi restaurant guide."}},
             {"q": {"fr": "La street food au Vietnam est-elle sans danger ?",
                    "en": "Is street food in Vietnam safe?"},
              "a": {"fr": "Oui si vous choisissez les stands fréquentés où la nourriture "

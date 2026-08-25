@@ -108,10 +108,15 @@ def organization_schema(lang: str = "fr") -> dict:
         "email": config.LEGAL_CONTACT_EMAIL,
         "areaServed": {"@type": "Country", "name": "Vietnam"},
         "knowsAbout": [
-            "Vietnam travel", "Vietnam visa", "Vietnam itinerary",
-            "Hanoi travel", "Hội An travel", "Ho Chi Minh City travel",
+            "Vietnam travel", "Vietnam visa", "Vietnam visa price",
+            "Vietnam itinerary", "Vietnam itinerary 10 days", "15 days in Vietnam",
+            "Hanoi travel", "where to stay in Hanoi", "where to eat in Hanoi",
+            "Hội An travel", "Ho Chi Minh City travel",
+            "Nha Trang", "Ninh Binh travel guide", "Cat Ba island",
+            "Ha Giang", "Tam Dao Vietnam", "Vung Tau", "Cu Chi",
             "Halong Bay", "Mekong Delta", "Vietnam budget travel",
-            "Vietnam eSIM", "Vietnam street food",
+            "transport in Vietnam", "Vietnam eSIM", "Vietnam street food",
+            "best time to visit Vietnam", "Vietnam festivals",
         ],
         "audience": {
             "@type": "Audience",
@@ -178,7 +183,12 @@ def webpage_schema(
         "about": {"@id": f"{base}/#organization"},
     }
     if image:
-        data["primaryImageOfPage"] = {"@type": "ImageObject", "url": image}
+        data["primaryImageOfPage"] = {
+            "@type": "ImageObject",
+            "url": image,
+            "width": 1200,
+            "height": 630,
+        }
     return data
 
 
@@ -196,17 +206,22 @@ def breadcrumb_schema(items: list[tuple[str, str | None]]) -> dict:
 def faq_schema(faq_items: list[dict]) -> dict | None:
     if not faq_items:
         return None
-    return {
-        "@type": "FAQPage",
-        "mainEntity": [
-            {
+    entities = []
+    for item in faq_items:
+        q = item.get("question") or item.get("q") or item.get("name") or ""
+        a = item.get("answer") or item.get("a") or ""
+        if isinstance(a, dict):
+            a = a.get("text") or a.get("fr") or a.get("en") or ""
+        q, a = str(q).strip(), str(a).strip()
+        if q and a:
+            entities.append({
                 "@type": "Question",
-                "name": item["question"],
-                "acceptedAnswer": {"@type": "Answer", "text": item["answer"]},
-            }
-            for item in faq_items
-        ],
-    }
+                "name": q,
+                "acceptedAnswer": {"@type": "Answer", "text": a},
+            })
+    if not entities:
+        return None
+    return {"@type": "FAQPage", "mainEntity": entities}
 
 
 def item_list_schema(name: str, items: list[dict]) -> dict:

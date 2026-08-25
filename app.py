@@ -100,6 +100,13 @@ app.config["COMPRESS_MIMETYPES"] = [
 ]
 app.config["COMPRESS_LEVEL"] = 6
 app.config["COMPRESS_MIN_SIZE"] = 256
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 31536000
+try:
+    import brotli as _brotli  # noqa: F401
+    app.config["COMPRESS_ALGORITHM"] = ["br", "gzip"]
+    app.config["COMPRESS_BR_LEVEL"] = 5
+except ImportError:
+    app.config["COMPRESS_ALGORITHM"] = ["gzip"]
 Compress(app)
 app.register_blueprint(admin_bp)
 app.register_blueprint(partners_bp)
@@ -110,20 +117,26 @@ app.register_blueprint(partners_bp)
 # redéployé (cause n°1 des « ça bloque encore » alors que le correctif est sur main).
 APP_BOOT_TIME = datetime.utcnow()
 MAIN_CSS_PATH = "css/style.css"
+MAIN_JS_PATH = None
 
 try:
-    from admin.static_assets import ensure_minified_css as _ensure_minified_css
+    from admin.static_assets import (
+        ensure_minified_css as _ensure_minified_css,
+        ensure_minified_js as _ensure_minified_js,
+    )
 
     MAIN_CSS_PATH = _ensure_minified_css(app.static_folder)
+    MAIN_JS_PATH = _ensure_minified_js(app.static_folder)
 except Exception:
     pass
 
 
 def _refresh_main_css_path() -> str:
-    global MAIN_CSS_PATH
-    from admin.static_assets import ensure_minified_css
+    global MAIN_CSS_PATH, MAIN_JS_PATH
+    from admin.static_assets import ensure_minified_css, ensure_minified_js
 
     MAIN_CSS_PATH = ensure_minified_css(app.static_folder)
+    MAIN_JS_PATH = ensure_minified_js(app.static_folder)
     return MAIN_CSS_PATH
 
 
@@ -177,13 +190,13 @@ def _destinations(lang=None):
 
 
 def _home_featured_destinations(dests: dict, limit: int = 6) -> list[tuple[str, dict]]:
-    """Destinations mises en avant sur l'accueil (ordre trip planner, puis le reste)."""
+    """Accueil : priorise les villes GSC (impressions), puis le trip planner."""
     from data.trip_planner import PLANNER_CITIES
+    from seo_gsc import GSC_HOME_DESTS
 
     out: list[tuple[str, dict]] = []
     seen: set[str] = set()
-    for city in PLANNER_CITIES:
-        slug = city["slug"]
+    for slug in (*GSC_HOME_DESTS, *(c["slug"] for c in PLANNER_CITIES)):
         if slug in dests and slug not in seen:
             out.append((slug, dests[slug]))
             seen.add(slug)
@@ -341,11 +354,9 @@ def add_static_version(endpoint, values):
     filename = values.get("filename")
     if not filename:
         return
-    try:
-        mtime = os.stat(os.path.join(app.static_folder, filename)).st_mtime
-        values["v"] = int(mtime)
-    except OSError:
-        pass
+    mtime = _static_mtime(filename)
+    if mtime:
+        values["v"] = mtime
 
 
 @app.after_request
@@ -356,7 +367,7 @@ def add_performance_headers(response):
         # réponse immutable sur une URL stable (image du store référencée en dur)
         # figeait l'ancienne photo chez les visiteurs pendant un an après un
         # remplacement. Sans ?v=, cache court revalidable.
-        if request.args.get("v"):
+        if request.args.get("v") or path.endswith((".woff2", ".woff")):
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         else:
             response.headers["Cache-Control"] = "public, max-age=3600, must-revalidate"
@@ -383,6 +394,7 @@ def _admin_context_minimal():
         "lang_url": lang_url,
         "html_lang": "en" if lang == "en" else "fr",
         "main_css": MAIN_CSS_PATH,
+        "main_js": MAIN_JS_PATH,
     }
 
 
@@ -407,6 +419,7 @@ def inject_globals():
         "site": app.config,
         "lang": lang,
         "main_css": MAIN_CSS_PATH,
+        "main_js": MAIN_JS_PATH,
         "categories": _categories(lang),
         "current_year": datetime.now().year,
         "destinations": dests,
@@ -428,6 +441,7 @@ def inject_globals():
         "meta_description": config.SITE_DESCRIPTION_I18N.get(lang, config.SITE_DESCRIPTION),
         "meta_keywords": config.SITE_KEYWORDS_I18N.get(lang, config.SITE_KEYWORDS),
         "og_image": None,
+        "og_image_alt": None,
         "legal_contact_email": config.LEGAL_CONTACT_EMAIL,
         "legal_updated": config.LEGAL_UPDATED_I18N.get(lang, config.LEGAL_UPDATED),
         "site_tagline": config.SITE_TAGLINE_I18N.get(lang, config.SITE_TAGLINE),
@@ -472,6 +486,36 @@ def seo_breadcrumb(items):
 @app.template_global()
 def seo_faq(items):
     return faq_schema(items)
+
+
+@app.template_global()
+def seo_tourist_destination(dest, canonical_url, image_abs=None):
+    from seo_gsc import tourist_destination_schema
+    return tourist_destination_schema(dest, canonical_url, image_abs, get_lang())
+
+
+@app.template_global()
+def seo_dest_hotels(dest, canonical_url):
+    from seo_gsc import destination_hotel_list_schema
+    return destination_hotel_list_schema(dest, canonical_url, get_lang())
+
+
+@app.template_global()
+def seo_how_to(name, description, steps, url):
+    from seo_gsc import how_to_schema
+    return how_to_schema(name, description, steps, url, get_lang())
+
+
+@app.template_global()
+def seo_event(ev, page_url):
+    from seo_gsc import festival_event_schema
+    return festival_event_schema(ev, page_url)
+
+
+@app.template_global()
+def gsc_tool_faq(page):
+    from seo_gsc import tool_faq
+    return tool_faq(page, get_lang())
 
 
 @app.template_global()
@@ -540,6 +584,7 @@ def article_image_url(article) -> str:
     return article.get("image") or url_for("static", filename="images/og-default.jpg")
 
 
+@lru_cache(maxsize=2048)
 def _variant_exists(static_rel: str) -> bool:
     return (Path(app.static_folder) / static_rel).is_file()
 
@@ -555,6 +600,7 @@ def _static_mtime(rel_path: str) -> int:
 def clear_static_image_caches() -> None:
     _static_mtime.cache_clear()
     _responsive_image_cached.cache_clear()
+    _variant_exists.cache_clear()
 
 
 def _static_versioned(static_url: str) -> str:
@@ -629,6 +675,13 @@ def _responsive_image_cached(image_url: str, card: bool) -> dict:
 
     rel = image_url.removeprefix("/static/")
     stem_rel = rel[:-5]
+    for suffix in ("-1280", "-960", "-640"):
+        if stem_rel.endswith(suffix):
+            base_stem = stem_rel[: -len(suffix)]
+            if _variant_exists(f"{base_stem}.webp"):
+                stem_rel = base_stem
+                image_url = f"/static/{base_stem}.webp"
+            break
     is_partner = "/images/partners/" in image_url
     full_w = 1920 if is_partner else 1200
     variant_specs = (
@@ -794,15 +847,25 @@ def index():
     featured_articles = [a for a in articles if a.get("featured")]
     dests = _destinations(lang)
     itins = _itineraries(lang)
+    home_og = None
+    home_og_alt = None
+    if dests.get("halong") and dests["halong"].get("image"):
+        home_og = dests["halong"]["image"]
+        home_og_alt = dests["halong"].get("image_alt") or dests["halong"].get("name")
     return render_template(
         "index.html",
         featured_articles=featured_articles,
         home_destinations=_home_featured_destinations(dests, 6),
         home_itineraries=list(itins.items())[:3],
-        home_recommended=list_recommended_partners(lang)[:3],
+        home_recommended=get_or_set(
+            f"home_reco:{lang}",
+            lambda: list_recommended_partners(lang)[:3],
+        ),
         meta_title=t("meta.home.title", lang),
         meta_description=t("meta.home.desc", lang),
         meta_keywords=t("meta.home.kw", lang),
+        og_image=home_og,
+        og_image_alt=home_og_alt,
     )
 
 
@@ -924,9 +987,9 @@ def best_season():
         seasons=build_seasons(lang),
         meta_title=t("meta.season.title", lang),
         meta_description=t("meta.season.desc", lang),
-        meta_keywords="meilleure saison Vietnam, quand partir Vietnam, météo Vietnam"
+        meta_keywords="quand partir au Vietnam, meilleure saison Vietnam, météo Vietnam, best time to visit Vietnam weather"
         if lang == "fr"
-        else "best time Vietnam, when to visit Vietnam, Vietnam weather",
+        else "best time to visit Vietnam for weather, when to visit Vietnam weather, Vietnam seasons 2026",
     )
 
 
@@ -951,9 +1014,9 @@ def budget_tool():
         budget=build_budget(lang),
         meta_title=t("meta.budget.title", lang),
         meta_description=t("meta.budget.desc", lang),
-        meta_keywords="budget voyage Vietnam, coût voyage Vietnam, prix Vietnam"
+        meta_keywords="budget voyage Vietnam, prix voyage Vietnam, coût Vietnam 2026, Vietnam travel budget"
         if lang == "fr"
-        else "Vietnam travel budget, Vietnam trip cost, Vietnam prices",
+        else "Vietnam travel budget 2026, Vietnam cost of travel, Vietnam daily budget",
     )
 
 
@@ -968,9 +1031,9 @@ def visa_tool():
         visa=build_visa(lang),
         meta_title=t("meta.visa.title", lang),
         meta_description=t("meta.visa.desc", lang),
-        meta_keywords="visa Vietnam, e-visa Vietnam, exemption visa Vietnam"
+        meta_keywords="prix visa Vietnam, tarif visa Vietnam, frais visa Vietnam, e-visa, délai obtention visa Vietnam"
         if lang == "fr"
-        else "Vietnam visa, Vietnam e-visa, Vietnam visa exemption",
+        else "Vietnam visa price, Vietnam e-visa fee, Vietnam visa cost, e-visa processing time",
     )
 
 
@@ -985,9 +1048,9 @@ def essentials_tool():
         compare=build_comparators(lang),
         meta_title=t("meta.essentials.title", lang),
         meta_description=t("meta.essentials.desc", lang),
-        meta_keywords="eSIM Vietnam, assurance voyage Vietnam, Airalo Holafly"
+        meta_keywords="eSIM Vietnam, SIM touriste Vietnam, prix eSIM, Airalo Holafly"
         if lang == "fr"
-        else "Vietnam eSIM, Vietnam travel insurance, Airalo Holafly",
+        else "Vietnam eSIM, Vietnam tourist SIM vs eSIM, eSIM Vietnam price, Airalo Holafly",
     )
 
 
@@ -1135,6 +1198,8 @@ def article(slug):
     post = get_article_by_slug(slug, lang)
     if not post:
         abort(404)
+    from seo_gsc import apply_article_seo
+    post = apply_article_seo(post, lang)
     # Repli image : si le fichier (FS éphémère) a disparu après un redéploiement, on
     # bascule sur la photo du pool (commitée) — corrige les articles générés avant le fix.
     post["image"] = persistent_image_url(post.get("image"), post.get("image_photo_id"), post.get("image_source_url"))
@@ -1146,8 +1211,9 @@ def article(slug):
         related=related,
         meta_title=article_meta_title(post),
         meta_description=article_meta_description(post, lang),
-        meta_keywords=", ".join(post.get("tags", [])[:10]),
+        meta_keywords=", ".join(post.get("tags", [])[:12]),
         og_image=post.get("image"),
+        og_image_alt=post.get("image_alt") or post.get("title"),
     )
 
 
@@ -1268,6 +1334,7 @@ def itinerary(slug):
         meta_description=itin["meta_description"],
         meta_keywords=t("meta.itin.kw", lang, days=str(itin["duration"])),
         og_image=itin.get("hero_image"),
+        og_image_alt=itin.get("image_alt") or itin.get("title"),
     )
 
 
@@ -1841,7 +1908,7 @@ def pillar(slug):
         pillar=p,
         meta_title=p["meta_title"],
         meta_description=p["meta_description"],
-        meta_keywords=f"{p['title']}, Vietnam, voyage Vietnam, guide Vietnam",
+        meta_keywords=f"{p['title']}, Vietnam, guide Vietnam, {p['meta_title']}",
         og_image=(f"/static/images/pool/{p.get('photo_id')}.webp" if p.get("photo_id") else None),
     )
 
@@ -1854,10 +1921,17 @@ def destination_page(slug):
     if slug in RESERVED_SLUGS:
         abort(404)
     lang = get_lang()
-    dest = _destinations(lang).get(slug)
+    dests = _destinations(lang)
+    dest = dests.get(slug)
     if not dest:
+        from admin.store import destination_alias_target
+        alias = destination_alias_target(slug)
+        if alias and alias in dests:
+            return redirect(lang_url("destination_page", lang, slug=alias), 301)
         abort(404)
     from admin.partner_discovery import partners_for_destination
+    from seo_gsc import apply_destination_seo
+    dest = apply_destination_seo(dest, slug, lang)
     local_partners = partners_for_destination(slug, lang, limit=6)
     return render_template(
         "destination.html",
@@ -1865,8 +1939,9 @@ def destination_page(slug):
         local_partners=local_partners,
         meta_title=dest.get("meta_title") or build_meta_title(f"Guide {dest['name']} Vietnam"),
         meta_description=truncate_text(dest.get("meta_description", ""), 160),
-        meta_keywords=t("meta.dest.kw", lang, name=dest["name"]),
+        meta_keywords=dest.get("seo_keywords") or t("meta.dest.kw", lang, name=dest["name"]),
         og_image=dest.get("image"),
+        og_image_alt=dest.get("image_alt") or dest.get("name"),
     )
 
 

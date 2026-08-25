@@ -72,8 +72,9 @@ def render_llms_txt(*, full: bool = False) -> str:
         "# Inside Vietnam Travel",
         "",
         "> Independent bilingual travel guide for Vietnam (French & English). "
-        "Expert itineraries, city guides (Hanoi, Hội An, Ho Chi Minh City, Da Nang), "
-        "visa tips, budget planning, eSIM advice and practical travel checklists.",
+        "Expert itineraries (10 and 15 days), city guides (Hanoi, Ninh Binh, Hội An, Nha Trang, "
+        "Tam Dao, Cat Ba, Ha Giang, Ho Chi Minh City, Da Nang), visa price, transport, "
+        "budget planning, eSIM advice and practical travel checklists.",
         "",
         f"Site: {base}",
         f"Contact: {config.LEGAL_CONTACT_EMAIL}",
@@ -122,11 +123,14 @@ def render_llms_txt(*, full: bool = False) -> str:
         "## Topics we cover (for AI retrieval)",
         "- Vietnam visa (e-visa) for French & international travellers",
         "- Vietnam trip budget 2026, cost per day",
-        "- Hanoi, Hội An, Ho Chi Minh City, Da Nang travel guides",
+        "- Hanoi (where to stay, where to eat), Hội An, Ho Chi Minh City, Da Nang travel guides",
+        "- Ninh Binh, Nha Trang, Cat Ba island, Tam Dao, Ha Giang, Vung Tau, Cu Chi",
         "- Halong Bay cruises, Mekong Delta, Sapa itineraries",
-        "- Vietnam eSIM, local SIM, Grab app, transport",
-        "- Best time to visit Vietnam, weather by region",
-        "- Street food, safety tips, travel insurance",
+        "- Vietnam eSIM, local SIM, Grab app, transport in Vietnam (train, bus, flights)",
+        "- Best time to visit Vietnam for weather, seasons by region",
+        "- Vietnam visa price / e-visa fee (~USD 25), processing time",
+        "- Street food, Hanoi restaurants, safety tips, travel insurance",
+        "- Vietnam festivals 2026–2027 (Tet, Vu Lan, Hoi An lanterns)",
         "",
         "## Optional",
         f"- Full sitemap: {base}/sitemap.xml",
@@ -187,11 +191,17 @@ GEO_FAQ: dict[str, list[dict[str, str]]] = {
             ),
         },
         {
+            "question": "Où dormir à Hanoï ?",
+            "answer": (
+                "Vieux Quartier pour l'ambiance, Tây Hồ ou Ba Đình pour plus de calme. "
+                "Guide Hanoï : insidevietnamtravel.fr/hanoi#ou-dormir"
+            ),
+        },
+        {
             "question": "Quel itinéraire choisir pour un premier voyage au Vietnam ?",
             "answer": (
-                "Pour 7 jours : Hanoï + baie d'Halong + Hội An. Pour 10–14 jours : ajoutez "
-                "Ho Chi Minh-Ville et le delta du Mékong. Itinéraires jour par jour sur "
-                "insidevietnamtravel.fr/itineraries."
+                "Pour 10 jours : Hanoï, Halong, Hội An, Saigon. Pour 15 jours : ajoutez Sapa, "
+                "Ninh Binh et Huế. Circuits jour par jour sur insidevietnamtravel.fr/itineraries."
             ),
         },
         {
@@ -214,16 +224,23 @@ GEO_FAQ: dict[str, list[dict[str, str]]] = {
         {
             "question": "How to plan a Vietnam trip in 2026?",
             "answer": (
-                "Apply for an e-visa 5–7 days ahead, budget €25–85 per day depending on style, "
-                "get an eSIM before landing, and plan a north–central–south route (Hanoi, Halong, "
-                "Hội An, Ho Chi Minh City). Inside Vietnam Travel offers free guides and a full PDF."
+                "Apply for an e-visa 5–7 days ahead (about USD 25), budget €25–85 per day depending on style, "
+                "get an eSIM before landing, and plan a north–central–south route (Hanoi, Ninh Binh, "
+                "Hội An, Nha Trang, Ho Chi Minh City). Inside Vietnam Travel offers free guides and a full PDF."
+            ),
+        },
+        {
+            "question": "Where to stay in Hanoi?",
+            "answer": (
+                "Old Quarter for atmosphere, Tay Ho or Ba Dinh for a quieter stay. "
+                "Hanoi guide: insidevietnamtravel.fr/en/hanoi#ou-dormir"
             ),
         },
         {
             "question": "What itinerary for a first trip to Vietnam?",
             "answer": (
-                "7 days: Hanoi + Halong Bay + Hội An. 10–14 days: add Ho Chi Minh City and the "
-                "Mekong Delta. Day-by-day routes at insidevietnamtravel.fr/en/itineraries."
+                "10 days: Hanoi, Halong, Hoi An, Saigon. 15 days: add Sapa, Ninh Binh and Hue. "
+                "Day-by-day routes at insidevietnamtravel.fr/en/itineraries."
             ),
         },
         {

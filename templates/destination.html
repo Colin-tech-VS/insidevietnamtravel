@@ -9,7 +9,7 @@
 
 {% block og_image %}
 {% if dest.image %}
-{{ og_image_tags(site.SITE_URL ~ (dest.image | static_v)) }}
+{{ og_image_tags(site.SITE_URL ~ (dest.image | static_v), alt=dest.image_alt or dest.name) }}
 {% else %}
 {{ super() }}
 {% endif %}
@@ -18,30 +18,23 @@
 {% block head_preload %}
 {% if dest.image %}
 {% set hero = responsive_image(dest.image, card=false) %}
-<link rel="preload" as="image" href="{{ hero.src }}"{% if hero.srcset %} imagesrcset="{{ hero.srcset }}" imagesizes="100vw"{% endif %}>
+<link rel="preload" as="image" href="{{ hero.src }}"{% if hero.srcset %} imagesrcset="{{ hero.srcset }}" imagesizes="100vw"{% endif %} fetchpriority="high">
 {% endif %}
 {% endblock %}
 
 {% block structured_data %}
-{% set dest_schema = {
-  "@type": "TouristDestination",
-  "name": dest.name,
-  "description": meta_description,
-  "url": canonical_url,
-  "touristType": "Travellers" if lang == 'en' else "Voyageurs français",
-  "inLanguage": "en-GB" if lang == 'en' else "fr-FR"
-} %}
-{% if dest.image %}
-{% set _ = dest_schema.update({"image": site.SITE_URL ~ (dest.image | static_v)}) %}
-{% endif %}
+{% set dest_image_abs = (site.SITE_URL ~ (dest.image | static_v)) if dest.image else none %}
+{% set dest_schema = seo_tourist_destination(dest, canonical_url, dest_image_abs) %}
+{% set hotel_schema = seo_dest_hotels(dest, canonical_url) %}
+{% set faq_schema_obj = seo_faq(dest.seo_faq) if dest.seo_faq else none %}
 {{ json_ld_graph([
   dest_schema,
   seo_breadcrumb([
     (t('nav.home'), site.SITE_URL ~ lang_url('index')),
     (t('nav.destinations'), site.SITE_URL ~ lang_url('destinations_index')),
-    (("Guide " if lang == 'fr' else "Guide ") ~ dest.name, None),
+    (dest.h1 or dest.name, None),
   ]),
-]) }}
+] + ([hotel_schema] if hotel_schema else []) + ([faq_schema_obj] if faq_schema_obj else [])) }}
 {% endblock %}
 
 {% block content %}
@@ -66,7 +59,7 @@
         <li aria-current="page">{{ dest.name }}</li>
       </ol>
     </nav>
-    <h1>{% if lang == 'en' %}Guide {{ dest.name }} — Vietnam travel{% else %}Guide {{ dest.name }} — voyage Vietnam{% endif %}</h1>
+    <h1>{{ dest.h1 or dest.name }}</h1>
     <p class="page-hero__lead">{{ dest.tagline }}</p>
   </div>
 </header>
@@ -98,9 +91,15 @@
       </ul>
     </section>
 
+    {% if dest.eat_slug %}
+    <p class="section-intro">
+      <a href="{{ lang_url('article', slug=dest.eat_slug) }}">{{ t('dest.eat_cta', name=dest.name) }} →</a>
+    </p>
+    {% endif %}
+
     {{ destination_map(dest.slug) }}
 
-    <section class="content-block">
+    <section class="content-block" id="ou-dormir">
       <h2>{{ t('dest.hotels') }}</h2>
       <p class="section-intro">{% if lang == 'en' %}Affiliate links — compare prices before booking.{% else %}Liens affiliés — comparez les prix avant de réserver.{% endif %}</p>
       <div class="affiliate-grid">
@@ -129,6 +128,20 @@
         {% endfor %}
       </ul>
     </section>
+
+    {% if dest.seo_faq %}
+    <section class="content-block" id="faq">
+      <h2>{{ t('dest.faq_title') }}</h2>
+      <div class="faq-list">
+        {% for item in dest.seo_faq %}
+        <details class="faq-item">
+          <summary><h3>{{ item.question }}</h3></summary>
+          <p>{{ item.answer }}</p>
+        </details>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
 
     {% if local_partners %}
     <section class="content-block destination-partners" aria-label="{{ 'Local partners' if lang == 'en' else 'Partenaires locaux' }}">

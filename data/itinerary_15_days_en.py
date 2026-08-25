@@ -2,10 +2,10 @@
 
 ITINERARY_15_DAYS_EN = {
     "title": "15-day Vietnam itinerary — North to South",
-    "meta_title": "Vietnam Itinerary 15 Days — Hanoi to Saigon Full Route",
+    "meta_title": "15 days in Vietnam itinerary 2026 — full north to south",
     "meta_description": (
-        "Full 15-day Vietnam itinerary: Hanoi, Sapa, Ninh Bình, Halong Bay, Huế, Hội An, "
-        "Saigon and the Mekong Delta. Day-by-day plan, budget tips and bookings."
+        "Vietnam 15 days itinerary: Hanoi, Sapa, Ninh Binh, Halong, Hue, Hoi An, Saigon and Mekong. "
+        "Day-by-day plan, budget and bookings."
     ),
     "summary": (
         "The classic 2-week route: thousand-year-old capital, Sapa mountains, Halong Bay, "

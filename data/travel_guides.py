@@ -300,6 +300,14 @@ SAFETY_SECTIONS: list[dict] = [
 
 SAFETY_FAQ = _faq([
     (
+        "Le Vietnam est-il sûr pour voyager ?",
+        "Is it safe to travel to Vietnam?",
+        "Oui pour la grande majorité des voyageurs : criminalité violente rare, vigilance "
+        "sur le trafic moto, les pickpockets et les arnaques taxi. Assurance recommandée.",
+        "Yes for most travellers: violent crime is rare; watch motorbike traffic, pickpockets "
+        "and taxi scams. Travel insurance is recommended.",
+    ),
+    (
         "Le Vietnam est-il sûr pour une femme seule ?",
         "Is Vietnam safe for solo female travellers?",
         "Oui, avec les précautions habituelles (quartiers centraux la nuit, Grab de nuit, "
@@ -474,6 +482,22 @@ CUSTOMS_SECTIONS: list[dict] = [
 ]
 
 CUSTOMS_FAQ = _faq([
+    (
+        "Les Vietnamiens s'inclinent-ils pour se saluer ?",
+        "Do Vietnamese people bow when greeting?",
+        "Non, on ne s'incline pas comme au Japon. Un sourire, un « xin chào » et parfois "
+        "une poignée de main suffisent. Évitez de toucher la tête de quelqu'un.",
+        "No — Vietnamese people do not bow like in Japan. A smile, « xin chào » and sometimes "
+        "a handshake are enough. Do not touch someone's head.",
+    ),
+    (
+        "Quels sont les tabous au Vietnam ?",
+        "What are taboos in Vietnam?",
+        "Ne touchez pas la tête, n'exposez pas la plante des pieds vers un autel, "
+        "couvrez épaules et genoux dans les pagodes, évitez les débats politiques virulents.",
+        "Don't touch heads, don't point soles at an altar, cover shoulders and knees in pagodas, "
+        "avoid heated political debates with strangers.",
+    ),
     (
         "Faut-il parler vietnamien pour voyager ?",
         "Do you need to speak Vietnamese to travel?",

@@ -14,7 +14,11 @@
 ] %}
 
 {% block structured_data %}
-{{ json_ld_graph([
+{% set howto_steps = [] %}
+{% for icon, title, desc in steps %}
+{% set _ = howto_steps.append((title[1] if lang == 'en' else title[0], desc[1] if lang == 'en' else desc[0])) %}
+{% endfor %}
+{% set graph = [
   {
     "@type": "WebPage",
     "name": meta_title,
@@ -26,7 +30,15 @@
     (t('nav.home'), site.SITE_URL ~ lang_url('index')),
     (t('visa.title'), None),
   ]),
-]) }}
+  seo_how_to(
+    t('visa.steps_title'),
+    meta_description,
+    howto_steps,
+    canonical_url
+  ),
+] %}
+{% if visa.faq %}{% set _ = graph.append(seo_faq(visa.faq)) %}{% endif %}
+{{ json_ld_graph(graph) }}
 {% endblock %}
 
 {% block content %}

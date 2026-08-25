@@ -84,8 +84,8 @@ UI: dict[str, dict[str, str]] = {
     "home.hero.title": {"fr": "Votre guide voyage", "en": "Your travel guide"},
     "home.hero.title_em": {"fr": "au Vietnam", "en": "to Vietnam"},
     "home.hero.lead": {
-        "fr": "Itinéraires prêts à l'emploi, guides par ville, conseils visa et budget — pour préparer votre séjour au Vietnam en toute sérénité.",
-        "en": "Ready-made itineraries, city guides, visa and budget tips — plan your Vietnam trip with confidence.",
+        "fr": "Itinéraires 10 et 15 jours, guides Hanoï (où dormir, où manger), Ninh Binh, Hội An, Nha Trang — visa, transport et budget.",
+        "en": "10- and 15-day itineraries, Hanoi (where to stay, where to eat), Ninh Binh, Hoi An, Nha Trang — visa, transport and budget.",
     },
     "home.hero.cta_dest": {"fr": "Explorer les destinations", "en": "Explore destinations"},
     "home.hero.cta_pdf": {"fr": "Télécharger le guide PDF", "en": "Download the PDF guide"},
@@ -342,12 +342,12 @@ UI: dict[str, dict[str, str]] = {
         "en": "Affiliate links — at no extra cost to you, they support the site.",
     },
     "meta.prepare.title": {
-        "fr": "Préparer mon voyage au Vietnam — itinéraires sur mesure",
-        "en": "Plan my Vietnam trip — tailored itineraries",
+        "fr": "Vietnam trip planner 2026 — itinéraire 10 et 15 jours",
+        "en": "Vietnam trip planner 2026 — 10 & 15 day itinerary",
     },
     "meta.prepare.desc": {
-        "fr": "Quiz voyage : nombre de personnes, type de séjour et durée — obtenez itinéraires, destinations et guides adaptés.",
-        "en": "Trip quiz: group size, travel style and duration — get matching itineraries, destinations and guides.",
+        "fr": "Planifiez votre voyage au Vietnam : itinéraires 10 et 15 jours, destinations (Hanoï, Ninh Binh, Hội An, Nha Trang), budget et guides adaptés.",
+        "en": "Plan your Vietnam trip: 10- and 15-day itineraries, destinations (Hanoi, Ninh Binh, Hoi An, Nha Trang), budget and matching guides.",
     },
 
     # Article
@@ -379,6 +379,9 @@ UI: dict[str, dict[str, str]] = {
         "en": "Tours and experiences in {city} — book on Viator (8% affiliate commission).",
     },
     "dest.tips": {"fr": "Conseils pratiques", "en": "Practical tips"},
+    "dest.faq_title": {"fr": "Questions fréquentes", "en": "Frequently asked questions"},
+    "dest.eat_cta": {"fr": "Où manger à {name}", "en": "Where to eat in {name}"},
+    "tools.faq_title": {"fr": "Questions fréquentes", "en": "Frequently asked questions"},
     "dest.book": {"fr": "Réserver", "en": "Book"},
     "dest.from": {"fr": "dès", "en": "from"},
 
@@ -628,45 +631,45 @@ UI: dict[str, dict[str, str]] = {
 
     # SEO meta (pages statiques)
     "meta.destinations.title": {
-        "fr": "Destinations Vietnam — guides complets par ville",
-        "en": "Vietnam destinations — complete city guides",
+        "fr": "Destinations Vietnam 2026 — Hanoï, Ninh Binh, Hội An, Nha Trang",
+        "en": "Vietnam destinations 2026 — Hanoi, Ninh Binh, Hoi An, Nha Trang",
     },
     "meta.destinations.desc": {
-        "fr": "Toutes nos destinations au Vietnam : guides par ville, que faire, où dormir et activités incontournables — Nord, Centre et Sud.",
-        "en": "All our Vietnam destinations: city guides, what to do, where to stay and must-see activities — North, Central and South.",
+        "fr": "Guides destinations Vietnam : Hanoï (où dormir, où manger), Ninh Binh, Hội An, Nha Trang, Cat Ba, Tam Dao, Hà Giang — que faire et où dormir.",
+        "en": "Vietnam destination guides: Hanoi (where to stay, where to eat), Ninh Binh, Hoi An, Nha Trang, Cat Ba, Tam Dao, Ha Giang — things to do and hotels.",
     },
     "meta.destinations.kw": {
-        "fr": "destinations Vietnam, guide voyage Vietnam, villes Vietnam, Hanoi, Hoi An, Halong",
-        "en": "Vietnam destinations, Vietnam travel guide, Vietnam cities, Hanoi, Hoi An, Halong",
+        "fr": "destinations Vietnam, Ninh Binh, Nha Trang, Hội An, Tam Dao, Cat Ba, Hà Giang, Vũng Tàu",
+        "en": "Vietnam destinations, Ninh Binh, Nha Trang, Hoi An, Tam Dao, Cat Ba, Ha Giang, Vung Tau",
     },
     "destinations.page.title": {"fr": "Toutes les destinations au Vietnam", "en": "All destinations in Vietnam"},
     "destinations.page.sub": {
-        "fr": "Guides complets par ville et par région — que faire, où dormir, activités incontournables",
-        "en": "Complete guides by city and region — what to do, where to stay, must-see activities",
+        "fr": "Guides par ville — Hanoï, Ninh Binh, Hội An, Nha Trang, Tam Dao : que faire, où dormir, où manger",
+        "en": "City guides — Hanoi, Ninh Binh, Hoi An, Nha Trang, Tam Dao: things to do, where to stay, where to eat",
     },
     "meta.home.title": {
-        "fr": "Voyage Vietnam 2026 : guides, itinéraires et conseils pratiques",
-        "en": "Vietnam travel 2026: guides, itineraries and practical tips",
+        "fr": "Guide Vietnam 2026 — Hanoï, Ninh Binh, 10 et 15 jours",
+        "en": "Vietnam travel guide 2026 — Hanoi, itineraries, Hoi An",
     },
     "meta.home.desc": {
-        "fr": "Préparez votre voyage au Vietnam : itinéraires 3 à 10 jours, guides Hanoï, Hội An, Saigon, visa, budget et conseils pour voyageurs français.",
-        "en": "Plan your Vietnam trip: 3 to 10-day itineraries, Hanoi, Hội An, Saigon guides, visa, budget and travel tips.",
+        "fr": "Guide voyage Vietnam : où dormir à Hanoï, Ninh Binh, Hội An, Nha Trang, Cat Ba. Itinéraires 10 et 15 jours, transport, prix visa, budget.",
+        "en": "Vietnam travel guide: where to stay in Hanoi, Ninh Binh, Hoi An, Nha Trang, Cat Ba. 10- and 15-day itineraries, transport, visa price, budget.",
     },
     "meta.home.kw": {
-        "fr": "voyage Vietnam, guide Vietnam, itinéraire Vietnam, préparer voyage Vietnam, voyageurs français",
-        "en": "Vietnam travel, Vietnam guide, Vietnam itinerary, plan Vietnam trip, Vietnam travel tips",
+        "fr": "guide Vietnam, itinéraire Vietnam 10 jours, itinéraire 15 jours, où dormir à Hanoï, transport Vietnam, Ninh Binh, Hội An, Nha Trang, Tam Dao, prix visa Vietnam",
+        "en": "Vietnam travel guide, Vietnam itinerary 10 days, 15 days in Vietnam, where to stay in Hanoi, transport Vietnam, Ninh Binh, Hoi An, Nha Trang, Tam Dao, Vietnam visa price",
     },
     "meta.blog.title": {
-        "fr": "Blog voyage Vietnam : visa, budget, transport, gastronomie",
-        "en": "Vietnam travel blog: visa, budget, transport, food",
+        "fr": "Blog voyage Vietnam : visa prix, budget, transport, où manger",
+        "en": "Vietnam travel blog: visa price, budget, transport, Hanoi food",
     },
     "meta.blog.desc": {
-        "fr": "Articles pratiques pour préparer un voyage au Vietnam : e-visa, budget au jour, eSIM, sécurité, transport et street food.",
-        "en": "Practical articles to plan a Vietnam trip: e-visa, daily budget, eSIM, safety, transport and street food.",
+        "fr": "Articles pratiques Vietnam : prix visa, budget, eSIM, sécurité, transport, où manger à Hanoï et street food.",
+        "en": "Practical Vietnam articles: visa price, budget, eSIM, safety, transport, where to eat in Hanoi and street food.",
     },
     "meta.blog.kw": {
-        "fr": "blog voyage Vietnam, visa Vietnam, budget Vietnam, conseils voyage Vietnam",
-        "en": "Vietnam travel blog, Vietnam visa, Vietnam budget, Vietnam travel tips",
+        "fr": "blog voyage Vietnam, prix visa Vietnam, budget Vietnam, transport Vietnam, où manger Hanoï",
+        "en": "Vietnam travel blog, Vietnam visa price, Vietnam budget, transport Vietnam, where to eat in Hanoi",
     },
     "meta.about.title": {
         "fr": "À propos — guide voyage Vietnam indépendant",
@@ -736,12 +739,12 @@ UI: dict[str, dict[str, str]] = {
         "en": "Tips for travellers planning a trip to Vietnam.",
     },
     "meta.itin.kw": {
-        "fr": "itinéraire Vietnam {days} jours, voyage Vietnam, circuit Vietnam",
-        "en": "Vietnam itinerary {days} days, Vietnam travel, Vietnam tour",
+        "fr": "itinéraire Vietnam {days} jours, Vietnam in {days} days, circuit Vietnam, voyage Vietnam 2026",
+        "en": "Vietnam itinerary {days} days, {days} days in Vietnam, Vietnam travel itinerary, Vietnam 2026",
     },
     "meta.dest.kw": {
-        "fr": "guide {name}, voyage {name}, que faire {name}, Vietnam",
-        "en": "{name} guide, travel {name}, things to do {name}, Vietnam",
+        "fr": "guide {name}, {name} Vietnam, que faire {name}, où dormir {name}, voyage {name}",
+        "en": "{name} travel guide, {name} Vietnam, things to do {name}, where to stay {name}",
     },
     "meta.article.desc_extra_fr": {
         "fr": "Guide pratique pour voyageurs français",
@@ -1026,10 +1029,10 @@ UI: dict[str, dict[str, str]] = {
     "visa.eyebrow": {"fr": "Formalités", "en": "Formalities"},
     "visa.title": {"fr": "Avez-vous besoin d'un visa ?", "en": "Do you need a visa?"},
     "visa.lead": {
-        "fr": "Indiquez votre nationalité et la durée de votre séjour pour savoir "
-              "si l'e-visa est nécessaire.",
-        "en": "Enter your nationality and trip length to find out whether the "
-              "e-visa is required.",
+        "fr": "Prix de l'e-visa ≈ 25 $ (tarif officiel). Indiquez votre nationalité et la durée "
+              "pour savoir si vous en avez besoin, et le délai d'obtention (3–5 jours).",
+        "en": "E-visa fee ≈ USD 25 (official tariff). Enter your nationality and trip length "
+              "to see if you need one, plus processing time (3–5 days).",
     },
     "visa.q_country": {"fr": "Votre nationalité", "en": "Your nationality"},
     "visa.q_days": {"fr": "Durée du séjour (jours)", "en": "Length of stay (days)"},
@@ -1163,96 +1166,96 @@ UI: dict[str, dict[str, str]] = {
 
     # ── Meta des nouvelles pages ─────────────────────────────────────
     "meta.season.title": {
-        "fr": "Quand partir au Vietnam ? Météo et meilleure saison par région 2026",
-        "en": "When to visit Vietnam? Weather and best season by region 2026",
+        "fr": "Quand partir au Vietnam 2026 ? Meilleure saison et météo",
+        "en": "Best time to visit Vietnam 2026 — weather by region",
     },
     "meta.season.desc": {
-        "fr": "Meilleure période pour voyager au Vietnam région par région : nord, "
-              "centre, sud. Calendrier des saisons, météo et conseils mois par mois.",
-        "en": "Best time to travel to Vietnam region by region: north, central, "
-              "south. Season calendar, weather and month-by-month advice.",
+        "fr": "Meilleure période et météo Vietnam : nord, centre, sud, quand partir au Vietnam du Sud. "
+              "Calendrier mois par mois 2026.",
+        "en": "Best time to visit Vietnam for weather: north, centre, south. "
+              "Month-by-month calendar and when to go in 2026.",
     },
     "meta.budget.title": {
-        "fr": "Calculateur de budget voyage Vietnam 2026 — estimez votre coût",
-        "en": "Vietnam travel budget calculator 2026 — estimate your cost",
+        "fr": "Budget voyage Vietnam 2026 — prix par jour et calculateur",
+        "en": "Vietnam travel budget 2026 — daily cost calculator",
     },
     "meta.budget.desc": {
-        "fr": "Calculez le budget de votre voyage au Vietnam selon votre style et la "
-              "durée : hébergement, repas, transport, activités. Estimation gratuite.",
-        "en": "Calculate your Vietnam trip budget by style and duration: "
-              "accommodation, food, transport, activities. Free estimate.",
+        "fr": "Budget et prix voyage Vietnam 2026 : hébergement, nourriture, transport. "
+              "Calculez le coût selon la durée et le style.",
+        "en": "Vietnam trip cost 2026: hotels, food, transport. Calculate your daily "
+              "travel budget by length and style.",
     },
     "meta.visa.title": {
-        "fr": "Visa Vietnam 2026 — avez-vous besoin d'un visa ? Test en ligne",
-        "en": "Vietnam visa 2026 — do you need a visa? Online checker",
+        "fr": "Prix visa Vietnam 2026 — tarif e-visa, frais, délai",
+        "en": "Vietnam visa price 2026 — e-visa fee, cost, processing time",
     },
     "meta.visa.desc": {
-        "fr": "Vérifiez en 10 secondes si vous avez besoin d'un visa pour le Vietnam "
-              "selon votre nationalité, et comment demander l'e-visa étape par étape.",
-        "en": "Check in 10 seconds whether you need a visa for Vietnam based on your "
-              "nationality, and how to apply for the e-visa step by step.",
+        "fr": "Prix du visa Vietnam ≈ 25 $ (e-visa). Tarif, frais, délai d'obtention 3–5 jours "
+              "et test selon votre nationalité.",
+        "en": "Vietnam e-visa costs about USD 25. Fee, processing time (3–5 days) "
+              "and a checker by nationality.",
     },
     "meta.essentials.title": {
-        "fr": "eSIM & assurance voyage Vietnam 2026 — comparatif",
-        "en": "Vietnam eSIM & travel insurance 2026 — comparison",
+        "fr": "eSIM Vietnam 2026 — prix, SIM touriste vs eSIM",
+        "en": "Vietnam eSIM 2026 — tourist SIM vs eSIM prices",
     },
     "meta.essentials.desc": {
-        "fr": "Comparez les eSIM (Airalo, Holafly) et choisissez votre assurance "
-              "voyage pour le Vietnam : data, prix, validité et garanties.",
-        "en": "Compare eSIMs (Airalo, Holafly) and choose your travel insurance for "
-              "Vietnam: data, price, validity and cover.",
+        "fr": "eSIM Vietnam : prix Airalo, Holafly, SIM touriste vs eSIM, data et "
+              "assurance voyage. Comparatif 2026.",
+        "en": "Vietnam eSIM prices: Airalo, Holafly, tourist SIM vs eSIM, data and "
+              "travel insurance. 2026 comparison.",
     },
     "meta.apps.title": {
-        "fr": "Applications utiles au Vietnam (2026) — Grab & anti-arnaque",
-        "en": "Useful apps for Vietnam (2026) — Grab & anti-scam",
+        "fr": "Applications Vietnam 2026 — Grab, alternative, eSIM",
+        "en": "Vietnam apps 2026 — Grab, alternatives, eSIM",
     },
     "meta.apps.desc": {
-        "fr": "Les applications indispensables pour voyager au Vietnam sans se faire "
-              "arnaquer : Grab, Google Maps, XE, Google Translate, eSIM et plus.",
-        "en": "The essential apps to travel Vietnam without getting scammed: Grab, "
-              "Google Maps, XE, Google Translate, eSIM and more.",
+        "fr": "Apps indispensables au Vietnam : Grab (et alternatives), Maps, eSIM, "
+              "change. Pour se déplacer sans arnaque.",
+        "en": "Essential Vietnam apps: Grab (and alternatives), Maps, eSIM, currency. "
+              "Get around without scams.",
     },
     "meta.safety.title": {
-        "fr": "Sécurité Vietnam 2026 — arnaques, santé, assurance, numéros d'urgence",
-        "en": "Vietnam safety 2026 — scams, health, insurance, emergency numbers",
+        "fr": "Le Vietnam est-il sûr ? Dangers, arnaques, conseils 2026",
+        "en": "Is Vietnam safe to travel? Dangers, scams, 2026 tips",
     },
     "meta.safety.desc": {
-        "fr": "Guide sécurité Vietnam : arnaques taxi et change, vaccins, assurance "
-              "voyage, eSIM, numéros d'urgence et consulats. Conseils pratiques 2026.",
-        "en": "Vietnam safety guide: taxi & exchange scams, vaccines, travel insurance, "
-              "eSIM, emergency numbers and consulates. Practical 2026 tips.",
+        "fr": "Sécurité voyage Vietnam : is it safe, dangers, arnaques, quartiers à éviter, "
+              "assurance et numéros d'urgence. Conseils 2026.",
+        "en": "Vietnam travel safety: is it safe, dangers, scams, places to avoid, "
+              "insurance and emergency numbers. 2026 tips.",
     },
     "meta.safety.kw": {
-        "fr": "sécurité Vietnam, arnaques Vietnam, santé voyage Vietnam, vaccins Vietnam",
-        "en": "Vietnam safety, Vietnam scams, Vietnam travel health, Vietnam vaccines",
+        "fr": "sécurité Vietnam, is Vietnam safe, dangers Vietnam, arnaques Vietnam, travel warnings",
+        "en": "is Vietnam safe, Vietnam safety, dangers in Vietnam, Vietnam travel warnings",
     },
     "meta.customs.title": {
-        "fr": "Coutumes Vietnam — étiquette, temples, repas & tabous",
-        "en": "Vietnam customs — etiquette, temples, dining & taboos",
+        "fr": "Coutumes Vietnam — salutations, tabous, étiquette, temples",
+        "en": "Vietnam customs — do they bow, taboos, etiquette, temples",
     },
     "meta.customs.desc": {
-        "fr": "Coutumes et étiquette au Vietnam : salutations, tenue dans les temples, "
-              "baguettes, pourboires, négociation et gestes à éviter.",
-        "en": "Customs and etiquette in Vietnam: greetings, temple dress, chopsticks, "
-              "tipping, bargaining and gestures to avoid.",
+        "fr": "Coutumes et étiquette au Vietnam : on se salue-t-on en s'inclinant, tabous, "
+              "tenue pagode, repas, manières. Guide respectueux 2026.",
+        "en": "Vietnam customs and manners: do Vietnamese people bow, taboos, pagoda dress code, "
+              "dining etiquette. Respectful 2026 guide.",
     },
     "meta.customs.kw": {
-        "fr": "coutumes Vietnam, étiquette Vietnam, respect Vietnam voyage",
-        "en": "Vietnam customs, Vietnam etiquette, Vietnam travel respect",
+        "fr": "coutumes Vietnam, tabous Vietnam, étiquette Vietnam, salutations Vietnam, pagoda dress code",
+        "en": "Vietnam customs, Vietnamese taboos, do Vietnamese bow, Vietnam etiquette, pagoda dress code",
     },
     "meta.phrases.title": {
-        "fr": "Phrases utiles vietnamien — guide prononciation FR & EN",
-        "en": "Useful Vietnamese phrases — FR & EN pronunciation guide",
+        "fr": "Bonjour et merci en vietnamien — phrases voyage 2026",
+        "en": "Hello and thank you in Vietnamese — travel phrases 2026",
     },
     "meta.phrases.desc": {
-        "fr": "Lexique voyage vietnamien : bonjour, merci, transport, restaurant, "
-              "urgences avec translittération pour francophones et anglophones.",
-        "en": "Vietnamese travel phrasebook: hello, thanks, transport, dining, "
-              "emergencies with pronunciation for French and English speakers.",
+        "fr": "Bonjour, merci, oui et non en vietnamien : phrases voyage, transport, restaurant, "
+              "prononciation pour francophones.",
+        "en": "Hello, thank you, yes and no in Vietnamese: travel phrases, transport, dining, "
+              "pronunciation guide.",
     },
     "meta.phrases.kw": {
-        "fr": "phrases vietnamien, parler vietnamien voyage, vocabulaire Vietnam",
-        "en": "Vietnamese phrases, learn Vietnamese travel, Vietnam vocabulary",
+        "fr": "bonjour vietnamien, merci vietnamien, oui non vietnamien, phrases vietnamien voyage",
+        "en": "hello in Vietnamese, thank you in Vietnamese, Vietnamese travel phrases",
     },
     "events.nav": {"fr": "Événements Vietnam", "en": "Vietnam events"},
     "events.eyebrow": {"fr": "Calendrier culturel", "en": "Cultural calendar"},
@@ -1362,18 +1365,18 @@ UI: dict[str, dict[str, str]] = {
     "events.month.11": {"fr": "Novembre", "en": "November"},
     "events.month.12": {"fr": "Décembre", "en": "December"},
     "meta.events.title": {
-        "fr": "Événements Vietnam 2026–2027 — Têt, festivals & calendrier lunaire",
-        "en": "Vietnam events 2026–2027 — Tết, festivals & lunar calendar",
+        "fr": "Festivals Vietnam 2026–2027 — Têt, Vu Lan, lanternes Hội An",
+        "en": "Vietnam festivals 2026–2027 — Tết, Vu Lan, Hoi An lanterns",
     },
     "meta.events.desc": {
-        "fr": "Calendrier des festivals et événements au Vietnam : Nouvel An lunaire, Hội An, "
-              "Huế, Cham, Mékong. Dates 2026–2027 et conseils voyage.",
-        "en": "Vietnam festival calendar: Lunar New Year, Hội An, Huế, Cham, Mekong. "
-              "2026–2027 dates and travel tips.",
+        "fr": "Dates Têt 2026–2027, Vu Lan (Wandering Souls), festival des lanternes Hội An, "
+              "calendrier lunaire et conseils voyage.",
+        "en": "Tết 2026–2027 dates, Vu Lan (Wandering Souls Day), Hoi An lantern festival, "
+              "lunar calendar and travel tips.",
     },
     "meta.events.kw": {
-        "fr": "événements Vietnam, Têt 2026, festivals Vietnam, calendrier Vietnam voyage",
-        "en": "Vietnam events, Tết 2026, Vietnam festivals, Vietnam travel calendar",
+        "fr": "festivals Vietnam 2026, Têt 2026, Têt 2027, Vu Lan 2026, festival lanternes Vietnam 2027",
+        "en": "Vietnam festivals 2026, Tet 2026, Tet 2027, wandering souls day, lantern festival Vietnam 2027",
     },
 }
 

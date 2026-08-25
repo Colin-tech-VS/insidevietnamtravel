@@ -7,6 +7,12 @@
 
 {% set geo_faq = geo_faq_items() %}
 
+{% block head_preload %}
+{% set hero_bg = destinations.halong.image if destinations.get('halong') and destinations.halong.image else '/static/images/destinations/halong-960.webp' %}
+{% set hero = responsive_image(hero_bg, card=false) %}
+<link rel="preload" as="image" href="{{ hero.src }}"{% if hero.srcset %} imagesrcset="{{ hero.srcset }}" imagesizes="100vw"{% endif %} fetchpriority="high">
+{% endblock %}
+
 {% block meta_keywords %}
 <meta name="keywords" content="{{ meta_keywords or site.SITE_KEYWORDS }}">
 {% endblock %}
@@ -336,5 +342,9 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/home_personalize.js') }}" defer></script>
+<script>
+__ivtIdle(function () {
+  __ivtLoadScript({{ url_for('static', filename='js/home_personalize.js') | tojson }});
+});
+</script>
 {% endblock %}

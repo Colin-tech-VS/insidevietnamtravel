@@ -9,6 +9,7 @@
 {% set esim_urls = {'esim_airalo': esim_airalo_url(), 'esim_holafly': esim_holafly_url()} %}
 
 {% block structured_data %}
+{% set esim_faq = gsc_tool_faq('essentials') %}
 {{ json_ld_graph([
   {
     "@type": "WebPage",
@@ -21,7 +22,7 @@
     (t('nav.home'), site.SITE_URL ~ lang_url('index')),
     (t('compare.title'), None),
   ]),
-]) }}
+] + ([seo_faq(esim_faq)] if esim_faq else [])) }}
 {% endblock %}
 
 {% block content %}
@@ -105,6 +106,25 @@
            rel="sponsored noopener noreferrer" target="_blank">{{ t('compare.insurance_cta') }}</a>
       </div>
     </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    {% set esim_faq = gsc_tool_faq('essentials') %}
+    {% if esim_faq %}
+    <div class="section-header">
+      <h2>{{ t('tools.faq_title') }}</h2>
+    </div>
+    <div class="pillar-faq">
+      {% for item in esim_faq %}
+      <details class="pillar-faq__item">
+        <summary>{{ item.question }}</summary>
+        <p>{{ item.answer }}</p>
+      </details>
+      {% endfor %}
+    </div>
+    {% endif %}
   </div>
 </section>
 

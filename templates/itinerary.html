@@ -8,7 +8,7 @@
 
 {% block og_image %}
 {% if itin.hero_image %}
-{{ og_image_tags(site.SITE_URL ~ (itin.hero_image | static_v)) }}
+{{ og_image_tags(site.SITE_URL ~ (itin.hero_image | static_v), alt=itin.image_alt or itin.title) }}
 {% else %}
 {{ super() }}
 {% endif %}
@@ -17,7 +17,7 @@
 {% block head_preload %}
 {% if itin.hero_image %}
 {% set hero = responsive_image(itin.hero_image, card=false) %}
-<link rel="preload" as="image" href="{{ hero.src }}"{% if hero.srcset %} imagesrcset="{{ hero.srcset }}" imagesizes="100vw"{% endif %}>
+<link rel="preload" as="image" href="{{ hero.src }}"{% if hero.srcset %} imagesrcset="{{ hero.srcset }}" imagesizes="100vw"{% endif %} fetchpriority="high">
 {% endif %}
 {% endblock %}
 
@@ -31,7 +31,7 @@
   "name": itin.title,
   "description": meta_description,
   "url": canonical_url,
-  "touristType": "Travellers" if lang == 'en' else "Voyageurs français",
+  "touristType": "Travellers" if lang == 'en' else "Voyageurs internationaux",
   "itinerary": {
     "@type": "ItemList",
     "name": "Day-by-day programme" if lang == 'en' else "Programme jour par jour",
@@ -39,6 +39,9 @@
     "itemListElement": day_items
   }
 } %}
+{% if itin.duration %}
+{% set _ = trip_schema.update({"temporalCoverage": "P" ~ itin.duration ~ "D"}) %}
+{% endif %}
 {% if itin.hero_image %}
 {% set _ = trip_schema.update({"image": site.SITE_URL ~ (itin.hero_image | static_v)}) %}
 {% endif %}

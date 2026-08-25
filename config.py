@@ -49,25 +49,27 @@ def pdf_flow_base_url() -> str:
         return sco
     return SITE_URL.rstrip("/")
 SITE_DESCRIPTION = (
-    "Préparez votre voyage au Vietnam : itinéraires jour par jour, guides Hanoï, Hội An, "
-    "Saigon et Đà Nẵng, visa, budget, eSIM et conseils pour voyageurs français."
+    "Guide voyage Vietnam 2026 : Hanoï (où dormir, où manger), Ninh Binh, Hội An, Nha Trang, "
+    "itinéraires 10 et 15 jours, transport, prix visa, budget et conseils pratiques."
 )
 SITE_DESCRIPTION_I18N = {
     "fr": SITE_DESCRIPTION,
     "en": (
-        "Plan your Vietnam trip: day-by-day itineraries, Hanoi, Hội An, "
-        "Saigon and Đà Nẵng guides, visa, budget, eSIM and travel tips."
+        "Vietnam travel guide 2026: Hanoi (where to stay, where to eat), Ninh Binh, Hoi An, "
+        "Nha Trang, 10- and 15-day itineraries, transport, visa price, budget and practical tips."
     ),
 }
 SITE_KEYWORDS = (
-    "voyage Vietnam, guide Vietnam, itinéraire Vietnam, préparer voyage Vietnam, "
-    "Hanoï, Hội An, Ho Chi Minh, Đà Nẵng, budget Vietnam, visa Vietnam, voyageurs français"
+    "voyage Vietnam, guide Vietnam, itinéraire Vietnam 10 jours, itinéraire 15 jours, "
+    "où dormir à Hanoï, transport Vietnam, Ninh Binh, Hội An, Nha Trang, Tam Dao, "
+    "prix visa Vietnam, budget voyage Vietnam"
 )
 SITE_KEYWORDS_I18N = {
     "fr": SITE_KEYWORDS,
     "en": (
-        "Vietnam travel, Vietnam guide, Vietnam itinerary, plan Vietnam trip, "
-        "Hanoi, Hội An, Ho Chi Minh, Đà Nẵng, Vietnam budget, Vietnam visa"
+        "Vietnam travel, Vietnam travel guide, Vietnam itinerary 10 days, 15 days in Vietnam, "
+        "where to stay in Hanoi, transport Vietnam, Ninh Binh, Hoi An, Nha Trang, Tam Dao, "
+        "Vietnam visa price, Vietnam travel budget"
     ),
 }
 SITE_LANG = "fr"

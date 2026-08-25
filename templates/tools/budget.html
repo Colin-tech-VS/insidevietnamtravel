@@ -7,6 +7,7 @@
 {% endblock %}
 
 {% block structured_data %}
+{% set budget_faq = gsc_tool_faq('budget') %}
 {{ json_ld_graph([
   {
     "@type": "WebApplication",
@@ -22,7 +23,7 @@
     (t('nav.home'), site.SITE_URL ~ lang_url('index')),
     (t('budget.title'), None),
   ]),
-]) }}
+] + ([seo_faq(budget_faq)] if budget_faq else [])) }}
 {% endblock %}
 
 {% block content %}
@@ -236,6 +237,21 @@
     </div>
 
     <p class="tool-note">{{ t('budget.note') }}</p>
+
+    {% set budget_faq = gsc_tool_faq('budget') %}
+    {% if budget_faq %}
+    <div class="section-header" style="margin-top:2.5rem">
+      <h2>{{ t('tools.faq_title') }}</h2>
+    </div>
+    <div class="pillar-faq">
+      {% for item in budget_faq %}
+      <details class="pillar-faq__item">
+        <summary>{{ item.question }}</summary>
+        <p>{{ item.answer }}</p>
+      </details>
+      {% endfor %}
+    </div>
+    {% endif %}
   </div>
 </section>
 

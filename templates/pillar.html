@@ -10,7 +10,7 @@
 
 {% block og_image %}
 {% from "macros/seo.html" import og_image_tags with context %}
-{{ og_image_tags(site.SITE_URL ~ hero_img) }}
+{{ og_image_tags(site.SITE_URL ~ hero_img, alt=pillar.title) }}
 {% endblock %}
 
 {% block structured_data %}
@@ -33,7 +33,7 @@
 {% block content %}
 <header class="pillar-hero">
   <div class="pillar-hero__media" aria-hidden="true">
-    {{ responsive_img(hero_img, alt='', width=1600, height=900, loading='eager',
+    {{ responsive_img(hero_img, alt=pillar.title, width=1600, height=900, loading='eager',
        fetchpriority='high', class='pillar-hero__img',
        sizes='100vw') }}
   </div>

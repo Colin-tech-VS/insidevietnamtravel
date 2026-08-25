@@ -4,46 +4,17 @@
 
 <head>
 
-  {% if google_ads_id %}
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('consent', 'default', {
-      ad_storage: 'denied',
-      ad_user_data: 'denied',
-      ad_personalization: 'denied',
-      analytics_storage: 'denied',
-      wait_for_update: 500
-    });
-    (function () {
-      var adsId = {{ google_ads_id | tojson }};
-      function loadAdsTag() {
-        if (window.__adsTagLoaded) return;
-        window.__adsTagLoaded = true;
-        var s = document.createElement('script');
-        s.async = true;
-        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(adsId);
-        s.onload = function () {
-          gtag('js', new Date());
-          gtag('config', adsId);
-        };
-        document.head.appendChild(s);
-      }
-      if ('requestIdleCallback' in window) {
-        requestIdleCallback(loadAdsTag, { timeout: 2500 });
-      } else {
-        window.addEventListener('load', loadAdsTag, { once: true });
-      }
-    })();
-  </script>
-  {% endif %}
-
   <meta charset="UTF-8">
   <meta name="agd-partner-manual-verification" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>{{ meta_title }}</title>
+
+  <link rel="preload" href="{{ url_for('static', filename=main_css) }}" as="style">
+  <link rel="stylesheet" href="{{ url_for('static', filename=main_css) }}" fetchpriority="high">
+  <link rel="preload" href="{{ url_for('static', filename='fonts/outfit-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
+  {% block head_preload %}{% endblock %}
 
   <meta name="description" content="{{ meta_description }}">
 
@@ -74,12 +45,6 @@
   {% from "macros/hreflang.html" import hreflang_tags with context %}
   {{ hreflang_tags() }}
 
-
-
-  {% block head_preload %}{% endblock %}
-
-
-
   <meta property="og:type" content="{% block og_type %}website{% endblock %}">
 
   <meta property="og:title" content="{{ meta_title }}">
@@ -91,12 +56,13 @@
   <meta property="og:site_name" content="{{ site.SITE_NAME }}">
 
   <meta property="og:locale" content="{{ og_locale }}">
+  <meta property="og:locale:alternate" content="{{ 'fr_FR' if lang == 'en' else 'en_GB' }}">
 
   {# Image OG resolue : variable `og_image` (chemin ou URL) fournie par la route,
      sinon carte de marque raster par defaut (le SVG n'est pas lu par Facebook/X). #}
   {% set og_image_abs = (og_image if (og_image and '://' in og_image) else (site.SITE_URL ~ (og_image | static_v)) if og_image else (site.SITE_URL ~ url_for('static', filename='images/og-default.jpg'))) %}
   {% set og_image_type = 'image/webp' if '.webp' in og_image_abs else ('image/png' if '.png' in og_image_abs else 'image/jpeg') %}
-  {% set og_image_alt = (og_image_alt | default(meta_title)) %}
+  {% set og_image_alt = og_image_alt or meta_title %}
 
   {% block og_image %}
 
@@ -126,26 +92,13 @@
 
   <meta name="twitter:description" content="{{ meta_description }}">
 
+  {% block extra_head %}{% endblock %}
 
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
   {% if ga4_id or google_ads_id %}
   <link rel="dns-prefetch" href="https://www.googletagmanager.com">
-  <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
   {% endif %}
-
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Outfit:wght@300;400;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
-
-  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Outfit:wght@300;400;600;700&display=swap"></noscript>
-
-
-
-  <link rel="preload" href="{{ url_for('static', filename=main_css) }}" as="style">
-
-  <link rel="stylesheet" href="{{ url_for('static', filename=main_css) }}">
 
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
 
@@ -155,23 +108,7 @@
 
   <style>
     body.is-loading { overflow: hidden; }
-    #page-loader {
-      position: fixed;
-      inset: 0;
-      z-index: 10000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #FAF7F2;
-      opacity: 1;
-      visibility: visible;
-      transition: opacity 0.45s ease, visibility 0.45s ease;
-    }
-    #page-loader.is-hidden {
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-    }
+    .nps-widget { position: fixed; opacity: 0; pointer-events: none; }
   </style>
 
   {# JSON-LD GLOBAL present sur TOUTES les pages (actuelles et futures) :
@@ -186,35 +123,48 @@
 
   {% block structured_data %}{% endblock %}
 
+  {% if google_ads_id %}
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied',
+      analytics_storage: 'denied',
+      wait_for_update: 500
+    });
+    (function () {
+      var adsId = {{ google_ads_id | tojson }};
+      function loadAdsTag() {
+        if (window.__adsTagLoaded) return;
+        window.__adsTagLoaded = true;
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(adsId);
+        s.onload = function () {
+          gtag('js', new Date());
+          gtag('config', adsId);
+        };
+        document.head.appendChild(s);
+      }
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(loadAdsTag, { timeout: 4000 });
+      } else {
+        window.addEventListener('load', loadAdsTag, { once: true });
+      }
+    })();
+  </script>
+  {% endif %}
+
 </head>
 
-<body class="is-loading {% block body_class %}{% endblock %}" data-ga4-id="{{ ga4_id }}"
+<body class="{% block body_class %}{% endblock %}" data-ga4-id="{{ ga4_id }}"
       data-profile-api="{{ url_for('api_visitor_recommendations') }}"
       data-profile-sync="{{ url_for('api_visitor_profile_sync') }}">
 
   {% from "macros/loader.html" import page_loader with context %}
   {{ page_loader() }}
-  <script>
-    (function () {
-      var done = false;
-      function hide() {
-        if (done) return;
-        done = true;
-        var loader = document.getElementById('page-loader');
-        if (!loader) return;
-        loader.classList.add('is-hidden');
-        document.body.classList.remove('is-loading');
-        loader.setAttribute('aria-busy', 'false');
-      }
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function () { setTimeout(hide, 400); }, { once: true });
-      } else {
-        setTimeout(hide, 400);
-      }
-      window.addEventListener('load', function () { setTimeout(hide, 400); }, { once: true });
-      setTimeout(hide, 3500);
-    })();
-  </script>
   <noscript><style>#page-loader{display:none!important}body.is-loading{overflow:auto!important}</style></noscript>
 
   <a href="#main" class="skip-link">{{ t('skip.main') }}</a>
@@ -550,18 +500,62 @@
 
 
 
+  <script type="speculationrules">
+  {
+    "prefetch": [{
+      "where": {
+        "and": [
+          {"href_matches": "/*"},
+          {"not": {"href_matches": "/admin/*"}},
+          {"not": {"href_matches": "/partners/*"}},
+          {"not": {"href_matches": "/api/*"}},
+          {"not": {"href_matches": "/go/*"}}
+        ]
+      },
+      "eagerness": "moderate"
+    }]
+  }
+  </script>
+  <script>
+    window.__ivtIdle = function (fn) {
+      if ('requestIdleCallback' in window) requestIdleCallback(fn, { timeout: 2500 });
+      else window.addEventListener('load', function () { setTimeout(fn, 1); }, { once: true });
+    };
+    window.__ivtLoadScript = function (src) {
+      var s = document.createElement('script');
+      s.src = src;
+      s.async = true;
+      document.head.appendChild(s);
+    };
+    window.__ivtLoadStyle = function (href) {
+      var l = document.createElement('link');
+      l.rel = 'stylesheet';
+      l.href = href;
+      document.head.appendChild(l);
+    };
+  </script>
+  {% if main_js %}
+  <script src="{{ url_for('static', filename=main_js) }}" defer></script>
+  {% else %}
   <script src="{{ url_for('static', filename='js/loader.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/cookies.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/visitor_profile.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/search.js') }}" defer></script>
-  {% if nps_enabled %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/nps.css') }}">
-  <script src="{{ url_for('static', filename='js/nps.js') }}" defer></script>
   {% endif %}
-  {% if newsletter_popup_enabled %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/newsletter_popup.css') }}">
-  <script src="{{ url_for('static', filename='js/newsletter_popup.js') }}" defer></script>
+  {% if nps_enabled or newsletter_popup_enabled %}
+  <script>
+    __ivtIdle(function () {
+      {% if nps_enabled %}
+      __ivtLoadStyle({{ url_for('static', filename='css/nps.css') | tojson }});
+      __ivtLoadScript({{ url_for('static', filename='js/nps.js') | tojson }});
+      {% endif %}
+      {% if newsletter_popup_enabled %}
+      __ivtLoadStyle({{ url_for('static', filename='css/newsletter_popup.css') | tojson }});
+      __ivtLoadScript({{ url_for('static', filename='js/newsletter_popup.js') | tojson }});
+      {% endif %}
+    });
+  </script>
   {% endif %}
   {% block scripts %}{% endblock %}
 

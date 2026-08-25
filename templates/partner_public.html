@@ -24,7 +24,7 @@
 {% block head_preload %}
 {% set hero_src = hero_image if hero_image is defined and hero_image else page.image_url %}
 {% if hero_src and not is_private_preview %}
-<link rel="preload" as="image" href="{{ hero_src if '://' in hero_src else (site.SITE_URL ~ (hero_src | static_v)) }}">
+<link rel="preload" as="image" href="{{ hero_src if '://' in hero_src else (site.SITE_URL ~ (hero_src | static_v)) }}" fetchpriority="high">
 {% endif %}
 {% endblock %}
 
