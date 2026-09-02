@@ -304,7 +304,7 @@ ROUTE_PATHS: dict[str, dict[str, str]] = {
         "en": "/en/itineraries/{slug}/guide/{token}",
     },
     "pillar": {"fr": "/guide/{slug}", "en": "/en/guide/{slug}"},
-    "pdf_checkout": {"fr": "/guide-pdf/checkout", "en": "/en/guide-pdf/checkout"},
+    "pdf_checkout": {"fr": "/checkout", "en": "/en/guide-pdf/checkout"},
     "pdf_success": {"fr": "/guide-pdf/merci", "en": "/en/guide-pdf/success"},
     "pdf_download": {"fr": "/guide-pdf/telecharger/{token}", "en": "/en/guide-pdf/download/{token}"},
     "destination_page": {"fr": "/{slug}", "en": "/en/{slug}"},

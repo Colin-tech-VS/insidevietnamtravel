@@ -1,6 +1,8 @@
 """Sondes de santé et hôte canonique (apex, sans www)."""
 
+import os
 import unittest
+from pathlib import Path
 
 import config
 from app import app
@@ -60,6 +62,55 @@ class HealthHostTests(unittest.TestCase):
             config._without_www("https://insidevietnamtravel.fr"),
             "https://insidevietnamtravel.fr",
         )
+
+    def test_public_ip_default(self):
+        self.assertEqual(config.PUBLIC_IP, "185.135.132.50")
+        self.assertNotIn("localhost", config._resolve_site_url())
+
+    def test_pdf_flow_uses_canonical_host(self):
+        self.assertIsNone(os.environ.get("PDF_USE_SCALINGO_HOST"))
+        self.assertEqual(
+            config.pdf_flow_base_url(),
+            "https://insidevietnamtravel.fr",
+        )
+
+    def test_checkout_http_from_public_ip_goes_to_canonical_https(self):
+        response = self.client.get(
+            "/checkout",
+            headers={"Host": "185.135.132.50"},
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(
+            response.headers.get("Location"),
+            "https://insidevietnamtravel.fr/checkout",
+        )
+
+    def test_checkout_http_from_www_goes_to_canonical_https(self):
+        response = self.client.get(
+            "/checkout",
+            headers={"Host": "www.insidevietnamtravel.fr"},
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(
+            response.headers.get("Location"),
+            "https://insidevietnamtravel.fr/checkout",
+        )
+
+    def test_nginx_checkout_redirects_to_canonical_https(self):
+        text = Path(__file__).resolve().parents[1].joinpath("nginx.conf").read_text()
+        self.assertNotIn("localhost", text)
+        self.assertNotIn("SCALINGO_HOSTNAME", text)
+        self.assertNotIn("10.100.4.", text)
+        self.assertIn("185.135.132.50", text)
+        self.assertIn("location = /checkout", text)
+        self.assertIn("return 301 https://insidevietnamtravel.fr/checkout;", text)
+
+    def test_env_example_has_public_ip_and_no_scalingo_pdf_host(self):
+        text = Path(__file__).resolve().parents[1].joinpath(".env.example").read_text()
+        self.assertIn("PUBLIC_IP=185.135.132.50", text)
+        self.assertNotIn("PDF_USE_SCALINGO_HOST", text)
 
 
 if __name__ == "__main__":

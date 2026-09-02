@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import os
 import threading
 from datetime import datetime
 from functools import lru_cache
@@ -14,6 +15,8 @@ from flask import (
     request, redirect, flash, jsonify,
 )
 from flask_compress import Compress
+
+load_dotenv()
 
 import config
 from i18n_utils import (
@@ -71,7 +74,7 @@ RESERVED_SLUGS = frozenset({
     "robots.txt", "sitemap.xml", "llms.txt", "llms-full.txt",
     "AgodaPartnerVerification.htm",
     "categorie", "category", "static", "favicon.ico", "guide",
-    "en", "about", "privacy", "legal", "unsubscribe", "contact", "guide-pdf",
+    "en", "about", "privacy", "legal", "unsubscribe", "contact", "checkout", "guide-pdf",
     "preparer-mon-voyage", "plan-my-trip",
     "quand-partir-au-vietnam", "best-time-to-visit-vietnam",
     "calculateur-budget-vietnam", "vietnam-budget-calculator",
@@ -81,10 +84,6 @@ RESERVED_SLUGS = frozenset({
     "devenir-partenaire", "become-a-partner", "partenaire", "partner", "partners",
     "seo", "ressources-voyage-vietnam", "vietnam-travel-resources",
 })
-
-load_dotenv()
-
-import os
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-change-in-production")
@@ -305,6 +304,22 @@ def _mai_request_context():
         "visitor_hash": visitor_hash,
         "path": page_path,
     }
+
+
+@app.before_request
+def checkout_http_to_canonical_https():
+    """HTTP /checkout (IP, www, apex) → https://insidevietnamtravel.fr/checkout."""
+    if request.path.rstrip("/") != "/checkout":
+        return None
+    host = (request.host or "").split(":")[0].lower()
+    if host in {"localhost", "127.0.0.1", "::1", "testserver"}:
+        return None
+    canonical = "https://insidevietnamtravel.fr/checkout"
+    if request.scheme == "https" and host == "insidevietnamtravel.fr":
+        return None
+    if host in {config.PUBLIC_IP, "www.insidevietnamtravel.fr"} or request.scheme == "http":
+        return redirect(canonical, code=301)
+    return None
 
 
 @app.before_request
@@ -1802,6 +1817,7 @@ def newsletter_subscribe():
 
 # ── Guide PDF (achat + téléchargement) ───────────────────────────────────
 
+@app.route("/checkout")
 @app.route("/guide-pdf/checkout")
 @app.route("/en/guide-pdf/checkout")
 def pdf_checkout_start():
