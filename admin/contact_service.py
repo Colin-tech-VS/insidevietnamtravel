@@ -23,12 +23,13 @@ def _save_messages(messages: list[dict]):
 
 
 def count_unread_messages() -> int:
-    try:
-        from admin.inbox_service import count_unread_inbox
+    """Badge nav : messages formulaire uniquement.
 
-        return count_unread_inbox()
-    except Exception:  # noqa: BLE001
-        return sum(1 for m in get_contact_messages() if not m.get("read"))
+    Ne pas passer par IMAP ici : count_unread_inbox() télécharge jusqu'à 200
+    messages complets et faisait pendre chaque GET /admin (login inclus)
+    plusieurs secondes → ReadTimeout des sondes.
+    """
+    return sum(1 for m in get_contact_messages() if not m.get("read"))
 
 
 def mark_message_read(msg_id: str) -> bool:

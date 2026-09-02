@@ -1,7 +1,9 @@
 """Configuration Gunicorn pour Scalingo (équivalent nginx côté process web).
 
 Bind $PORT, un worker (mémoire container S), threads pour le concurrent,
-timeout long pour l'admin. Les sondes /api/health et /healthz restent hors DB.
+timeout long pour les jobs IA admin. Les GET /admin et /admin/login ne
+doivent plus toucher IMAP (voir admin_globals) — sinon ReadTimeout sonde.
+Les sondes /api/health et /healthz restent hors DB.
 """
 
 import os
