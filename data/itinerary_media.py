@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from collections import defaultdict
 
+from seo_utils import visiter_vietnam_alt
+
 
 def pool_img(photo_id: str) -> str:
     return f"/static/images/pool/{photo_id}.webp"
@@ -102,32 +104,32 @@ ITINERARY_HERO_ALT: dict[str, str] = {
 # Galerie = une photo par ville du circuit (sans doublon)
 ITINERARY_GALLERY: dict[str, list[dict]] = {
     "3-days-vietnam": [
-        {"photo_id": "1555921015-5532091f6026"},
-        {"photo_id": "1772867342647-b7f70ccd029d"},
-        {"photo_id": "1526139334526-f591a54b477c"},
+        {"photo_id": "1555921015-5532091f6026", "slug": "hanoi"},
+        {"photo_id": "1772867342647-b7f70ccd029d", "slug": "hanoi"},
+        {"photo_id": "1526139334526-f591a54b477c", "slug": "hoi-an"},
     ],
     "7-days-vietnam": [
-        {"photo_id": "1555921015-5532091f6026"},
-        {"photo_id": "1772867342647-b7f70ccd029d"},
-        {"photo_id": "1528127269322-539801943592"},
-        {"photo_id": "1555979864-7a8f9b4fddf8"},
+        {"photo_id": "1555921015-5532091f6026", "slug": "hanoi"},
+        {"photo_id": "1772867342647-b7f70ccd029d", "slug": "halong"},
+        {"photo_id": "1528127269322-539801943592", "slug": "hoi-an"},
+        {"photo_id": "1555979864-7a8f9b4fddf8", "slug": "da-nang"},
     ],
     "10-days-vietnam": [
-        {"photo_id": "1555921015-5532091f6026"},
-        {"photo_id": "1772867342647-b7f70ccd029d"},
-        {"photo_id": "1528127269322-539801943592"},
-        {"photo_id": "1583417319070-4a69db38a482"},
-        {"dest": _DEST_MEKONG, "caption": "Delta du Mékong — canaux et sampan", "alt": "Delta du Mékong, Vietnam"},
+        {"photo_id": "1555921015-5532091f6026", "slug": "hanoi"},
+        {"photo_id": "1772867342647-b7f70ccd029d", "slug": "halong"},
+        {"photo_id": "1528127269322-539801943592", "slug": "hoi-an"},
+        {"photo_id": "1583417319070-4a69db38a482", "slug": "ho-chi-minh-city"},
+        {"dest": _DEST_MEKONG, "caption": "Delta du Mékong — canaux et sampan", "alt": "Delta du Mékong, Vietnam", "slug": "delta-du-mekong"},
     ],
     "15-days-vietnam": [
-        {"photo_id": "1555921015-5532091f6026"},
-        {"photo_id": "1531737212413-667205e1cda7"},
-        {"photo_id": "1557750255-c76072a7aad1"},
-        {"photo_id": "1772867342647-b7f70ccd029d"},
-        {"dest": _DEST_HUE, "caption": "Citadelle impériale de Huế", "alt": "Huế, Vietnam"},
-        {"photo_id": "1528127269322-539801943592"},
-        {"photo_id": "1583417319070-4a69db38a482"},
-        {"dest": _DEST_MEKONG, "caption": "Delta du Mékong — marché fluvial", "alt": "Delta du Mékong, Vietnam"},
+        {"photo_id": "1555921015-5532091f6026", "slug": "hanoi"},
+        {"photo_id": "1531737212413-667205e1cda7", "slug": "sapa"},
+        {"photo_id": "1557750255-c76072a7aad1", "slug": "ninh-binh"},
+        {"photo_id": "1772867342647-b7f70ccd029d", "slug": "halong"},
+        {"dest": _DEST_HUE, "caption": "Citadelle impériale de Huế", "alt": "Huế, Vietnam", "slug": "hue"},
+        {"photo_id": "1528127269322-539801943592", "slug": "hoi-an"},
+        {"photo_id": "1583417319070-4a69db38a482", "slug": "ho-chi-minh-city"},
+        {"dest": _DEST_MEKONG, "caption": "Delta du Mékong — marché fluvial", "alt": "Delta du Mékong, Vietnam", "slug": "delta-du-mekong"},
     ],
 }
 
@@ -135,7 +137,8 @@ ITINERARY_GALLERY: dict[str, list[dict]] = {
 def _resolve_photo_entry(entry) -> tuple[str, str]:
     """Retourne (url, alt) pour une entrée pool ou dest."""
     if isinstance(entry, tuple) and entry[0] == "dest":
-        return entry[1], entry[2] if len(entry) > 2 else "Vietnam"
+        raw_alt = entry[2] if len(entry) > 2 else "Vietnam"
+        return entry[1], raw_alt
     photo_id = entry
     return pool_img(photo_id), _PHOTO_CAPTIONS_FR.get(photo_id, "Vietnam")
 
@@ -160,7 +163,8 @@ def _day_image_for_location(location_slug: str, index: int) -> tuple[str, str]:
     if not photos:
         return "", ""
     entry = photos[index % len(photos)]
-    return _resolve_photo_entry(entry)
+    url, _raw_alt = _resolve_photo_entry(entry)
+    return url, visiter_vietnam_alt(_raw_alt, "fr", slug=location_slug)
 
 
 def attach_itinerary_media(itin: dict) -> dict:
@@ -171,10 +175,16 @@ def attach_itinerary_media(itin: dict) -> dict:
         itin["hero_image"] = ITINERARY_HERO[slug]
         itin["image_alt"] = ITINERARY_HERO_ALT.get(slug, itin.get("title", "Vietnam"))
 
-    itin["gallery"] = [
-        _resolve_gallery_item(item)
-        for item in ITINERARY_GALLERY.get(slug, [])
-    ]
+    itin["gallery"] = []
+    for item in ITINERARY_GALLERY.get(slug, []):
+        resolved = _resolve_gallery_item(item)
+        loc = item.get("slug") or item.get("location_slug")
+        resolved["alt"] = visiter_vietnam_alt(
+            resolved.get("alt") or resolved.get("caption") or "vietnam",
+            "fr",
+            slug=loc,
+        )
+        itin["gallery"].append(resolved)
 
     location_counters: dict[str, int] = defaultdict(int)
     days = []
@@ -188,6 +198,10 @@ def attach_itinerary_media(itin: dict) -> dict:
                 d["image"] = url
                 d["image_alt"] = alt
                 location_counters[loc] += 1
+        if loc:
+            d["image_alt"] = visiter_vietnam_alt(
+                d.get("image_alt") or loc, "fr", slug=loc
+            )
         days.append(d)
     itin["days"] = days
     return itin

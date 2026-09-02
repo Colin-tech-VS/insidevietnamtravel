@@ -69,7 +69,10 @@ def fit_seo_title(title: str, max_len: int = 60) -> str:
 def visiter_vietnam_alt(place: str, lang: str = "fr", slug: str | None = None) -> str:
     """Alt images : « visiter vietnam [lieu] » (FR) / « visit vietnam [place] » (EN)."""
     lieu = (_ALT_LIEU.get(slug or "") if slug else None) or (place or "").strip().lower()
-    lieu = re.sub(r"\s+", " ", lieu).strip(" .") or "vietnam"
+    lieu = re.sub(r"\s+", " ", lieu).strip(" .,;:—–-")
+    lieu = re.sub(r",?\s*vietnam$", "", lieu).strip()
+    if not lieu or lieu == "vietnam":
+        return "visit vietnam" if lang == "en" else "visiter vietnam"
     if lang == "en":
         return f"visit vietnam {lieu}"
     return f"visiter vietnam {lieu}"
