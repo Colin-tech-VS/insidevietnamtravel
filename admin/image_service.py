@@ -417,15 +417,17 @@ def _align_destination_pool_image(dest: dict) -> dict | None:
 
 # Texte alternatif des photos de ville committées dans static/images/destinations/.
 DESTINATION_IMAGE_ALTS: dict[str, str] = {
-    "hanoi": "Pont rouge Thê Húc sur le lac Hoàn Kiếm, Hanoï, Vietnam",
-    "ho-chi-minh-city": "Skyline de Ho Chi Minh-Ville illuminée la nuit, Vietnam",
-    "hoi-an": "Lanternes colorées de la vieille ville de Hội An la nuit, Vietnam",
-    "da-nang": "Pont d'Or (Golden Bridge) soutenu par des mains géantes, Bà Nà Hills, Đà Nẵng",
-    "halong": "Karsts calcaires émergeant des eaux émeraude de la baie d'Halong, Vietnam",
-    "sapa": "Rizières en terrasses dorées de la vallée de Sapa, Vietnam",
-    "delta-du-mekong": "Marché flottant de Cái Răng, barques chargées de fruits, delta du Mékong",
-    "hue": "Tour du drapeau et douves de la citadelle impériale de Huế, Vietnam",
-    "phu-quoc": "Plage de sable blanc, palmiers et eaux turquoise de Phú Quốc, Vietnam",
+    "hanoi": "visiter vietnam hanoï",
+    "ho-chi-minh-city": "visiter vietnam hô chi minh-ville",
+    "hoi-an": "visiter vietnam hội an",
+    "da-nang": "visiter vietnam đà nẵng",
+    "halong": "visiter vietnam baie d'halong",
+    "sapa": "visiter vietnam sapa",
+    "delta-du-mekong": "visiter vietnam delta du mékong",
+    "hue": "visiter vietnam huế",
+    "phu-quoc": "visiter vietnam phú quốc",
+    "nha-trang": "visiter vietnam nha trang",
+    "ninh-binh": "visiter vietnam ninh binh",
 }
 
 

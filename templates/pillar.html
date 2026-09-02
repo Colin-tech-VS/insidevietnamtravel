@@ -33,7 +33,7 @@
 {% block content %}
 <header class="pillar-hero">
   <div class="pillar-hero__media" aria-hidden="true">
-    {{ responsive_img(hero_img, alt=pillar.title, width=1600, height=900, loading='eager',
+    {{ responsive_img(hero_img, alt='visiter vietnam ' ~ pillar.title|lower, width=1600, height=900, loading='eager',
        fetchpriority='high', class='pillar-hero__img',
        sizes='100vw') }}
   </div>

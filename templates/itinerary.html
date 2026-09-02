@@ -3,6 +3,7 @@
 {% from "macros/images.html" import responsive_img with context %}
 {% from "macros/itinerary.html" import itin_day_block with context %}
 {% from "macros/seo.html" import json_ld_graph, og_image_tags with context %}
+{% from "macros/travel_guide.html" import dest_internal_list with context %}
 
 {% block og_type %}article{% endblock %}
 
@@ -73,7 +74,7 @@
   <div class="page-hero__media" aria-hidden="true">
     {{ responsive_img(
       itin.hero_image,
-      alt=itin.image_alt or itin.title,
+      alt=itin.image_alt or ('visiter vietnam ' ~ itin.title|lower),
       width=1200,
       height=675,
       loading='eager',
@@ -127,6 +128,8 @@
       <div class="prose">{{ itin.overview | safe }}</div>
     </section>
     {% endif %}
+
+    {{ dest_internal_list(itin.related_dest_slugs) }}
 
     {% if itin.includes %}
     <section class="content-block">

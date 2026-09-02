@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% from "macros/images.html" import responsive_img with context %}
 {% from "macros/seo.html" import json_ld_graph with context %}
+{% from "macros/travel_guide.html" import dest_internal_links with context %}
 
 {% block structured_data %}
 {% set list_name = "Destinations Vietnam" if lang == 'fr' else "Vietnam destinations" %}
@@ -17,7 +18,7 @@
 <header class="pillar-hero destinations-hero">
   <div class="pillar-hero__media" aria-hidden="true">
     <img src="{{ url_for('static', filename='images/destinations/ha-long-qu-ng-ninh-960.webp') }}"
-         alt="" width="960" height="640" loading="eager" decoding="async" fetchpriority="high" class="pillar-hero__img">
+         alt="visiter vietnam baie d'halong" width="960" height="640" loading="eager" decoding="async" fetchpriority="high" class="pillar-hero__img">
   </div>
   <div class="container destinations-hero__inner">
     <nav class="breadcrumb breadcrumb--light" aria-label="{{ t('breadcrumb.aria') }}">
@@ -35,6 +36,16 @@
 
 <section class="section destinations-directory" aria-label="{{ t('destinations.page.title') }}">
   <div class="container">
+    <div class="prose destinations-directory__intro">
+      {% if lang == 'en' %}
+      <h2>Where to go in Vietnam</h2>
+      <p>Start with <a href="{{ lang_url('destination_page', slug='hanoi') }}">Hanoi</a> and <a href="{{ lang_url('destination_page', slug='halong') }}">Halong Bay</a> in the north, then <a href="{{ lang_url('destination_page', slug='hoi-an') }}">Hoi An</a> in the centre and <a href="{{ lang_url('destination_page', slug='ho-chi-minh-city') }}">Ho Chi Minh City</a> in the south. How many days, best season and budget sit on each city guide.</p>
+      {% else %}
+      <h2>Où aller au Vietnam</h2>
+      <p>Commencez par <a href="{{ lang_url('destination_page', slug='hanoi') }}">Hanoï</a> et la <a href="{{ lang_url('destination_page', slug='halong') }}">baie d'Halong</a> au nord, puis <a href="{{ lang_url('destination_page', slug='hoi-an') }}">Hội An</a> au centre et <a href="{{ lang_url('destination_page', slug='ho-chi-minh-city') }}">Hô Chi Minh-Ville</a> au sud. Combien de jours, meilleure période et budget sont détaillés sur chaque fiche.</p>
+      {% endif %}
+    </div>
+    {{ dest_internal_links(['hanoi', 'ho-chi-minh-city', 'hoi-an', 'halong', 'ninh-binh', 'sapa', 'da-nang']) }}
     {% for region in destinations_by_region %}
     <div class="destinations-directory__region">
       <h2 class="destinations-directory__region-title">{{ region.label }}</h2>
@@ -46,7 +57,7 @@
           {% if d.image %}
           {{ responsive_img(
             d.image,
-            alt=d.image_alt or ('Guide ' ~ d.name ~ ', Vietnam'),
+            alt=d.image_alt or ('visiter vietnam ' ~ d.name|lower),
             width=400,
             height=225,
             loading='lazy',

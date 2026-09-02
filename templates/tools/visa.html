@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% from "macros/seo.html" import json_ld_graph with context %}
 {% from "macros/affiliates.html" import insurance_banner, visa_banner with context %}
+{% from "macros/travel_guide.html" import dest_internal_links with context %}
 
 {% block head_preload %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/tools.css') }}">
@@ -158,6 +159,7 @@
 
 <section class="section section--monetize">
   <div class="container">
+    {{ dest_internal_links(['hanoi', 'ho-chi-minh-city', 'hoi-an', 'da-nang']) }}
     {{ visa_banner() }}
     {{ insurance_banner() }}
   </div>

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "macros/seo.html" import json_ld_graph with context %}
+{% from "macros/travel_guide.html" import dest_internal_links with context %}
 
 {% block structured_data %}
 {{ json_ld_graph([
@@ -209,6 +210,16 @@
         </div>
       </aside>
     </div>
+  </div>
+</section>
+
+<section class="section section--alt">
+  <div class="container">
+    <header class="section-header">
+      <h2>{% if lang == 'en' %}Start from a destination{% else %}Partir d'une destination{% endif %}</h2>
+      <p>{% if lang == 'en' %}How many days, best season and budget for the cities most first trips include.{% else %}Combien de jours, meilleure période et budget pour les villes d'un premier voyage.{% endif %}</p>
+    </header>
+    {{ dest_internal_links(['hanoi', 'ho-chi-minh-city', 'hoi-an', 'halong', 'ninh-binh', 'da-nang']) }}
   </div>
 </section>
 {% endblock %}

@@ -51,6 +51,36 @@
 {% endif %}
 {% endmacro %}
 
+{% macro dest_internal_links(slugs=None, title=None) %}
+{% set slugs = slugs or ['hanoi', 'ho-chi-minh-city', 'hoi-an', 'halong'] %}
+{% set title = title or t('seo.dest_links') %}
+<nav class="pillar-related dest-internal-links" aria-label="{{ title }}">
+  <span class="pillar-related__label">{{ title }}</span>
+  {% for slug in slugs %}
+    {% set d = destinations.get(slug) %}
+    {% if d %}
+    <a href="{{ lang_url('destination_page', slug=slug) }}">{{ d.name }}</a>
+    {% endif %}
+  {% endfor %}
+</nav>
+{% endmacro %}
+
+{% macro dest_internal_list(slugs, heading=None) %}
+{% if slugs %}
+<section class="content-block dest-internal-list">
+  <h2>{{ heading or t('seo.dest_links') }}</h2>
+  <ul>
+    {% for slug in slugs %}
+      {% set d = destinations.get(slug) %}
+      {% if d %}
+      <li><a href="{{ lang_url('destination_page', slug=slug) }}">{{ d.name }}</a>{% if d.tagline %} — {{ d.tagline }}{% endif %}</li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endmacro %}
+
 {% macro guide_related_links(links) %}
 {% if links %}
 <nav class="pillar-related" aria-label="{{ t('pillar.related') }}">

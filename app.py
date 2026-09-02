@@ -181,10 +181,16 @@ def _destinations(lang=None):
     lang = lang or get_lang()
 
     def _build():
-        return {
-            slug: enrich_destination_for_display(d)
-            for slug, d in get_destinations_dict(lang).items()
-        }
+        from seo_utils import visiter_vietnam_alt
+
+        out = {}
+        for slug, d in get_destinations_dict(lang).items():
+            item = enrich_destination_for_display(d)
+            item["image_alt"] = visiter_vietnam_alt(
+                item.get("name") or slug, lang, slug=slug
+            )
+            out[slug] = item
+        return out
 
     return get_or_set(f"dest:{lang}", _build)
 
@@ -850,8 +856,11 @@ def index():
     home_og = None
     home_og_alt = None
     if dests.get("halong") and dests["halong"].get("image"):
+        from seo_utils import visiter_vietnam_alt
         home_og = dests["halong"]["image"]
-        home_og_alt = dests["halong"].get("image_alt") or dests["halong"].get("name")
+        home_og_alt = dests["halong"].get("image_alt") or visiter_vietnam_alt(
+            dests["halong"].get("name") or "baie d'halong", lang, slug="halong"
+        )
     return render_template(
         "index.html",
         featured_articles=featured_articles,
@@ -1319,6 +1328,8 @@ def itinerary(slug):
     itin = all_itins.get(slug)
     if not itin:
         abort(404)
+    from seo_gsc import apply_itinerary_seo
+    itin = apply_itinerary_seo(itin, slug, lang)
     # Maillage interne : les autres durées (3/7/10/15 jours) en bas de page.
     other_itins = [
         {"slug": s, "title": it["title"], "duration": it["duration"],

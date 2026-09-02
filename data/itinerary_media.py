@@ -93,10 +93,10 @@ ITINERARY_HERO: dict[str, str] = {
 }
 
 ITINERARY_HERO_ALT: dict[str, str] = {
-    "3-days-vietnam": "Train Street et Vieux Quartier de Hanoï, Vietnam",
-    "7-days-vietnam": "Îlots karstiques de la baie d'Halong, Vietnam",
-    "10-days-vietnam": "Vieille ville de Hội An au bord de la rivière, Vietnam",
-    "15-days-vietnam": "Rizières en terrasses de Sapa, Vietnam",
+    "3-days-vietnam": "visiter vietnam hanoï",
+    "7-days-vietnam": "visiter vietnam baie d'halong",
+    "10-days-vietnam": "visiter vietnam hội an",
+    "15-days-vietnam": "visiter vietnam sapa",
 }
 
 # Galerie = une photo par ville du circuit (sans doublon)

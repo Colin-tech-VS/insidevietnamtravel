@@ -4,6 +4,7 @@
 {% from "macros/images.html" import responsive_img with context %}
 {% from "macros/seo.html" import json_ld_graph with context %}
 {% from "macros/reviews.html" import reviews_section with context %}
+{% from "macros/travel_guide.html" import dest_internal_links with context %}
 
 {% set geo_faq = geo_faq_items() %}
 
@@ -40,7 +41,7 @@
 {% block content %}
 <section class="hero hero--centered" aria-labelledby="hero-title">
   {% set hero_bg = destinations.halong.image if destinations.get('halong') and destinations.halong.image else '/static/images/destinations/halong-960.webp' %}
-  {% set hero_bg_alt = destinations.halong.image_alt if destinations.get('halong') and destinations.halong.image_alt else "Baie d'Halong, Vietnam — paysage emblématique" %}
+  {% set hero_bg_alt = destinations.halong.image_alt if destinations.get('halong') and destinations.halong.image_alt else "visiter vietnam baie d'halong" %}
 
   <div class="hero-bg" aria-hidden="true">
     {{ responsive_img(hero_bg, alt=hero_bg_alt, width=1920, height=1080, loading='eager', fetchpriority='high', class='hero-bg__img', sizes='100vw') }}
@@ -123,6 +124,39 @@
   </div>
 </section>
 
+<section class="section home-guide" aria-labelledby="home-guide-title">
+  <div class="container container--narrow">
+    <header class="section-header">
+      <h2 id="home-guide-title">{% if lang == 'en' %}How to visit Vietnam in 2026{% else %}Comment visiter le Vietnam en 2026{% endif %}</h2>
+      <p>{% if lang == 'en' %}How many days, best season, daily budget and a sample 10-day route — with city guides.{% else %}Combien de jours, meilleure période, budget quotidien et un itinéraire type 10 jours — avec les guides villes.{% endif %}</p>
+    </header>
+    <div class="prose home-guide__prose">
+      <h3>{% if lang == 'en' %}Why visit Vietnam?{% else %}Pourquoi visiter le Vietnam ?{% endif %}</h3>
+      <ul>
+        <li>{% if lang == 'en' %}Varied landscapes: mountains, karst bays, beaches and lively cities.{% else %}Paysages variés : montagnes, baies karstiques, plages et villes animées.{% endif %}</li>
+        <li>{% if lang == 'en' %}Daily budget: about €30–100 depending on comfort (street food to mid-range hotels).{% else %}Budget voyage : environ 30 à 100 €/jour selon le confort (street food à hôtels milieu de gamme).{% endif %}</li>
+        <li>{% if lang == 'en' %}Easy north–south route by flight or train, with iconic stops in a first trip.{% else %}Traversée nord–sud simple en vol ou train, avec des étapes iconiques dès un premier voyage.{% endif %}</li>
+      </ul>
+      <h3>{% if lang == 'en' %}How many days?{% else %}Combien de jours ?{% endif %}</h3>
+      <ul>
+        <li><strong>7 {% if lang == 'en' %}days{% else %}jours{% endif %}</strong> — <a href="{{ lang_url('destination_page', slug='hanoi') }}">{% if lang == 'en' %}Hanoi{% else %}Hanoï{% endif %}</a>, <a href="{{ lang_url('destination_page', slug='halong') }}">{% if lang == 'en' %}Halong Bay{% else %}baie d'Halong{% endif %}</a>, <a href="{{ lang_url('destination_page', slug='hoi-an') }}">Hội An</a>.</li>
+        <li><strong>10 {% if lang == 'en' %}days{% else %}jours{% endif %}</strong> — {% if lang == 'en' %}add{% else %}ajoutez{% endif %} <a href="{{ lang_url('destination_page', slug='ho-chi-minh-city') }}">{% if lang == 'en' %}Ho Chi Minh City{% else %}Hô Chi Minh-Ville{% endif %}</a>.</li>
+        <li><strong>15 {% if lang == 'en' %}days{% else %}jours{% endif %}</strong> — {% if lang == 'en' %}add{% else %}ajoutez{% endif %} <a href="{{ lang_url('destination_page', slug='sapa') }}">Sapa</a> {% if lang == 'en' %}and{% else %}et{% endif %} <a href="{{ lang_url('destination_page', slug='ninh-binh') }}">Ninh Binh</a>.</li>
+      </ul>
+      <h3>{% if lang == 'en' %}Best time to go{% else %}Meilleure période{% endif %}</h3>
+      <p>{% if lang == 'en' %}There is no single best month: dry season is roughly October–April in the north, December–April in the south, February–August in the centre (outside typhoons).{% else %}Il n'y a pas un seul meilleur mois : saison sèche à peu près octobre–avril au nord, décembre–avril au sud, février–août au centre (hors typhons).{% endif %}</p>
+      <h3>{% if lang == 'en' %}Sample 10-day itinerary{% else %}Itinéraire type pour 10 jours{% endif %}</h3>
+      <ol>
+        <li><strong><a href="{{ lang_url('destination_page', slug='hanoi') }}">{% if lang == 'en' %}Hanoi{% else %}Hanoï{% endif %}</a></strong> (3 {% if lang == 'en' %}days{% else %}jours{% endif %}) — {% if lang == 'en' %}Old Quarter, Hoan Kiem Lake, street food.{% else %}Vieux Quartier, lac Hoàn Kiếm, street food.{% endif %}</li>
+        <li><strong><a href="{{ lang_url('destination_page', slug='halong') }}">{% if lang == 'en' %}Halong Bay{% else %}Baie d'Halong{% endif %}</a></strong> (2 {% if lang == 'en' %}days{% else %}jours{% endif %}) — {% if lang == 'en' %}Overnight cruise among the karsts.{% else %}Croisière une nuit parmi les karsts.{% endif %}</li>
+        <li><strong><a href="{{ lang_url('destination_page', slug='hoi-an') }}">Hội An</a></strong> (3 {% if lang == 'en' %}days{% else %}jours{% endif %}) — {% if lang == 'en' %}UNESCO lanterns, tailor, An Bang beach.{% else %}lanternes UNESCO, tailleur, plage An Bàng.{% endif %}</li>
+        <li><strong><a href="{{ lang_url('destination_page', slug='ho-chi-minh-city') }}">{% if lang == 'en' %}Ho Chi Minh City{% else %}Hô Chi Minh-Ville{% endif %}</a></strong> (2 {% if lang == 'en' %}days{% else %}jours{% endif %}) — {% if lang == 'en' %}museums, street food, optional Mekong.{% else %}musées, street food, Mékong en option.{% endif %}</li>
+      </ol>
+    </div>
+    {{ dest_internal_links(['hanoi', 'ho-chi-minh-city', 'hoi-an', 'halong', 'ninh-binh', 'da-nang']) }}
+  </div>
+</section>
+
 <section id="ivt-for-you" class="section section--alt ivt-for-you" hidden
          data-api-url="{{ url_for('api_visitor_recommendations') }}">
   <div class="container">
@@ -182,7 +216,7 @@
         {% if d.image %}
         {{ responsive_img(
           d.image,
-          alt=d.image_alt or ('Guide ' ~ d.name ~ ', Vietnam'),
+          alt=d.image_alt or ('visiter vietnam ' ~ d.name|lower),
           width=400,
           height=225,
           loading='lazy',

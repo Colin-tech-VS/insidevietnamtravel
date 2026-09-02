@@ -10,9 +10,16 @@ ITINERARY_10_DAYS_EN = {
     "summary": "The great classic north → centre → south route in 10 days.",
     "overview": (
         "<p>Ten days to link Vietnam's <strong>three regions</strong> without rushing: "
-        "Hanoi and Halong in the north, Hội An in the centre, then Ho Chi Minh City and the "
-        "<strong>Mekong Delta</strong> in the south. Two domestic flights (Hanoi→Đà Nẵng, "
+        "<a href=\"/en/hanoi\">Hanoi</a> and <a href=\"/en/halong\">Halong Bay</a> in the north, "
+        "<a href=\"/en/hoi-an\">Hoi An</a> in the centre, then <a href=\"/en/ho-chi-minh-city\">Ho Chi Minh City</a> and the "
+        "<strong><a href=\"/en/delta-du-mekong\">Mekong Delta</a></strong> in the south. Two domestic flights (Hanoi→Đà Nẵng, "
         "Đà Nẵng→SGN) spare you entire days on a bus.</p>"
+        "<h2>How many days, best season, budget</h2>"
+        "<ul>"
+        "<li><strong>How many days</strong>: 10 days for the classic north–south; 7 if you stay north–centre; 15 to add Sapa and Ninh Binh.</li>"
+        "<li><strong>Best season</strong>: November to April for drier weather along the whole route.</li>"
+        "<li><strong>Budget</strong>: €70–120/day on the ground depending on comfort (international flights excluded).</li>"
+        "</ul>"
         "<p>A balanced pace: 2 nights per main stop, one overnight cruise and a Mekong "
         "excursion before you fly home.</p>"
     ),
