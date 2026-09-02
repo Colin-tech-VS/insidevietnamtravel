@@ -24,6 +24,7 @@ _INFRA_ANALYTICS_PATHS: frozenset[str] = frozenset({
     "/AgodaPartnerVerification.htm",
     "/site.webmanifest",
     "/healthz",
+    "/api/health",
     "/feed.xml",
     "/en/feed.xml",
     "/search-index.json",

@@ -1,0 +1,26 @@
+{
+  "name": "InsideVietnamTravel",
+  "description": "Guide voyage Vietnam — Flask / Gunicorn. Hôte canonique https://insidevietnamtravel.fr (sans www).",
+  "repository": "https://github.com/Colin-tech-VS/insidevietnamtravel",
+  "website": "https://insidevietnamtravel.fr",
+  "env": {
+    "SITE_URL": {
+      "description": "URL publique canonique (apex, sans www).",
+      "value": "https://insidevietnamtravel.fr"
+    },
+    "SITE_CANONICAL_URL": {
+      "description": "URL canonique SEO et emails (apex, sans www).",
+      "value": "https://insidevietnamtravel.fr"
+    },
+    "SITE_PUBLIC_DOMAIN": {
+      "description": "Domaine public sans préfixe www.",
+      "value": "insidevietnamtravel.fr"
+    }
+  },
+  "formation": {
+    "web": {
+      "amount": 1,
+      "size": "S"
+    }
+  }
+}
