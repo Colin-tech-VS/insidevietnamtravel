@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 IMAP_PORT_SSL = 993
 CONTACT_SUBJECT_PREFIX = "[Contact]"
+IMAP_TIMEOUT = max(2, int(os.environ.get("IMAP_TIMEOUT", "8")))
 
 
 def _imap_config() -> dict:
@@ -144,9 +145,9 @@ def delete_imap_message(uid: str) -> bool:
 @contextmanager
 def _open_imap(cfg: dict):
     if cfg["use_ssl"]:
-        mail = imaplib.IMAP4_SSL(cfg["host"], cfg["port"])
+        mail = imaplib.IMAP4_SSL(cfg["host"], cfg["port"], timeout=IMAP_TIMEOUT)
     else:
-        mail = imaplib.IMAP4(cfg["host"], cfg["port"])
+        mail = imaplib.IMAP4(cfg["host"], cfg["port"], timeout=IMAP_TIMEOUT)
     try:
         mail.login(cfg["user"], cfg["password"])
         yield mail

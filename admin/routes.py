@@ -196,7 +196,7 @@ def _improve_draft(report, article: dict, instructions: str) -> dict:
     return article
 
 
-@admin_bp.route("/login", methods=["GET", "POST"])
+@admin_bp.route("/login", methods=["GET", "POST"], strict_slashes=False)
 def login():
     if session.get("admin_logged_in"):
         return redirect(url_for("admin.dashboard"))
@@ -214,9 +214,12 @@ def logout():
     return redirect(url_for("admin.login"))
 
 
-@admin_bp.route("/")
-@login_required
+@admin_bp.route("/", strict_slashes=False)
 def dashboard():
+    # Invité : 200 immédiat sur /admin et /admin/ (pas de 308 slash, pas de 302 login).
+    # Les sondes qui suivent les redirections évitaient sinon un ReadTimeout.
+    if not session.get("admin_logged_in"):
+        return render_template("admin/login.html")
     totals = db.get_dashboard_totals()
     revenue = db.get_revenue_stats()
     realtime = db.get_realtime_stats()
@@ -1483,6 +1486,9 @@ def leads_export():
 
 @admin_bp.context_processor
 def admin_globals():
+    """Badges nav — uniquement si session admin, jamais d'IMAP (ReadTimeout /admin)."""
+    if not session.get("admin_logged_in"):
+        return {"contact_unread": 0, "leads_open": 0}
     try:
         from admin.contact_service import count_unread_messages
         unread = count_unread_messages()

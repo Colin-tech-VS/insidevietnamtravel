@@ -3,6 +3,7 @@
 import os
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import config
 from app import app
@@ -45,11 +46,38 @@ class HealthHostTests(unittest.TestCase):
 
     def test_admin_without_trailing_slash(self):
         response = self.client.get("/admin", follow_redirects=False)
-        self.assertIn(response.status_code, (200, 302, 308))
-        self.assertNotIn(
-            "www.insidevietnamtravel.fr",
-            response.headers.get("Location", ""),
-        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.headers.get("Location"))
+        self.assertIn(b"Administration", response.data)
+
+    def test_admin_trailing_slash_is_login_200(self):
+        response = self.client.get("/admin/", follow_redirects=False)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.headers.get("Location"))
+
+    def test_admin_login_does_not_fetch_imap(self):
+        """Le GET /admin/login ne doit pas synchroniser IMAP (ReadTimeout)."""
+        with patch("admin.imap_service.fetch_inbox_messages") as mock_fetch:
+            mock_fetch.side_effect = AssertionError("IMAP interdit sur /admin/login")
+            response = self.client.get("/admin/login", follow_redirects=False)
+        self.assertEqual(response.status_code, 200)
+        mock_fetch.assert_not_called()
+
+    def test_admin_get_does_not_fetch_imap(self):
+        with patch("admin.imap_service.fetch_inbox_messages") as mock_fetch:
+            mock_fetch.side_effect = AssertionError("IMAP interdit sur /admin")
+            response = self.client.get("/admin", follow_redirects=False)
+        self.assertEqual(response.status_code, 200)
+        mock_fetch.assert_not_called()
+
+    def test_unread_badge_does_not_use_imap(self):
+        from admin.contact_service import count_unread_messages
+
+        with patch("admin.inbox_service.get_unified_inbox") as mock_inbox:
+            mock_inbox.side_effect = AssertionError("IMAP interdit pour le badge")
+            count = count_unread_messages()
+        self.assertIsInstance(count, int)
+        mock_inbox.assert_not_called()
 
     def test_canonical_url_has_no_www(self):
         self.assertEqual(config.SITE_PUBLIC_DOMAIN, "insidevietnamtravel.fr")
@@ -106,6 +134,14 @@ class HealthHostTests(unittest.TestCase):
         self.assertIn("185.135.132.50", text)
         self.assertIn("location = /checkout", text)
         self.assertIn("return 301 https://insidevietnamtravel.fr/checkout;", text)
+
+    def test_nginx_admin_goes_to_scalingo_https_www(self):
+        """L'apex LWS (185.135.132.50) ne doit pas renvoyer /admin vers http://www."""
+        text = Path(__file__).resolve().parents[1].joinpath("nginx.conf").read_text()
+        self.assertIn("location = /admin", text)
+        self.assertIn("location /admin/", text)
+        self.assertIn("return 301 https://www.insidevietnamtravel.fr/admin;", text)
+        self.assertNotIn("http://www.insidevietnamtravel.fr", text)
 
     def test_env_example_has_public_ip_and_no_scalingo_pdf_host(self):
         text = Path(__file__).resolve().parents[1].joinpath(".env.example").read_text()
