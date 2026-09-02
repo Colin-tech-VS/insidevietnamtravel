@@ -1,12 +1,25 @@
 """Site configuration — SITE_URL auto-détecté sur Scalingo."""
 
 import os
+from urllib.parse import urlsplit, urlunsplit
+
+
+def _without_www(url: str) -> str:
+    """Hôte canonique = apex (sans www). www.insidevietnamtravel.fr est inaccessible."""
+    url = (url or "").strip().rstrip("/")
+    if not url:
+        return url
+    parts = urlsplit(url)
+    host = (parts.netloc or "").lower()
+    if host.startswith("www."):
+        return urlunsplit(parts._replace(netloc=host[4:])).rstrip("/")
+    return url
 
 
 def _resolve_site_url() -> str:
     explicit = os.environ.get("SITE_URL", "").strip()
     if explicit:
-        return explicit.rstrip("/")
+        return _without_www(explicit)
     app_name = os.environ.get("SCALINGO_APP", "").strip()
     if app_name:
         region = os.environ.get("SCALINGO_REGION", "osc-fr1").strip() or "osc-fr1"
@@ -25,9 +38,14 @@ SITE_URL = _resolve_site_url()
 # (X-Robots-Tag noindex + robots.txt Disallow all). Désactivé par défaut → aucun
 # impact en production. Activer en posant SITE_NOINDEX=true sur l'app de staging.
 SITE_NOINDEX = os.environ.get("SITE_NOINDEX", "").strip().lower() in ("1", "true", "yes", "on")
-SITE_PUBLIC_DOMAIN = os.environ.get("SITE_PUBLIC_DOMAIN", "insidevietnamtravel.fr").strip().lower()
-SITE_CANONICAL_URL = (
-    os.environ.get("SITE_CANONICAL_URL", f"https://www.{SITE_PUBLIC_DOMAIN}").strip().rstrip("/")
+SITE_PUBLIC_DOMAIN = (
+    os.environ.get("SITE_PUBLIC_DOMAIN", "insidevietnamtravel.fr")
+    .strip()
+    .lower()
+    .removeprefix("www.")
+)
+SITE_CANONICAL_URL = _without_www(
+    os.environ.get("SITE_CANONICAL_URL", f"https://{SITE_PUBLIC_DOMAIN}").strip()
 )
 
 

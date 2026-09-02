@@ -140,6 +140,7 @@ def _refresh_main_css_path() -> str:
     return MAIN_CSS_PATH
 
 
+@app.route("/api/health")
 @app.route("/healthz")
 def healthz():
     """Sonde de santé + repère de déploiement (heure de boot, version)."""
@@ -152,6 +153,13 @@ def healthz():
             or "unknown"
         ),
     }
+
+
+@app.before_request
+def health_fast_path():
+    """Répond tout de suite aux sondes — pas d'analytics, pas de redirection www."""
+    if request.method in ("GET", "HEAD") and request.path in ("/api/health", "/healthz"):
+        return healthz()
 
 
 
@@ -357,6 +365,19 @@ def add_static_version(endpoint, values):
     mtime = _static_mtime(filename)
     if mtime:
         values["v"] = mtime
+
+
+@app.after_request
+def never_redirect_to_www(response):
+    """Si l'apex atteint l'app, ne pas renvoyer vers www (301 registrar HTTP www)."""
+    loc = response.headers.get("Location")
+    if not loc:
+        return response
+    apex = config.SITE_PUBLIC_DOMAIN
+    host = (request.host or "").split(":")[0].lower()
+    if host == apex and f"www.{apex}" in loc:
+        response.headers["Location"] = loc.replace(f"www.{apex}", apex)
+    return response
 
 
 @app.after_request
