@@ -12,9 +12,15 @@ ITINERARY_7_DAYS_FR = {
     "summary": "Hanoï → Halong → Hội An — le triangle nord-centre idéal pour une première semaine au Vietnam.",
     "overview": (
         "<p>En une semaine, cet itinéraire condense l'essentiel du <strong>nord et du centre</strong> "
-        "sans courir : deux nuits à Hanoï pour la street food et l'histoire, une croisière "
-        "inoubliable sur la <strong>baie d'Halong</strong>, puis trois nuits à Hội An pour "
-        "la culture, la plage et les lanternes.</p>"
+        "sans courir : deux nuits à <a href=\"/hanoi\">Hanoï</a> pour la street food et l'histoire, une croisière "
+        "inoubliable sur la <strong><a href=\"/halong\">baie d'Halong</a></strong>, puis trois nuits à "
+        "<a href=\"/hoi-an\">Hội An</a> pour la culture, la plage et les lanternes.</p>"
+        "<h2>Combien de jours, meilleure période, budget</h2>"
+        "<ul>"
+        "<li><strong>Combien de jours</strong> : 7 jours pour Hanoï–Halong–Hội An ; 10 jours si vous ajoutez Saigon.</li>"
+        "<li><strong>Meilleure période</strong> : novembre à avril pour un nord plus sec et un centre hors typhons.</li>"
+        "<li><strong>Budget</strong> : 65–115 €/jour sur place selon le confort (hors vol international).</li>"
+        "</ul>"
         "<p>Les <strong>vols intérieurs</strong> Hanoï → Đà Nẵng (1 h) évitent 16 h de route. "
         "Budget réaliste : 450–800 € sur place hors vol international, en comptant hôtels 3*, "
         "croisière milieu de gamme et food tours.</p>"

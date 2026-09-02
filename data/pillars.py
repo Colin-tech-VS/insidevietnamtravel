@@ -54,8 +54,8 @@ PILLARS: dict[str, dict] = {
             "en": "Visa, budget, season, eSIM, safety: everything to sort out before "
                   "you go, gathered and cross-linked so nothing slips through.",
         },
-        "meta_title": {"fr": "Préparer son voyage au Vietnam — checklist complète 2026",
-                       "en": "Plan your Vietnam trip — complete 2026 checklist"},
+        "meta_title": {"fr": "Préparer son voyage Vietnam : checklist 2026",
+                       "en": "Plan your Vietnam trip: 2026 checklist"},
         "meta_description": {
             "fr": "Le guide pour préparer votre voyage au Vietnam : visa, formalités, "
                   "budget, meilleure saison, eSIM et sécurité. Checklist pas à pas.",
@@ -125,7 +125,7 @@ PILLARS: dict[str, dict] = {
                        "Temples, dining, bargaining: the right habits."),
              ]},
         ],
-        "related_destinations": ["hanoi", "ho-chi-minh-city"],
+        "related_destinations": ["hanoi", "ho-chi-minh-city", "hoi-an", "halong"],
         "related_pillars": ["transport", "itineraires", "budget"],
         "faq": [
             {"q": {"fr": "Faut-il un visa pour voyager au Vietnam ?",
@@ -198,11 +198,11 @@ PILLARS: dict[str, dict] = {
                 "presque tous les taxis de rue.</p>"
                 "<h2>Quel moyen pour quel trajet ?</h2>"
                 "<ul>"
-                "<li><strong>Hanoï → Đà Nẵng / Hội An</strong> : vol 1 h (recommandé si &lt; 12 jours) "
+                "<li><strong><a href=\"/hanoi\">Hanoï</a> → Đà Nẵng / <a href=\"/hoi-an\">Hội An</a></strong> : vol 1 h (recommandé si &lt; 12 jours) "
                 "ou train + route.</li>"
-                "<li><strong>Hanoï → Huế</strong> : train de nuit en couchette (13–14 h) — paysages garantis.</li>"
-                "<li><strong>Hanoï → Saigon</strong> : vol 2 h ou train Réunification 32 h (à découper en étapes).</li>"
-                "<li><strong>Hanoï → Sapa</strong> : minibus VIP ou train de nuit + transfert (pas d'aéroport local).</li>"
+                "<li><strong>Hanoï → <a href=\"/hue\">Huế</a></strong> : train de nuit en couchette (13–14 h) — paysages garantis.</li>"
+                "<li><strong>Hanoï → <a href=\"/ho-chi-minh-city\">Saigon</a></strong> : vol 2 h ou train Réunification 32 h (à découper en étapes).</li>"
+                "<li><strong>Hanoï → <a href=\"/sapa\">Sapa</a></strong> : minibus VIP ou train de nuit + transfert (pas d'aéroport local).</li>"
                 "<li><strong>En ville</strong> : Grab voiture ou moto ; scooter seulement hors grands centres.</li>"
                 "</ul>"
                 "<p>Les guides ci-dessous détaillent réservations, prix réels et pièges à éviter.</p>"
@@ -214,11 +214,11 @@ PILLARS: dict[str, dict] = {
                 "most street taxis.</p>"
                 "<h2>Which mode for which leg?</h2>"
                 "<ul>"
-                "<li><strong>Hanoi → Đà Nẵng / Hội An</strong>: 1 h flight (best if &lt; 12 days) "
+                "<li><strong><a href=\"/en/hanoi\">Hanoi</a> → Da Nang / <a href=\"/en/hoi-an\">Hoi An</a></strong>: 1 h flight (best if &lt; 12 days) "
                 "or train + road.</li>"
-                "<li><strong>Hanoi → Huế</strong>: overnight sleeper train (13–14 h) — scenery guaranteed.</li>"
-                "<li><strong>Hanoi → Saigon</strong>: 2 h flight or 32 h Reunification train (split into stops).</li>"
-                "<li><strong>Hanoi → Sapa</strong>: VIP minibus or night train + transfer (no local airport).</li>"
+                "<li><strong>Hanoi → <a href=\"/en/hue\">Hue</a></strong>: overnight sleeper train (13–14 h) — scenery guaranteed.</li>"
+                "<li><strong>Hanoi → <a href=\"/en/ho-chi-minh-city\">Saigon</a></strong>: 2 h flight or 32 h Reunification train (split into stops).</li>"
+                "<li><strong>Hanoi → <a href=\"/en/sapa\">Sapa</a></strong>: VIP minibus or night train + transfer (no local airport).</li>"
                 "<li><strong>In town</strong>: Grab car or bike; scooters only outside major city centres.</li>"
                 "</ul>"
                 "<p>The guides below cover booking, real prices and pitfalls to avoid.</p>"
@@ -395,9 +395,9 @@ PILLARS: dict[str, dict] = {
                 "rapport saveur/prix — comptez <strong>1,50–4 €</strong> par repas aux stands fréquentés.</p>"
                 "<h2>Par où commencer ?</h2>"
                 "<ul>"
-                "<li><strong>Nord (Hanoï)</strong> : phở matinal, bún chả au déjeuner, egg coffee en pause.</li>"
-                "<li><strong>Centre (Huế, Hội An)</strong> : bún bò Huế épicé, cao lầu et white rose.</li>"
-                "<li><strong>Sud (Saigon)</strong> : bánh mì, hủ tiếu et marchés de nuit (Bến Thành).</li>"
+                "<li><strong>Nord (<a href=\"/hanoi\">Hanoï</a>)</strong> : phở matinal, bún chả au déjeuner, egg coffee en pause.</li>"
+                "<li><strong>Centre (<a href=\"/hue\">Huế</a>, <a href=\"/hoi-an\">Hội An</a>)</strong> : bún bò Huế épicé, cao lầu et white rose.</li>"
+                "<li><strong>Sud (<a href=\"/ho-chi-minh-city\">Saigon</a>)</strong> : bánh mì, hủ tiếu et marchés de nuit (Bến Thành).</li>"
                 "</ul>"
                 "<p>Les guides ci-dessous listent les plats incontournables, les adresses testées et "
                 "les cafés à ne pas manquer.</p>"
@@ -408,9 +408,9 @@ PILLARS: dict[str, dict] = {
                 "flavour-to-price ratio — expect <strong>€1.50–4</strong> at busy stalls.</p>"
                 "<h2>Where to start?</h2>"
                 "<ul>"
-                "<li><strong>North (Hanoi)</strong>: morning phở, bún chả at lunch, egg coffee break.</li>"
-                "<li><strong>Central (Huế, Hội An)</strong>: spicy bún bò Huế, cao lầu and white rose.</li>"
-                "<li><strong>South (Saigon)</strong>: bánh mì, hủ tiếu and night markets (Bến Thành).</li>"
+                "<li><strong>North (<a href=\"/en/hanoi\">Hanoi</a>)</strong>: morning phở, bún chả at lunch, egg coffee break.</li>"
+                "<li><strong>Central (<a href=\"/en/hue\">Hue</a>, <a href=\"/en/hoi-an\">Hoi An</a>)</strong>: spicy bún bò Huế, cao lầu and white rose.</li>"
+                "<li><strong>South (<a href=\"/en/ho-chi-minh-city\">Saigon</a>)</strong>: bánh mì, hủ tiếu and night markets (Bến Thành).</li>"
                 "</ul>"
                 "<p>The guides below list must-try dishes, tested addresses and unmissable cafés.</p>"
             ),
@@ -552,7 +552,7 @@ PILLARS: dict[str, dict] = {
                        slug="da-nang-plages-vietnam"),
              ]},
         ],
-        "related_destinations": ["hanoi", "ho-chi-minh-city"],
+        "related_destinations": ["hanoi", "ho-chi-minh-city", "halong", "hoi-an", "sapa", "hue", "phu-quoc"],
         "related_pillars": ["itineraires", "gastronomie"],
         "faq": [
             {"q": {"fr": "Quelle est l'expérience à ne pas manquer au Vietnam ?",

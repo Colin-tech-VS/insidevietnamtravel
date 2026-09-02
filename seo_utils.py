@@ -17,6 +17,33 @@ def fix_legacy_article_links(html: str) -> str:
     return _LEGACY_DEST_LINK.sub(r'href="/\1"', html)
 
 
+# Lieux connus pour les alt « visiter vietnam [lieu] » (minuscules, sans diacritiques forcé).
+_ALT_LIEU: dict[str, str] = {
+    "hanoi": "hanoï",
+    "ho-chi-minh-city": "hô chi minh-ville",
+    "hoi-an": "hội an",
+    "da-nang": "đà nẵng",
+    "halong": "baie d'halong",
+    "sapa": "sapa",
+    "delta-du-mekong": "delta du mékong",
+    "hue": "huế",
+    "phu-quoc": "phú quốc",
+    "nha-trang": "nha trang",
+    "ninh-binh": "ninh binh",
+    "tam-dao": "tam dao",
+    "cat-ba": "cat ba",
+    "ha-giang": "hà giang",
+    "cu-chi": "củ chi",
+    "vung-tau": "vũng tàu",
+    "mui-ne": "mũi né",
+    "can-tho": "cần thơ",
+    "phong-nha": "phong nha",
+    "con-dao": "côn đảo",
+    "da-lat": "đà lạt",
+    "dalat": "đà lạt",
+}
+
+
 def truncate_text(text: str, max_len: int = 160) -> str:
     text = re.sub(r"\s+", " ", (text or "").strip())
     if len(text) <= max_len:
@@ -25,21 +52,42 @@ def truncate_text(text: str, max_len: int = 160) -> str:
     return cut + "…"
 
 
+def fit_seo_title(title: str, max_len: int = 60) -> str:
+    """Title <60 caractères, avec le mot Vietnam (requête + pays)."""
+    title = re.sub(r"\s+", " ", (title or "").strip())
+    if "vietnam" not in title.casefold():
+        title = f"{title} Vietnam".strip() if title else "Vietnam"
+    if len(title) <= max_len:
+        return title
+    cut = title[:max_len].rsplit(" ", 1)[0].rstrip("—–-,;:|")
+    if "vietnam" not in cut.casefold():
+        room = max_len - 8  # " Vietnam"
+        cut = title[:room].rsplit(" ", 1)[0].rstrip("—–-,;:|") + " Vietnam"
+    return cut[:max_len]
+
+
+def visiter_vietnam_alt(place: str, lang: str = "fr", slug: str | None = None) -> str:
+    """Alt images : « visiter vietnam [lieu] » (FR) / « visit vietnam [place] » (EN)."""
+    lieu = (_ALT_LIEU.get(slug or "") if slug else None) or (place or "").strip().lower()
+    lieu = re.sub(r"\s+", " ", lieu).strip(" .,;:—–-")
+    lieu = re.sub(r",?\s*vietnam$", "", lieu).strip()
+    if not lieu or lieu == "vietnam":
+        return "visit vietnam" if lang == "en" else "visiter vietnam"
+    if lang == "en":
+        return f"visit vietnam {lieu}"
+    return f"visiter vietnam {lieu}"
+
+
 def build_meta_title(title: str, *, brand: str | None = None, max_len: int = 60) -> str:
-    """Title tag optimisé — mot-clé en tête, brand court en suffixe."""
-    brand = brand or config.SITE_NAME
-    title = (title or "").strip()
-    suffix = f" | {brand}"
-    if len(title) + len(suffix) <= max_len:
-        return title + suffix
-    room = max_len - len(suffix) - 1
-    return title[:room].rsplit(" ", 1)[0] + suffix
+    """Title tag CTR — requête + Vietnam, sans suffixe marque (économise les 60 car.)."""
+    del brand  # conservé pour compatibilité d'appel
+    return fit_seo_title(title, max_len)
 
 
 def article_meta_title(article: dict) -> str:
     if article.get("meta_title"):
-        return article["meta_title"][:70]
-    return build_meta_title(article.get("title", ""))
+        return fit_seo_title(article["meta_title"])
+    return fit_seo_title(article.get("title", ""))
 
 
 def article_meta_description(article: dict, lang: str = "fr") -> str:

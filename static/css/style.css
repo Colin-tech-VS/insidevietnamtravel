@@ -1706,6 +1706,13 @@ body.is-nav-open { overflow: hidden; }
   font-size: 1.05rem;
 }
 
+.home-guide__prose { margin-bottom: 2rem; }
+.home-guide .dest-internal-links,
+.destinations-directory__intro + .dest-internal-links { margin: 1.5rem 0 2.5rem; }
+.destinations-directory__intro { max-width: 42rem; margin: 0 0 1.5rem; }
+.dest-internal-list ul { margin: 0; padding-left: 1.2rem; }
+.dest-internal-list li { margin-bottom: 0.45rem; }
+
 .featured-section,
 .articles-section {
   padding: 5rem 0;

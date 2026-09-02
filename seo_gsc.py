@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Any
 
 import config
-from seo_utils import truncate_text
+from seo_utils import fit_seo_title, truncate_text, visiter_vietnam_alt
 
 GSC_HOME_DESTS: tuple[str, ...] = (
     "tam-dao",
@@ -911,6 +911,270 @@ DEST_PACKS["da-lat"] = {
 DEST_PACKS["dalat"] = DEST_PACKS["da-lat"]
 
 
+# Titres CTR (<60 car., requête + « Vietnam ») — priment sur les packs GSC.
+CTR_TITLES: dict[str, dict[str, str]] = {
+    "hanoi": _loc("Visiter Hanoï Vietnam : que faire, où dormir", "Visit Hanoi Vietnam: things to do, stay"),
+    "nha-trang": _loc("Visiter Nha Trang Vietnam : plages, itinerary", "Visit Nha Trang Vietnam: beaches, itinerary"),
+    "ninh-binh": _loc("Visiter Ninh Binh Vietnam : Tam Coc, durée", "Visit Ninh Binh Vietnam: Tam Coc, how long"),
+    "hoi-an": _loc("Visiter Hội An Vietnam : lanternes, que faire", "Visit Hoi An Vietnam: lanterns, what to do"),
+    "tam-dao": _loc("Visiter Tam Dao Vietnam : station et week-end", "Visit Tam Dao Vietnam: hill station weekend"),
+    "cat-ba": _loc("Visiter Cat Ba Vietnam : île et parc national", "Visit Cat Ba Vietnam: island and national park"),
+    "ha-giang": _loc("Visiter Hà Giang Vietnam : boucle et province", "Visit Ha Giang Vietnam: loop and province"),
+    "cu-chi": _loc("Visiter Củ Chi Vietnam : tunnels depuis Saigon", "Visit Cu Chi Vietnam: tunnels from Saigon"),
+    "vung-tau": _loc("Visiter Vũng Tàu Vietnam : plage près Saigon", "Visit Vung Tau Vietnam: beach near Saigon"),
+    "phu-quoc": _loc("Visiter Phú Quốc Vietnam : plages et île", "Visit Phu Quoc Vietnam: beaches and island"),
+    "ho-chi-minh-city": _loc("Visiter Saigon Vietnam : que faire à HCMC", "Visit Ho Chi Minh City Vietnam: Saigon guide"),
+    "da-nang": _loc("Visiter Đà Nẵng Vietnam : plages et Hội An", "Visit Da Nang Vietnam: beaches and Hoi An"),
+    "hue": _loc("Visiter Huế Vietnam : citadelle et itinerary", "Visit Hue Vietnam: citadel and itinerary"),
+    "sapa": _loc("Visiter Sapa Vietnam : rizières et Lào Cai", "Visit Sapa Vietnam: rice terraces, Lao Cai"),
+    "halong": _loc("Visiter Halong Vietnam : croisière et Cat Ba", "Visit Halong Bay Vietnam: cruise and Cat Ba"),
+    "delta-du-mekong": _loc("Visiter le Mékong Vietnam : Mỹ Tho, Cần Thơ", "Visit Mekong Delta Vietnam: My Tho, Can Tho"),
+    "mui-ne": _loc("Visiter Mũi Né Vietnam : dunes et Phan Thiết", "Visit Mui Ne Vietnam: dunes and Phan Thiet"),
+    "can-tho": _loc("Visiter Cần Thơ Vietnam : marché flottant", "Visit Can Tho Vietnam: floating market"),
+    "phong-nha": _loc("Visiter Phong Nha Vietnam : grottes UNESCO", "Visit Phong Nha Vietnam: UNESCO caves"),
+    "con-dao": _loc("Visiter Côn Đảo Vietnam : île et Côn Sơn", "Visit Con Dao Vietnam: Con Son island"),
+    "da-lat": _loc("Visiter Đà Lạt Vietnam : Lâm Đồng et climat", "Visit Da Lat Vietnam: Lam Dong highlands"),
+    "dalat": _loc("Visiter Đà Lạt Vietnam : Lâm Đồng et climat", "Visit Da Lat Vietnam: Lam Dong highlands"),
+}
+
+CTR_DESCS: dict[str, dict[str, str]] = {
+    "hanoi": _loc(
+        "Combien de jours à Hanoï, meilleure période, budget quotidien, où dormir et que faire. Guide pratique 2026.",
+        "How many days in Hanoi, best time to go, daily budget, where to stay and what to do. Practical 2026 guide.",
+    ),
+    "nha-trang": _loc(
+        "Nha Trang : combien de jours, meilleure période, budget plage, itinerary 2–4 jours et îles. Guide Vietnam 2026.",
+        "Nha Trang: how many days, best season, beach budget, 2–4 day itinerary and islands. Vietnam 2026 guide.",
+    ),
+    "ninh-binh": _loc(
+        "Ninh Binh : combien de jours, Tam Coc ou Trang An, budget et comment venir de Hanoï. Guide Vietnam 2026.",
+        "Ninh Binh: how many days, Tam Coc or Trang An, budget and how to come from Hanoi. Vietnam 2026 guide.",
+    ),
+    "hoi-an": _loc(
+        "Hội An : combien de jours, meilleure période, budget lanternes, que visiter et où dormir. Guide Vietnam 2026.",
+        "Hoi An: how many days, best season, lantern budget, what to visit and where to stay. Vietnam 2026 guide.",
+    ),
+    "tam-dao": _loc(
+        "Tam Dao : combien de jours, meilleure période, budget week-end et accès depuis Hanoï. Guide Vietnam 2026.",
+        "Tam Dao: how many days, best season, weekend budget and access from Hanoi. Vietnam 2026 guide.",
+    ),
+    "cat-ba": _loc(
+        "Cat Ba : combien de jours, meilleure période, budget île, parc national vs Halong. Guide Vietnam 2026.",
+        "Cat Ba: how many days, best season, island budget, national park vs Halong. Vietnam 2026 guide.",
+    ),
+    "ha-giang": _loc(
+        "Hà Giang : combien de jours pour la boucle, meilleure période, budget moto. Guide Vietnam 2026.",
+        "Ha Giang: how many days for the loop, best season, motorbike budget. Vietnam 2026 guide.",
+    ),
+    "cu-chi": _loc(
+        "Củ Chi : excursion depuis Saigon, combien de temps, budget et faut-il y dormir. Guide Vietnam 2026.",
+        "Cu Chi: day trip from Saigon, how long, budget and whether to stay. Vietnam 2026 guide.",
+    ),
+    "vung-tau": _loc(
+        "Vũng Tàu : combien de jours, meilleure période, budget week-end depuis Saigon. Guide Vietnam 2026.",
+        "Vung Tau: how many days, best season, weekend budget from Saigon. Vietnam 2026 guide.",
+    ),
+    "phu-quoc": _loc(
+        "Phú Quốc : combien de jours, meilleure période, budget plage et vols depuis Saigon. Guide Vietnam 2026.",
+        "Phu Quoc: how many days, best season, beach budget and flights from Saigon. Vietnam 2026 guide.",
+    ),
+    "ho-chi-minh-city": _loc(
+        "Saigon : combien de jours, meilleure période, budget quotidien, Củ Chi et Mékong. Guide Vietnam 2026.",
+        "Saigon: how many days, best season, daily budget, Cu Chi and the Mekong. Vietnam 2026 guide.",
+    ),
+    "da-nang": _loc(
+        "Đà Nẵng : combien de jours, meilleure période, budget plage et base pour Hội An. Guide Vietnam 2026.",
+        "Da Nang: how many days, best season, beach budget and base for Hoi An. Vietnam 2026 guide.",
+    ),
+    "hue": _loc(
+        "Huế : combien de jours, meilleure période, budget citadelle et lien avec Hội An. Guide Vietnam 2026.",
+        "Hue: how many days, best season, citadel budget and link with Hoi An. Vietnam 2026 guide.",
+    ),
+    "sapa": _loc(
+        "Sapa : combien de jours, meilleure période, budget trek et train depuis Hanoï. Guide Vietnam 2026.",
+        "Sapa: how many days, best season, trek budget and train from Hanoi. Vietnam 2026 guide.",
+    ),
+    "halong": _loc(
+        "Baie d'Halong : combien de jours, meilleure période, budget croisière et Cat Ba. Guide Vietnam 2026.",
+        "Halong Bay: how many days, best season, cruise budget and Cat Ba. Vietnam 2026 guide.",
+    ),
+    "delta-du-mekong": _loc(
+        "Mékong : combien de jours, meilleure période, budget excursion Mỹ Tho ou Cần Thơ. Guide Vietnam 2026.",
+        "Mekong: how many days, best season, day-trip budget for My Tho or Can Tho. Vietnam 2026 guide.",
+    ),
+    "mui-ne": _loc(
+        "Mũi Né : combien de jours, meilleure période, budget dunes et étape vers Nha Trang. Guide Vietnam 2026.",
+        "Mui Ne: how many days, best season, dune budget and stop towards Nha Trang. Vietnam 2026 guide.",
+    ),
+    "can-tho": _loc(
+        "Cần Thơ : combien de jours, meilleure période, budget marché flottant Cai Rang. Guide Vietnam 2026.",
+        "Can Tho: how many days, best season, Cai Rang floating-market budget. Vietnam 2026 guide.",
+    ),
+    "phong-nha": _loc(
+        "Phong Nha : combien de jours, meilleure période, budget grottes UNESCO. Guide Vietnam 2026.",
+        "Phong Nha: how many days, best season, UNESCO cave budget. Vietnam 2026 guide.",
+    ),
+    "con-dao": _loc(
+        "Côn Đảo : combien de jours, meilleure période, budget île vs Phú Quốc. Guide Vietnam 2026.",
+        "Con Dao: how many days, best season, island budget vs Phu Quoc. Vietnam 2026 guide.",
+    ),
+    "da-lat": _loc(
+        "Đà Lạt : combien de jours, meilleure période, budget hauts plateaux et Nha Trang. Guide Vietnam 2026.",
+        "Da Lat: how many days, best season, highland budget and Nha Trang. Vietnam 2026 guide.",
+    ),
+}
+CTR_DESCS["dalat"] = CTR_DESCS["da-lat"]
+
+RELATED_DESTS: dict[str, list[str]] = {
+    "hanoi": ["halong", "ninh-binh", "sapa"],
+    "halong": ["hanoi", "cat-ba", "ninh-binh"],
+    "ninh-binh": ["hanoi", "halong", "cat-ba"],
+    "sapa": ["hanoi", "ha-giang"],
+    "ha-giang": ["hanoi", "sapa"],
+    "tam-dao": ["hanoi", "ninh-binh"],
+    "cat-ba": ["halong", "hanoi", "ninh-binh"],
+    "hoi-an": ["da-nang", "hue"],
+    "da-nang": ["hoi-an", "hue"],
+    "hue": ["hoi-an", "da-nang", "phong-nha"],
+    "phong-nha": ["hue", "ninh-binh"],
+    "nha-trang": ["da-lat", "mui-ne", "hoi-an"],
+    "da-lat": ["nha-trang", "ho-chi-minh-city"],
+    "dalat": ["nha-trang", "ho-chi-minh-city"],
+    "mui-ne": ["nha-trang", "ho-chi-minh-city"],
+    "ho-chi-minh-city": ["delta-du-mekong", "cu-chi", "vung-tau"],
+    "cu-chi": ["ho-chi-minh-city", "delta-du-mekong"],
+    "vung-tau": ["ho-chi-minh-city"],
+    "delta-du-mekong": ["ho-chi-minh-city", "can-tho"],
+    "can-tho": ["delta-du-mekong", "ho-chi-minh-city"],
+    "phu-quoc": ["ho-chi-minh-city", "con-dao"],
+    "con-dao": ["phu-quoc", "vung-tau"],
+}
+
+ITIN_DEST_SLUGS: dict[str, list[str]] = {
+    "3-days-vietnam": ["hanoi", "ho-chi-minh-city", "halong"],
+    "7-days-vietnam": ["hanoi", "halong", "hoi-an"],
+    "10-days-vietnam": ["hanoi", "halong", "hoi-an", "ho-chi-minh-city", "delta-du-mekong"],
+    "15-days-vietnam": ["hanoi", "sapa", "ninh-binh", "halong", "hue", "hoi-an", "ho-chi-minh-city"],
+}
+
+GENERIC_DEST_SLUGS: tuple[str, ...] = (
+    "hanoi", "ho-chi-minh-city", "hoi-an", "halong",
+)
+
+ARTICLE_DEST_SLUGS: dict[str, list[str]] = {
+    "croisiere-baie-halong-vietnam": ["halong", "hanoi", "cat-ba"],
+    "trek-sapa-rizieres-vietnam": ["sapa", "hanoi"],
+    "excursion-delta-mekong-marches-flottants": ["delta-du-mekong", "ho-chi-minh-city", "can-tho"],
+    "hoi-an-lanternes-vieille-ville": ["hoi-an", "da-nang", "hue"],
+    "hue-citadelle-imperiale-vietnam": ["hue", "hoi-an", "da-nang"],
+    "phu-quoc-plages-ile-tropicale": ["phu-quoc", "ho-chi-minh-city"],
+    "da-nang-plages-vietnam": ["da-nang", "hoi-an", "hue"],
+    "meilleurs-restaurants-hanoi": ["hanoi"],
+    "decouvrez-hanoi-en-7-jours-itineraire-ideal-pour-les-debutants-au-vietnam": ["hanoi", "halong", "ninh-binh"],
+    "visa-vietnam-guide-complet-francais": list(GENERIC_DEST_SLUGS),
+    "budget-voyage-vietnam-2026": list(GENERIC_DEST_SLUGS),
+    "carte-sim-esim-vietnam": list(GENERIC_DEST_SLUGS),
+    "securite-voyage-vietnam-conseils": ["hanoi", "ho-chi-minh-city"],
+    "transport-vietnam-train-bus-vol": ["hanoi", "ho-chi-minh-city", "da-nang"],
+    "train-reunification-hanoi-saigon": ["hanoi", "hue", "nha-trang", "ho-chi-minh-city"],
+    "vols-interieurs-vietnam": ["hanoi", "da-nang", "ho-chi-minh-city"],
+    "location-scooter-vietnam": ["hoi-an", "phu-quoc", "hanoi"],
+    "plats-incontournables-vietnam": ["hanoi", "hoi-an", "ho-chi-minh-city"],
+    "cafe-vietnamien-guide": ["hanoi", "ho-chi-minh-city"],
+}
+
+_PRACTICAL_DAYS = {
+    "hanoi": _loc("2 jours pour l'essentiel, 3 jours pour un musée et un quartier hors centre.",
+                  "2 days for the essentials, 3 if you add a museum and a quieter neighbourhood."),
+    "halong": _loc("1 nuit à bord pour la croisière classique ; 2 nuits si vous ajoutez Cat Ba.",
+                   "One night aboard for the classic cruise; two if you add Cat Ba."),
+    "ninh-binh": _loc("1 nuit / 2 jours pour Tam Coc ou Trang An ; 2 nuits avec vélo dans les rizières.",
+                      "One night / two days for Tam Coc or Trang An; two nights with a rice-field bike ride."),
+    "sapa": _loc("2 nuits pour un trek d'une journée ; 3 nuits pour un village plus loin.",
+                 "Two nights for a day trek; three for a further village."),
+    "hoi-an": _loc("2 nuits minimum, 3 si vous voulez la plage An Bàng et Mỹ Sơn.",
+                   "Two nights minimum, three with An Bang beach and My Son."),
+    "ho-chi-minh-city": _loc("2 jours centre + musées ; 3 jours avec Củ Chi ou le delta du Mékong.",
+                             "Two days downtown and museums; three with Cu Chi or the Mekong."),
+    "da-nang": _loc("1 à 2 nuits comme base plage / aéroport ; beaucoup enchaînent avec Hội An (30 min).",
+                    "1–2 nights as a beach / airport base; many continue to Hoi An (30 min)."),
+    "hue": _loc("1 journée complète ou 2 nuits entre Halong et Hội An.",
+                "One full day or two nights between Halong and Hoi An."),
+    "phu-quoc": _loc("4–5 jours pour plage + nord de l'île ; 3 jours en extension après Saigon.",
+                     "4–5 days for beach plus the north; 3 days as an add-on after Saigon."),
+    "nha-trang": _loc("2 jours plage + île ; 3–4 jours si vous plongez ou enchaînez Đà Lạt.",
+                      "Two days for beach and an island; 3–4 if you dive or continue to Da Lat."),
+}
+
+_PRACTICAL_SEASON = {
+    "hanoi": _loc("Octobre–avril pour un nord plus sec ; l'été est chaud et orageux.",
+                  "October–April for a drier north; summer is hot and stormy."),
+    "halong": _loc("Octobre–avril : mer plus calme. Évitez les typhons de juillet–septembre.",
+                   "October–April: calmer seas. Avoid typhoons in July–September."),
+    "sapa": _loc("Septembre–novembre et mars–mai : terrasses et sentiers praticables.",
+                 "September–November and March–May: terraces and walkable trails."),
+    "hoi-an": _loc("Février–août hors saison des typhons ; les lanternes sont belles toute l'année.",
+                   "February–August outside typhoon season; lanterns are lovely year-round."),
+    "ho-chi-minh-city": _loc("Décembre–avril plus sec ; mai–novembre : averses courtes, chaleur constante.",
+                             "December–April is drier; May–November: short downpours, steady heat."),
+    "phu-quoc": _loc("Novembre–avril pour nager ; juin–septembre plus de pluie à l'ouest.",
+                     "November–April for swimming; June–September is wetter on the west."),
+}
+
+_PRACTICAL_BUDGET = {
+    "hanoi": _loc("Street food 2–4 €, hôtel simple 15–30 €, Grab urbain quelques euros.",
+                  "Street food €2–4, simple hotel €15–30, inner-city Grab a few euros."),
+    "halong": _loc("Croisière 2J/1N dès ~90 € ; journée depuis Hanoï moins chère mais plus courte.",
+                   "2D/1N cruise from about €90; a day trip from Hanoi is cheaper but shorter."),
+    "hoi-an": _loc("Ticket monuments ~5 €, repas 2–8 €, vélo à la journée quelques euros.",
+                   "Heritage ticket about €5, meals €2–8, a day bike a few euros."),
+    "ho-chi-minh-city": _loc("Street food 1,50–4 €, hôtel central 20–55 €, Grab moto très économique.",
+                             "Street food €1.50–4, central hotel €20–55, Grab bike is very cheap."),
+    "phu-quoc": _loc("Resorts plus chers que le continent ; comptez 40–100 €/jour selon le confort.",
+                     "Resorts cost more than the mainland; plan €40–100/day by comfort."),
+}
+
+
+def _practical_for(slug: str, name: str, lang: str) -> dict[str, str]:
+    lang = _lang(lang)
+    days = (_PRACTICAL_DAYS.get(slug) or {}).get(lang) or (
+        f"Most travellers spend 2–3 days in {name}."
+        if lang == "en"
+        else f"Comptez 2–3 jours à {name} pour la plupart des voyageurs."
+    )
+    season = (_PRACTICAL_SEASON.get(slug) or {}).get(lang) or (
+        "Follow the dry season of the region (north Oct–Apr, south Dec–Apr, centre Feb–Aug)."
+        if lang == "en"
+        else "Suivez la saison sèche de la région (nord oct.–avr., sud déc.–avr., centre fév.–août)."
+    )
+    budget = (_PRACTICAL_BUDGET.get(slug) or {}).get(lang) or (
+        "About €30–70/day on the ground, more with a cruise or island resort."
+        if lang == "en"
+        else "Environ 30–70 €/jour sur place, davantage avec une croisière ou un resort."
+    )
+    if lang == "en":
+        return {
+            "heading": f"Plan your stay in {name}",
+            "days_title": "How many days",
+            "days": days,
+            "season_title": "Best time to go",
+            "season": season,
+            "budget_title": "On-the-ground budget",
+            "budget": budget,
+            "related_title": "Pair it with",
+        }
+    return {
+        "heading": f"Préparer votre séjour à {name}",
+        "days_title": "Combien de jours",
+        "days": days,
+        "season_title": "Meilleure période",
+        "season": season,
+        "budget_title": "Budget sur place",
+        "budget": budget,
+        "related_title": "À combiner avec",
+    }
+
+
 def _generic_faq(name: str, lang: str) -> list[dict[str, str]]:
     if lang == "en":
         return [
@@ -982,37 +1246,53 @@ def apply_destination_seo(dest: dict, slug: str, lang: str) -> dict:
         out["eat_slug"] = pack.get("eat_slug")
     else:
         if lang == "en":
-            out["h1"] = f"{name} Vietnam 2026 — things to do, where to stay"
+            out["h1"] = f"Visit {name} Vietnam 2026 — things to do, where to stay"
             out.setdefault(
                 "meta_title",
-                dest.get("meta_title") or f"{name} Vietnam 2026 — travel guide",
+                dest.get("meta_title") or f"Visit {name} Vietnam 2026 — travel guide",
             )
             desc = dest.get("meta_description") or (
-                f"{name} travel guide: things to do, where to stay, how to get there. "
-                "Practical Vietnam tips for 2026."
+                f"{name}: how many days, best time to go, daily budget and where to stay. "
+                "Practical Vietnam guide 2026."
             )
         else:
-            out["h1"] = f"Guide {name} 2026 — que faire, où dormir"
+            out["h1"] = f"Visiter {name} au Vietnam — que faire, où dormir"
             out.setdefault(
                 "meta_title",
-                dest.get("meta_title") or f"Guide {name} Vietnam 2026 — que faire, où dormir",
+                dest.get("meta_title") or f"Visiter {name} Vietnam : que faire, où dormir",
             )
             desc = dest.get("meta_description") or (
-                f"Guide {name} : que faire, où dormir, comment y aller. "
-                "Conseils pratiques voyage Vietnam 2026."
+                f"{name} : combien de jours, meilleure période, budget quotidien et où dormir. "
+                "Guide Vietnam 2026."
             )
-        out["meta_title"] = out["meta_title"][:70]
-        out["meta_description"] = truncate_text(desc, 160)
         out["seo_keywords"] = (
             f"{name} Vietnam, {name} travel guide, things to do {name}"
             if lang == "en"
-            else f"guide {name}, {name} Vietnam, que faire {name}, où dormir {name}"
+            else f"visiter {name}, {name} Vietnam, que faire {name}, où dormir {name}"
         )
         out["seo_faq"] = _generic_faq(name, lang)
         out["seo_geo"] = None
         out["seo_alts"] = []
         out["seo_contained"] = None
         out["eat_slug"] = None
+        out["meta_description"] = truncate_text(desc, 160)
+
+    ctr_title = (CTR_TITLES.get(slug) or {}).get(lang)
+    if ctr_title:
+        out["meta_title"] = ctr_title
+        out["h1"] = ctr_title
+    else:
+        out["meta_title"] = fit_seo_title(out.get("meta_title") or f"Visiter {name} Vietnam")
+    ctr_desc = (CTR_DESCS.get(slug) or {}).get(lang)
+    if ctr_desc:
+        out["meta_description"] = truncate_text(ctr_desc, 160)
+    else:
+        out["meta_description"] = truncate_text(out.get("meta_description") or "", 160)
+
+    out["image_alt"] = visiter_vietnam_alt(name, lang, slug=slug)
+    out["seo_practical"] = _practical_for(slug, name, lang)
+    related = list(RELATED_DESTS.get(slug) or GENERIC_DEST_SLUGS)
+    out["related_dest_slugs"] = [s for s in related if s != slug][:4]
     return out
 
 
@@ -1102,7 +1382,7 @@ def destination_hotel_list_schema(dest: dict, canonical_url: str, lang: str) -> 
 ARTICLE_SEO: dict[str, dict[str, dict[str, Any]]] = {
     "meilleurs-restaurants-hanoi": {
         "fr": {
-            "meta_title": "Où manger à Hanoï 2026 — street food, cheap food",
+            "meta_title": "Où manger à Hanoï Vietnam : street food",
             "meta_description": (
                 "Où manger à Hanoï : meilleurs restaurants, street food, cheap food, phở et bún chả. "
                 "Adresses testées et budget 2–15 €."
@@ -1114,7 +1394,7 @@ ARTICLE_SEO: dict[str, dict[str, dict[str, Any]]] = {
         },
         "en": {
             "title": "Where to eat in Hanoi 2026: street food, cheap eats, best spots",
-            "meta_title": "Where to eat in Hanoi 2026 — street food & cheap eats",
+            "meta_title": "Where to eat in Hanoi Vietnam: street food",
             "meta_description": (
                 "Where to eat in Hanoi: best Vietnamese food, cheap street food, phở and bún chả. "
                 "Tested spots and prices."
@@ -1239,20 +1519,175 @@ ARTICLE_SEO: dict[str, dict[str, dict[str, Any]]] = {
     },
     "hoi-an-lanternes-vieille-ville": {
         "fr": {
-            "meta_title": "Hội An 2026 — lanternes, où est Hội An, que visiter",
+            "meta_title": "Visiter Hội An Vietnam : lanternes UNESCO",
             "meta_description": (
-                "Où est Hội An au Vietnam ? Vieille ville, festival des lanternes 2026–2027, "
-                "que visiter. Guide pratique."
+                "Hội An : combien de jours, meilleure période, budget lanternes et que visiter "
+                "dans la vieille ville UNESCO."
             ),
-            "tags": ["Hội An", "where is Hoi An", "lantern festival Vietnam", "An Hội"],
+            "tags": ["Hội An", "visiter Hội An", "lanternes Hội An", "An Hội"],
         },
         "en": {
-            "title": "Where is Hoi An in Vietnam? Lanterns and Old Town 2026",
-            "meta_title": "Where is Hoi An? 2026 lanterns & Old Town guide",
+            "title": "Visit Hoi An Vietnam: lanterns and Old Town",
+            "meta_title": "Visit Hoi An Vietnam: lanterns and Old Town",
             "meta_description": (
-                "Where is Hoi An in Vietnam? Old Town, lantern festival 2026–2027, things to visit."
+                "Hoi An: how many days, best season, lantern budget and what to visit in the UNESCO Old Town."
             ),
-            "tags": ["where is Hoi An", "Hoi An Vietnam", "lantern festival Vietnam 2027"],
+            "tags": ["visit Hoi An", "Hoi An Vietnam", "lantern festival Vietnam"],
+        },
+    },
+    "croisiere-baie-halong-vietnam": {
+        "fr": {
+            "meta_title": "Croisière Halong Vietnam : prix et durée",
+            "meta_description": (
+                "Croisière baie d'Halong : combien de jours, meilleure période, budget et "
+                "alternative Cat Ba. Guide 2026."
+            ),
+        },
+        "en": {
+            "meta_title": "Halong Bay cruise Vietnam: price and duration",
+            "meta_description": (
+                "Halong Bay cruise: how many days, best season, budget and the Cat Ba alternative. 2026 guide."
+            ),
+        },
+    },
+    "trek-sapa-rizieres-vietnam": {
+        "fr": {
+            "meta_title": "Trek Sapa Vietnam : rizières et villages",
+            "meta_description": (
+                "Trek à Sapa : combien de jours, meilleure période, budget randonnée et villages Hmong. Guide 2026."
+            ),
+        },
+        "en": {
+            "meta_title": "Sapa trek Vietnam: rice terraces and villages",
+            "meta_description": (
+                "Sapa trek: how many days, best season, hiking budget and Hmong villages. 2026 guide."
+            ),
+        },
+    },
+    "excursion-delta-mekong-marches-flottants": {
+        "fr": {
+            "meta_title": "Mékong Vietnam : marchés flottants, Saigon",
+            "meta_description": (
+                "Delta du Mékong : combien de jours, budget excursion Mỹ Tho ou Cần Thơ depuis Saigon. Guide 2026."
+            ),
+        },
+        "en": {
+            "meta_title": "Mekong Delta Vietnam: floating markets, Saigon",
+            "meta_description": (
+                "Mekong Delta: how many days, day-trip budget for My Tho or Can Tho from Saigon. 2026 guide."
+            ),
+        },
+    },
+    "hue-citadelle-imperiale-vietnam": {
+        "fr": {
+            "meta_title": "Visiter Huế Vietnam : citadelle et tombeaux",
+            "meta_description": (
+                "Huế : combien de jours, meilleure période, budget citadelle et tombeaux impériaux. Guide 2026."
+            ),
+        },
+        "en": {
+            "meta_title": "Visit Hue Vietnam: citadel and tombs",
+            "meta_description": (
+                "Hue: how many days, best season, citadel budget and imperial tombs. 2026 guide."
+            ),
+        },
+    },
+    "phu-quoc-plages-ile-tropicale": {
+        "fr": {
+            "meta_title": "Visiter Phú Quốc Vietnam : plages et île",
+            "meta_description": (
+                "Phú Quốc : combien de jours, meilleure période, budget plage et vols depuis Saigon. Guide 2026."
+            ),
+        },
+        "en": {
+            "meta_title": "Visit Phu Quoc Vietnam: beaches and island",
+            "meta_description": (
+                "Phu Quoc: how many days, best season, beach budget and flights from Saigon. 2026 guide."
+            ),
+        },
+    },
+    "da-nang-plages-vietnam": {
+        "fr": {
+            "meta_title": "Visiter Đà Nẵng Vietnam : plages et ponts",
+            "meta_description": (
+                "Đà Nẵng : combien de jours, meilleure période, budget plage et base pour Hội An. Guide 2026."
+            ),
+        },
+        "en": {
+            "meta_title": "Visit Da Nang Vietnam: beaches and bridges",
+            "meta_description": (
+                "Da Nang: how many days, best season, beach budget and base for Hoi An. 2026 guide."
+            ),
+        },
+    },
+    "train-reunification-hanoi-saigon": {
+        "fr": {
+            "meta_title": "Train Vietnam : Réunification Hanoï-Saigon",
+            "meta_description": (
+                "Train de la Réunification : combien de jours, budget couchette, étapes Huế et Nha Trang. Guide 2026."
+            ),
+        },
+        "en": {
+            "meta_title": "Vietnam train: Reunification Hanoi–Saigon",
+            "meta_description": (
+                "Reunification railway: how long, sleeper budget, Hue and Nha Trang stops. 2026 guide."
+            ),
+        },
+    },
+    "vols-interieurs-vietnam": {
+        "fr": {
+            "meta_title": "Vols intérieurs Vietnam : prix et compagnies",
+            "meta_description": (
+                "Vols intérieurs Vietnam : prix 2026, VietJet, Vietnam Airlines et axes Hanoï–Đà Nẵng–Saigon."
+            ),
+        },
+        "en": {
+            "meta_title": "Domestic flights Vietnam: prices and airlines",
+            "meta_description": (
+                "Vietnam domestic flights: 2026 prices, VietJet, Vietnam Airlines and Hanoi–Da Nang–Saigon routes."
+            ),
+        },
+    },
+    "location-scooter-vietnam": {
+        "fr": {
+            "meta_title": "Scooter Vietnam : location, permis, sécurité",
+            "meta_description": (
+                "Louer un scooter au Vietnam : permis, prix, budget journalier et villes adaptées (Hội An, Phú Quốc)."
+            ),
+        },
+        "en": {
+            "meta_title": "Vietnam scooter rental: licence, price, safety",
+            "meta_description": (
+                "Rent a scooter in Vietnam: licence, daily budget and suitable cities (Hoi An, Phu Quoc)."
+            ),
+        },
+    },
+    "cafe-vietnamien-guide": {
+        "fr": {
+            "meta_title": "Café Vietnam : œuf, coco et phin",
+            "meta_description": (
+                "Café vietnamien : à l'œuf, à la noix de coco, phin. Où boire à Hanoï et Saigon, budget 2026."
+            ),
+        },
+        "en": {
+            "meta_title": "Vietnam coffee: egg, coconut and phin",
+            "meta_description": (
+                "Vietnamese coffee: egg, coconut, phin. Where to drink in Hanoi and Saigon, 2026 budget."
+            ),
+        },
+    },
+    "decouvrez-hanoi-en-7-jours-itineraire-ideal-pour-les-debutants-au-vietnam": {
+        "fr": {
+            "meta_title": "Hanoï 7 jours Vietnam : itinéraire débutant",
+            "meta_description": (
+                "Hanoï en 7 jours : combien de jours en ville, meilleure période, budget et excursions Halong / Ninh Binh."
+            ),
+        },
+        "en": {
+            "meta_title": "Hanoi 7 days Vietnam: first-timer itinerary",
+            "meta_description": (
+                "Hanoi in 7 days: how many days in town, best season, budget and Halong / Ninh Binh day trips."
+            ),
         },
     },
 }
@@ -1261,17 +1696,83 @@ ARTICLE_SEO: dict[str, dict[str, dict[str, Any]]] = {
 def apply_article_seo(article: dict, lang: str) -> dict:
     lang = _lang(lang)
     out = dict(article)
-    pack = (ARTICLE_SEO.get(article.get("slug") or "") or {}).get(lang) or {}
+    slug = article.get("slug") or ""
+    pack = (ARTICLE_SEO.get(slug) or {}).get(lang) or {}
     if pack.get("title"):
         out["title"] = pack["title"]
     if pack.get("meta_title"):
-        out["meta_title"] = pack["meta_title"]
+        out["meta_title"] = fit_seo_title(pack["meta_title"])
+    elif out.get("meta_title"):
+        out["meta_title"] = fit_seo_title(out["meta_title"])
+    else:
+        out["meta_title"] = fit_seo_title(out.get("title") or "")
     if pack.get("meta_description"):
-        out["meta_description"] = pack["meta_description"]
+        out["meta_description"] = truncate_text(pack["meta_description"], 160)
+    elif out.get("meta_description"):
+        out["meta_description"] = truncate_text(out["meta_description"], 160)
     if pack.get("tags"):
         # Garde les tags existants, ajoute les mots-clés GSC en tête.
         existing = [t for t in (out.get("tags") or []) if t not in pack["tags"]]
         out["tags"] = pack["tags"] + existing
+    city = out.get("city") or ""
+    dest_slugs = list(ARTICLE_DEST_SLUGS.get(slug) or GENERIC_DEST_SLUGS)
+    out["related_dest_slugs"] = dest_slugs
+    lieu = city if city and city not in ("Tout le Vietnam", "All Vietnam") else dest_slugs[0]
+    out["image_alt"] = visiter_vietnam_alt(lieu, lang, slug=dest_slugs[0] if dest_slugs else None)
+    return out
+
+
+def apply_itinerary_seo(itin: dict, slug: str, lang: str) -> dict:
+    """Titres CTR + slugs destinations pour le maillage interne."""
+    lang = _lang(lang)
+    out = dict(itin)
+    titles = {
+        "3-days-vietnam": _loc(
+            "Itinéraire 3 jours Vietnam : Hanoï ou Saigon",
+            "Vietnam itinerary 3 days: Hanoi or Saigon",
+        ),
+        "7-days-vietnam": _loc(
+            "Itinéraire 7 jours Vietnam : Hanoï et Hội An",
+            "Vietnam itinerary 7 days: Hanoi and Hoi An",
+        ),
+        "10-days-vietnam": _loc(
+            "Itinéraire 10 jours Vietnam : Hanoï à Saigon",
+            "Vietnam itinerary 10 days: Hanoi to Saigon",
+        ),
+        "15-days-vietnam": _loc(
+            "Itinéraire 15 jours Vietnam : nord au sud",
+            "Vietnam itinerary 15 days: north to south",
+        ),
+    }
+    descs = {
+        "3-days-vietnam": _loc(
+            "3 jours au Vietnam : city break Hanoï ou Saigon, budget quotidien, meilleure période et excursion Halong.",
+            "3 days in Vietnam: Hanoi or Saigon city break, daily budget, best season and a Halong day trip.",
+        ),
+        "7-days-vietnam": _loc(
+            "7 jours au Vietnam : Hanoï, croisière Halong, Hội An. Combien de jours par étape, budget et transports.",
+            "7 days in Vietnam: Hanoi, Halong cruise, Hoi An. How many days per stop, budget and transport.",
+        ),
+        "10-days-vietnam": _loc(
+            "10 jours au Vietnam : Hanoï, Halong, Hội An, Saigon. Itinéraire, budget quotidien et meilleure période.",
+            "10 days in Vietnam: Hanoi, Halong, Hoi An, Saigon. Itinerary, daily budget and best season.",
+        ),
+        "15-days-vietnam": _loc(
+            "15 jours au Vietnam : Sapa, Ninh Binh, Halong, Huế, Hội An, Saigon. Budget et meilleure période.",
+            "15 days in Vietnam: Sapa, Ninh Binh, Halong, Hue, Hoi An, Saigon. Budget and best season.",
+        ),
+    }
+    if slug in titles:
+        out["meta_title"] = fit_seo_title(titles[slug][lang])
+    else:
+        out["meta_title"] = fit_seo_title(out.get("meta_title") or out.get("title") or "")
+    if slug in descs:
+        out["meta_description"] = truncate_text(descs[slug][lang], 160)
+    else:
+        out["meta_description"] = truncate_text(out.get("meta_description") or "", 160)
+    out["related_dest_slugs"] = list(ITIN_DEST_SLUGS.get(slug) or GENERIC_DEST_SLUGS)
+    first = (out["related_dest_slugs"] or ["hanoi"])[0]
+    out["image_alt"] = visiter_vietnam_alt(out.get("title") or first, lang, slug=first)
     return out
 
 

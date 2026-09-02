@@ -3,6 +3,7 @@
 {% from "macros/affiliates.html" import sim_banner, insurance_banner, pdf_banner with context %}
 {% from "macros/images.html" import responsive_img with context %}
 {% from "macros/seo.html" import json_ld_graph, og_image_tags with context %}
+{% from "macros/travel_guide.html" import dest_internal_links with context %}
 
 {% block og_type %}article{% endblock %}
 
@@ -86,7 +87,7 @@
     <div class="article-hero__media" aria-hidden="true">
       {{ responsive_img(
         article.image,
-        alt=article.image_alt or article.title,
+        alt=article.image_alt or ('visiter vietnam ' ~ (article.city or article.title)|lower),
         width=1200,
         height=675,
         loading='eager',
@@ -132,6 +133,9 @@
   <div class="container article-layout">
     <div class="article-content prose">
       {{ article.content | safe }}
+      {% if article.related_dest_slugs %}
+      {{ dest_internal_links(article.related_dest_slugs) }}
+      {% endif %}
     </div>
     <aside class="article-sidebar">
       {% if article.slug == 'carte-sim-esim-vietnam' %}

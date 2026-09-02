@@ -12,9 +12,16 @@ ITINERARY_10_DAYS_FR = {
     "summary": "Le grand classique nord → centre → sud en 10 jours.",
     "overview": (
         "<p>Dix jours pour enchaîner les <strong>trois régions</strong> du Vietnam sans précipitation : "
-        "Hanoï et Halong au nord, Hội An au centre, puis Ho Chi Minh-Ville et le "
-        "<strong>delta du Mékong</strong> au sud. Deux vols intérieurs (Hanoï→Đà Nẵng, Đà Nẵng→SGN) "
+        "<a href=\"/hanoi\">Hanoï</a> et la <a href=\"/halong\">baie d'Halong</a> au nord, "
+        "<a href=\"/hoi-an\">Hội An</a> au centre, puis <a href=\"/ho-chi-minh-city\">Ho Chi Minh-Ville</a> et le "
+        "<strong><a href=\"/delta-du-mekong\">delta du Mékong</a></strong> au sud. Deux vols intérieurs (Hanoï→Đà Nẵng, Đà Nẵng→SGN) "
         "évitent des journées entières en bus.</p>"
+        "<h2>Combien de jours, meilleure période, budget</h2>"
+        "<ul>"
+        "<li><strong>Combien de jours</strong> : 10 jours pour le classique nord–sud ; 7 jours si vous restez nord–centre ; 15 jours pour Sapa et Ninh Binh.</li>"
+        "<li><strong>Meilleure période</strong> : novembre à avril pour un climat plus sec sur l'ensemble du trajet.</li>"
+        "<li><strong>Budget</strong> : 70–120 €/jour sur place selon le confort (hors vol international).</li>"
+        "</ul>"
         "<p>Rythme équilibré : 2 nuits par grande étape, une croisière overnight et une excursion "
         "Mékong avant le départ.</p>"
     ),

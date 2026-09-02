@@ -2,7 +2,7 @@
 {% from "macros/images.html" import responsive_img with context %}
 {% from "macros/seo.html" import json_ld_graph with context %}
 {% from "macros/affiliates.html" import sim_banner, insurance_banner with context %}
-{% from "macros/travel_guide.html" import guide_faq, guide_related_links with context %}
+{% from "macros/travel_guide.html" import guide_faq, guide_related_links, dest_internal_links with context %}
 
 {% set hero_img = '/static/images/pool/1528127269322-539801943592.webp' %}
 
@@ -96,6 +96,7 @@
       </div>
       <a class="btn btn-primary btn-lg" href="{{ lang_url('useful_apps') }}">{{ t('tools.apps') }}</a>
     </div>
+    {{ dest_internal_links(['hanoi', 'ho-chi-minh-city', 'hoi-an']) }}
     {{ guide_related_links([
       {'url': lang_url('customs_guide'), 'title': t('customs.nav')},
       {'url': lang_url('phrases_guide'), 'title': t('phrases.nav')},

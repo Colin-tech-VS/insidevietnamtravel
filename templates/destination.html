@@ -4,6 +4,7 @@
 {% from "macros/images.html" import responsive_img with context %}
 {% from "macros/map.html" import destination_map with context %}
 {% from "macros/seo.html" import json_ld_graph, og_image_tags with context %}
+{% from "macros/travel_guide.html" import dest_internal_list with context %}
 
 {% block og_type %}article{% endblock %}
 
@@ -43,7 +44,7 @@
   <div class="page-hero__media" aria-hidden="true">
     {{ responsive_img(
       dest.image,
-      alt=dest.image_alt or ('Guide ' ~ dest.name ~ ', Vietnam'),
+      alt=dest.image_alt or ('visiter vietnam ' ~ dest.name|lower),
       width=1200,
       height=675,
       loading='eager',
@@ -70,6 +71,20 @@
       <h2>{% if lang == 'en' %}Overview{% else %}Vue d'ensemble{% endif %}</h2>
       <div class="prose">{{ dest.overview | safe }}</div>
     </section>
+
+    {% if dest.seo_practical %}
+    <section class="content-block dest-practical">
+      <h2>{{ dest.seo_practical.heading }}</h2>
+      <h3>{{ dest.seo_practical.days_title }}</h3>
+      <ul><li>{{ dest.seo_practical.days }}</li></ul>
+      <h3>{{ dest.seo_practical.season_title }}</h3>
+      <ul><li>{{ dest.seo_practical.season }}</li></ul>
+      <h3>{{ dest.seo_practical.budget_title }}</h3>
+      <ul><li>{{ dest.seo_practical.budget }}</li></ul>
+    </section>
+    {% endif %}
+
+    {{ dest_internal_list(dest.related_dest_slugs, dest.seo_practical.related_title if dest.seo_practical else none) }}
 
     {% set silo_pillars = pillar_backlinks('destination_page', dest.slug) %}
     {% if silo_pillars %}

@@ -13,8 +13,15 @@ ITINERARY_3_DAYS_FR = {
     "overview": (
         "<p>Trois jours au Vietnam, c'est court mais suffisant pour <strong>goûter l'âme du pays</strong> "
         "dans une grande ville : street food, temples, marchés et une excursion d'une demi-journée "
-        "dans les environs. Ce programme est calibré sur <strong>Hanoï</strong> (nord) — "
-        "remplacez Halong par Củ Chi si vous atterrissez à Ho Chi Minh-Ville.</p>"
+        "dans les environs. Ce programme est calibré sur <strong><a href=\"/hanoi\">Hanoï</a></strong> (nord) — "
+        "remplacez <a href=\"/halong\">Halong</a> par <a href=\"/cu-chi\">Củ Chi</a> si vous atterrissez à "
+        "<a href=\"/ho-chi-minh-city\">Ho Chi Minh-Ville</a>.</p>"
+        "<h2>Combien de jours, meilleure période, budget</h2>"
+        "<ul>"
+        "<li><strong>Combien de jours</strong> : 3 jours pour un city break ; 7 jours dès que vous voulez Halong et Hội An.</li>"
+        "<li><strong>Meilleure période</strong> : octobre à avril ; évitez les pluies de juillet–août au nord.</li>"
+        "<li><strong>Budget</strong> : 50–120 €/jour selon le confort (hors vol international).</li>"
+        "</ul>"
         "<p>Idéal en escale longue, week-end prolongé ou prolongation après un voyage d'affaires "
         "en Asie du Sud-Est.</p>"
     ),

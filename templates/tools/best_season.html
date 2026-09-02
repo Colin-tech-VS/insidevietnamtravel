@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% from "macros/seo.html" import json_ld_graph with context %}
 {% from "macros/affiliates.html" import pdf_banner with context %}
+{% from "macros/travel_guide.html" import dest_internal_links with context %}
 
 {% block head_preload %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/tools.css') }}">
@@ -197,6 +198,16 @@
       {% endfor %}
     </div>
     {% endif %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <header class="section-header">
+      <h2>{% if lang == 'en' %}Best season by destination{% else %}Meilleure période par destination{% endif %}</h2>
+      <p>{% if lang == 'en' %}How many days and when to go for the cities on a first Vietnam trip.{% else %}Combien de jours et quand partir pour les villes d'un premier voyage au Vietnam.{% endif %}</p>
+    </header>
+    {{ dest_internal_links(['hanoi', 'ho-chi-minh-city', 'hoi-an', 'halong', 'sapa', 'phu-quoc']) }}
   </div>
 </section>
 
