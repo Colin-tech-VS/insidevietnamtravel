@@ -74,6 +74,7 @@ RESERVED_SLUGS = frozenset({
     "robots.txt", "sitemap.xml", "llms.txt", "llms-full.txt",
     "AgodaPartnerVerification.htm",
     "categorie", "category", "static", "favicon.ico", "guide",
+    "voyage", "actualites", "news",
     "en", "about", "privacy", "legal", "unsubscribe", "contact", "checkout", "guide-pdf",
     "preparer-mon-voyage", "plan-my-trip",
     "quand-partir-au-vietnam", "best-time-to-visit-vietnam",
@@ -928,6 +929,13 @@ def destinations_index():
 
 # ── Préparer mon voyage ───────────────────────────────────────────────
 
+@app.route("/voyage", strict_slashes=False)
+@app.route("/en/voyage", strict_slashes=False)
+def voyage_alias():
+    """Slug court /voyage → planificateur canonique /preparer-mon-voyage."""
+    return redirect(lang_url("prepare_trip", get_lang()), 301)
+
+
 @app.route("/preparer-mon-voyage")
 @app.route("/en/plan-my-trip")
 def prepare_trip():
@@ -1212,6 +1220,14 @@ def events_calendar():
 
 
 # ── Blog ──────────────────────────────────────────────────────────────
+
+@app.route("/actualites", strict_slashes=False)
+@app.route("/en/actualites", strict_slashes=False)
+@app.route("/en/news", strict_slashes=False)
+def actualites_alias():
+    """Slug court /actualites → index blog canonique /blog."""
+    return redirect(lang_url("blog_index", get_lang()), 301)
+
 
 @app.route("/blog")
 @app.route("/en/blog")
@@ -1930,6 +1946,13 @@ def pdf_download(token):
 
 
 # ── Guides piliers (silos thématiques SEO) ──────────────────────────────
+
+@app.route("/guide", strict_slashes=False)
+@app.route("/en/guide", strict_slashes=False)
+def guide_index_alias():
+    """Slug court /guide → hub canonique /guide/preparer-son-voyage."""
+    return redirect(lang_url("pillar", get_lang(), slug="preparer-son-voyage"), 301)
+
 
 @app.route("/guide/<slug>")
 @app.route("/en/guide/<slug>")
