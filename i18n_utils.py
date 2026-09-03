@@ -43,6 +43,21 @@ def is_analytics_excluded_ip() -> bool:
     return _is_excluded(client_ip())
 
 
+def strip_legacy_fr_prefix(path: str) -> str:
+    """Le français canonique est `/`, pas `/fr/`. Ne jamais faire l'inverse.
+
+    `/fr` et `/fr/` → `/` ; `/fr/hanoi` → `/hanoi`. `/france` et `/en/…` inchangés.
+    """
+    if not path:
+        return "/"
+    if path == "/fr" or path == "/fr/":
+        return "/"
+    if path.startswith("/fr/"):
+        rest = path[3:]
+        return rest if rest.startswith("/") else f"/{rest}"
+    return path
+
+
 def detect_lang_from_path(path: str | None = None) -> str:
     path = path if path is not None else request.path
     if path == "/en" or path.startswith("/en/"):
