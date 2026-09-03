@@ -30,10 +30,10 @@ def _resolve_site_url() -> str:
 
 
 SITE_NAME = "Inside Vietnam Travel"
-SITE_TAGLINE = "Guides, itinéraires et conseils pour voyager au Vietnam"
+SITE_TAGLINE = "Voyage au Vietnam : guides, itinéraires et conseils"
 SITE_TAGLINE_I18N = {
     "fr": SITE_TAGLINE,
-    "en": "Guides, itineraries and tips for travelling in Vietnam",
+    "en": "Vietnam travel: guides, itineraries and tips",
 }
 SITE_URL = _resolve_site_url()
 # Environnement de staging : empêche l'indexation Google du double public du site
@@ -60,27 +60,27 @@ def pdf_flow_base_url() -> str:
 
 
 SITE_DESCRIPTION = (
-    "Guide voyage Vietnam 2026 : Hanoï (où dormir, où manger), Ninh Binh, Hội An, Nha Trang, "
-    "itinéraires 10 et 15 jours, transport, prix visa, budget et conseils pratiques."
+    "Voyage au Vietnam 2026 : guides, itinéraires 10 et 15 jours, visas et conseils "
+    "(Hanoï, Ninh Binh, Hội An, Nha Trang) pour préparer votre séjour."
 )
 SITE_DESCRIPTION_I18N = {
     "fr": SITE_DESCRIPTION,
     "en": (
-        "Vietnam travel guide 2026: Hanoi (where to stay, where to eat), Ninh Binh, Hoi An, "
-        "Nha Trang, 10- and 15-day itineraries, transport, visa price, budget and practical tips."
+        "Vietnam travel 2026: guides, 10- and 15-day itineraries, visas and tips "
+        "(Hanoi, Ninh Binh, Hoi An, Nha Trang) to plan your trip."
     ),
 }
 SITE_KEYWORDS = (
-    "voyage Vietnam, guide Vietnam, itinéraire Vietnam 10 jours, itinéraire 15 jours, "
-    "où dormir à Hanoï, transport Vietnam, Ninh Binh, Hội An, Nha Trang, Tam Dao, "
-    "prix visa Vietnam, budget voyage Vietnam"
+    "voyage Vietnam, guide itinéraire, guide Vietnam, itinéraire Vietnam 10 jours, "
+    "itinéraire 15 jours, où dormir à Hanoï, transport Vietnam, Ninh Binh, Hội An, "
+    "Nha Trang, Tam Dao, prix visa Vietnam, budget voyage Vietnam"
 )
 SITE_KEYWORDS_I18N = {
     "fr": SITE_KEYWORDS,
     "en": (
-        "Vietnam travel, Vietnam travel guide, Vietnam itinerary 10 days, 15 days in Vietnam, "
-        "where to stay in Hanoi, transport Vietnam, Ninh Binh, Hoi An, Nha Trang, Tam Dao, "
-        "Vietnam visa price, Vietnam travel budget"
+        "Vietnam travel, itinerary guide, Vietnam travel guide, Vietnam itinerary 10 days, "
+        "15 days in Vietnam, where to stay in Hanoi, transport Vietnam, Ninh Binh, Hoi An, "
+        "Nha Trang, Tam Dao, Vietnam visa price, Vietnam travel budget"
     ),
 }
 SITE_LANG = "fr"
