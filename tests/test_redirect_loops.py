@@ -82,17 +82,35 @@ class RedirectLoopTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.headers.get("Location"))
 
-    def test_www_fr_prefix_is_one_hop_to_apex_root(self):
+    def test_www_fr_prefix_strips_without_bouncing_to_apex(self):
+        """www reste www : un 301 vers l'apex boucle avec LWS apex → www."""
         response = self.client.get(
             "/fr/hanoi?utm_source=gsc",
             headers={"Host": "www.insidevietnamtravel.fr"},
             follow_redirects=False,
         )
         self.assertEqual(response.status_code, 301)
-        self.assertEqual(
-            response.headers.get("Location"),
-            "https://insidevietnamtravel.fr/hanoi?utm_source=gsc",
+        location = response.headers.get("Location", "")
+        self.assertEqual(_location_path(location), "/hanoi")
+        self.assertIn("utm_source=gsc", location)
+        self.assertNotIn("insidevietnamtravel.fr", location)
+
+        response, seen = self._follow_until_settled(
+            "/", headers={"Host": "www.insidevietnamtravel.fr"}
         )
+        self.assertEqual(response.status_code, 200, seen)
+        self.assertEqual(len(seen), 1, seen)
+
+    def test_www_checkout_does_not_redirect_to_apex(self):
+        response = self.client.get(
+            "/checkout",
+            headers={"Host": "www.insidevietnamtravel.fr"},
+            follow_redirects=False,
+        )
+        location = response.headers.get("Location", "")
+        self.assertNotEqual(location, "https://insidevietnamtravel.fr/checkout")
+        self.assertNotEqual(location, "http://insidevietnamtravel.fr/checkout")
+        self.assertNotIn("://insidevietnamtravel.fr/checkout", location)
 
     def test_apex_checkout_does_not_redirect_to_itself(self):
         response = self.client.get(
@@ -141,10 +159,11 @@ class RedirectLoopTests(unittest.TestCase):
             block for block in blocks if "server_name www.insidevietnamtravel.fr" in block
         ]
         self.assertEqual(len(www_blocks), 1, www_blocks)
-        self.assertIn(
+        self.assertNotIn(
             "return 301 https://insidevietnamtravel.fr$request_uri;",
             www_blocks[0],
         )
+        self.assertNotIn("insidevietnamtravel.fr$request_uri", www_blocks[0])
 
 
 if __name__ == "__main__":
