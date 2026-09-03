@@ -165,18 +165,20 @@ def health_fast_path():
 
 @app.before_request
 def canonicalize_public_url():
-    """Un seul 301 : /fr/… → chemin FR sans préfixe. Le français canonique est `/`.
+    """Un seul 301 : www → HTTPS apex, et /fr/… → chemin FR sans préfixe.
 
-    Ne pas 301 www → apex : le vhost LWS envoie encore l'apex vers www
-    (``Redirect /``). Les deux 301 opposés produisent TooManyRedirects.
-    Le backend Scalingo écoute ``www.insidevietnamtravel.fr``.
+    Le français canonique est `/`, jamais `/fr/`. Combiner les deux règles
+    dans le même saut évite www/fr/ → apex/fr/ → apex/.
     """
+    host = (request.host or "").split(":")[0].lower()
+    apex = config.SITE_PUBLIC_DOMAIN
     path = request.path or "/"
     stripped = strip_legacy_fr_prefix(path)
-    if stripped == path:
+    is_www = host == f"www.{apex}"
+    if not is_www and stripped == path:
         return None
     query = request.query_string.decode("utf-8", errors="replace")
-    target = stripped
+    target = f"https://{apex}{stripped}" if is_www else stripped
     if query:
         target = f"{target}?{query}"
     return redirect(target, code=301)
@@ -328,25 +330,18 @@ def _mai_request_context():
 
 @app.before_request
 def checkout_http_to_canonical_https():
-    """HTTP /checkout depuis l'IP publique → HTTPS apex.
+    """HTTP /checkout depuis l'IP publique ou www → HTTPS apex.
 
-    L'apex et www ne sont pas redirigés ici : un 301 www → apex boucle avec
-    le ``Redirect /`` LWS (apex → www). L'apex n'est pas redirigé vers soi-même
-    (``X-Forwarded-Proto`` souvent absent derrière le proxy).
+    L'apex n'est pas redirigé ici : un 301 vers la même URL boucle dès que
+    ``X-Forwarded-Proto`` est absent (scheme vu en http derrière le proxy).
+    Le vhost HTTP LWS (nginx.conf) gère HTTP→HTTPS pour l'apex.
     """
     if request.path.rstrip("/") != "/checkout":
         return None
     host = (request.host or "").split(":")[0].lower()
-    if host in {
-        "localhost",
-        "127.0.0.1",
-        "::1",
-        "testserver",
-        "insidevietnamtravel.fr",
-        "www.insidevietnamtravel.fr",
-    }:
+    if host in {"localhost", "127.0.0.1", "::1", "testserver", "insidevietnamtravel.fr"}:
         return None
-    if host == config.PUBLIC_IP:
+    if host in {config.PUBLIC_IP, "www.insidevietnamtravel.fr"}:
         return redirect("https://insidevietnamtravel.fr/checkout", code=301)
     return None
 

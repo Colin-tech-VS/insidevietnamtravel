@@ -45,37 +45,41 @@ class HealthHostTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.headers.get("Location"))
 
-    def test_www_homepage_is_served_in_place(self):
-        """www est le backend Scalingo : un 301 vers l'apex boucle avec LWS."""
+    def test_www_homepage_redirects_to_apex(self):
         response = self.client.get(
             "/",
             headers={"Host": "www.insidevietnamtravel.fr"},
             follow_redirects=False,
         )
-        self.assertEqual(response.status_code, 200)
-        location = response.headers.get("Location", "")
-        self.assertNotIn("insidevietnamtravel.fr", location)
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(
+            response.headers.get("Location"),
+            "https://insidevietnamtravel.fr/",
+        )
 
-    def test_www_path_is_served_in_place(self):
+    def test_www_path_and_query_redirect_to_apex(self):
         response = self.client.get(
             "/hanoi?utm_source=gsc",
             headers={"Host": "www.insidevietnamtravel.fr"},
             follow_redirects=False,
         )
-        self.assertEqual(response.status_code, 200)
-        location = response.headers.get("Location", "")
-        self.assertNotIn("://insidevietnamtravel.fr", location)
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(
+            response.headers.get("Location"),
+            "https://insidevietnamtravel.fr/hanoi?utm_source=gsc",
+        )
 
-    def test_www_admin_is_served_in_place(self):
+    def test_www_admin_redirects_to_apex(self):
         response = self.client.get(
             "/admin",
             headers={"Host": "www.insidevietnamtravel.fr"},
             follow_redirects=False,
         )
-        self.assertEqual(response.status_code, 200)
-        location = response.headers.get("Location", "")
-        self.assertNotEqual(location, "https://insidevietnamtravel.fr/admin")
-        self.assertIn(b"Administration", response.data)
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(
+            response.headers.get("Location"),
+            "https://insidevietnamtravel.fr/admin",
+        )
 
     def test_admin_without_trailing_slash(self):
         response = self.client.get("/admin", follow_redirects=False)
@@ -147,15 +151,17 @@ class HealthHostTests(unittest.TestCase):
             "https://insidevietnamtravel.fr/checkout",
         )
 
-    def test_checkout_http_from_www_does_not_bounce_to_apex(self):
+    def test_checkout_http_from_www_goes_to_canonical_https(self):
         response = self.client.get(
             "/checkout",
             headers={"Host": "www.insidevietnamtravel.fr"},
             follow_redirects=False,
         )
-        location = response.headers.get("Location", "")
-        self.assertNotEqual(location, "https://insidevietnamtravel.fr/checkout")
-        self.assertNotEqual(location, "http://insidevietnamtravel.fr/checkout")
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(
+            response.headers.get("Location"),
+            "https://insidevietnamtravel.fr/checkout",
+        )
 
     def test_nginx_checkout_redirects_to_canonical_https(self):
         text = Path(__file__).resolve().parents[1].joinpath("nginx.conf").read_text()
@@ -166,23 +172,13 @@ class HealthHostTests(unittest.TestCase):
         self.assertIn("location = /checkout", text)
         self.assertIn("return 301 https://insidevietnamtravel.fr/checkout;", text)
 
-    def test_nginx_www_does_not_redirect_to_apex(self):
-        """Le bloc www ne doit pas 301 vers l'apex (boucle avec Redirect / LWS)."""
-        import re
-
+    def test_nginx_www_redirects_to_apex_https(self):
         text = Path(__file__).resolve().parents[1].joinpath("nginx.conf").read_text()
         self.assertIn("server_name www.insidevietnamtravel.fr;", text)
+        self.assertIn("return 301 https://insidevietnamtravel.fr$request_uri;", text)
         active = "\n".join(
-            line.split("#", 1)[0]
-            for line in text.splitlines()
-            if line.strip() and not line.strip().startswith("#")
+            line for line in text.splitlines() if line.strip() and not line.strip().startswith("#")
         )
-        blocks = re.split(r"\bserver\s*\{", active)
-        www_blocks = [
-            block for block in blocks if "server_name www.insidevietnamtravel.fr" in block
-        ]
-        self.assertEqual(len(www_blocks), 1, www_blocks)
-        self.assertNotIn("insidevietnamtravel.fr$request_uri", www_blocks[0])
         self.assertNotIn("http://www.insidevietnamtravel.fr", active)
 
     def test_nginx_admin_goes_to_canonical_https_apex(self):
