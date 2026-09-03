@@ -16,6 +16,21 @@ _I18N_CONTENT_KEYS = (
 )
 
 
+def _require_itinerary_seo(slug: str, itin: dict) -> None:
+    """title / summary obligatoires ; meta_title ≤ 60 et meta_description ≤ 160."""
+    for field in ("title", "summary", "meta_title", "meta_description"):
+        if not str(itin.get(field) or "").strip():
+            raise ValueError(f"Itinéraire {slug}: champ {field} vide")
+    meta_title = itin["meta_title"].strip()
+    meta_description = itin["meta_description"].strip()
+    if len(meta_title) > 60:
+        raise ValueError(f"Itinéraire {slug}: meta_title trop long ({len(meta_title)})")
+    if len(meta_description) > 160:
+        raise ValueError(
+            f"Itinéraire {slug}: meta_description trop longue ({len(meta_description)})"
+        )
+
+
 def _build_itineraries() -> dict:
     base = {
         "3-days-vietnam": ITINERARY_3_DAYS_FR,
@@ -24,6 +39,7 @@ def _build_itineraries() -> dict:
         "15-days-vietnam": ITINERARY_15_DAYS_FR,
     }
     for slug, itin in base.items():
+        _require_itinerary_seo(slug, itin)
         itin = attach_itinerary_media(itin)
         base[slug] = itin
         fr_block = {k: itin[k] for k in _I18N_CONTENT_KEYS if k in itin}

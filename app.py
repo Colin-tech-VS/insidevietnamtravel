@@ -1420,13 +1420,19 @@ def itinerary(slug):
          "summary": it.get("summary", ""), "budget_hint": it.get("budget_hint", "")}
         for s, it in all_itins.items() if s != slug
     ]
+    fallback_title, fallback_desc = itinerary_seo(itin["duration"], lang)
+    meta_title = (itin.get("meta_title") or "").strip() or fallback_title
+    meta_description = (itin.get("meta_description") or "").strip() or fallback_desc
+    if len(meta_title) > 60:
+        meta_title = clip_title(meta_title)
+    meta_description = truncate_text(meta_description, 160)
     return render_template(
         "itinerary.html",
         itin=itin,
         slug=slug,
         other_itins=other_itins,
-        meta_title=itinerary_seo(itin["duration"], lang)[0],
-        meta_description=itinerary_seo(itin["duration"], lang)[1],
+        meta_title=meta_title,
+        meta_description=meta_description,
         meta_keywords=t("meta.itin.kw", lang, days=str(itin["duration"])),
         og_image=itin.get("hero_image"),
         og_image_alt=itin.get("image_alt") or itin.get("title"),

@@ -3,10 +3,10 @@
 ITINERARY_15_DAYS_FR = {
     "slug": "15-days-vietnam",
     "title": "Itinéraire 15 jours Vietnam — Nord au Sud",
-    "meta_title": "Itinéraire Vietnam 15 jours 2026 — Hanoï, Sapa, Ninh Binh",
+    "meta_title": "Itinéraire Vietnam 15 jours | InsideVietnamTravel",
     "meta_description": (
-        "Vietnam in 15 days : Hanoï, Sapa, Ninh Binh, Halong, Huế, Hội An, Saigon et Mékong. "
-        "Circuit complet jour par jour, budget et transports."
+        "Découvrez un itinéraire Vietnam 15 jours nord-sud : "
+        "Hanoï, Sapa, Halong, Huế, Hội An, Mékong. Guide pratique, budget, transports et visa."
     ),
     "duration": 15,
     "summary": (

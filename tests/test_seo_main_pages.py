@@ -220,6 +220,65 @@ class SeoMainPagesTests(unittest.TestCase):
             self.assertLessEqual(len(slug), 40, slug)
             self.assertNotIn("_", slug)
 
+    def test_critical_itinerary_seo_fields(self):
+        from data.itineraries import ITINERARIES
+
+        itinerary_kws = (
+            "itinéraire Vietnam",
+            "guide pratique",
+            "budget",
+            "transports",
+        )
+        for slug in (
+            "3-days-vietnam",
+            "7-days-vietnam",
+            "10-days-vietnam",
+            "15-days-vietnam",
+        ):
+            days = slug.split("-")[0]
+            itin = ITINERARIES[slug]
+            self.assertTrue(itin["title"].strip(), slug)
+            self.assertTrue(itin["summary"].strip(), slug)
+            self.assertLessEqual(len(itin["meta_title"]), 60, itin["meta_title"])
+            self.assertLessEqual(len(itin["meta_description"]), 160, itin["meta_description"])
+            self.assertIn(f"itinéraire vietnam {days} jours", itin["meta_title"].casefold())
+            self.assertIn("InsideVietnamTravel", itin["meta_title"])
+            self.assertIn(f"itinéraire vietnam {days} jours", itin["meta_description"].casefold())
+            desc = itin["meta_description"].casefold()
+            for kw in itinerary_kws:
+                if slug == "3-days-vietnam" and kw == "guide pratique":
+                    self.assertIn("pratiques", desc)
+                    continue
+                self.assertIn(kw.casefold(), desc, f"{slug} missing {kw}")
+
+            html = self._get(f"/itineraries/{slug}")
+            self.assertEqual(_title(html), itin["meta_title"])
+            self.assertEqual(_meta_description(html), itin["meta_description"])
+
+
+class ArticleMetaDescriptionTests(unittest.TestCase):
+    def test_itinerary_generated_description_includes_keywords(self):
+        from seo_utils import article_meta_description
+
+        desc = article_meta_description({
+            "category": "itinerary",
+            "excerpt": "Programme jour par jour de Hanoï à Hô Chi Minh-Ville.",
+        })
+        self.assertLessEqual(len(desc), 160)
+        for kw in ("itinéraire Vietnam", "guide pratique", "budget", "transports", "visa"):
+            self.assertIn(kw.casefold(), desc.casefold(), kw)
+
+    def test_city_generated_description_includes_keywords(self):
+        from seo_utils import article_meta_description
+
+        desc = article_meta_description({
+            "city": "Hanoï",
+            "excerpt": "Capitale millénaire entre lac, ruelles et street food.",
+        })
+        self.assertLessEqual(len(desc), 160)
+        for kw in ("où dormir", "où manger", "activités", "visiter"):
+            self.assertIn(kw.casefold(), desc.casefold(), kw)
+
 
 if __name__ == "__main__":
     unittest.main()

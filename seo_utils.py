@@ -42,26 +42,90 @@ def article_meta_title(article: dict) -> str:
     return build_meta_title(article.get("title", ""))
 
 
+_ITINERARY_META_KEYWORDS = {
+    "fr": ("itinéraire Vietnam", "guide pratique", "budget", "transports", "visa"),
+    "en": ("Vietnam itinerary", "practical guide", "budget", "transports", "visa"),
+}
+_CITY_META_KEYWORDS = {
+    "fr": ("où dormir", "où manger", "activités", "visiter"),
+    "en": ("where to stay", "where to eat", "activities", "visit"),
+}
+
+
+def _is_itinerary_article(article: dict) -> bool:
+    category = (article.get("category") or "").lower()
+    slug = (article.get("slug") or "").lower()
+    title = (article.get("title") or "").lower()
+    if article.get("duration") not in (None, ""):
+        return True
+    if category in {"itinerary", "itineraire", "itineraires"}:
+        return True
+    if any(token in slug for token in ("days-vietnam", "itineraire", "itinerary")):
+        return True
+    return "itinéraire" in title or "itinerary" in title
+
+
+def _is_city_article(article: dict) -> bool:
+    city = (article.get("city") or "").strip()
+    return bool(city) and city not in {"Tout le Vietnam", "All Vietnam"}
+
+
+def _meta_keywords_for_article(article: dict, lang: str) -> tuple[str, ...]:
+    loc = "en" if lang == "en" else "fr"
+    if _is_itinerary_article(article):
+        return _ITINERARY_META_KEYWORDS[loc]
+    if _is_city_article(article):
+        return _CITY_META_KEYWORDS[loc]
+    return ()
+
+
+def _ensure_meta_keywords(text: str, keywords: tuple[str, ...], max_len: int = 160) -> str:
+    """Garantit la présence des mots-clés cibles dans la description générée."""
+    text = re.sub(r"\s+", " ", (text or "").strip())
+    if not keywords:
+        return truncate_text(text, max_len)
+    folded = text.casefold()
+    missing = [kw for kw in keywords if kw.casefold() not in folded]
+    if not missing:
+        return truncate_text(text, max_len)
+    extra = ", ".join(missing) + "."
+    extra = extra[0].upper() + extra[1:]
+    if text:
+        extra = " " + extra
+    room = max_len - len(extra)
+    if room < 1:
+        return truncate_text(extra.strip(), max_len)
+    if len(text) <= room:
+        base = text
+    else:
+        cut = text[:room].rsplit(" ", 1)[0].rstrip(" ,;:.-")
+        base = cut or text[:room]
+    return truncate_text(f"{base}{extra}", max_len)
+
+
 def article_meta_description(article: dict, lang: str = "fr") -> str:
     if article.get("meta_description"):
-        return truncate_text(article["meta_description"], 160)
-    excerpt = article.get("excerpt", "")
-    if len(excerpt) >= 100:
-        return truncate_text(excerpt, 160)
-    city = article.get("city", "")
-    if lang == "en":
-        extra = " Practical guide for travellers"
-        if city and city not in ("Tout le Vietnam", "All Vietnam"):
-            extra += f" — {city}, Vietnam."
-        else:
-            extra += " — plan your Vietnam trip."
+        base = article["meta_description"]
     else:
-        extra = " Guide pratique pour voyageurs français"
-        if city and city != "Tout le Vietnam":
-            extra += f" — {city}, Vietnam."
+        excerpt = article.get("excerpt") or article.get("summary") or ""
+        if len(excerpt) >= 100:
+            base = excerpt
         else:
-            extra += " — préparez votre voyage au Vietnam."
-    return truncate_text(f"{excerpt}{extra}", 160)
+            city = article.get("city", "")
+            if lang == "en":
+                extra = " Practical guide for travellers"
+                if city and city not in ("Tout le Vietnam", "All Vietnam"):
+                    extra += f" — {city}, Vietnam."
+                else:
+                    extra += " — plan your Vietnam trip."
+            else:
+                extra = " Guide pratique pour voyageurs français"
+                if city and city != "Tout le Vietnam":
+                    extra += f" — {city}, Vietnam."
+                else:
+                    extra += " — préparez votre voyage au Vietnam."
+            base = f"{excerpt}{extra}"
+    return _ensure_meta_keywords(base, _meta_keywords_for_article(article, lang), 160)
 
 
 def extract_faq_from_html(html: str) -> list[dict]:
