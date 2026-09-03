@@ -68,7 +68,6 @@ from data.affiliate_urls import (
 from data.itineraries import ITINERARIES
 from data.affiliates import PDF_GUIDE, NEWSLETTER
 from data import pillars
-from redirect_limit import RedirectLimitMiddleware
 
 RESERVED_SLUGS = frozenset({
     "blog", "admin", "go", "itineraries", "a-propos", "newsletter",
@@ -92,8 +91,6 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-change-in-production")
 app.config.from_object(config)
 
-# Coupe les boucles 301/302 (> 5 sauts) sur / et /api/health.
-app.wsgi_app = RedirectLimitMiddleware(app.wsgi_app)
 if os.environ.get("PORT") or os.environ.get("SCALINGO_APP"):
     from werkzeug.middleware.proxy_fix import ProxyFix
 
