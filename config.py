@@ -7,7 +7,7 @@ PUBLIC_IP = os.environ.get("PUBLIC_IP", "185.135.132.50").strip() or "185.135.13
 
 
 def _without_www(url: str) -> str:
-    """Hôte canonique = apex (sans www). www.insidevietnamtravel.fr est inaccessible."""
+    """Hôte canonique = apex (sans www). www.* est redirigé en 301 vers l'apex."""
     url = (url or "").strip().rstrip("/")
     if not url:
         return url

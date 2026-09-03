@@ -162,6 +162,20 @@ def health_fast_path():
         return healthz()
 
 
+@app.before_request
+def redirect_www_to_apex():
+    """301 permanent : www.insidevietnamtravel.fr → https://insidevietnamtravel.fr."""
+    host = (request.host or "").split(":")[0].lower()
+    apex = config.SITE_PUBLIC_DOMAIN
+    if host != f"www.{apex}":
+        return None
+    path = request.path or "/"
+    query = request.query_string.decode("utf-8", errors="replace")
+    target = f"https://{apex}{path}"
+    if query:
+        target = f"{target}?{query}"
+    return redirect(target, code=301)
+
 
 def _articles(lang=None):
     lang = lang or get_lang()
