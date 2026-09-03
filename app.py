@@ -32,12 +32,20 @@ from i18n_utils import (
     switch_lang_url,
 )
 from locales.ui import t
+from seo_feed import (
+    clip_description,
+    clip_title,
+    default_seo,
+    destination_seo,
+    enrich_title_with_place,
+    itinerary_seo,
+    page_seo,
+)
 from seo_sitemap import render_sitemap_xml
 from seo_utils import (
     article_meta_description,
     article_meta_title,
     breadcrumb_schema,
-    build_meta_title,
     extract_faq_from_html,
     faq_schema,
     item_list_schema,
@@ -76,7 +84,8 @@ RESERVED_SLUGS = frozenset({
     "robots.txt", "sitemap.xml", "llms.txt", "llms-full.txt",
     "AgodaPartnerVerification.htm",
     "categorie", "category", "static", "favicon.ico", "guide",
-    "voyage", "actualites", "news",
+    "voyage", "voyages", "actualites", "news",
+    "guides",
     "en", "fr", "about", "privacy", "legal", "unsubscribe", "contact", "checkout", "guide-pdf",
     "preparer-mon-voyage", "plan-my-trip",
     "quand-partir-au-vietnam", "best-time-to-visit-vietnam",
@@ -502,11 +511,10 @@ def inject_globals():
         "hreflang_urls": hreflang_urls(),
         "switch_lang_url": switch_lang_url(),
         "page_url_in_lang": page_url_in_lang,
-        # Valeurs SEO par défaut : garantissent que TOUTE page (même future ou qui
-        # oublierait de les passer) expédie des balises meta/OG cohérentes. Les routes
-        # qui passent ces kwargs à render_template les remplacent automatiquement.
-        "meta_title": f"{config.SITE_NAME} — {config.SITE_TAGLINE_I18N.get(lang, config.SITE_TAGLINE)}",
-        "meta_description": config.SITE_DESCRIPTION_I18N.get(lang, config.SITE_DESCRIPTION),
+        # Valeurs SEO par défaut (seo_feed) : toute page expédie title ≤ 60
+        # et description ≤ 150. Les routes remplacent ces kwargs.
+        "meta_title": default_seo(lang)[0],
+        "meta_description": default_seo(lang)[1],
         "meta_keywords": config.SITE_KEYWORDS_I18N.get(lang, config.SITE_KEYWORDS),
         "og_image": None,
         "og_image_alt": None,
@@ -929,8 +937,8 @@ def index():
             f"home_reco:{lang}",
             lambda: list_recommended_partners(lang)[:3],
         ),
-        meta_title=t("meta.home.title", lang),
-        meta_description=t("meta.home.desc", lang),
+        meta_title=page_seo("home", lang)[0],
+        meta_description=page_seo("home", lang)[1],
         meta_keywords=t("meta.home.kw", lang),
         og_image=home_og,
         og_image_alt=home_og_alt,
@@ -951,8 +959,8 @@ def destinations_index():
     ]
     return render_template(
         "destinations_index.html",
-        meta_title=t("meta.destinations.title", lang),
-        meta_description=t("meta.destinations.desc", lang),
+        meta_title=clip_title(t("meta.destinations.title", lang)),
+        meta_description=clip_description(t("meta.destinations.desc", lang)),
         meta_keywords=t("meta.destinations.kw", lang),
         dest_schema_items=dest_items,
     )
@@ -961,9 +969,11 @@ def destinations_index():
 # ── Préparer mon voyage ───────────────────────────────────────────────
 
 @app.route("/voyage", strict_slashes=False)
+@app.route("/voyages", strict_slashes=False)
 @app.route("/en/voyage", strict_slashes=False)
+@app.route("/en/voyages", strict_slashes=False)
 def voyage_alias():
-    """Slug court /voyage → planificateur canonique /preparer-mon-voyage."""
+    """Slugs courts /voyage et /voyages → planificateur /preparer-mon-voyage."""
     return redirect(lang_url("prepare_trip", get_lang()), 301)
 
 
@@ -987,8 +997,8 @@ def prepare_trip():
     return render_template(
         "prepare_trip.html",
         planner_catalog=catalog,
-        meta_title=ui_t("meta.prepare.title", lang),
-        meta_description=ui_t("meta.prepare.desc", lang),
+        meta_title=page_seo("voyages", lang)[0],
+        meta_description=page_seo("voyages", lang)[1],
     )
 
 
@@ -1292,8 +1302,10 @@ def article(slug):
         "article.html",
         article=post,
         related=related,
-        meta_title=article_meta_title(post),
-        meta_description=article_meta_description(post, lang),
+        meta_title=enrich_title_with_place(
+            article_meta_title(post), post.get("city"), lang
+        ),
+        meta_description=clip_description(article_meta_description(post, lang)),
         meta_keywords=", ".join(post.get("tags", [])[:12]),
         og_image=post.get("image"),
         og_image_alt=post.get("image_alt") or post.get("title"),
@@ -1413,8 +1425,8 @@ def itinerary(slug):
         itin=itin,
         slug=slug,
         other_itins=other_itins,
-        meta_title=itin["meta_title"],
-        meta_description=itin["meta_description"],
+        meta_title=itinerary_seo(itin["duration"], lang)[0],
+        meta_description=itinerary_seo(itin["duration"], lang)[1],
         meta_keywords=t("meta.itin.kw", lang, days=str(itin["duration"])),
         og_image=itin.get("hero_image"),
         og_image_alt=itin.get("image_alt") or itin.get("title"),
@@ -1979,9 +1991,11 @@ def pdf_download(token):
 # ── Guides piliers (silos thématiques SEO) ──────────────────────────────
 
 @app.route("/guide", strict_slashes=False)
+@app.route("/guides", strict_slashes=False)
 @app.route("/en/guide", strict_slashes=False)
+@app.route("/en/guides", strict_slashes=False)
 def guide_index_alias():
-    """Slug court /guide → hub canonique /guide/preparer-son-voyage."""
+    """Slugs courts /guide et /guides → hub /guide/preparer-son-voyage."""
     return redirect(lang_url("pillar", get_lang(), slug="preparer-son-voyage"), 301)
 
 
@@ -1994,11 +2008,16 @@ def pillar(slug):
         abort(404)
     key, raw = found
     p = pillars.localize_hub(key, raw, lang, lang_url)
+    if key == "preparer-son-voyage":
+        pillar_title, pillar_desc = page_seo("guides", lang)
+    else:
+        pillar_title = clip_title(p["meta_title"])
+        pillar_desc = clip_description(p["meta_description"])
     return render_template(
         "pillar.html",
         pillar=p,
-        meta_title=p["meta_title"],
-        meta_description=p["meta_description"],
+        meta_title=pillar_title,
+        meta_description=pillar_desc,
         meta_keywords=f"{p['title']}, Vietnam, guide Vietnam, {p['meta_title']}",
         og_image=(f"/static/images/pool/{p.get('photo_id')}.webp" if p.get("photo_id") else None),
     )
@@ -2028,8 +2047,8 @@ def destination_page(slug):
         "destination.html",
         dest=dest,
         local_partners=local_partners,
-        meta_title=dest.get("meta_title") or build_meta_title(f"Guide {dest['name']} Vietnam"),
-        meta_description=truncate_text(dest.get("meta_description", ""), 160),
+        meta_title=destination_seo(dest.get("name") or slug, lang)[0],
+        meta_description=destination_seo(dest.get("name") or slug, lang)[1],
         meta_keywords=dest.get("seo_keywords") or t("meta.dest.kw", lang, name=dest["name"]),
         og_image=dest.get("image"),
         og_image_alt=dest.get("image_alt") or dest.get("name"),
