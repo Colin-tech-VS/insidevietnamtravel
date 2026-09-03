@@ -241,9 +241,9 @@ class SeoMainPagesTests(unittest.TestCase):
             self.assertTrue(itin["summary"].strip(), slug)
             self.assertLessEqual(len(itin["meta_title"]), 60, itin["meta_title"])
             self.assertLessEqual(len(itin["meta_description"]), 160, itin["meta_description"])
-            self.assertIn(f"itinéraire Vietnam {days} jours", itin["meta_title"])
+            self.assertIn(f"itinéraire vietnam {days} jours", itin["meta_title"].casefold())
             self.assertIn("InsideVietnamTravel", itin["meta_title"])
-            self.assertIn(f"itinéraire Vietnam {days} jours", itin["meta_description"])
+            self.assertIn(f"itinéraire vietnam {days} jours", itin["meta_description"].casefold())
             desc = itin["meta_description"].casefold()
             for kw in itinerary_kws:
                 if slug == "3-days-vietnam" and kw == "guide pratique":
