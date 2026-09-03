@@ -31,11 +31,12 @@ class HealthHostTests(unittest.TestCase):
             headers={"Host": "insidevietnamtravel.fr"},
             follow_redirects=False,
         )
+        self.assertEqual(response.status_code, 200)
         location = response.headers.get("Location", "")
         self.assertNotIn("www.insidevietnamtravel.fr", location)
 
     def test_www_health_is_served_in_place(self):
-        """Ne pas renvoyer www → apex : le registrar 301 l'apex vers http://www."""
+        """Les sondes restent 200 sur www (Scalingo) — pas de 301 vers l'apex."""
         response = self.client.get(
             "/api/health",
             headers={"Host": "www.insidevietnamtravel.fr"},
@@ -43,6 +44,42 @@ class HealthHostTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.headers.get("Location"))
+
+    def test_www_homepage_redirects_to_apex(self):
+        response = self.client.get(
+            "/",
+            headers={"Host": "www.insidevietnamtravel.fr"},
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(
+            response.headers.get("Location"),
+            "https://insidevietnamtravel.fr/",
+        )
+
+    def test_www_path_and_query_redirect_to_apex(self):
+        response = self.client.get(
+            "/hanoi?utm_source=gsc",
+            headers={"Host": "www.insidevietnamtravel.fr"},
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(
+            response.headers.get("Location"),
+            "https://insidevietnamtravel.fr/hanoi?utm_source=gsc",
+        )
+
+    def test_www_admin_redirects_to_apex(self):
+        response = self.client.get(
+            "/admin",
+            headers={"Host": "www.insidevietnamtravel.fr"},
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(
+            response.headers.get("Location"),
+            "https://insidevietnamtravel.fr/admin",
+        )
 
     def test_admin_without_trailing_slash(self):
         response = self.client.get("/admin", follow_redirects=False)
@@ -135,12 +172,19 @@ class HealthHostTests(unittest.TestCase):
         self.assertIn("location = /checkout", text)
         self.assertIn("return 301 https://insidevietnamtravel.fr/checkout;", text)
 
-    def test_nginx_admin_goes_to_scalingo_https_www(self):
+    def test_nginx_www_redirects_to_apex_https(self):
+        text = Path(__file__).resolve().parents[1].joinpath("nginx.conf").read_text()
+        self.assertIn("server_name www.insidevietnamtravel.fr;", text)
+        self.assertIn("return 301 https://insidevietnamtravel.fr$request_uri;", text)
+        self.assertNotIn("http://www.insidevietnamtravel.fr", text)
+
+    def test_nginx_admin_goes_to_canonical_https_apex(self):
         """L'apex LWS (185.135.132.50) ne doit pas renvoyer /admin vers http://www."""
         text = Path(__file__).resolve().parents[1].joinpath("nginx.conf").read_text()
         self.assertIn("location = /admin", text)
         self.assertIn("location /admin/", text)
-        self.assertIn("return 301 https://www.insidevietnamtravel.fr/admin;", text)
+        self.assertIn("return 301 https://insidevietnamtravel.fr/admin;", text)
+        self.assertNotIn("https://www.insidevietnamtravel.fr/admin", text)
         self.assertNotIn("http://www.insidevietnamtravel.fr", text)
 
     def test_env_example_has_public_ip_and_no_scalingo_pdf_host(self):
