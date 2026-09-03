@@ -183,6 +183,7 @@ class HealthHostTests(unittest.TestCase):
         ]
         self.assertEqual(len(www_blocks), 1, www_blocks)
         self.assertNotIn("insidevietnamtravel.fr$request_uri", www_blocks[0])
+        self.assertNotRegex(www_blocks[0], r"\breturn\s+301\b")
         self.assertNotIn("http://www.insidevietnamtravel.fr", active)
 
     def test_nginx_admin_goes_to_canonical_https_apex(self):
