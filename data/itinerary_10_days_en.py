@@ -2,10 +2,10 @@
 
 ITINERARY_10_DAYS_EN = {
     "title": "10-day Vietnam itinerary",
-    "meta_title": "Vietnam itinerary 10 days 2026 — Hanoi to Saigon",
+    "meta_title": "Vietnam itinerary 10 days | InsideVietnamTravel",
     "meta_description": (
-        "10 days in Vietnam itinerary: Hanoi, Halong Bay, Hoi An, Ho Chi Minh City and the Mekong. "
-        "Day-by-day plan, transport and hotels — the classic north–south route."
+        "Vietnam itinerary 10 days, Hanoi to Saigon: Halong, Hội An and the Mekong. "
+        "Practical guide with budget, transports and visa."
     ),
     "summary": "The great classic north → centre → south route in 10 days.",
     "overview": (

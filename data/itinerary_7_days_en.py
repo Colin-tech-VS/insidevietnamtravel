@@ -2,10 +2,10 @@
 
 ITINERARY_7_DAYS_EN = {
     "title": "7-day Vietnam itinerary",
-    "meta_title": "Vietnam Itinerary 7 Days — Hanoi, Halong Bay & Hội An",
+    "meta_title": "Vietnam itinerary 7 days | InsideVietnamTravel",
     "meta_description": (
-        "Detailed 7-day Vietnam itinerary: Hanoi, an overnight Halong Bay cruise and UNESCO "
-        "Hội An. Day-by-day plan with transport tips, hotels and bookable activities."
+        "Vietnam itinerary 7 days: Hanoi, Halong Bay and Hội An. Practical guide with "
+        "budget, transports and visa."
     ),
     "summary": "Hanoi → Halong → Hội An — the ideal north-central triangle for a first week in Vietnam.",
     "overview": (

@@ -3,10 +3,10 @@
 ITINERARY_7_DAYS_FR = {
     "slug": "7-days-vietnam",
     "title": "Itinéraire 7 jours au Vietnam",
-    "meta_title": "Itinéraire 7 jours Vietnam — Hanoï, Halong et Hội An jour par jour",
+    "meta_title": "Itinéraire Vietnam 7 jours | InsideVietnamTravel",
     "meta_description": (
-        "Circuit 7 jours Vietnam détaillé : Hanoï, croisière baie d'Halong 2J/1N, Hội An UNESCO. "
-        "Programme complet, conseils transport, hôtels et activités à réserver."
+        "Découvrez un itinéraire Vietnam 7 jours : Hanoï → Halong → Hội An. "
+        "Guide pratique, budget, transports et visa."
     ),
     "duration": 7,
     "summary": "Hanoï → Halong → Hội An — le triangle nord-centre idéal pour une première semaine au Vietnam.",

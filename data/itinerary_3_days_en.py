@@ -2,10 +2,10 @@
 
 ITINERARY_3_DAYS_EN = {
     "title": "3-day Vietnam itinerary",
-    "meta_title": "Vietnam Itinerary 3 Days — Hanoi or Saigon City Break",
+    "meta_title": "Vietnam itinerary 3 days | InsideVietnamTravel",
     "meta_description": (
-        "What can you do with 3 days in Vietnam? Detailed Hanoi city break — Old Quarter, "
-        "street food, Halong day cruise — with hotels, activities and a real budget."
+        "Vietnam itinerary 3 days: Hanoi, Halong Bay and a practical guide with budget, "
+        "transports and visa tips."
     ),
     "summary": "Perfect for a first taste — an intense city break in Hanoi or Saigon.",
     "overview": (

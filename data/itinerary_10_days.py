@@ -3,10 +3,10 @@
 ITINERARY_10_DAYS_FR = {
     "slug": "10-days-vietnam",
     "title": "Itinéraire 10 jours au Vietnam",
-    "meta_title": "Itinéraire Vietnam 10 jours 2026 — Hanoï, Halong, Hội An",
+    "meta_title": "Itinéraire Vietnam 10 jours | InsideVietnamTravel",
     "meta_description": (
-        "Vietnam itinerary 10 days : Hanoï, Halong, Hội An, Saigon et Mékong. "
-        "Programme jour par jour, transport et hôtels — le classique nord-sud."
+        "Découvrez un itinéraire Vietnam 10 jours, classique nord-sud : "
+        "Hanoï, Halong, Hội An, Saigon. Guide pratique, budget, transports et visa."
     ),
     "duration": 10,
     "summary": "Le grand classique nord → centre → sud en 10 jours.",
