@@ -28,6 +28,7 @@ from i18n_utils import (
     localize_itinerary,
     set_lang,
     page_url_in_lang,
+    strip_legacy_fr_prefix,
     switch_lang_url,
 )
 from locales.ui import t
@@ -75,7 +76,7 @@ RESERVED_SLUGS = frozenset({
     "AgodaPartnerVerification.htm",
     "categorie", "category", "static", "favicon.ico", "guide",
     "voyage", "actualites", "news",
-    "en", "about", "privacy", "legal", "unsubscribe", "contact", "checkout", "guide-pdf",
+    "en", "fr", "about", "privacy", "legal", "unsubscribe", "contact", "checkout", "guide-pdf",
     "preparer-mon-voyage", "plan-my-trip",
     "quand-partir-au-vietnam", "best-time-to-visit-vietnam",
     "calculateur-budget-vietnam", "vietnam-budget-calculator",
@@ -163,15 +164,21 @@ def health_fast_path():
 
 
 @app.before_request
-def redirect_www_to_apex():
-    """301 permanent : www.insidevietnamtravel.fr → https://insidevietnamtravel.fr."""
+def canonicalize_public_url():
+    """Un seul 301 : www → HTTPS apex, et /fr/… → chemin FR sans préfixe.
+
+    Le français canonique est `/`, jamais `/fr/`. Combiner les deux règles
+    dans le même saut évite www/fr/ → apex/fr/ → apex/.
+    """
     host = (request.host or "").split(":")[0].lower()
     apex = config.SITE_PUBLIC_DOMAIN
-    if host != f"www.{apex}":
-        return None
     path = request.path or "/"
+    stripped = strip_legacy_fr_prefix(path)
+    is_www = host == f"www.{apex}"
+    if not is_www and stripped == path:
+        return None
     query = request.query_string.decode("utf-8", errors="replace")
-    target = f"https://{apex}{path}"
+    target = f"https://{apex}{stripped}" if is_www else stripped
     if query:
         target = f"{target}?{query}"
     return redirect(target, code=301)
@@ -323,17 +330,19 @@ def _mai_request_context():
 
 @app.before_request
 def checkout_http_to_canonical_https():
-    """HTTP /checkout (IP, www, apex) → https://insidevietnamtravel.fr/checkout."""
+    """HTTP /checkout depuis l'IP publique ou www → HTTPS apex.
+
+    L'apex n'est pas redirigé ici : un 301 vers la même URL boucle dès que
+    ``X-Forwarded-Proto`` est absent (scheme vu en http derrière le proxy).
+    Le vhost HTTP LWS (nginx.conf) gère HTTP→HTTPS pour l'apex.
+    """
     if request.path.rstrip("/") != "/checkout":
         return None
     host = (request.host or "").split(":")[0].lower()
-    if host in {"localhost", "127.0.0.1", "::1", "testserver"}:
+    if host in {"localhost", "127.0.0.1", "::1", "testserver", "insidevietnamtravel.fr"}:
         return None
-    canonical = "https://insidevietnamtravel.fr/checkout"
-    if request.scheme == "https" and host == "insidevietnamtravel.fr":
-        return None
-    if host in {config.PUBLIC_IP, "www.insidevietnamtravel.fr"} or request.scheme == "http":
-        return redirect(canonical, code=301)
+    if host in {config.PUBLIC_IP, "www.insidevietnamtravel.fr"}:
+        return redirect("https://insidevietnamtravel.fr/checkout", code=301)
     return None
 
 

@@ -176,7 +176,10 @@ class HealthHostTests(unittest.TestCase):
         text = Path(__file__).resolve().parents[1].joinpath("nginx.conf").read_text()
         self.assertIn("server_name www.insidevietnamtravel.fr;", text)
         self.assertIn("return 301 https://insidevietnamtravel.fr$request_uri;", text)
-        self.assertNotIn("http://www.insidevietnamtravel.fr", text)
+        active = "\n".join(
+            line for line in text.splitlines() if line.strip() and not line.strip().startswith("#")
+        )
+        self.assertNotIn("http://www.insidevietnamtravel.fr", active)
 
     def test_nginx_admin_goes_to_canonical_https_apex(self):
         """L'apex LWS (185.135.132.50) ne doit pas renvoyer /admin vers http://www."""
@@ -185,7 +188,11 @@ class HealthHostTests(unittest.TestCase):
         self.assertIn("location /admin/", text)
         self.assertIn("return 301 https://insidevietnamtravel.fr/admin;", text)
         self.assertNotIn("https://www.insidevietnamtravel.fr/admin", text)
-        self.assertNotIn("http://www.insidevietnamtravel.fr", text)
+        active = "\n".join(
+            line for line in text.splitlines() if line.strip() and not line.strip().startswith("#")
+        )
+        self.assertNotIn("http://www.insidevietnamtravel.fr", active)
+        self.assertNotIn("RedirectMatch 301 ^/admin", active)
 
     def test_env_example_has_public_ip_and_no_scalingo_pdf_host(self):
         text = Path(__file__).resolve().parents[1].joinpath(".env.example").read_text()
