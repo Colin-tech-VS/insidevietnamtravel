@@ -126,6 +126,12 @@ class RedirectLoopTests(unittest.TestCase):
         else:
             self.assertEqual(response.status_code, 200)
 
+    def test_flask_has_no_www_to_apex_redirect(self):
+        """Le 301 www → apex (redirect_www_to_apex) ne doit pas revenir."""
+        text = Path(__file__).resolve().parents[1].joinpath("app.py").read_text()
+        self.assertNotIn("def redirect_www_to_apex", text)
+        self.assertNotIn("301 permanent : www.insidevietnamtravel.fr", text)
+
     def test_nginx_strips_fr_prefix_and_never_adds_it(self):
         text = Path(__file__).resolve().parents[1].joinpath("nginx.conf").read_text()
         self.assertIn("location = /fr", text)
@@ -164,6 +170,8 @@ class RedirectLoopTests(unittest.TestCase):
             www_blocks[0],
         )
         self.assertNotIn("insidevietnamtravel.fr$request_uri", www_blocks[0])
+        self.assertNotRegex(www_blocks[0], r"\breturn\s+301\b")
+        self.assertNotRegex(www_blocks[0], r"location\s+/")
 
 
 if __name__ == "__main__":

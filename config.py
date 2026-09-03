@@ -7,7 +7,11 @@ PUBLIC_IP = os.environ.get("PUBLIC_IP", "185.135.132.50").strip() or "185.135.13
 
 
 def _without_www(url: str) -> str:
-    """Hôte canonique = apex (sans www). www.* est redirigé en 301 vers l'apex."""
+    """Hôte canonique = apex (sans www) pour les URLs SEO.
+
+    Ne pas en déduire un 301 HTTP www → apex : LWS redirige encore l'apex
+    vers www (``Redirect /``), et les deux 301 opposés bouclent.
+    """
     url = (url or "").strip().rstrip("/")
     if not url:
         return url
