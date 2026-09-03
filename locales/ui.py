@@ -340,12 +340,12 @@ UI: dict[str, dict[str, str]] = {
         "en": "Affiliate links — at no extra cost to you, they support the site.",
     },
     "meta.prepare.title": {
-        "fr": "Voyage au Vietnam : guide itinéraire 10 et 15 jours",
-        "en": "Vietnam travel: 10 & 15 day itinerary guide",
+        "fr": "Circuits Vietnam : 10 et 15 jours Nord-Sud",
+        "en": "Vietnam circuits: 10 and 15-day routes",
     },
     "meta.prepare.desc": {
-        "fr": "Planifiez votre voyage au Vietnam : guide itinéraire 10 et 15 jours, destinations et budget. Commencez maintenant !",
-        "en": "Plan your Vietnam trip: 10- and 15-day itinerary guide, destinations and budget. Start now!",
+        "fr": "Circuits Vietnam 10 et 15 jours, de Hanoï à Saigon. Comparez et composez votre itinéraire sur mesure.",
+        "en": "Vietnam circuits of 10 and 15 days, Hanoi to Saigon. Compare options and build your trip now!",
     },
 
     # Article
@@ -629,8 +629,8 @@ UI: dict[str, dict[str, str]] = {
 
     # SEO meta (pages statiques)
     "meta.destinations.title": {
-        "fr": "Voyage Vietnam : destinations Hanoï, Hội An, Halong",
-        "en": "Vietnam travel: Hanoi, Hoi An, Halong destinations",
+        "fr": "Destinations Vietnam : Hanoï, Hội An, Halong",
+        "en": "Vietnam destinations: Hanoi, Hoi An, Halong",
     },
     "meta.destinations.desc": {
         "fr": "Guides destinations Vietnam : Hanoï, Hội An, Halong, Nha Trang. Que faire, où dormir. Explorez et préparez votre voyage !",
@@ -646,12 +646,12 @@ UI: dict[str, dict[str, str]] = {
         "en": "City guides — Hanoi, Ninh Binh, Hoi An, Nha Trang, Tam Dao: things to do, where to stay, where to eat",
     },
     "meta.home.title": {
-        "fr": "Voyage au Vietnam 2026 : itinéraires, conseils et visas",
-        "en": "Vietnam travel 2026: itineraries, tips and visas",
+        "fr": "Voyage Vietnam : Circuit Hanoï-Ho Chi Minh",
+        "en": "Vietnam travel: Hanoi-Ho Chi Minh circuit",
     },
     "meta.home.desc": {
-        "fr": "Découvrez nos guides voyage Vietnam : itinéraires, conseils pratiques et visas. Préparez votre séjour dès maintenant !",
-        "en": "Discover our Vietnam travel guides: itineraries, practical tips and visas. Start planning your trip now!",
+        "fr": "Voyage Vietnam 2026 : circuit Hanoï-Ho Chi Minh, visas et conseils. Découvrez nos itinéraires sur mesure.",
+        "en": "Vietnam travel 2026: Hanoi-Ho Chi Minh circuit, visas and tips. Discover our tailor-made itineraries.",
     },
     "meta.home.kw": {
         "fr": "voyage Vietnam, guide itinéraire, guide Vietnam, itinéraire Vietnam 10 jours, itinéraire 15 jours, où dormir à Hanoï, transport Vietnam, visa Vietnam, budget voyage Vietnam",

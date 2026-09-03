@@ -59,6 +59,9 @@ CTA_HINTS = (
     "follow the checklist",
     "build your trip",
     "get ready",
+    "découvrez",
+    "decouvrez",
+    "discover",
 )
 
 
@@ -71,7 +74,7 @@ class SeoMainPagesTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200, path)
         return response.get_data(as_text=True)
 
-    def test_ui_meta_descriptions_max_160(self):
+    def test_ui_meta_descriptions_max_150(self):
         keys = (
             "meta.home.desc",
             "meta.prepare.desc",
@@ -81,9 +84,10 @@ class SeoMainPagesTests(unittest.TestCase):
         )
         for key in keys:
             for lang, text in UI[key].items():
+                limit = 150 if key in ("meta.home.desc", "meta.prepare.desc") else 160
                 self.assertLessEqual(
                     len(text),
-                    160,
+                    limit,
                     f"{key}[{lang}] has {len(text)} chars: {text}",
                 )
                 lowered = text.lower()
@@ -98,12 +102,14 @@ class SeoMainPagesTests(unittest.TestCase):
 
     def test_ui_titles_include_target_keywords(self):
         fr_home = UI["meta.home.title"]["fr"].lower()
-        self.assertIn("voyage au vietnam", fr_home)
-        self.assertIn("itinéraires", fr_home)
+        self.assertIn("voyage vietnam", fr_home)
+        self.assertIn("circuit hanoï-ho chi minh", fr_home)
+        self.assertLessEqual(len(UI["meta.home.title"]["fr"]), 60)
 
         fr_prepare = UI["meta.prepare.title"]["fr"].lower()
-        self.assertIn("voyage au vietnam", fr_prepare)
-        self.assertIn("guide itinéraire", fr_prepare)
+        self.assertIn("circuits vietnam", fr_prepare)
+        self.assertIn("10 et 15 jours", fr_prepare)
+        self.assertLessEqual(len(UI["meta.prepare.title"]["fr"]), 60)
 
         fr_blog = UI["meta.blog.title"]["fr"].lower()
         self.assertIn("voyage vietnam", fr_blog)
@@ -136,7 +142,8 @@ class SeoMainPagesTests(unittest.TestCase):
 
         self.assertEqual(title, UI["meta.home.title"]["fr"])
         self.assertEqual(desc, UI["meta.home.desc"]["fr"])
-        self.assertLessEqual(len(desc), 160)
+        self.assertLessEqual(len(title), 60)
+        self.assertLessEqual(len(desc), 150)
         self.assertIn("Guide ultime pour un voyage", h1)
         self.assertIn("au Vietnam", h1)
         joined = " ".join(h2s).lower()
@@ -154,6 +161,10 @@ class SeoMainPagesTests(unittest.TestCase):
         self.assertEqual(alias.status_code, 301)
         self.assertTrue(alias.headers["Location"].endswith("/preparer-mon-voyage"))
 
+        voyages = self.client.get("/voyages", follow_redirects=False)
+        self.assertEqual(voyages.status_code, 301)
+        self.assertTrue(voyages.headers["Location"].endswith("/preparer-mon-voyage"))
+
         en_alias = self.client.get("/en/voyage", follow_redirects=False)
         self.assertEqual(en_alias.status_code, 301)
         self.assertTrue(en_alias.headers["Location"].endswith("/en/plan-my-trip"))
@@ -170,9 +181,11 @@ class SeoMainPagesTests(unittest.TestCase):
 
     def test_guide_page_and_alias(self):
         html = self._get("/guide/preparer-son-voyage")
-        self.assertIn("Guide voyage Vietnam", _title(html))
+        self.assertIn("Guides Vietnam", _title(html))
+        self.assertIn("visa", _title(html).lower())
         self.assertIn("voyage au Vietnam", _h1(html))
-        self.assertLessEqual(len(_meta_description(html)), 160)
+        self.assertLessEqual(len(_title(html)), 60)
+        self.assertLessEqual(len(_meta_description(html)), 150)
 
         itin = self._get("/guide/itineraires-vietnam")
         self.assertIn("Guide itinéraire Vietnam", _title(itin))
@@ -181,6 +194,10 @@ class SeoMainPagesTests(unittest.TestCase):
         alias = self.client.get("/guide", follow_redirects=False)
         self.assertEqual(alias.status_code, 301)
         self.assertTrue(alias.headers["Location"].endswith("/guide/preparer-son-voyage"))
+
+        guides = self.client.get("/guides", follow_redirects=False)
+        self.assertEqual(guides.status_code, 301)
+        self.assertTrue(guides.headers["Location"].endswith("/guide/preparer-son-voyage"))
 
         still_ok = self.client.get("/guide/itineraires-vietnam", follow_redirects=False)
         self.assertEqual(still_ok.status_code, 200)
