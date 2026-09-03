@@ -46,21 +46,21 @@ PILLARS: dict[str, dict] = {
         "slug": "preparer-son-voyage",
         "photo_id": "1557750255-c76072a7aad1",
         "eyebrow": {"fr": "Guide pilier", "en": "Pillar guide"},
-        "title": {"fr": "Préparer son voyage au Vietnam",
-                  "en": "Plan your trip to Vietnam"},
+        "title": {"fr": "Guide pour préparer un voyage au Vietnam",
+                  "en": "Guide to planning a trip to Vietnam"},
         "lede": {
             "fr": "Visa, budget, saison, eSIM, sécurité : tout ce qu'il faut régler "
                   "avant de partir, réuni et relié pour ne rien oublier.",
             "en": "Visa, budget, season, eSIM, safety: everything to sort out before "
                   "you go, gathered and cross-linked so nothing slips through.",
         },
-        "meta_title": {"fr": "Préparer son voyage au Vietnam — checklist complète 2026",
-                       "en": "Plan your Vietnam trip — complete 2026 checklist"},
+        "meta_title": {"fr": "Guide voyage Vietnam : visa, budget et checklist 2026",
+                       "en": "Vietnam travel guide: visa, budget and 2026 checklist"},
         "meta_description": {
-            "fr": "Le guide pour préparer votre voyage au Vietnam : visa, formalités, "
-                  "budget, meilleure saison, eSIM et sécurité. Checklist pas à pas.",
-            "en": "The hub to plan your Vietnam trip: visa, paperwork, budget, best "
-                  "season, eSIM and safety. A step-by-step checklist.",
+            "fr": "Guide pour préparer un voyage au Vietnam : visa, budget, saison et eSIM. "
+                  "Suivez la checklist et partez serein !",
+            "en": "Guide to plan a Vietnam trip: visa, budget, season and eSIM. "
+                  "Follow the checklist and get ready to go!",
         },
         "clusters": [
             {"title": {"fr": "Formalités & entrée", "en": "Paperwork & entry"},
@@ -300,20 +300,20 @@ PILLARS: dict[str, dict] = {
         "slug": "itineraires-vietnam",
         "photo_id": "1772867342647-6e6d87a0b014",
         "eyebrow": {"fr": "Guide pilier", "en": "Pillar guide"},
-        "title": {"fr": "Itinéraires au Vietnam", "en": "Vietnam itineraries"},
+        "title": {"fr": "Guide itinéraire pour un voyage au Vietnam", "en": "Itinerary guide for a trip to Vietnam"},
         "lede": {
             "fr": "Du city-break à la grande traversée Nord-Sud : des parcours testés "
                   "par durée, et un planificateur pour composer le vôtre.",
             "en": "From a city break to the full north–south crossing: road-tested "
                   "routes by length, plus a planner to build your own.",
         },
-        "meta_title": {"fr": "Itinéraires Vietnam 10 et 15 jours — circuits 2026",
-                       "en": "Vietnam itinerary 10 and 15 days — 2026 routes"},
+        "meta_title": {"fr": "Guide itinéraire Vietnam : 3, 7, 10 et 15 jours",
+                       "en": "Vietnam itinerary guide: 3, 7, 10 and 15 days"},
         "meta_description": {
-            "fr": "Itinéraires au Vietnam par durée (3, 7, 10, 15 jours), conseils Nord/Centre/"
-                  "Sud et planificateur sur mesure pour composer votre voyage.",
-            "en": "Vietnam itineraries by length (3, 7, 10, 15 days), north/centre/south tips "
-                  "and a tailored planner to build your trip.",
+            "fr": "Guide itinéraire Vietnam : circuits 3, 7, 10 et 15 jours, nord au sud. "
+                  "Comparez et composez votre voyage maintenant !",
+            "en": "Vietnam itinerary guide: 3, 7, 10 and 15-day routes, north to south. "
+                  "Compare options and build your trip now!",
         },
         "clusters": [
             {"title": {"fr": "Par durée", "en": "By length"},

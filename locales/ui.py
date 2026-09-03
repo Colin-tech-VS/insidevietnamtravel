@@ -43,8 +43,8 @@ UI: dict[str, dict[str, str]] = {
     # Hub Ressources voyage (pages SEO)
     "seo_hub.eyebrow": {"fr": "Ressources voyage Vietnam", "en": "Vietnam travel resources"},
     "seo_hub.title": {
-        "fr": "Ressources & guides pratiques pour voyager au Vietnam",
-        "en": "Resources & practical guides for traveling to Vietnam",
+        "fr": "Guides pratiques pour un voyage au Vietnam",
+        "en": "Practical guides for travelling in Vietnam",
     },
     "seo_hub.intro": {
         "fr": "Tous nos guides pratiques, conseils et ressources pour préparer "
@@ -53,14 +53,12 @@ UI: dict[str, dict[str, str]] = {
               "Vietnam: formalities, budget, seasons, regions and much more.",
     },
     "seo_hub.meta_title": {
-        "fr": "Ressources voyage Vietnam : guides pratiques & conseils",
-        "en": "Vietnam travel resources: practical guides & tips",
+        "fr": "Guide voyage Vietnam : ressources, itinéraires et visas",
+        "en": "Vietnam travel guide: resources, itineraries and visas",
     },
     "seo_hub.meta_description": {
-        "fr": "Retrouvez toutes nos ressources et guides pratiques pour organiser "
-              "votre voyage au Vietnam : visa, budget, météo, itinéraires et conseils d'experts.",
-        "en": "Find all our resources and practical guides to organize your trip to "
-              "Vietnam: visa, budget, weather, itineraries and expert tips.",
+        "fr": "Tous nos guides voyage Vietnam : visa, budget, itinéraires et conseils. Consultez les ressources et préparez-vous !",
+        "en": "All our Vietnam travel guides: visa, budget, itineraries and tips. Browse the resources and start planning!",
     },
     "seo_hub.search_label": {"fr": "Rechercher une ressource", "en": "Search a resource"},
     "seo_hub.search_placeholder": {
@@ -81,7 +79,7 @@ UI: dict[str, dict[str, str]] = {
 
     # Homepage
     "home.hero.eyebrow": {"fr": "Guide voyage Vietnam", "en": "Vietnam travel guide"},
-    "home.hero.title": {"fr": "Votre guide voyage", "en": "Your travel guide"},
+    "home.hero.title": {"fr": "Guide ultime pour un voyage", "en": "The ultimate travel guide"},
     "home.hero.title_em": {"fr": "au Vietnam", "en": "to Vietnam"},
     "home.hero.lead": {
         "fr": "Itinéraires 10 et 15 jours, guides Hanoï (où dormir, où manger), Ninh Binh, Hội An, Nha Trang — visa, transport et budget.",
@@ -115,24 +113,24 @@ UI: dict[str, dict[str, str]] = {
     "home.hero.slide.hoi_an": {"fr": "Hội An, ville ancienne", "en": "Hội An ancient town"},
     "home.hero.slide.hanoi": {"fr": "Hanoï, capitale du Vietnam", "en": "Hanoi, Vietnam capital"},
     "home.hero.showcase_label": {"fr": "Destinations à explorer", "en": "Destinations to explore"},
-    "home.pillars.title": {"fr": "Par où commencer", "en": "Where to start"},
+    "home.pillars.title": {"fr": "Guide itinéraire : par où commencer", "en": "Itinerary guide: where to start"},
     "home.pillars.sub": {
         "fr": "Nos guides piliers pour préparer chaque facette de votre voyage au Vietnam",
         "en": "Our pillar guides to plan every part of your trip to Vietnam",
     },
-    "home.dest.title": {"fr": "Destinations au Vietnam", "en": "Destinations in Vietnam"},
+    "home.dest.title": {"fr": "Destinations pour un voyage au Vietnam", "en": "Destinations for a trip to Vietnam"},
     "home.dest.sub": {
         "fr": "Guides complets par ville : que faire, où dormir, activités incontournables",
         "en": "Complete city guides: what to do, where to stay, must-see activities",
     },
     "home.dest.cta": {"fr": "Lire le guide →", "en": "Read the guide →"},
-    "home.itin.title": {"fr": "Itinéraires Vietnam", "en": "Vietnam itineraries"},
+    "home.itin.title": {"fr": "Guide itinéraire Vietnam", "en": "Vietnam itinerary guide"},
     "home.itin.sub": {
         "fr": "Circuits jour par jour — 3, 7 ou 10 jours pour organiser votre voyage",
         "en": "Day-by-day routes — 3, 7 or 10 days to plan your trip",
     },
     "home.itin.cta": {"fr": "Voir l'itinéraire →", "en": "View itinerary →"},
-    "home.blog.title": {"fr": "Guides pratiques voyage Vietnam", "en": "Practical Vietnam travel guides"},
+    "home.blog.title": {"fr": "Actualités et guides voyage Vietnam", "en": "Vietnam travel news and guides"},
     "home.blog.sub": {
         "fr": "Visa, budget, eSIM, sécurité — conseils pour voyageurs français",
         "en": "Visa, budget, eSIM, safety — tips for travellers",
@@ -140,7 +138,7 @@ UI: dict[str, dict[str, str]] = {
     "home.blog.cta": {"fr": "Tous les articles", "en": "All articles"},
 
     # Blog
-    "blog.title": {"fr": "Blog voyage Vietnam", "en": "Vietnam travel blog"},
+    "blog.title": {"fr": "Actualités voyage Vietnam", "en": "Vietnam travel news"},
     "blog.sub": {
         "fr": "Visa, budget, transport, gastronomie — articles pratiques pour préparer votre séjour",
         "en": "Visa, budget, transport, food — practical articles to plan your trip",
@@ -164,7 +162,7 @@ UI: dict[str, dict[str, str]] = {
     },
     "promobar.cta": {"fr": "Créer mon voyage", "en": "Build my trip"},
     "promobar.dismiss": {"fr": "Masquer ce bandeau", "en": "Dismiss this banner"},
-    "prepare.title": {"fr": "Préparer mon voyage au Vietnam", "en": "Plan my Vietnam trip"},
+    "prepare.title": {"fr": "Voyage au Vietnam : votre guide itinéraire", "en": "Vietnam trip: your itinerary guide"},
     "prepare.sub": {
         "fr": "Répondez à 5 questions — nous vous proposons itinéraires, guides et articles adaptés à votre profil.",
         "en": "Answer 5 questions — we'll suggest itineraries, guides and articles tailored to your profile.",
@@ -342,12 +340,12 @@ UI: dict[str, dict[str, str]] = {
         "en": "Affiliate links — at no extra cost to you, they support the site.",
     },
     "meta.prepare.title": {
-        "fr": "Vietnam trip planner 2026 — itinéraire 10 et 15 jours",
-        "en": "Vietnam trip planner 2026 — 10 & 15 day itinerary",
+        "fr": "Voyage au Vietnam : guide itinéraire 10 et 15 jours",
+        "en": "Vietnam travel: 10 & 15 day itinerary guide",
     },
     "meta.prepare.desc": {
-        "fr": "Planifiez votre voyage au Vietnam : itinéraires 10 et 15 jours, destinations (Hanoï, Ninh Binh, Hội An, Nha Trang), budget et guides adaptés.",
-        "en": "Plan your Vietnam trip: 10- and 15-day itineraries, destinations (Hanoi, Ninh Binh, Hoi An, Nha Trang), budget and matching guides.",
+        "fr": "Planifiez votre voyage au Vietnam : guide itinéraire 10 et 15 jours, destinations et budget. Commencez maintenant !",
+        "en": "Plan your Vietnam trip: 10- and 15-day itinerary guide, destinations and budget. Start now!",
     },
 
     # Article
@@ -631,45 +629,45 @@ UI: dict[str, dict[str, str]] = {
 
     # SEO meta (pages statiques)
     "meta.destinations.title": {
-        "fr": "Destinations Vietnam 2026 — Hanoï, Ninh Binh, Hội An, Nha Trang",
-        "en": "Vietnam destinations 2026 — Hanoi, Ninh Binh, Hoi An, Nha Trang",
+        "fr": "Voyage Vietnam : destinations Hanoï, Hội An, Halong",
+        "en": "Vietnam travel: Hanoi, Hoi An, Halong destinations",
     },
     "meta.destinations.desc": {
-        "fr": "Guides destinations Vietnam : Hanoï (où dormir, où manger), Ninh Binh, Hội An, Nha Trang, Cat Ba, Tam Dao, Hà Giang — que faire et où dormir.",
-        "en": "Vietnam destination guides: Hanoi (where to stay, where to eat), Ninh Binh, Hoi An, Nha Trang, Cat Ba, Tam Dao, Ha Giang — things to do and hotels.",
+        "fr": "Guides destinations Vietnam : Hanoï, Hội An, Halong, Nha Trang. Que faire, où dormir. Explorez et préparez votre voyage !",
+        "en": "Vietnam destination guides: Hanoi, Hoi An, Halong, Nha Trang. Things to do and where to stay. Explore and plan your trip!",
     },
     "meta.destinations.kw": {
-        "fr": "destinations Vietnam, Ninh Binh, Nha Trang, Hội An, Tam Dao, Cat Ba, Hà Giang, Vũng Tàu",
-        "en": "Vietnam destinations, Ninh Binh, Nha Trang, Hoi An, Tam Dao, Cat Ba, Ha Giang, Vung Tau",
+        "fr": "voyage Vietnam, destinations Vietnam, guide Hanoï, Hội An, Halong, Nha Trang, Ninh Binh, Tam Dao, Cat Ba, Hà Giang",
+        "en": "Vietnam travel, Vietnam destinations, Hanoi guide, Hoi An, Halong, Nha Trang, Ninh Binh, Tam Dao, Cat Ba, Ha Giang",
     },
-    "destinations.page.title": {"fr": "Toutes les destinations au Vietnam", "en": "All destinations in Vietnam"},
+    "destinations.page.title": {"fr": "Destinations pour un voyage au Vietnam", "en": "Destinations for travelling in Vietnam"},
     "destinations.page.sub": {
         "fr": "Guides par ville — Hanoï, Ninh Binh, Hội An, Nha Trang, Tam Dao : que faire, où dormir, où manger",
         "en": "City guides — Hanoi, Ninh Binh, Hoi An, Nha Trang, Tam Dao: things to do, where to stay, where to eat",
     },
     "meta.home.title": {
-        "fr": "Guide Vietnam 2026 — Hanoï, Ninh Binh, 10 et 15 jours",
-        "en": "Vietnam travel guide 2026 — Hanoi, itineraries, Hoi An",
+        "fr": "Voyage au Vietnam 2026 : itinéraires, conseils et visas",
+        "en": "Vietnam travel 2026: itineraries, tips and visas",
     },
     "meta.home.desc": {
-        "fr": "Guide voyage Vietnam : où dormir à Hanoï, Ninh Binh, Hội An, Nha Trang, Cat Ba. Itinéraires 10 et 15 jours, transport, prix visa, budget.",
-        "en": "Vietnam travel guide: where to stay in Hanoi, Ninh Binh, Hoi An, Nha Trang, Cat Ba. 10- and 15-day itineraries, transport, visa price, budget.",
+        "fr": "Découvrez nos guides voyage Vietnam : itinéraires, conseils pratiques et visas. Préparez votre séjour dès maintenant !",
+        "en": "Discover our Vietnam travel guides: itineraries, practical tips and visas. Start planning your trip now!",
     },
     "meta.home.kw": {
-        "fr": "guide Vietnam, itinéraire Vietnam 10 jours, itinéraire 15 jours, où dormir à Hanoï, transport Vietnam, Ninh Binh, Hội An, Nha Trang, Tam Dao, prix visa Vietnam",
-        "en": "Vietnam travel guide, Vietnam itinerary 10 days, 15 days in Vietnam, where to stay in Hanoi, transport Vietnam, Ninh Binh, Hoi An, Nha Trang, Tam Dao, Vietnam visa price",
+        "fr": "voyage Vietnam, guide itinéraire, guide Vietnam, itinéraire Vietnam 10 jours, itinéraire 15 jours, où dormir à Hanoï, transport Vietnam, visa Vietnam, budget voyage Vietnam",
+        "en": "Vietnam travel, itinerary guide, Vietnam travel guide, Vietnam itinerary 10 days, 15 days in Vietnam, where to stay in Hanoi, Vietnam visa, Vietnam travel budget",
     },
     "meta.blog.title": {
-        "fr": "Blog voyage Vietnam : visa prix, budget, transport, où manger",
-        "en": "Vietnam travel blog: visa price, budget, transport, Hanoi food",
+        "fr": "Actualités voyage Vietnam : guides, visa et budget",
+        "en": "Vietnam travel news: guides, visa and budget",
     },
     "meta.blog.desc": {
-        "fr": "Articles pratiques Vietnam : prix visa, budget, eSIM, sécurité, transport, où manger à Hanoï et street food.",
-        "en": "Practical Vietnam articles: visa price, budget, eSIM, safety, transport, where to eat in Hanoi and street food.",
+        "fr": "Actualités et guides voyage Vietnam : visa, budget, transport et conseils. Lisez nos articles et préparez-vous !",
+        "en": "Vietnam travel news and guides: visa, budget, transport and tips. Read our articles and start planning!",
     },
     "meta.blog.kw": {
-        "fr": "blog voyage Vietnam, prix visa Vietnam, budget Vietnam, transport Vietnam, où manger Hanoï",
-        "en": "Vietnam travel blog, Vietnam visa price, Vietnam budget, transport Vietnam, where to eat in Hanoi",
+        "fr": "actualités voyage Vietnam, blog voyage Vietnam, guide itinéraire, prix visa Vietnam, budget Vietnam, transport Vietnam",
+        "en": "Vietnam travel news, Vietnam travel blog, itinerary guide, Vietnam visa price, Vietnam budget, Vietnam transport",
     },
     "meta.about.title": {
         "fr": "À propos — guide voyage Vietnam indépendant",

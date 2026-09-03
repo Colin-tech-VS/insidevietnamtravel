@@ -97,7 +97,7 @@ def maillage_links(page: dict, lang: str, *, limit: int = 8) -> list[dict]:
             break
 
     add(lang_url("prepare_trip", lang), "Préparer mon voyage" if lang == "fr" else "Plan my trip")
-    add(lang_url("blog_index", lang), "Blog voyage Vietnam" if lang == "fr" else "Vietnam travel blog")
+    add(lang_url("blog_index", lang), "Actualités voyage Vietnam" if lang == "fr" else "Vietnam travel news")
     add(lang_url("destinations_index", lang), "Destinations Vietnam" if lang == "fr" else "Vietnam destinations")
     add(lang_url("partners_index", lang), "Partenaires voyage Vietnam" if lang == "fr" else "Vietnam travel partners")
 
