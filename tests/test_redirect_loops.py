@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import unittest
 from pathlib import Path
 from urllib.parse import urlparse
@@ -119,6 +120,31 @@ class RedirectLoopTests(unittest.TestCase):
         )
         self.assertNotIn("http://www.insidevietnamtravel.fr", active)
         self.assertNotIn("RedirectMatch 301 ^/admin", active)
+
+    def test_nginx_apex_has_no_catch_all_slash_redirect(self):
+        """Le bloc apex ne doit pas 301 le chemin / (Redirect / → boucle www)."""
+        text = Path(__file__).resolve().parents[1].joinpath("nginx.conf").read_text()
+        active_lines = [
+            line.split("#", 1)[0] for line in text.splitlines()
+        ]
+        active = "\n".join(active_lines)
+        blocks = re.split(r"\bserver\s*\{", active)
+        apex_blocks = [
+            block for block in blocks if "server_name insidevietnamtravel.fr" in block
+        ]
+        self.assertEqual(len(apex_blocks), 1, apex_blocks)
+        apex = apex_blocks[0]
+        self.assertNotRegex(apex, r"location\s+=\s+/\s*\{")
+        self.assertNotRegex(apex, r"location\s+/\s*\{")
+        self.assertIn("location = /fr", apex)
+        www_blocks = [
+            block for block in blocks if "server_name www.insidevietnamtravel.fr" in block
+        ]
+        self.assertEqual(len(www_blocks), 1, www_blocks)
+        self.assertIn(
+            "return 301 https://insidevietnamtravel.fr$request_uri;",
+            www_blocks[0],
+        )
 
 
 if __name__ == "__main__":
