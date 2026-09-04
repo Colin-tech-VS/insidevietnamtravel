@@ -88,6 +88,8 @@ SITE_KEYWORDS_I18N = {
     ),
 }
 SITE_LANG = "fr"
+SITE_TITLE = "Voyage au Vietnam 2026 | Guide Itinéraire & Conseils"
+SITE_META_DESCRIPTION = "Préparez votre voyage au Vietnam avec nos guides itinéraires 10 et 15 jours, conseils pratiques et budget. Hanoï, Ninh Binh, Hội An, Nha Trang."
 LEGAL_UPDATED = "8 juin 2026"
 LEGAL_UPDATED_I18N = {"fr": LEGAL_UPDATED, "en": "8 June 2026"}
 SITE_AUTHOR = "Inside Vietnam Travel"
